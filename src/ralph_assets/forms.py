@@ -25,7 +25,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from mptt.forms import TreeNodeChoiceField
 
-from ralph.assets.models import (
+from ralph_assets.models import (
     Asset,
     AssetCategory,
     AssetCategoryType,
@@ -37,6 +37,13 @@ from ralph.assets.models import (
 )
 from ralph.ui.widgets import DateWidget, HiddenSelectWidget
 
+
+LOOKUPS = {
+    'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
+    'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
+    'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
+    'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
+}
 
 class CodeWidget(forms.TextInput):
     def render(self, name, value, attrs=None, choices=()):
@@ -68,12 +75,18 @@ class BaseAssetForm(ModelForm):
     model = AutoCompleteSelectField(
         'asset_model',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/assetmodel/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmodel/add/?name=',
+            lookup_channel=LOOKUPS['asset_model'],
+        )
     )
     warehouse = AutoCompleteSelectField(
         'asset_warehouse',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/warehouse/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/warehouse/add/?name=',
+            lookup_channel=LOOKUPS['asset_warehouse'],
+        )
     )
 
     def __init__(self, *args, **kwargs):
@@ -169,11 +182,13 @@ class BasePartForm(ModelForm):
             channel,
             required=False,
             help_text='Enter barcode, sn, or model.',
+            plugin_options=dict(lookup_channel=LOOKUPS[channel])
         )
         self.fields['source_device'] = AutoCompleteSelectField(
             channel,
             required=False,
             help_text='Enter barcode, sn, or model.',
+            plugin_options=dict(lookup_channel=LOOKUPS[channel])
         )
         if self.instance.source_device:
             self.fields[
@@ -274,12 +289,18 @@ class BaseAddAssetForm(ModelForm):
     model = AutoCompleteSelectField(
         'asset_model',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/assetmodel/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmodel/add/?name=',
+            lookup_channel=LOOKUPS['asset_model']
+        )
     )
     warehouse = AutoCompleteSelectField(
         'asset_warehouse',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/warehouse/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/warehouse/add/?name=',
+            lookup_channel=LOOKUPS['asset_warehouse']
+        )
     )
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
@@ -356,12 +377,18 @@ class BaseEditAssetForm(ModelForm):
     model = AutoCompleteSelectField(
         'asset_model',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/assetmodel/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmodel/add/?name=',
+            lookup_channel=LOOKUPS['asset_model'],
+        )
     )
     warehouse = AutoCompleteSelectField(
         'asset_warehouse',
         required=True,
-        plugin_options=dict(add_link='/admin/assets/warehouse/add/?name=')
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/warehouse/add/?name=',
+            lookup_channel=LOOKUPS['asset_warehouse'],
+        )
     )
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
@@ -495,7 +522,8 @@ class SearchAssetForm(Form):
     model = AutoCompleteField(
         'asset_model',
         required=False,
-        help_text=None,
+        help_text='xxx',
+        plugin_options=dict(lookup_channel=LOOKUPS['asset_model'])
     )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)

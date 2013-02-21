@@ -13,8 +13,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
-from ralph.assets.history import field_changes
-from ralph.assets.models_assets import Asset, DeviceInfo, PartInfo, OfficeInfo
+from ralph_assets.history import field_changes
+from ralph_assets.models_assets import Asset, DeviceInfo, PartInfo, OfficeInfo
 
 
 class AssetHistoryChange(db.Model):

@@ -7,8 +7,8 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from ralph.assets.models_assets import AssetType, AssetStatus, AssetSource
-from ralph.assets.tests.util import create_asset, create_model, create_category
+from ralph_assets.models_assets import AssetType, AssetStatus, AssetSource
+from ralph_assets.tests.util import create_asset, create_model, create_category
 from ralph.ui.tests.global_utils import login_as_su
 
 

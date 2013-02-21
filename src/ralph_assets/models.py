@@ -10,7 +10,7 @@ from ajax_select import LookupChannel
 from django.utils.html import escape
 from django.db.models import Q
 
-from ralph.assets.models_assets import (
+from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
     AssetCategoryType,
@@ -25,7 +25,7 @@ from ralph.assets.models_assets import (
     PartInfo,
     Warehouse,
 )
-from ralph.assets.models_history import AssetHistoryChange
+from ralph_assets.models_history import AssetHistoryChange
 
 
 class DeviceLookup(LookupChannel):

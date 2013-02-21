@@ -9,12 +9,12 @@ from django.test import TestCase
 from mock import patch
 
 
-from ralph.assets.models_assets import (
+from ralph_assets.models_assets import (
     AssetManufacturer, AssetModel, Warehouse, Asset, AssetStatus, LicenseType,
     SAVE_PRIORITY)
 
-from ralph.assets.models_history import AssetHistoryChange
-from ralph.assets.tests.util import create_category
+from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.tests.util import create_category
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.ui.tests.global_utils import login_as_su
@@ -151,7 +151,7 @@ class ConnectAssetWithDevice(TestCase):
             name='test_device',
         )
 
-    @patch('ralph.assets.views.CONNECT_ASSET_WITH_DEVICE', True)
+    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', True)
     def test_add_dc_device_asset_with_create_device(self):
         """Test check situation, when Asset is created and
         the device is created with Asset serial_number
@@ -169,7 +169,7 @@ class ConnectAssetWithDevice(TestCase):
         self.assertEqual(device.sn, '777-777')
         self.assertEqual(device.venture.name, 'Stock')
 
-    @patch('ralph.assets.views.CONNECT_ASSET_WITH_DEVICE', True)
+    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', True)
     def test_add_dc_device_asset_with_linked_device(self):
         """Test check situation, when Asset is created and device already
         exist with the same serial number as the Asset, then creates
@@ -186,7 +186,7 @@ class ConnectAssetWithDevice(TestCase):
         device = Device.objects.get(id=asset.device_info.ralph_device.id)
         self.assertEqual(device, asset.device_info.ralph_device)
 
-    @patch('ralph.assets.views.CONNECT_ASSET_WITH_DEVICE', False)
+    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', False)
     def test_add_dc_device_asset_without_create_device(self):
         """Test check situation, when link beetwen the asset and the device
         is not created. This situation occurs when
