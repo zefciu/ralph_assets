@@ -18,12 +18,12 @@ from django.forms.models import modelformset_factory
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
-from ralph.assets.forms import (
+from ralph_assets.forms import (
     AddDeviceForm, AddPartForm, EditDeviceForm,
     EditPartForm, DeviceForm, OfficeForm,
     BasePartForm, BulkEditAssetForm, SearchAssetForm
 )
-from ralph.assets.models import (
+from ralph_assets.models import (
     Asset,
     AssetCategory,
     AssetSource,
@@ -31,8 +31,8 @@ from ralph.assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.assets.models_assets import AssetType
-from ralph.assets.models_history import AssetHistoryChange
+from ralph_assets.models_assets import AssetType
+from ralph_assets.models_history import AssetHistoryChange
 from ralph.ui.views.common import Base
 
 

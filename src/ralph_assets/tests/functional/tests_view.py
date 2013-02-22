@@ -9,8 +9,8 @@ import datetime
 
 from django.test import TestCase
 
-from ralph.assets.models_assets import (AssetStatus, AssetType)
-from ralph.assets.tests.util import create_asset, create_category
+from ralph_assets.models_assets import (AssetStatus, AssetType)
+from ralph_assets.tests.util import create_asset, create_category
 from ralph.ui.tests.global_utils import login_as_su
 
 

@@ -1,0 +1,14 @@
+<style type="text/css">
+    .asset-container {
+        padding: 3px;
+    }
+    .asset-model {
+        color: red;
+    }
+    .asset-sn {
+        color: green;
+    }
+    .asset-barcode {
+        color: blue;
+    }
+</style>

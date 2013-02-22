@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ralph.assets.models_assets import (
+from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
     AssetCategoryType,

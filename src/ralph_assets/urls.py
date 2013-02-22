@@ -9,7 +9,7 @@ from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
-from ralph.assets.views import (
+from ralph_assets.views import (
     BackOfficeSearch, DataCenterSearch, BackOfficeAddDevice, BackOfficeAddPart,
     DataCenterAddDevice, DataCenterAddPart, BackOfficeEditDevice,
     DataCenterEditDevice, BackOfficeEditPart, DataCenterEditPart,
