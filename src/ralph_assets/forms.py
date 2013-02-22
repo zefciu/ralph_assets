@@ -73,19 +73,17 @@ class BaseAssetForm(ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
-        'asset_model',
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
-            lookup_channel=LOOKUPS['asset_model'],
         )
     )
     warehouse = AutoCompleteSelectField(
-        'asset_warehouse',
+        LOOKUPS['asset_warehouse'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/warehouse/add/?name=',
-            lookup_channel=LOOKUPS['asset_warehouse'],
         )
     )
 
@@ -179,16 +177,14 @@ class BasePartForm(ModelForm):
 
         channel = 'asset_dcdevice' if mode == 'dc' else 'asset_bodevice'
         self.fields['device'] = AutoCompleteSelectField(
-            channel,
+            LOOKUPS[channel],
             required=False,
             help_text='Enter barcode, sn, or model.',
-            plugin_options=dict(lookup_channel=LOOKUPS[channel])
         )
         self.fields['source_device'] = AutoCompleteSelectField(
-            channel,
+            LOOKUPS[channel],
             required=False,
             help_text='Enter barcode, sn, or model.',
-            plugin_options=dict(lookup_channel=LOOKUPS[channel])
         )
         if self.instance.source_device:
             self.fields[
@@ -287,19 +283,17 @@ class BaseAddAssetForm(ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
-        'asset_model',
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
-            lookup_channel=LOOKUPS['asset_model']
         )
     )
     warehouse = AutoCompleteSelectField(
-        'asset_warehouse',
+        LOOKUPS['asset_warehouse'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/warehouse/add/?name=',
-            lookup_channel=LOOKUPS['asset_warehouse']
         )
     )
     category = TreeNodeChoiceField(
@@ -375,19 +369,17 @@ class BaseEditAssetForm(ModelForm):
             'barcode': Textarea(attrs={'rows': 1}),
         }
     model = AutoCompleteSelectField(
-        'asset_model',
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
-            lookup_channel=LOOKUPS['asset_model'],
         )
     )
     warehouse = AutoCompleteSelectField(
-        'asset_warehouse',
+        LOOKUPS['asset_warehouse'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/warehouse/add/?name=',
-            lookup_channel=LOOKUPS['asset_warehouse'],
         )
     )
     category = TreeNodeChoiceField(
@@ -520,10 +512,8 @@ class SearchAssetForm(Form):
     :returns Form
     """
     model = AutoCompleteField(
-        'asset_model',
+        LOOKUPS['asset_model'],
         required=False,
-        help_text='xxx',
-        plugin_options=dict(lookup_channel=LOOKUPS['asset_model'])
     )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
@@ -621,19 +611,18 @@ class SearchAssetForm(Form):
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
-        channel = 'asset_dcdevice' if mode == 'dc' else 'asset_bodevice'
         super(SearchAssetForm, self).__init__(*args, **kwargs)
         category = self.fields['category'].queryset
         if mode == 'dc':
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.data_center
             )
-            channel = 'asset_dcdevice'
+            channel = LOOKUPS['asset_dcdevice']
         elif mode == 'back_office':
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
-            channel = 'asset_bodevice'
+            channel = LOOKUPS['asset_bodevice']
 
 
 class DeleteAssetConfirmForm(Form):
