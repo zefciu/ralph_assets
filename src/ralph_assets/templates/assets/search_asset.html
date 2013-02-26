@@ -83,7 +83,9 @@ form.form-inline {
                         <form class='form-inline' method="POST" action="./delete/asset/">
                             {% csrf_token %}
                             <input type='hidden' name='record_id' value='{{ row.id }}'/>
-                            <input class='btn btn-link del-asset-btn' value='Delete' type='submit'></input>
+                            {% if not row.deleted %}
+                                <input class='btn btn-link del-asset-btn' value='Delete' type='submit'></input>
+                            {% endif %}
                         </form>
                     </td>
                 </tr>

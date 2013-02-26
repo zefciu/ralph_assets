@@ -80,7 +80,7 @@ urlpatterns = patterns(
     url(r'back_office/bulkedit/$',
         login_required(BackOfficeBulkEdit.as_view()),
         name='back_office'),
-    url(r'back_office/delete/asset/(?P<asset_id>[0-9]+)/$',
+    url(r'back_office/delete/asset/$',
         login_required(DeleteAsset.as_view()),
         name='back_office'),
 )

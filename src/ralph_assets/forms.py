@@ -45,6 +45,7 @@ LOOKUPS = {
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
 }
 
+
 class CodeWidget(forms.TextInput):
     def render(self, name, value, attrs=None, choices=()):
         formatted = escape(value) if value else ''
@@ -151,6 +152,14 @@ class DeviceForm(ModelForm):
         fields = (
             'size',
         )
+
+    def __init__(self, *args, **kwargs):
+        mode = kwargs.get('mode')
+        if mode:
+            del kwargs['mode']
+        super(DeviceForm, self).__init__(*args, **kwargs)
+        if mode == 'back_office':
+            del self.fields['size']
 
     def clean_size(self):
         size = self.cleaned_data.get('size')
@@ -605,6 +614,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='')
+    deleted = forms.BooleanField(required=False, label="Include deleted")
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish

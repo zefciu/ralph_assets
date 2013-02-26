@@ -178,6 +178,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'provider',
             'sn',
             'status',
+            'deleted'
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -195,6 +196,9 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                     part = self.get_search_category_part(field_value)
                     if part:
                         all_q &= part
+                elif field == 'deleted':
+                    if field_value.lower() == 'on':
+                        all_q &= Q(deleted__in=(True, False))
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -311,6 +315,9 @@ class BackOfficeSearch(BackOfficeMixin, AssetSearch):
         return data
 
     def get_all_items(self, query):
+        include_deleted = self.request.GET.get('deleted')
+        if include_deleted and include_deleted.lower() == 'on':
+            return Asset.admin_objects_bo.filter(query)
         return Asset.objects_bo.filter(query)
 
 
@@ -338,6 +345,9 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
         return data
 
     def get_all_items(self, query):
+        include_deleted = self.request.GET.get('deleted')
+        if include_deleted and include_deleted.lower() == 'on':
+            return Asset.admin_objects_dc.filter(query)
         return Asset.objects_dc.filter(query)
 
 
@@ -351,11 +361,11 @@ def _get_return_link(request):
 
 
 @transaction.commit_on_success
-def _create_device(creator_profile, asset_data, device_info_data, sn,
+def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
-    device_info = DeviceInfo(
-        size=device_info_data['size']
-    )
+    device_info = DeviceInfo()
+    if mode == 'data_center':
+        device_info.size = device_info_data['size']
     device_info.save(user=creator_profile.user)
     asset = Asset(
         device_info=device_info,
@@ -385,14 +395,15 @@ class AddDevice(Base):
         return ret
 
     def get(self, *args, **kwargs):
-        self.asset_form = AddDeviceForm(mode=_get_mode(self.request))
-        self.device_info_form = DeviceForm()
+        mode = _get_mode(self.request)
+        self.asset_form = AddDeviceForm(mode=mode)
+        self.device_info_form = DeviceForm(mode=mode)
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        self.asset_form = AddDeviceForm(
-            self.request.POST, mode=_get_mode(self.request))
-        self.device_info_form = DeviceForm(self.request.POST)
+        mode = _get_mode(self.request)
+        self.asset_form = AddDeviceForm(self.request.POST, mode=mode)
+        self.device_info_form = DeviceForm(self.request.POST, mode=mode)
         if self.asset_form.is_valid() and self.device_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
@@ -408,8 +419,12 @@ class AddDevice(Base):
                 barcode = barcodes[index] if barcodes else None
                 ids.append(
                     _create_device(
-                        creator_profile, asset_data,
-                        self.device_info_form.cleaned_data, sn, barcode
+                        creator_profile,
+                        asset_data,
+                        self.device_info_form.cleaned_data,
+                        sn,
+                        mode,
+                        barcode
                     )
                 )
             messages.success(self.request, _("Assets saved."))
@@ -480,11 +495,9 @@ class AddPart(Base):
 
     def post(self, *args, **kwargs):
         self.initialize_vars()
-        self.asset_form = AddPartForm(
-            self.request.POST, mode=_get_mode(self.request))
-        self.part_info_form = BasePartForm(
-            self.request.POST, mode=_get_mode(self.request)
-        )
+        mode = _get_mode(self.request)
+        self.asset_form = AddPartForm(self.request.POST, mode=mode)
+        self.part_info_form = BasePartForm(self.request.POST, mode=mode)
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
@@ -605,23 +618,27 @@ class EditDevice(Base):
         self.asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        self.asset_form = EditDeviceForm(
-            instance=self.asset,
-            mode=_get_mode(self.request)
-        )
+        mode = _get_mode(self.request)
+        self.asset_form = EditDeviceForm(instance=self.asset, mode=mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
-        self.device_info_form = DeviceForm(instance=self.asset.device_info)
+        self.device_info_form = DeviceForm(
+            instance=self.asset.device_info,
+            mode=mode
+        )
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         self.initialize_vars()
         self.asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        mode = _get_mode(self.request)
         self.asset_form = EditDeviceForm(
-            self.request.POST, instance=self.asset, mode=_get_mode(self.request)
+            self.request.POST,
+            instance=self.asset,
+            mode=mode
         )
-        self.device_info_form = DeviceForm(self.request.POST)
+        self.device_info_form = DeviceForm(self.request.POST, mode=mode)
 
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(
@@ -685,25 +702,23 @@ class EditPart(Base):
         asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
         if asset.device_info:  # it isn't part asset
             raise Http404()
-        self.asset_form = EditPartForm(
-            instance=asset,
-            mode=_get_mode(self.request)
-        )
+        mode = _get_mode(self.request)
+        self.asset_form = EditPartForm(instance=asset, mode=mode)
         self.office_info_form = OfficeForm(instance=asset.office_info)
-        self.part_info_form = BasePartForm(
-            instance=asset.part_info, mode=_get_mode(self.request)
-        )
+        self.part_info_form = BasePartForm(instance=asset.part_info, mode=mode)
         return super(EditPart, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        mode = _get_mode(self.request)
         self.asset_form = EditPartForm(
-            self.request.POST, instance=asset, mode=_get_mode(self.request))
+            self.request.POST,
+            instance=asset,
+            mode=mode
+        )
         self.office_info_form = OfficeForm(
             self.request.POST, self.request.FILES)
-        self.part_info_form = BasePartForm(
-            self.request.POST, mode=_get_mode(self.request)
-        )
+        self.part_info_form = BasePartForm(self.request.POST, mode=mode)
         if all((
             self.asset_form.is_valid(),
             self.office_info_form.is_valid(),
