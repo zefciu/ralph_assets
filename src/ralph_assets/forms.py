@@ -427,6 +427,11 @@ class BaseEditAssetForm(ModelForm):
             )
         return data
 
+    def clean(self):
+        if self.instance.deleted:
+            raise ValidationError(_("Cannot edit deleted asset"))
+        return self.cleaned_data
+
 
 class AddPartForm(BaseAddAssetForm):
     sn = CharField(
