@@ -142,6 +142,10 @@ class DCAdminManager(models.Manager):
         )
 
 
+class AssetAdminManager(models.Manager):
+    pass
+
+
 class BOManager(BOAdminManager, ViewableSoftDeletableManager):
     pass
 
@@ -202,10 +206,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     provider_order_date = models.DateField(null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
 
-    objects_bo = BOManager()
-    objects_dc = DCManager()
-    admin_objects_bo = BOAdminManager()
+    admin_objects = AssetAdminManager()
     admin_objects_dc = DCAdminManager()
+    admin_objects_bo = BOAdminManager()
+    objects_dc = DCManager()
+    objects_bo = BOManager()
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
