@@ -615,7 +615,10 @@ class EditDevice(Base):
 
     def get(self, *args, **kwargs):
         self.initialize_vars()
-        self.asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        self.asset = get_object_or_404(
+            Asset.admin_objects.all(),
+            id=kwargs.get('asset_id')
+        )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
         mode = _get_mode(self.request)
@@ -631,7 +634,10 @@ class EditDevice(Base):
 
     def post(self, *args, **kwargs):
         self.initialize_vars()
-        self.asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        self.asset = get_object_or_404(
+            Asset.admin_objects.all(),
+            id=kwargs.get('asset_id')
+        )
         mode = _get_mode(self.request)
         self.asset_form = EditDeviceForm(
             self.request.POST,
@@ -669,6 +675,7 @@ class EditDevice(Base):
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
+            messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditDevice, self).get(*args, **kwargs)
 
 
@@ -699,7 +706,10 @@ class EditPart(Base):
         return ret
 
     def get(self, *args, **kwargs):
-        asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        asset = get_object_or_404(
+            Asset.admin_objects.all(),
+            id=kwargs.get('asset_id')
+        )
         if asset.device_info:  # it isn't part asset
             raise Http404()
         mode = _get_mode(self.request)
@@ -709,7 +719,10 @@ class EditPart(Base):
         return super(EditPart, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        asset = get_object_or_404(Asset, id=kwargs.get('asset_id'))
+        asset = get_object_or_404(
+            Asset.admin_objects.all(),
+            id=kwargs.get('asset_id')
+        )
         mode = _get_mode(self.request)
         self.asset_form = EditPartForm(
             self.request.POST,
@@ -745,6 +758,7 @@ class EditPart(Base):
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
+            messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditPart, self).get(*args, **kwargs)
 
 
@@ -764,7 +778,7 @@ class HistoryAsset(BackOfficeMixin):
         query_variable_name = 'history_page'
         ret = super(HistoryAsset, self).get_context_data(**kwargs)
         asset_id = kwargs.get('asset_id')
-        asset = Asset.objects.get(id=asset_id)
+        asset = Asset.admin_objects.get(id=asset_id)
         history = AssetHistoryChange.objects.filter(
             Q(asset_id=asset.id) |
             Q(device_info_id=getattr(asset.device_info, 'id', 0)) |
