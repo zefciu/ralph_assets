@@ -145,6 +145,13 @@ class BulkEditAssetForm(ModelForm):
             else:
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
+        group_type = AssetType.from_id(self.instance.type).group.name
+        if group_type == 'DC':
+            del self.fields['type']
+        elif group_type == 'BO':
+            self.fields['type'].choices = [('', '---------')] + [
+                (choice.id, choice.name) for choice in AssetType.BO.choices
+            ]
 
 
 class DeviceForm(ModelForm):

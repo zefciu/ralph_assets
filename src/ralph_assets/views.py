@@ -867,10 +867,22 @@ class BulkEdit(Base):
 
 class BackOfficeBulkEdit(BulkEdit, BackOfficeMixin):
     sidebar_selected = None
+    def get_context_data(self, **kwargs):
+        ret = super(BackOfficeBulkEdit, self).get_context_data(**kwargs)
+        ret.update({
+            'mode' : 'BO',
+        })
+        return ret
 
 
 class DataCenterBulkEdit(BulkEdit, DataCenterMixin):
     sidebar_selected = None
+    def get_context_data(self, **kwargs):
+        ret = super(DataCenterBulkEdit, self).get_context_data(**kwargs)
+        ret.update({
+            'mode' : 'DC',
+        })
+        return ret
 
 
 class DeleteAsset(AssetsMixin):
