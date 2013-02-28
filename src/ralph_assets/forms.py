@@ -365,6 +365,7 @@ class BaseEditAssetForm(ModelForm):
             'delivery_date',
             'invoice_date',
             'production_use_date',
+            'deleted'
         )
         widgets = {
             'request_date': DateWidget(),
@@ -516,7 +517,19 @@ class EditPartForm(BaseEditAssetForm):
 
 
 class EditDeviceForm(BaseEditAssetForm):
-    pass
+    def clean(self):
+        cleaned_data = super(EditDeviceForm, self).clean()
+        deleted = cleaned_data.get("deleted")
+        if deleted and self.instance.has_parts():
+            parts = self.instance.get_parts()
+            raise ValidationError(
+                _("Cannot remove asset with parts assigned. Please remove "
+                        "or unassign them from device first. ".format(
+                        ", ".join([part.asset.sn for part in parts])
+                    )
+                )
+            )
+        return cleaned_data
 
 
 class SearchAssetForm(Form):

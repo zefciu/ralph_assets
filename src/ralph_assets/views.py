@@ -676,7 +676,7 @@ class EditDevice(Base):
         else:
             messages.error(self.request, _("Please correct the errors."))
             messages.error(self.request, self.asset_form.non_field_errors())
-        return super(EditDevice, self).get(*args, **kwargs)
+        return self.get(*args, **kwargs)
 
 
 class BackOfficeEditDevice(EditDevice, BackOfficeMixin):
@@ -888,10 +888,20 @@ class DeleteAsset(AssetsMixin):
                 self.back_to = '/assets/dc/'
             else:
                 self.back_to = '/assets/back_office/'
-            if self.asset.get_data_type() == 'device':
-                PartInfo.objects.filter(
-                    device=self.asset
-                ).update(device=None)
+            if self.asset.has_parts():
+                parts = self.asset.get_parts()
+                messages.error(
+                    self.request,
+                    _("Cannot remove asset with parts assigned. Please remove "
+                        "or unassign them from device first. ".format(
+                            self.asset,
+                            ", ".join([str(part.asset) for part in parts])
+                        )
+                    )
+                )
+                return HttpResponseRedirect(
+                    '{}{}{}'.format(self.back_to, 'edit/device/', self.asset.id)
+                )
             self.asset.deleted = True
             self.asset.save(user=self.request.user)
             return HttpResponseRedirect(self.back_to)
