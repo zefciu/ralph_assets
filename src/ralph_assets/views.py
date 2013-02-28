@@ -178,7 +178,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'provider',
             'sn',
             'status',
-            'deleted'
+            'deleted',
+            'manufacturer'
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -199,6 +200,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                 elif field == 'deleted':
                     if field_value.lower() == 'on':
                         all_q &= Q(deleted__in=(True, False))
+                elif field == 'manufacturer':
+                    all_q &= Q(model__manufacturer__name=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

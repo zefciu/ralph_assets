@@ -43,6 +43,7 @@ LOOKUPS = {
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
+    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup')
 }
 
 
@@ -542,6 +543,10 @@ class SearchAssetForm(Form):
         LOOKUPS['asset_model'],
         required=False,
     )
+    manufacturer = AutoCompleteField(
+        LOOKUPS['asset_manufacturer'],
+        required=False,
+    )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
     provider = CharField(required=False, label='Provider')
@@ -561,6 +566,7 @@ class SearchAssetForm(Form):
         empty_label="---",
     )
     sn = CharField(required=False, label='SN')
+
     request_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
