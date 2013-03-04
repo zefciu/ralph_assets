@@ -43,7 +43,7 @@ LOOKUPS = {
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
-    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup')
+    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
 }
 
 
@@ -162,9 +162,7 @@ class DeviceForm(ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
-        mode = kwargs.get('mode')
-        if mode:
-            del kwargs['mode']
+        mode = kwargs.pop('mode')
         super(DeviceForm, self).__init__(*args, **kwargs)
         if mode == 'back_office':
             del self.fields['size']
@@ -373,7 +371,7 @@ class BaseEditAssetForm(ModelForm):
             'delivery_date',
             'invoice_date',
             'production_use_date',
-            'deleted'
+            'deleted',
         )
         widgets = {
             'request_date': DateWidget(),

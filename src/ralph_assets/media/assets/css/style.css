@@ -2,7 +2,7 @@
     .asset-container {
         padding: 3px;
     }
-    .asset-model {
+    .asset-model, .asset-deleted {
         color: red;
     }
     .asset-sn {

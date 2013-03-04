@@ -619,7 +619,7 @@ class EditDevice(Base):
     def get(self, *args, **kwargs):
         self.initialize_vars()
         self.asset = get_object_or_404(
-            Asset.admin_objects.all(),
+            Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         if not self.asset.device_info:  # it isn't device asset
@@ -638,7 +638,7 @@ class EditDevice(Base):
     def post(self, *args, **kwargs):
         self.initialize_vars()
         self.asset = get_object_or_404(
-            Asset.admin_objects.all(),
+            Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
@@ -710,7 +710,7 @@ class EditPart(Base):
 
     def get(self, *args, **kwargs):
         asset = get_object_or_404(
-            Asset.admin_objects.all(),
+            Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         if asset.device_info:  # it isn't part asset
@@ -723,7 +723,7 @@ class EditPart(Base):
 
     def post(self, *args, **kwargs):
         asset = get_object_or_404(
-            Asset.admin_objects.all(),
+            Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
