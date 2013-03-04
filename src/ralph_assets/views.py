@@ -179,7 +179,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'sn',
             'status',
             'deleted',
-            'manufacturer'
+            'manufacturer',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
