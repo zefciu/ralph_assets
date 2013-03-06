@@ -39,7 +39,7 @@ from ralph.ui.views.common import Base
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-CONNECT_ASSET_WITH_DEVICE = settings.CONNECT_ASSET_WITH_DEVICE
+CONNECT_ASSET_WITH_DEVICE = getattr(settings, 'CONNECT_ASSET_WITH_DEVICE', False)
 
 
 class AssetsMixin(Base):
@@ -79,9 +79,10 @@ class DataCenterMixin(AssetsMixin):
 
     def get_sidebar_items(self):
         items = (
-            ('/assets/dc/add/device/', 'Add device', 'fugue-block--plus'),
-            ('/assets/dc/add/part/', 'Add part', 'fugue-block--plus'),
+            ('/assets/dc/add/device', 'Add device', 'fugue-block--plus'),
+            ('/assets/dc/add/part', 'Add part', 'fugue-block--plus'),
             ('/assets/dc/search', 'Search', 'fugue-magnifier'),
+            ('/admin/ralph_assets', 'Admin', 'fugue-toolbox')
         )
         sidebar_menu = (
             [MenuHeader('Data center actions')] +
