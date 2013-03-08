@@ -13,7 +13,11 @@ import os
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
-    TimeTrackable, EditorTrackable, SoftDeletable, Named
+    EditorTrackable,
+    Named,
+    SoftDeletable,
+    TimeTrackable,
+    ViewableSoftDeletableManager
 )
 from lck.django.choices import Choices
 from mptt.fields import TreeForeignKey
@@ -124,18 +128,30 @@ def _get_file_path(instance, filename):
     return os.path.join('assets', filename)
 
 
-class BOManager(models.Manager):
+class BOAdminManager(models.Manager):
     def get_query_set(self):
-        return super(BOManager, self).get_query_set().filter(
+        return super(BOAdminManager, self).get_query_set().filter(
             type__in=(AssetType.BO.choices)
         )
 
 
-class DCManager(models.Manager):
+class DCAdminManager(models.Manager):
     def get_query_set(self):
-        return super(DCManager, self).get_query_set().filter(
+        return super(DCAdminManager, self).get_query_set().filter(
             type__in=(AssetType.DC.choices)
         )
+
+
+class AssetAdminManager(models.Manager):
+    pass
+
+
+class BOManager(BOAdminManager, ViewableSoftDeletableManager):
+    pass
+
+
+class DCManager(DCAdminManager, ViewableSoftDeletableManager):
+    pass
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
@@ -190,9 +206,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     provider_order_date = models.DateField(null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
 
-    objects = models.Manager()
-    objects_bo = BOManager()
+    admin_objects = AssetAdminManager()
+    admin_objects_dc = DCAdminManager()
+    admin_objects_bo = BOAdminManager()
     objects_dc = DCManager()
+    objects_bo = BOManager()
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -233,6 +251,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             )
         self.device_info.ralph_device = device
         self.device_info.save()
+
+    def get_parts(self):
+        parts = PartInfo.objects.filter(device=self)
+        return parts
+
+    def has_parts(self):
+        return PartInfo.objects.filter(device=self).exists()
 
     def __init__(self, *args, **kwargs):
         self.save_comment = None

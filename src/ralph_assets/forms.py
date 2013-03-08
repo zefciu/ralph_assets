@@ -43,7 +43,9 @@ LOOKUPS = {
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
+    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
 }
+
 
 class CodeWidget(forms.TextInput):
     def render(self, name, value, attrs=None, choices=()):
@@ -143,6 +145,13 @@ class BulkEditAssetForm(ModelForm):
             else:
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
+        group_type = AssetType.from_id(self.instance.type).group.name
+        if group_type == 'DC':
+            del self.fields['type']
+        elif group_type == 'BO':
+            self.fields['type'].choices = [('', '---------')] + [
+                (choice.id, choice.name) for choice in AssetType.BO.choices
+            ]
 
 
 class DeviceForm(ModelForm):
@@ -151,6 +160,12 @@ class DeviceForm(ModelForm):
         fields = (
             'size',
         )
+
+    def __init__(self, *args, **kwargs):
+        mode = kwargs.pop('mode')
+        super(DeviceForm, self).__init__(*args, **kwargs)
+        if mode == 'back_office':
+            del self.fields['size']
 
     def clean_size(self):
         size = self.cleaned_data.get('size')
@@ -356,6 +371,7 @@ class BaseEditAssetForm(ModelForm):
             'delivery_date',
             'invoice_date',
             'production_use_date',
+            'deleted',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -417,6 +433,11 @@ class BaseEditAssetForm(ModelForm):
                 _("Category must be selected from the subcategory")
             )
         return data
+
+    def clean(self):
+        if self.instance.deleted:
+            raise ValidationError(_("Cannot edit deleted asset"))
+        return self.cleaned_data
 
 
 class AddPartForm(BaseAddAssetForm):
@@ -502,7 +523,19 @@ class EditPartForm(BaseEditAssetForm):
 
 
 class EditDeviceForm(BaseEditAssetForm):
-    pass
+    def clean(self):
+        cleaned_data = super(EditDeviceForm, self).clean()
+        deleted = cleaned_data.get("deleted")
+        if deleted and self.instance.has_parts():
+            parts = self.instance.get_parts()
+            raise ValidationError(
+                _("Cannot remove asset with parts assigned. Please remove "
+                        "or unassign them from device first. ".format(
+                        ", ".join([part.asset.sn for part in parts])
+                    )
+                )
+            )
+        return cleaned_data
 
 
 class SearchAssetForm(Form):
@@ -513,6 +546,10 @@ class SearchAssetForm(Form):
     """
     model = AutoCompleteField(
         LOOKUPS['asset_model'],
+        required=False,
+    )
+    manufacturer = AutoCompleteField(
+        LOOKUPS['asset_manufacturer'],
         required=False,
     )
     invoice_no = CharField(required=False)
@@ -534,6 +571,7 @@ class SearchAssetForm(Form):
         empty_label="---",
     )
     sn = CharField(required=False, label='SN')
+
     request_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
@@ -605,6 +643,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='')
+    deleted = forms.BooleanField(required=False, label="Include deleted")
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish

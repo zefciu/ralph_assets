@@ -33,6 +33,37 @@ class WarehouseAdmin(ModelAdmin):
 admin.site.register(Warehouse, WarehouseAdmin)
 
 
+class AssetAdmin(ModelAdmin):
+    fields = (
+            'sn',
+            'type',
+            'category',
+            'model',
+            'status',
+            'warehouse',
+            'invoice_no',
+            'order_no',
+            'price',
+            'support_price',
+            'support_type',
+            'support_period',
+            'support_void_reporting',
+            'provider',
+            'remarks',
+            'barcode',
+            'request_date',
+            'provider_order_date',
+            'delivery_date',
+            'invoice_date',
+            'production_use_date',
+            'deleted'
+    )
+    search_fields = ('sn', 'barcode')
+    list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted')
+
+admin.site.register(Asset, AssetAdmin)
+
+
 class AssetModelAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)

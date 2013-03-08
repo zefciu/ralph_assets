@@ -57,11 +57,15 @@ form.form-inline {
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
                 <tbody>
                 {% for row in bob_page %}
-                <tr>
+                <tr {% if row.deleted %} class="asset-deleted" {% endif %}>
                     <td class="column-checkbox">
                         <input type="checkbox" name="select" value="{{row.id}}">
                     </td>
-                    <td>{% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}</td>
+                    <td>
+                        <a href="./edit/{% if row.get_data_type == 'part'%}part{% elif row.get_data_type == 'device' %}device{% endif %}/{{row.id}}">
+                            {% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}
+                        </a>
+                    </td>
                     <td>{{row.sn}}</td>
                     <td>{{row.barcode|default_if_none:'-'}}</td>
                     <td>{{row.model.name}}</td>
@@ -70,21 +74,36 @@ form.form-inline {
                     <td>{{row.get_status_display}}</td>
                     <td>{{row.warehouse}}</td>
                     <td>
+
+                    <div class="btn-group">
+                      <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                        Action
+                        <span class="caret"></span>
+                      </a>
+                      <ul class="dropdown-menu pull-right">
+
                     {% if row.get_data_type == 'device' %}
-                        <a href="./edit/device/{{row.id}}">Edit</a> |
-                        <a href="./history/device/{{row.id}}">History</a> |
+                        <li><a href="./edit/device/{{row.id}}">Edit</a></li>
+                        <li><a href="./history/device/{{row.id}}">History</a></li>
                         {% if row.device_info.ralph_device.id%}
-                            <a href="{% url search 'info' row.device_info.ralph_device.id %}">View in ralph</a> |
+                            <li><a href="{% url search 'info' row.device_info.ralph_device.id %}">View in Ralph</a></li>
                         {% endif %}
                     {% else %}
-                        <a href="./edit/part/{{row.id}}">Edit</a> |
-                        <a href="./history/part/{{row.id}}">History</a> |
+                        <li><a href="./edit/part/{{row.id}}">Edit</a></li>
+                        <li><a href="./history/part/{{row.id}}">History</a></li>
                     {% endif %}
-                        <form class='form-inline' method="POST" action="./delete/asset/">
-                            {% csrf_token %}
-                            <input type='hidden' name='record_id' value='{{ row.id }}'/>
-                            <input class='btn btn-link del-asset-btn' value='Delete' type='submit'></input>
-                        </form>
+                        {% if not row.deleted %}
+                            <li class="divider"></li>
+                            <li>
+                                <form class='form-inline' style="padding: 3px 20px;" method="POST" action="./delete/asset/">
+                                    {% csrf_token %}
+                                    <input type='hidden' name='record_id' value='{{ row.id }}'/>
+                                        <input class='btn btn-link del-asset-btn' style="color: #ff0011;" value='Delete' type='submit'></input>
+                                </form>
+                            </li>
+                        {% endif %}
+                        </ul>
+                    </div>
                     </td>
                 </tr>
                 {% endfor %}
