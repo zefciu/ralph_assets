@@ -35,7 +35,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.ui.widgets import DateWidget, HiddenSelectWidget
+from ralph.ui.widgets import DateWidget
 
 
 LOOKUPS = {
@@ -124,7 +124,7 @@ class BulkEditAssetForm(ModelForm):
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
-            'device_info': HiddenSelectWidget(),
+            'device_info': HiddenInput(),
         }
     barcode = BarcodeField(max_length=200, required=False)
 
