@@ -13,12 +13,11 @@ every device, for what, and how much it costs.
 This documentation
 ------------------
 
+See: quickstart.rst and installation.rst
+
 .. toctree::
    :maxdepth: 2
-
-   overview
    quickstart
    installation
-   configuration
 
 
