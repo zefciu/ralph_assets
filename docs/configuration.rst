@@ -1,4 +1,4 @@
-Intallation
+Installation
 ===========
 
 1. ``pip install ralph_assets``
