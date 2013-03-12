@@ -32,6 +32,8 @@ Now, lets add some devices and parts. Click Add device from top menu
 
 - Type - read only field for Data Center, or Back Office / Administration for BO. 
   Administration is used for Assets like Buildings etc.
+- Model - type couple of letters to search for given model. If not found in the database, 
+  just click 'Add button' to be able to add it.
 - Status - asset lifetime indicator. Newly buyed assets has status 'new'. 
   You can change it as required according to your own workflow. 
 - Warehouse - the place where asset is located in. 
@@ -99,3 +101,12 @@ Edit device
 In every case, you can edit assets fields as you like. From this screen you 
 can add parts by clicking on the 'Add part' button. 
 
+Admin
+-----
+Administration interface is accessible from within Menu. 
+
+Here you can define
+- models
+- categories
+- warehouses
+- other dictionary data.
