@@ -17,6 +17,7 @@ See: quickstart.rst and installation.rst
 
 .. toctree::
    :maxdepth: 2
+
    quickstart
    installation
 
