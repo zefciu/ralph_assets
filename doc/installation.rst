@@ -9,7 +9,7 @@ Installation
 
     INSTALLED_APPS += (
     ...
-    'ralph_assets'
+    'ralph_assets',
     )
 
 3. Run: 
