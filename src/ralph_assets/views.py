@@ -14,14 +14,14 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.forms import (
-    AddDeviceForm, AddPartForm, EditDeviceForm,
+    AddDeviceForm, AddPartForm, CleaveDevice, EditDeviceForm,
     EditPartForm, DeviceForm, OfficeForm,
-    BasePartForm, BulkEditAssetForm, SearchAssetForm
+    BasePartForm, BulkEditAssetForm, SearchAssetForm, CleaveDevice,
 )
 from ralph_assets.models import (
     Asset,
@@ -33,6 +33,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
+from ralph.discovery.models_device import Device
 from ralph.ui.views.common import Base
 
 
@@ -905,7 +906,7 @@ class DeleteAsset(AssetsMixin):
             else:
                 self.back_to = '/assets/back_office/'
             if self.asset.has_parts():
-                parts = self.asset.get_parts()
+                parts = self.asset.get_parts_info()
                 messages.error(
                     self.request,
                     _("Cannot remove asset with parts assigned. Please remove "
@@ -921,3 +922,93 @@ class DeleteAsset(AssetsMixin):
             self.asset.deleted = True
             self.asset.save(user=self.request.user)
             return HttpResponseRedirect(self.back_to)
+
+
+class DataCenterCleaveDevice(Base):
+    template_name = 'assets/cleave_edit.html'
+
+    def get_context_data(self, **kwargs):
+        ret = super(DataCenterCleaveDevice, self).get_context_data(**kwargs)
+        ret.update({
+            'formset': self.asset_formset,
+            'device': {
+                'model': self.asset.model,
+                'sn': self.asset.sn,
+            },
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        self.asset_id = self.kwargs.get('asset_id')
+        self.asset = Asset.objects.get(id=self.asset_id)
+        AssetFormSet = formset_factory(
+            form=CleaveDevice,
+            extra=0,
+        )
+        self.asset_formset = AssetFormSet(
+            initial=self.get_proposed_components()
+        )
+        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        AssetFormSet = modelformset_factory(
+            Asset,
+            form=CleaveDevice,
+            extra=0,
+        )
+        self.asset_formset = AssetFormSet(self.request.POST)
+        if self.asset_formset.is_valid():
+            with transaction.commit_on_success():
+                instances = self.asset_formset.save(commit=False)
+                for instance in instances:
+                    instance.modified_by = self.request.user.get_profile()
+                    instance.save(user=self.request.user)
+            messages.success(self.request, _("Changes saved."))
+            return HttpResponseRedirect(self.request.get_full_path())
+        form_error = self.asset_formset.get_form_error()
+        if form_error:
+            messages.error(
+                self.request,
+                _("Please correct duplicated serial numbers or barcodes.")
+            )
+        else:
+            messages.error(self.request, _("Please correct the errors."))
+        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
+
+    def get_proposed_components(self):
+        try:
+            ralph_device = Device.objects.get(sn=self.asset.sn)
+        except Device.DoesNotExist:
+            ralph_device = None
+        if not ralph_device:
+            return []
+        else:
+            components = ralph_device.get_components
+            parts = self.parts_from_components(components)
+            return parts
+
+    def parts_from_components(self, components):
+        processors = components.get('processors')
+        memory = components.get('memory')
+        storages = components.get('storages')
+        ethernets = components.get('ethernets')
+        fibrechannels = components.get('fibrechannels')
+        processors = [{
+                'model_proposed': proc.model.name,
+            } for proc in processors]
+        memory = [{
+                'model_proposed': mem.model.name,
+            } for mem in memory]
+        storages = [{
+                'model_proposed': stor.model.name,
+                'sn': stor.sn,
+            } for stor in storages]
+        ethernets = [{
+                'model_proposed': eth,
+                'sn': eth.mac,
+            } for eth in ethernets]
+        fibrechannels = [{
+                'model_proposed': fibre.model.name,
+                'sn': fibre.mac,
+            } for fibre in fibrechannels]
+        return processors + memory + storages + ethernets + fibrechannels

@@ -252,8 +252,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         self.device_info.ralph_device = device
         self.device_info.save()
 
-    def get_parts(self):
+    def get_parts_info(self):
         parts = PartInfo.objects.filter(device=self)
+        return parts
+
+    def get_parts(self):
+        parts = Asset.objects.filter(part_info__device=self)
         return parts
 
     def has_parts(self):

@@ -13,7 +13,8 @@ from ralph_assets.views import (
     BackOfficeSearch, DataCenterSearch, BackOfficeAddDevice, BackOfficeAddPart,
     DataCenterAddDevice, DataCenterAddPart, BackOfficeEditDevice,
     DataCenterEditDevice, BackOfficeEditPart, DataCenterEditPart,
-    HistoryAsset, BackOfficeBulkEdit, DataCenterBulkEdit, DeleteAsset
+    HistoryAsset, BackOfficeBulkEdit, DataCenterBulkEdit, DeleteAsset,
+    DataCenterCleaveDevice,
 )
 
 
@@ -55,6 +56,12 @@ urlpatterns = patterns(
     url(r'dc/delete/asset/$',
         login_required(DeleteAsset.as_view()),
         name='dc'),
+    url(r'dc/cleave/asset/(?P<asset_id>[0-9]+)/$',
+        login_required(DataCenterCleaveDevice.as_view()),
+        name='dc'),
+
+
+
 
     url(r'back_office/search',
         login_required(BackOfficeSearch.as_view()),

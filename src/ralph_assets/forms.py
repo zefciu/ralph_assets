@@ -19,7 +19,7 @@ from django.forms import (
     ValidationError,
 )
 from django import forms
-from django.forms.widgets import Textarea, HiddenInput
+from django.forms.widgets import CheckboxInput, Textarea, HiddenInput
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -35,7 +35,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.ui.widgets import DateWidget
+from ralph.ui.widgets import ButtonCheckboxWidget, DateWidget, ReadOnlyWidget
 
 
 LOOKUPS = {
@@ -527,7 +527,7 @@ class EditDeviceForm(BaseEditAssetForm):
         cleaned_data = super(EditDeviceForm, self).clean()
         deleted = cleaned_data.get("deleted")
         if deleted and self.instance.has_parts():
-            parts = self.instance.get_parts()
+            parts = self.instance.get_parts_info()
             raise ValidationError(
                 _("Cannot remove asset with parts assigned. Please remove "
                         "or unassign them from device first. ".format(
@@ -666,3 +666,52 @@ class SearchAssetForm(Form):
 
 class DeleteAssetConfirmForm(Form):
     asset_id = IntegerField(widget=HiddenInput())
+
+
+class CleaveDevice(ModelForm):
+    class Meta:
+        model = Asset
+        fields = (
+            'delete',
+            'model_proposed',
+            'model','invoice_no', 'order_no',
+            'sn', 'barcode', 'price', 'support_price',
+            'support_period', 'support_type', 'support_void_reporting',
+            'provider', 'source', 'status', 'request_date',
+            'delivery_date', 'invoice_date', 'production_use_date',
+            'provider_order_date',
+        )
+        widgets = {
+            'request_date': DateWidget(),
+            'delivery_date': DateWidget(),
+            'invoice_date': DateWidget(),
+            'production_use_date': DateWidget(),
+            'provider_order_date': DateWidget(),
+            'device_info': HiddenInput(),
+        }
+    delete = forms.BooleanField()
+    model = forms.CharField()
+    barcode = forms.CharField()
+    model_proposed = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        super(CleaveDevice, self).__init__(*args, **kwargs)
+        fillable_fields = [
+            'type', 'model', 'device_info', 'invoice_no', 'order_no',
+            'request_date', 'delivery_date', 'invoice_date',
+            'production_use_date', 'provider_order_date',
+            'provider_order_date', 'support_period', 'support_type',
+            'provider', 'source', 'status',
+        ]
+        for field_name in self.fields:
+            if field_name in fillable_fields:
+                classes = "span12 fillable"
+            elif field_name == 'support_void_reporting':
+                classes = ""
+            else:
+                classes = "span12"
+            self.fields[field_name].widget.attrs = {'class': classes}
+        self.fields['model_proposed'].widget = ReadOnlyWidget()
+        self.fields['delete'].widget = ButtonCheckboxWidget(
+            attrs={'class': 'delete_row', 'value': '-'}
+        )
