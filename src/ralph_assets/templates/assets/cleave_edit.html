@@ -117,9 +117,12 @@
     {% icon 'fugue-pencil--plus' %}
   </a>
 </div>
-
 <div class="row"><h3>Clave device:</h3>
-    <h4>{{device.model}} (sn: {{device.sn}})</h4>
+    <h4>
+      <a href="{% url dc_device_edit device.id %}">
+        {{ device.model }} (sn: {{ device.sn }}, price: {{ device.price|default:"0.00" }})
+      </a>
+    </h4>
 </div>
 <form action="" method="POST" class="form form-inline form-cleave">
   {% csrf_token %}
@@ -128,7 +131,6 @@
       <table class="table table-striped table-bordered table-condensed scrollable-table">
       <thead><tr>
         <th></th>
-        {% if mode == 'BO' %}<th>Type</th>{% endif %}
         <th>Remove</th>
         <th>Model proposed</th>
         <th>Model</th>
@@ -149,8 +151,10 @@
         <th>Invoice date</th>
         <th>Production use date</th>
         <th>Provider order date</th>
+        <th>Werehouse</th>
       </tr></thead>
-      <tbody>{% for form in formset %}
+      <tbody>
+        {% for form in formset %}
         <tr>
           <td style="vertical-align:middle" class="ordinal" data-no="{{ forloop.counter }}">
             {{ forloop.counter }}
@@ -162,6 +166,7 @@
               {# do nothing... #}
             {% elif "-barcode" in field.html_name  %}
               <td class="control-group{% if form.device_info.value and field.errors %} error{% endif %}" style="vertical-align:middle">
+                {{ field }}
                 {% if form.device_info.value %}
                   {{ field }}
                   {% if field.errors %}

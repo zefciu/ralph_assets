@@ -25,4 +25,8 @@ $(document).ready(function() {
             $(this).parents('tr').remove();
         }
     });
+
+    $(".input, .uneditable-input").on("click", function(){
+        $(this).parent().next("td").find('input').val($(this).html());
+    });
 });

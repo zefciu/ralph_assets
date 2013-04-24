@@ -78,5 +78,10 @@
           </table>
           {% endif %}
           <a href="../../../add/part?device={{asset.id}}" class="btn btn-primary">Add part</a>
+          {% if not asset.has_parts %}
+            <a href="{% url dc_device_cleave asset.id %}" class="btn btn-danger">
+              <i class="fugue-icon fugue-cake"></i>&nbsp;Cleave device
+            </a>
+          {% endif %}
       </div>
 {% endblock %}

@@ -9,7 +9,7 @@ from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.core.urlresolvers import resolve
+from django.core.urlresolvers import resolve, reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
@@ -25,6 +25,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.models import (
     Asset,
+    AssetModel,
     AssetCategory,
     AssetSource,
     DeviceInfo,
@@ -358,7 +359,12 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
 
 def _get_mode(request):
     current_url = resolve(request.get_full_path())
-    return current_url.url_name
+    url_name = current_url.url_name
+    if url_name.startswith('dc'):
+        url_name = 'dc'
+    elif url_name.startswith('back_office'):
+        url_name = 'back_office'
+    return url_name
 
 
 def _get_return_link(request):
@@ -934,6 +940,8 @@ class DataCenterCleaveDevice(Base):
             'device': {
                 'model': self.asset.model,
                 'sn': self.asset.sn,
+                'price': self.asset.price,
+                'id': self.asset.id,
             },
         })
         return ret
@@ -941,31 +949,58 @@ class DataCenterCleaveDevice(Base):
     def get(self, *args, **kwargs):
         self.asset_id = self.kwargs.get('asset_id')
         self.asset = Asset.objects.get(id=self.asset_id)
+        if self.asset.has_parts():
+            messages.error(self.request, _("This asset was cleaved."))
+            return HttpResponseRedirect(
+                reverse('dc_device_edit', args=[self.asset.id,])
+            )
+        initial = kwargs.get('initial')
+        errors = kwargs.get('errors')
+
         AssetFormSet = formset_factory(
             form=CleaveDevice,
             extra=0,
         )
-        self.asset_formset = AssetFormSet(
-            initial=self.get_proposed_components()
-        )
+        if initial:
+            self.asset_formset = AssetFormSet(initial=initial)
+
+            self.asset_formset._errors = errors
+        else:
+            self.asset_formset = AssetFormSet(
+                initial=self.get_proposed_components()
+            )
         return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        AssetFormSet = modelformset_factory(
-            Asset,
+        self.asset_id = self.kwargs.get('asset_id')
+        self.asset = Asset.objects.get(id=self.asset_id)
+        AssetFormSet = formset_factory(
             form=CleaveDevice,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():
+            valid_price, total_price = self.valid_total_price()
+            if not valid_price:
+                messages.error(self.request, _(
+                    "Total parts price must be equal to the asset price. "
+                    "Total parts price (%s) != Asset "
+                    "price (%s)" % (total_price, self.asset.price)
+                    )
+                )
+                return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
             with transaction.commit_on_success():
-                instances = self.asset_formset.save(commit=False)
-                for instance in instances:
-                    instance.modified_by = self.request.user.get_profile()
-                    instance.save(user=self.request.user)
+                for instance in self.asset_formset.forms:
+                    form = instance.save(commit=False)
+                    model_name = instance['model_user'].value()
+                    form.model = self.create_asset_model(model_name)
+                    form.type = AssetType.data_center
+                    form.part_info = self.create_part_info()
+                    form.modified_by = self.request.user.get_profile()
+                    form.save(user=self.request.user)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
-        form_error = self.asset_formset.get_form_error()
+        form_error = self.asset_formset.errors
         if form_error:
             messages.error(
                 self.request,
@@ -973,7 +1008,52 @@ class DataCenterCleaveDevice(Base):
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
-        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
+        initial, errors = self.prepare_inital_data_from_post(
+            self.request.POST, form_error
+        )
+        self.asset_formset._errors = errors
+        return self.get(
+            initial=initial, errors=errors,
+            *args, **kwargs
+        )
+
+    def prepare_inital_data_from_post(self, initial, form_error):
+        forms = {}
+        print(initial)
+        for item in initial.iterlists():
+            field = item[0].split('-')
+            excluded = ('TOTAL_FORMS','INITIAL_FORMS', 'MAX_NUM_FORMS')
+            if field[0] == 'form' and field[1] not in excluded:
+                if not forms.has_key(field[1]):
+                    forms[field[1]] = {}
+                if item[1][0]:
+                    forms[field[1]][field[2]] = item[1][0]
+        errors = []
+        for number in sorted(forms.keys()):
+            errors.append(form_error[int(number)])
+        return [value for key, value in forms.items()], errors
+
+
+    def valid_total_price(self):
+        total_price = 0
+        for instance in self.asset_formset.forms:
+            total_price += int(instance['price'].value())
+        valid_price = True if total_price == self.asset.price else False
+        return valid_price, total_price
+
+
+    def create_asset_model(self, model_name):
+        model = AssetModel()
+        model.name = model_name
+        model.save()
+        return model
+
+    def create_part_info(self):
+        part_info = PartInfo()
+        part_info.source_device = self.asset
+        part_info.device = self.asset
+        part_info.save(user=self.request.user);
+        return part_info
 
     def get_proposed_components(self):
         try:
@@ -981,7 +1061,7 @@ class DataCenterCleaveDevice(Base):
         except Device.DoesNotExist:
             ralph_device = None
         if not ralph_device:
-            return []
+            return [{'model_proposed': ''},]
         else:
             components = ralph_device.get_components
             parts = self.parts_from_components(components)

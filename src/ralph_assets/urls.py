@@ -40,7 +40,7 @@ urlpatterns = patterns(
         name='dc'),
     url(r'dc/edit/device/(?P<asset_id>[0-9]+)/$',
         login_required(DataCenterEditDevice.as_view()),
-        name='dc'),
+        name='dc_device_edit'),
     url(r'dc/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(DataCenterEditPart.as_view()),
         name='dc'),
@@ -58,7 +58,7 @@ urlpatterns = patterns(
         name='dc'),
     url(r'dc/cleave/asset/(?P<asset_id>[0-9]+)/$',
         login_required(DataCenterCleaveDevice.as_view()),
-        name='dc'),
+        name='dc_device_cleave'),
 
 
 

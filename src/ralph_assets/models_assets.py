@@ -92,10 +92,10 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named.NonUnique):
 
 class AssetModel(TimeTrackable, EditorTrackable, Named.NonUnique):
     manufacturer = models.ForeignKey(
-        AssetManufacturer, on_delete=models.PROTECT)
+        AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
     def __unicode__(self):
-        return "%s %s" % (self.manufacturer.name, self.name)
+        return "%s %s" % (self.manufacturer, self.name)
 
 
 class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
@@ -174,7 +174,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
-    sn = models.CharField(max_length=200, unique=True)
+    sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
     barcode = models.CharField(
         max_length=200, null=True, blank=True, unique=True
     )

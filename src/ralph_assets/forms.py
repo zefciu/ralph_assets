@@ -672,14 +672,12 @@ class CleaveDevice(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'delete',
-            'model_proposed',
-            'model','invoice_no', 'order_no',
-            'sn', 'barcode', 'price', 'support_price',
+            'id', 'delete', 'model_proposed','model_user','invoice_no',
+            'order_no','sn', 'barcode', 'price', 'support_price',
             'support_period', 'support_type', 'support_void_reporting',
-            'provider', 'source', 'status', 'request_date',
-            'delivery_date', 'invoice_date', 'production_use_date',
-            'provider_order_date',
+            'provider', 'source', 'status', 'request_date', 'delivery_date',
+            'invoice_date', 'production_use_date', 'provider_order_date',
+            'warehouse',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -689,19 +687,18 @@ class CleaveDevice(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
-    delete = forms.BooleanField()
-    model = forms.CharField()
-    barcode = forms.CharField()
-    model_proposed = forms.CharField()
+    delete = forms.BooleanField(required=False)
+    model_user = forms.CharField()
+    model_proposed = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(CleaveDevice, self).__init__(*args, **kwargs)
         fillable_fields = [
-            'type', 'model', 'device_info', 'invoice_no', 'order_no',
+            'model', 'device_info', 'invoice_no', 'order_no',
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status',
+            'provider', 'source', 'status','warehouse'
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
