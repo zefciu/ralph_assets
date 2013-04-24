@@ -712,3 +712,13 @@ class CleaveDevice(ModelForm):
         self.fields['delete'].widget = ButtonCheckboxWidget(
             attrs={'class': 'delete_row', 'value': '-'}
         )
+
+    def clean(self):
+        cleaned_data = super(CleaveDevice, self).clean()
+        sn = cleaned_data.get('sn')
+        barcode = cleaned_data.get('barcode')
+        if not sn and not barcode:
+            error_text = [_("SN or Barcode is required"),]
+            self.errors['sn'] = error_text
+            self.errors['barcode'] = error_text
+        return cleaned_data

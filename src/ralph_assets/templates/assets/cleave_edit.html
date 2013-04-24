@@ -162,26 +162,12 @@
             {{ form.device_info }}
           </td>
           {% for field in form %}
-            {% if "-device_info" in field.html_name or "-id" in field.html_name %}
-              {# do nothing... #}
-            {% elif "-barcode" in field.html_name  %}
-              <td class="control-group{% if form.device_info.value and field.errors %} error{% endif %}" style="vertical-align:middle">
-                {{ field }}
-                {% if form.device_info.value %}
-                  {{ field }}
-                  {% if field.errors %}
-                    <span class="help-inline">{% for error in field.errors %}{{ error }} {% endfor %}</span>
-                  {% endif %}
-                {% endif %}
-              </td>
-            {% else %}
               <td class="control-group{% if "-support_period" in field.html_name %} small{% endif %}{% if field.errors %} error{% endif %}" style="vertical-align:middle">
                 {{ field }}
                 {% if field.errors %}
                   <span class="help-inline">{% for error in field.errors %}{{ error }} {% endfor %}</span>
                 {% endif %}
               </td>
-            {% endif %}
           {% endfor %}
         </tr>
       {% endfor %}</tbody>

@@ -954,21 +954,10 @@ class DataCenterCleaveDevice(Base):
             return HttpResponseRedirect(
                 reverse('dc_device_edit', args=[self.asset.id,])
             )
-        initial = kwargs.get('initial')
-        errors = kwargs.get('errors')
-
-        AssetFormSet = formset_factory(
-            form=CleaveDevice,
-            extra=0,
+        AssetFormSet = formset_factory(form=CleaveDevice, extra=0)
+        self.asset_formset = AssetFormSet(
+            initial=self.get_proposed_components()
         )
-        if initial:
-            self.asset_formset = AssetFormSet(initial=initial)
-
-            self.asset_formset._errors = errors
-        else:
-            self.asset_formset = AssetFormSet(
-                initial=self.get_proposed_components()
-            )
         return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -1008,31 +997,7 @@ class DataCenterCleaveDevice(Base):
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
-        initial, errors = self.prepare_inital_data_from_post(
-            self.request.POST, form_error
-        )
-        self.asset_formset._errors = errors
-        return self.get(
-            initial=initial, errors=errors,
-            *args, **kwargs
-        )
-
-    def prepare_inital_data_from_post(self, initial, form_error):
-        forms = {}
-        print(initial)
-        for item in initial.iterlists():
-            field = item[0].split('-')
-            excluded = ('TOTAL_FORMS','INITIAL_FORMS', 'MAX_NUM_FORMS')
-            if field[0] == 'form' and field[1] not in excluded:
-                if not forms.has_key(field[1]):
-                    forms[field[1]] = {}
-                if item[1][0]:
-                    forms[field[1]][field[2]] = item[1][0]
-        errors = []
-        for number in sorted(forms.keys()):
-            errors.append(form_error[int(number)])
-        return [value for key, value in forms.items()], errors
-
+        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
 
     def valid_total_price(self):
         total_price = 0
