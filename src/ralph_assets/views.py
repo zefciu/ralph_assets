@@ -675,9 +675,10 @@ class EditDevice(Base):
                 )
             else:
                 for part_id in post_data.get('part_ids'):
-                    PartInfo.objects.select_related().filter(asset=part_id).update(
-                        device=destination_asset,
-                    )
+                    info_part = PartInfo.objects.get(asset=part_id)
+                    info_part.device_id = destination_asset
+                    info_part.save()
+
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
             if self.asset.type in AssetType.BO.choices:
