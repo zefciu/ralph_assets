@@ -36,6 +36,7 @@ from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.discovery.models_device import Device
 from ralph.ui.views.common import Base
+from ralph.util.api_pricing import get_device_components
 
 
 SAVE_PRIORITY = 200
@@ -1025,39 +1026,5 @@ class DataCenterCleaveDevice(DataCenterMixin):
         return part_info
 
     def get_proposed_components(self):
-        try:
-            ralph_device = Device.objects.get(sn=self.asset.sn)
-        except Device.DoesNotExist:
-            ralph_device = None
-        if not ralph_device:
-            return [{'model_proposed': ''},]
-        else:
-            components = ralph_device.get_components
-            parts = self.parts_from_components(components)
-            return parts
-
-    def parts_from_components(self, components):
-        processors = components.get('processors')
-        memory = components.get('memory')
-        storages = components.get('storages')
-        ethernets = components.get('ethernets')
-        fibrechannels = components.get('fibrechannels')
-        processors = [{
-                'model_proposed': proc.model.name,
-            } for proc in processors]
-        memory = [{
-                'model_proposed': mem.model.name,
-            } for mem in memory]
-        storages = [{
-                'model_proposed': stor.model.name,
-                'sn': stor.sn,
-            } for stor in storages]
-        ethernets = [{
-                'model_proposed': eth,
-                'sn': eth.mac,
-            } for eth in ethernets]
-        fibrechannels = [{
-                'model_proposed': fibre.model.name,
-                'sn': fibre.mac,
-            } for fibre in fibrechannels]
-        return processors + memory + storages + ethernets + fibrechannels
+        components = get_device_components(sn=self.asset.sn)
+        return [component for component in components]
