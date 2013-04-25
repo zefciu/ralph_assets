@@ -19,7 +19,7 @@ from django.forms import (
     ValidationError,
 )
 from django import forms
-from django.forms.widgets import CheckboxInput, Textarea, HiddenInput
+from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
@@ -672,8 +672,8 @@ class CleaveDevice(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'id', 'delete', 'model_proposed','model_user','invoice_no',
-            'order_no','sn', 'barcode', 'price', 'support_price',
+            'id', 'delete', 'model_proposed', 'model_user', 'invoice_no',
+            'order_no', 'sn', 'barcode', 'price', 'support_price',
             'support_period', 'support_type', 'support_void_reporting',
             'provider', 'source', 'status', 'request_date', 'delivery_date',
             'invoice_date', 'production_use_date', 'provider_order_date',
@@ -698,7 +698,7 @@ class CleaveDevice(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status','warehouse'
+            'provider', 'source', 'status', 'warehouse',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:

@@ -60,9 +60,6 @@ urlpatterns = patterns(
         login_required(DataCenterCleaveDevice.as_view()),
         name='dc_device_cleave'),
 
-
-
-
     url(r'back_office/search',
         login_required(BackOfficeSearch.as_view()),
         name='back_office'),
