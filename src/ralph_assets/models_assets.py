@@ -268,7 +268,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         super(Asset, self).__init__(*args, **kwargs)
 
 
-class DeviceInfo(TimeTrackable, SavingUser):
+class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device = models.ForeignKey(
         'discovery.Device', null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -287,7 +287,7 @@ class DeviceInfo(TimeTrackable, SavingUser):
         super(DeviceInfo, self).__init__(*args, **kwargs)
 
 
-class OfficeInfo(TimeTrackable, SavingUser):
+class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
     license_key = models.CharField(max_length=255, blank=True)
     version = models.CharField(max_length=50, blank=True)
     attachment = models.FileField(
@@ -313,7 +313,7 @@ class OfficeInfo(TimeTrackable, SavingUser):
         super(OfficeInfo, self).__init__(*args, **kwargs)
 
 
-class PartInfo(TimeTrackable, SavingUser):
+class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
     barcode_salvaged = models.CharField(max_length=200, null=True, blank=True)
     source_device = models.ForeignKey(
         Asset, null=True, blank=True, related_name='source_device'

@@ -35,7 +35,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.ui.widgets import ButtonCheckboxWidget, DateWidget, ReadOnlyWidget
+from ralph.ui.widgets import ButtonWidget, DateWidget, ReadOnlyWidget
 
 
 LOOKUPS = {
@@ -709,14 +709,18 @@ class CleaveDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        self.fields['delete'].widget = ButtonCheckboxWidget(
-            attrs={'class': 'delete_row', 'value': '-'}
+        self.fields['delete'].widget = ButtonWidget(
+            attrs={'class': 'btn-danger delete_row', 'value': '-'}
         )
 
     def clean(self):
         cleaned_data = super(CleaveDevice, self).clean()
         sn = cleaned_data.get('sn')
         barcode = cleaned_data.get('barcode')
+        if not sn:
+            cleaned_data['sn'] = None
+        if not barcode:
+            cleaned_data['barcode'] = None
         if not sn and not barcode:
             error_text = [_("SN or Barcode is required"),]
             self.errors['sn'] = error_text

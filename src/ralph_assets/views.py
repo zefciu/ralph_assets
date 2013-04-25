@@ -930,8 +930,9 @@ class DeleteAsset(AssetsMixin):
             return HttpResponseRedirect(self.back_to)
 
 
-class DataCenterCleaveDevice(Base):
+class DataCenterCleaveDevice(DataCenterMixin):
     template_name = 'assets/cleave_edit.html'
+    sidebar_selected = ''
 
     def get_context_data(self, **kwargs):
         ret = super(DataCenterCleaveDevice, self).get_context_data(**kwargs)
@@ -950,7 +951,7 @@ class DataCenterCleaveDevice(Base):
         self.asset_id = self.kwargs.get('asset_id')
         self.asset = Asset.objects.get(id=self.asset_id)
         if self.asset.has_parts():
-            messages.error(self.request, _("This asset was cleaved."))
+            messages.success(self.request, _("This asset was cleaved."))
             return HttpResponseRedirect(
                 reverse('dc_device_edit', args=[self.asset.id,])
             )
@@ -1002,15 +1003,18 @@ class DataCenterCleaveDevice(Base):
     def valid_total_price(self):
         total_price = 0
         for instance in self.asset_formset.forms:
-            total_price += int(instance['price'].value())
+            total_price += float(instance['price'].value())
         valid_price = True if total_price == self.asset.price else False
         return valid_price, total_price
 
 
     def create_asset_model(self, model_name):
-        model = AssetModel()
-        model.name = model_name
-        model.save()
+        try:
+            model = AssetModel.objects.get(name=model_name)
+        except AssetModel.DoesNotExist:
+            model = AssetModel()
+            model.name = model_name
+            model.save()
         return model
 
     def create_part_info(self):
