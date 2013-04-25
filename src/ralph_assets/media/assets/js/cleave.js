@@ -35,7 +35,7 @@ $(document).ready(function () {
     }
 
     function cleanup_fields(row) {
-        row.find('input').each(function (i, elem) {
+        row.find('input, select').each(function (i, elem) {
             $(elem).val('');
             td_class = $(elem).parent().attr('class');
             td_class = td_class.replace('error', '');
@@ -45,7 +45,6 @@ $(document).ready(function () {
         row.find('.uneditable-input').html('');
         return false;
     }
-
 
     function renumber_forms() {
         var form = $('.form-cleave tr')
