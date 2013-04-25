@@ -444,10 +444,6 @@ class MoveAssetPartForm(Form):
         LOOKUPS['asset_dcdevice'],
     )
 
-    def clean(self):
-        new_asset = self.cleaned_data["new_asset"]
-        import pdb; pdb.set_trace()
-
 
 class AddPartForm(BaseAddAssetForm):
     sn = CharField(
