@@ -646,21 +646,21 @@ class EditDevice(Base):
 
     def post(self, *args, **kwargs):
         self.initialize_vars()
-        request = self.request.POST
+        post_data = self.request.POST
         self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
         self.asset_form = EditDeviceForm(
-            request,
+            post_data,
             instance=self.asset,
             mode=mode,
         )
-        self.device_info_form = DeviceForm(request, mode=mode)
-        self.part_form = MoveAssetPartForm(request)
-        if 'move_parts' in request.keys():
-            destination_asset = request.get('new_asset')
+        self.device_info_form = DeviceForm(post_data, mode=mode)
+        self.part_form = MoveAssetPartForm(post_data)
+        if 'move_parts' in post_data.keys():
+            destination_asset = post_data.get('new_asset')
             if not destination_asset or not Asset.objects.filter(
                 id=destination_asset,
             ):
@@ -674,12 +674,12 @@ class EditDevice(Base):
                     _("You can't move parts to the same device"),
                 )
             else:
-                for part_id in request.get('part_ids'):
+                for part_id in post_data.get('part_ids'):
                     PartInfo.objects.select_related().filter(asset=part_id).update(
                         device=destination_asset,
                     )
                 messages.success(self.request, _("Selected parts was moved."))
-        elif 'asset' in request.keys():
+        elif 'asset' in post_data.keys():
             if self.asset.type in AssetType.BO.choices:
                 self.office_info_form = OfficeForm(request, self.request.FILES)
             if all((
