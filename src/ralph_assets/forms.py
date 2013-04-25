@@ -694,7 +694,7 @@ class CleaveDevice(ModelForm):
     def __init__(self, *args, **kwargs):
         super(CleaveDevice, self).__init__(*args, **kwargs)
         fillable_fields = [
-            'model', 'device_info', 'invoice_no', 'order_no',
+            'model_user', 'device_info', 'invoice_no', 'order_no',
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
