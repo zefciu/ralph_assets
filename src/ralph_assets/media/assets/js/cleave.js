@@ -47,13 +47,16 @@ $(document).ready(function () {
     }
 
     function renumber_forms() {
-        var form = $('.form-cleave tr')
+        var form = $('.form-cleave tr');
         form.each(function (i, elem) {
             $(elem).find('input').each(function (j, elem) {
                 var numberPattern = /\d+/g;
                 name = $(elem).attr('name');
                 $(elem).attr('name', name.replace(numberPattern, i - 1));
+                id = $(elem).attr('id');
+                $(elem).attr('id', name.replace(numberPattern, i - 1));
             });
+
         });
 
         $('.ordinal').each(function (i, elem) {

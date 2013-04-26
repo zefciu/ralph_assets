@@ -717,12 +717,20 @@ class CleaveDevice(ModelForm):
         cleaned_data = super(CleaveDevice, self).clean()
         sn = cleaned_data.get('sn')
         barcode = cleaned_data.get('barcode')
+        price = cleaned_data.get('price', '')
+        try:
+            float(price)
+        except (ValueError, TypeError):
+            if 'price' in self.errors:
+                self.errors['price'].append(_("Price must be decimal"))
+            else:
+                self.errors['price'] = [_("Price must be decimal"), ]
         if not sn:
             cleaned_data['sn'] = None
         if not barcode:
             cleaned_data['barcode'] = None
         if not sn and not barcode:
-            error_text = [_("SN or Barcode is required"),]
+            error_text = [_("SN or Barcode is required"), ]
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data

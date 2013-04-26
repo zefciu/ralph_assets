@@ -1,5 +1,5 @@
   // Fill fields in bulk edit and cleave asset forms
-
+$(document).ready(function () {
   // Disable autocomplete without cluttering html attributes
   $('input').attr('autocomplete', 'off');
 
@@ -70,3 +70,4 @@
       $("#float_toolbar").hide();
       return false;
   });
+});
