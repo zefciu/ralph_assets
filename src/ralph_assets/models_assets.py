@@ -85,12 +85,12 @@ class AssetCategoryType(Choices):
     data_center = _("data center")
 
 
-class AssetManufacturer(TimeTrackable, EditorTrackable, Named.NonUnique):
+class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
     def __unicode__(self):
         return self.name
 
 
-class AssetModel(TimeTrackable, EditorTrackable, Named.NonUnique):
+class AssetModel(TimeTrackable, EditorTrackable, Named):
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
@@ -117,7 +117,7 @@ class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named.NonUnique):
+class Warehouse(TimeTrackable, EditorTrackable, Named):
     def __unicode__(self):
         return self.name
 

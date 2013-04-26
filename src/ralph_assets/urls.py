@@ -10,11 +10,21 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
 from ralph_assets.views import (
-    BackOfficeSearch, DataCenterSearch, BackOfficeAddDevice, BackOfficeAddPart,
-    DataCenterAddDevice, DataCenterAddPart, BackOfficeEditDevice,
-    DataCenterEditDevice, BackOfficeEditPart, DataCenterEditPart,
-    HistoryAsset, BackOfficeBulkEdit, DataCenterBulkEdit, DeleteAsset,
+    BackOfficeAddDevice,
+    BackOfficeAddPart,
+    BackOfficeBulkEdit,
+    BackOfficeEditDevice,
+    BackOfficeEditPart,
+    BackOfficeSearch,
+    DataCenterAddDevice,
+    DataCenterAddPart,
+    DataCenterBulkEdit,
     DataCenterCleaveDevice,
+    DataCenterEditDevice,
+    DataCenterEditPart,
+    DataCenterSearch,
+    DeleteAsset,
+    HistoryAsset,
 )
 
 

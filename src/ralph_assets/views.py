@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import Counter
+
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
@@ -19,9 +21,16 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.forms import (
-    AddDeviceForm, AddPartForm, CleaveDevice, EditDeviceForm,
-    EditPartForm, DeviceForm, OfficeForm,
-    BasePartForm, BulkEditAssetForm, SearchAssetForm, CleaveDevice,
+    AddDeviceForm,
+    AddPartForm,
+    BasePartForm,
+    BulkEditAssetForm,
+    CleaveDevice,
+    CleaveDevice,
+    DeviceForm, OfficeForm,
+    EditDeviceForm,
+    EditPartForm,
+    SearchAssetForm,
 )
 from ralph_assets.models import (
     Asset,
@@ -34,9 +43,9 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
-from ralph.discovery.models_device import Device
+from ralph.discovery.models import Device
 from ralph.ui.views.common import Base
-from ralph.util.api_pricing import get_device_components
+from ralph.util.api_assets import get_device_components
 
 
 SAVE_PRIORITY = 200
@@ -952,14 +961,14 @@ class DataCenterCleaveDevice(DataCenterMixin):
         self.asset_id = self.kwargs.get('asset_id')
         self.asset = Asset.objects.get(id=self.asset_id)
         if self.asset.has_parts():
-            messages.success(self.request, _("This asset was cleaved."))
+            messages.error(self.request, _("This asset was cleaved."))
             return HttpResponseRedirect(
                 reverse('dc_device_edit', args=[self.asset.id,])
             )
-        AssetFormSet = formset_factory(form=CleaveDevice, extra=0)
-        self.asset_formset = AssetFormSet(
-            initial=self.get_proposed_components()
-        )
+        initial = self.get_proposed_components()
+        extra = 0 if initial else 1
+        AssetFormSet = formset_factory(form=CleaveDevice, extra=extra)
+        self.asset_formset = AssetFormSet(initial=initial)
         return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -971,15 +980,6 @@ class DataCenterCleaveDevice(DataCenterMixin):
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():
-            valid_price, total_price = self.valid_total_price()
-            if not valid_price:
-                messages.error(self.request, _(
-                    "Total parts price must be equal to the asset price. "
-                    "Total parts price (%s) != Asset "
-                    "price (%s)" % (total_price, self.asset.price)
-                    )
-                )
-                return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
             with transaction.commit_on_success():
                 for instance in self.asset_formset.forms:
                     form = instance.save(commit=False)
@@ -991,14 +991,10 @@ class DataCenterCleaveDevice(DataCenterMixin):
                     form.save(user=self.request.user)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
-        form_error = self.asset_formset.errors
-        if form_error:
-            messages.error(
-                self.request,
-                _("Please correct duplicated serial numbers or barcodes.")
-            )
-        else:
-            messages.error(self.request, _("Please correct the errors."))
+        self.valid_duplicates('sn')
+        self.valid_duplicates('barcode')
+        self.valid_total_price()
+        messages.error(self.request, _("Please correct the errors."))
         return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
 
     def valid_total_price(self):
@@ -1006,8 +1002,43 @@ class DataCenterCleaveDevice(DataCenterMixin):
         for instance in self.asset_formset.forms:
             total_price += float(instance['price'].value())
         valid_price = True if total_price == self.asset.price else False
-        return valid_price, total_price
+        if not valid_price:
+            messages.error(
+                self.request,
+                _(
+                    "Total parts price must be equal to the asset price. "
+                    "Total parts price (%s) != Asset "
+                    "price (%s)" % (total_price, self.asset.price)
+                )
+            )
+            return True
 
+    def valid_duplicates(self, name):
+        def get_duplicates(list):
+            cnt = Counter(list)
+            return [key for key in cnt.keys() if cnt[key] > 1]
+        items = []
+        for instance in self.asset_formset.forms:
+            value = instance[name].value().strip()
+            if value:
+                items.append(value)
+        duplicates_items = get_duplicates(items)
+        for instance in self.asset_formset.forms:
+            value = instance[name].value().strip()
+            if value in duplicates_items:
+                if name in instance.errors:
+                    instance.errors[name].append('This %s is duplicated' % name)
+                else:
+                    instance.errors[name] = ['This %s is duplicated' % name]
+        if duplicates_items:
+            messages.error(
+                self.request,
+                _("This %s is duplicated: (%s) " % (
+                    name,
+                    ', '.join(duplicates_items)
+                )),
+            )
+            return True
 
     def create_asset_model(self, model_name):
         try:
@@ -1022,7 +1053,7 @@ class DataCenterCleaveDevice(DataCenterMixin):
         part_info = PartInfo()
         part_info.source_device = self.asset
         part_info.device = self.asset
-        part_info.save(user=self.request.user);
+        part_info.save(user=self.request.user)
         return part_info
 
     def get_proposed_components(self):

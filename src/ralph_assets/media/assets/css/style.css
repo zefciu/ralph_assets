@@ -11,4 +11,25 @@
     .asset-barcode {
         color: blue;
     }
+    /* fill multiple rows */
+    #fill_all_rows {
+      color: white;
+      text-decoration: underline;
+    }
+    #float_toolbar {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      padding: 4px;
+      background-color: white;
+      border: solid #ccc 2px;
+      border-radius: 3px;
+      display: none;
+    }
+    .overflow-x {
+        overflow-x: scroll;
+    }
+    .scrollable-table {
+        min-width: 2000px;
+    }
 </style>
