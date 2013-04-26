@@ -1057,5 +1057,8 @@ class DataCenterCleaveDevice(DataCenterMixin):
         return part_info
 
     def get_proposed_components(self):
-        components = get_device_components(sn=self.asset.sn)
-        return [component for component in components]
+        try:
+            components = list(get_device_components(sn=self.asset.sn))
+        except LookupError:
+            components = []
+        return components
