@@ -673,7 +673,7 @@ class DeleteAssetConfirmForm(Form):
     asset_id = IntegerField(widget=HiddenInput())
 
 
-class CleaveDevice(ModelForm):
+class SplitDevice(ModelForm):
     class Meta:
         model = Asset
         fields = (
@@ -697,7 +697,7 @@ class CleaveDevice(ModelForm):
     model_proposed = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
-        super(CleaveDevice, self).__init__(*args, **kwargs)
+        super(SplitDevice, self).__init__(*args, **kwargs)
         fillable_fields = [
             'model_user', 'device_info', 'invoice_no', 'order_no',
             'request_date', 'delivery_date', 'invoice_date',
@@ -719,10 +719,10 @@ class CleaveDevice(ModelForm):
         )
 
     def clean(self):
-        cleaned_data = super(CleaveDevice, self).clean()
+        cleaned_data = super(SplitDevice, self).clean()
         sn = cleaned_data.get('sn')
         barcode = cleaned_data.get('barcode')
-        price = cleaned_data.get('price', '')
+        price = cleaned_data.get('price', None)
         try:
             float(price)
         except (ValueError, TypeError):

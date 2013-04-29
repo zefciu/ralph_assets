@@ -25,7 +25,7 @@ from ralph_assets.forms import (
     AddPartForm,
     BasePartForm,
     BulkEditAssetForm,
-    CleaveDevice,
+    SplitDevice,
     DeviceForm,
     EditDeviceForm,
     EditPartForm,
@@ -963,12 +963,12 @@ class DeleteAsset(AssetsMixin):
             return HttpResponseRedirect(self.back_to)
 
 
-class DataCenterCleaveDevice(DataCenterMixin):
-    template_name = 'assets/cleave_edit.html'
+class DataCenterSplitDevice(DataCenterMixin):
+    template_name = 'assets/split_edit.html'
     sidebar_selected = ''
 
     def get_context_data(self, **kwargs):
-        ret = super(DataCenterCleaveDevice, self).get_context_data(**kwargs)
+        ret = super(DataCenterSplitDevice, self).get_context_data(**kwargs)
         ret.update({
             'formset': self.asset_formset,
             'device': {
@@ -984,21 +984,21 @@ class DataCenterCleaveDevice(DataCenterMixin):
         self.asset_id = self.kwargs.get('asset_id')
         self.asset = Asset.objects.get(id=self.asset_id)
         if self.asset.has_parts():
-            messages.error(self.request, _("This asset was cleaved."))
+            messages.error(self.request, _("This asset was splited."))
             return HttpResponseRedirect(
                 reverse('dc_device_edit', args=[self.asset.id,])
             )
         initial = self.get_proposed_components()
         extra = 0 if initial else 1
-        AssetFormSet = formset_factory(form=CleaveDevice, extra=extra)
+        AssetFormSet = formset_factory(form=SplitDevice, extra=extra)
         self.asset_formset = AssetFormSet(initial=initial)
-        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
+        return super(DataCenterSplitDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         self.asset_id = self.kwargs.get('asset_id')
         self.asset = Asset.objects.get(id=self.asset_id)
         AssetFormSet = formset_factory(
-            form=CleaveDevice,
+            form=SplitDevice,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
@@ -1018,12 +1018,12 @@ class DataCenterCleaveDevice(DataCenterMixin):
         self.valid_duplicates('barcode')
         self.valid_total_price()
         messages.error(self.request, _("Please correct the errors."))
-        return super(DataCenterCleaveDevice, self).get(*args, **kwargs)
+        return super(DataCenterSplitDevice, self).get(*args, **kwargs)
 
     def valid_total_price(self):
         total_price = 0
         for instance in self.asset_formset.forms:
-            total_price += float(instance['price'].value())
+            total_price += float(instance['price'].value() or 0)
         valid_price = True if total_price == self.asset.price else False
         if not valid_price:
             messages.error(

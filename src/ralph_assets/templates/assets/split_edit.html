@@ -10,7 +10,7 @@
 </div>
 <div class="row">
   <hgroup>
-    <h3>Cleave device:</h3>
+    <h3>Split device:</h3>
     <h4>
       <a href="{% url dc_device_edit device.id %}">
         {{ device.model }} (sn: {{ device.sn }}, price: {{ device.price|default:"0,00" }})
@@ -18,7 +18,7 @@
     </h4>
   </hgroup>
 </div>
-<form method="POST" class="form form-inline form-cleave">
+<form method="POST" class="form form-inline form-split">
   {% csrf_token %}
   {{ formset.management_form }}
   <div class="row overflow-x">

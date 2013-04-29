@@ -2,16 +2,16 @@ $(document).ready(function () {
     var FORM_COUNT = parseInt($('input[name="form-TOTAL_FORMS"]').val());
 
     $('.add_row').on("click", function () {
-        var row = $('.form-cleave tbody tr').last().clone(true, true);
+        var row = $('.form-split tbody tr').last().clone(true, true);
         cleanup_fields(row);
-        row.appendTo(".form-cleave tbody");
+        row.appendTo(".form-split tbody");
         change_form_counter('add');
         renumber_forms();
         return false;
     });
 
-    $("body").delegate(".form-cleave .delete_row", "click", function () {
-        var row_count = $('.form-cleave tbody tr').length;
+    $("body").delegate(".form-split .delete_row", "click", function () {
+        var row_count = $('.form-split tbody tr').length;
         if (row_count > 1) {
             $(this).parents('tr').remove();
         }
@@ -47,7 +47,7 @@ $(document).ready(function () {
     }
 
     function renumber_forms() {
-        var form = $('.form-cleave tr');
+        var form = $('.form-split tr');
         form.each(function (i, elem) {
             $(elem).find('input').each(function (j, elem) {
                 var numberPattern = /\d+/g;

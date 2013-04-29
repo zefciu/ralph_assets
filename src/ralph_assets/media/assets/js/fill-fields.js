@@ -1,4 +1,4 @@
-  // Fill fields in bulk edit and cleave asset forms
+  // Fill fields in bulk edit and split asset forms
 $(document).ready(function () {
   // Disable autocomplete without cluttering html attributes
   $('input').attr('autocomplete', 'off');
