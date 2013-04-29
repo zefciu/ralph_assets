@@ -722,7 +722,7 @@ class SplitDevice(ModelForm):
         cleaned_data = super(SplitDevice, self).clean()
         sn = cleaned_data.get('sn')
         barcode = cleaned_data.get('barcode')
-        price = cleaned_data.get('price', None)
+        price = cleaned_data.get('price', '')
         try:
             float(price)
         except (ValueError, TypeError):

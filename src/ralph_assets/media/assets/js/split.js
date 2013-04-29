@@ -51,9 +51,9 @@ $(document).ready(function () {
         form.each(function (i, elem) {
             $(elem).find('input').each(function (j, elem) {
                 var numberPattern = /\d+/g;
-                name = $(elem).attr('name');
+                var name = $(elem).attr('name');
                 $(elem).attr('name', name.replace(numberPattern, i - 1));
-                id = $(elem).attr('id');
+                var id = $(elem).attr('id');
                 $(elem).attr('id', name.replace(numberPattern, i - 1));
             });
 
