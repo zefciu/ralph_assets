@@ -439,6 +439,11 @@ class BaseEditAssetForm(ModelForm):
             raise ValidationError(_("Cannot edit deleted asset"))
         return self.cleaned_data
 
+class MoveAssetPartForm(Form):
+    new_asset = AutoCompleteSelectField(
+        LOOKUPS['asset_dcdevice'],
+    )
+
 
 class AddPartForm(BaseAddAssetForm):
     sn = CharField(

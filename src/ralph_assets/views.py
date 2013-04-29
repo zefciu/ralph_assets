@@ -26,10 +26,11 @@ from ralph_assets.forms import (
     BasePartForm,
     BulkEditAssetForm,
     CleaveDevice,
-    CleaveDevice,
-    DeviceForm, OfficeForm,
+    DeviceForm,
     EditDeviceForm,
     EditPartForm,
+    MoveAssetPartForm,
+    OfficeForm,
     SearchAssetForm,
 )
 from ralph_assets.models import (
@@ -626,6 +627,7 @@ class EditDevice(Base):
             'asset_form': self.asset_form,
             'device_info_form': self.device_info_form,
             'office_info_form': self.office_info_form,
+            'part_form': MoveAssetPartForm(),
             'form_id': 'edit_device_asset_form',
             'edit_mode': True,
             'status_history': status_history,
@@ -655,48 +657,69 @@ class EditDevice(Base):
 
     def post(self, *args, **kwargs):
         self.initialize_vars()
+        post_data = self.request.POST
         self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
         self.asset_form = EditDeviceForm(
-            self.request.POST,
+            post_data,
             instance=self.asset,
-            mode=mode
+            mode=mode,
         )
-        self.device_info_form = DeviceForm(self.request.POST, mode=mode)
-
-        if self.asset.type in AssetType.BO.choices:
-            self.office_info_form = OfficeForm(
-                self.request.POST, self.request.FILES)
-        if all((
-            self.asset_form.is_valid(),
-            self.device_info_form.is_valid(),
-            self.asset.type not in AssetType.BO.choices or self.office_info_form.is_valid()
-        )):
-            modifier_profile = self.request.user.get_profile()
-            self.asset = _update_asset(
-                modifier_profile, self.asset, self.asset_form.cleaned_data
-            )
-            if self.asset.type in AssetType.BO.choices:
-                self.asset = _update_office_info(
-                    modifier_profile.user, self.asset,
-                    self.office_info_form.cleaned_data
+        self.device_info_form = DeviceForm(post_data, mode=mode)
+        self.part_form = MoveAssetPartForm(post_data)
+        if 'move_parts' in post_data.keys():
+            destination_asset = post_data.get('new_asset')
+            if not destination_asset or not Asset.objects.filter(
+                id=destination_asset,
+            ):
+                messages.error(
+                    self.request,
+                    _("Source device asset does not exist"),
                 )
-            self.asset = _update_device_info(
-                modifier_profile.user, self.asset,
-                self.device_info_form.cleaned_data
-            )
-            self.asset.save(user=self.request.user)
-            messages.success(self.request, _("Assets edited."))
-            cat = self.request.path.split('/')[2]
-            return HttpResponseRedirect(
-                '/assets/%s/edit/device/%s/' % (cat, self.asset.id)
-            )
-        else:
-            messages.error(self.request, _("Please correct the errors."))
-            messages.error(self.request, self.asset_form.non_field_errors())
+            elif kwargs.get('asset_id') == destination_asset:
+                messages.error(
+                    self.request,
+                    _("You can't move parts to the same device"),
+                )
+            else:
+                for part_id in post_data.get('part_ids'):
+                    info_part = PartInfo.objects.get(asset=part_id)
+                    info_part.device_id = destination_asset
+                    info_part.save()
+                messages.success(self.request, _("Selected parts was moved."))
+        elif 'asset' in post_data.keys():
+            if self.asset.type in AssetType.BO.choices:
+                self.office_info_form = OfficeForm(request, self.request.FILES)
+            if all((
+                self.asset_form.is_valid(),
+                self.device_info_form.is_valid(),
+                self.asset.type not in AssetType.BO.choices or self.office_info_form.is_valid()
+            )):
+                modifier_profile = self.request.user.get_profile()
+                self.asset = _update_asset(
+                    modifier_profile, self.asset, self.asset_form.cleaned_data
+                )
+                if self.asset.type in AssetType.BO.choices:
+                    self.asset = _update_office_info(
+                        modifier_profile.user, self.asset,
+                        self.office_info_form.cleaned_data
+                    )
+                self.asset = _update_device_info(
+                    modifier_profile.user, self.asset,
+                    self.device_info_form.cleaned_data
+                )
+                self.asset.save(user=self.request.user)
+                messages.success(self.request, _("Assets edited."))
+                cat = self.request.path.split('/')[2]
+                return HttpResponseRedirect(
+                    '/assets/%s/edit/device/%s/' % (cat, self.asset.id)
+                )
+            else:
+                messages.error(self.request, _("Please correct the errors."))
+                messages.error(self.request, self.asset_form.non_field_errors())
         return self.get(*args, **kwargs)
 
 
