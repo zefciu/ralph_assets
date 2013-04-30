@@ -5,16 +5,18 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from collections import Counter
+
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.core.urlresolvers import resolve
+from django.core.urlresolvers import resolve, reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
@@ -23,6 +25,7 @@ from ralph_assets.forms import (
     AddPartForm,
     BasePartForm,
     BulkEditAssetForm,
+    SplitDevice,
     DeviceForm,
     EditDeviceForm,
     EditPartForm,
@@ -32,6 +35,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.models import (
     Asset,
+    AssetModel,
     AssetCategory,
     AssetSource,
     DeviceInfo,
@@ -40,7 +44,9 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
+from ralph.discovery.models import Device
 from ralph.ui.views.common import Base
+from ralph.util.api_assets import get_device_components
 
 
 SAVE_PRIORITY = 200
@@ -364,7 +370,12 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
 
 def _get_mode(request):
     current_url = resolve(request.get_full_path())
-    return current_url.url_name
+    url_name = current_url.url_name
+    if url_name.startswith('dc'):
+        url_name = 'dc'
+    elif url_name.startswith('back_office'):
+        url_name = 'back_office'
+    return url_name
 
 
 def _get_return_link(request):
@@ -934,7 +945,7 @@ class DeleteAsset(AssetsMixin):
             else:
                 self.back_to = '/assets/back_office/'
             if self.asset.has_parts():
-                parts = self.asset.get_parts()
+                parts = self.asset.get_parts_info()
                 messages.error(
                     self.request,
                     _("Cannot remove asset with parts assigned. Please remove "
@@ -950,3 +961,127 @@ class DeleteAsset(AssetsMixin):
             self.asset.deleted = True
             self.asset.save(user=self.request.user)
             return HttpResponseRedirect(self.back_to)
+
+
+class DataCenterSplitDevice(DataCenterMixin):
+    template_name = 'assets/split_edit.html'
+    sidebar_selected = ''
+
+    def get_context_data(self, **kwargs):
+        ret = super(DataCenterSplitDevice, self).get_context_data(**kwargs)
+        ret.update({
+            'formset': self.asset_formset,
+            'device': {
+                'model': self.asset.model,
+                'sn': self.asset.sn,
+                'price': self.asset.price,
+                'id': self.asset.id,
+            },
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        self.asset_id = self.kwargs.get('asset_id')
+        self.asset = Asset.objects.get(id=self.asset_id)
+        if self.asset.has_parts():
+            messages.error(self.request, _("This asset was splited."))
+            return HttpResponseRedirect(
+                reverse('dc_device_edit', args=[self.asset.id,])
+            )
+        initial = self.get_proposed_components()
+        extra = 0 if initial else 1
+        AssetFormSet = formset_factory(form=SplitDevice, extra=extra)
+        self.asset_formset = AssetFormSet(initial=initial)
+        return super(DataCenterSplitDevice, self).get(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        self.asset_id = self.kwargs.get('asset_id')
+        self.asset = Asset.objects.get(id=self.asset_id)
+        AssetFormSet = formset_factory(
+            form=SplitDevice,
+            extra=0,
+        )
+        self.asset_formset = AssetFormSet(self.request.POST)
+        if self.asset_formset.is_valid():
+            with transaction.commit_on_success():
+                for instance in self.asset_formset.forms:
+                    form = instance.save(commit=False)
+                    model_name = instance['model_user'].value()
+                    form.model = self.create_asset_model(model_name)
+                    form.type = AssetType.data_center
+                    form.part_info = self.create_part_info()
+                    form.modified_by = self.request.user.get_profile()
+                    form.save(user=self.request.user)
+            messages.success(self.request, _("Changes saved."))
+            return HttpResponseRedirect(self.request.get_full_path())
+        self.valid_duplicates('sn')
+        self.valid_duplicates('barcode')
+        self.valid_total_price()
+        messages.error(self.request, _("Please correct the errors."))
+        return super(DataCenterSplitDevice, self).get(*args, **kwargs)
+
+    def valid_total_price(self):
+        total_price = 0
+        for instance in self.asset_formset.forms:
+            total_price += float(instance['price'].value() or 0)
+        valid_price = True if total_price == self.asset.price else False
+        if not valid_price:
+            messages.error(
+                self.request,
+                _(
+                    "Total parts price must be equal to the asset price. "
+                    "Total parts price (%s) != Asset "
+                    "price (%s)" % (total_price, self.asset.price)
+                )
+            )
+            return True
+
+    def valid_duplicates(self, name):
+        def get_duplicates(list):
+            cnt = Counter(list)
+            return [key for key in cnt.keys() if cnt[key] > 1]
+        items = []
+        for instance in self.asset_formset.forms:
+            value = instance[name].value().strip()
+            if value:
+                items.append(value)
+        duplicates_items = get_duplicates(items)
+        for instance in self.asset_formset.forms:
+            value = instance[name].value().strip()
+            if value in duplicates_items:
+                if name in instance.errors:
+                    instance.errors[name].append('This %s is duplicated' % name)
+                else:
+                    instance.errors[name] = ['This %s is duplicated' % name]
+        if duplicates_items:
+            messages.error(
+                self.request,
+                _("This %s is duplicated: (%s) " % (
+                    name,
+                    ', '.join(duplicates_items)
+                )),
+            )
+            return True
+
+    def create_asset_model(self, model_name):
+        try:
+            model = AssetModel.objects.get(name=model_name)
+        except AssetModel.DoesNotExist:
+            model = AssetModel()
+            model.name = model_name
+            model.save()
+        return model
+
+    def create_part_info(self):
+        part_info = PartInfo()
+        part_info.source_device = self.asset
+        part_info.device = self.asset
+        part_info.save(user=self.request.user)
+        return part_info
+
+    def get_proposed_components(self):
+        try:
+            components = list(get_device_components(sn=self.asset.sn))
+        except LookupError:
+            components = []
+        return components

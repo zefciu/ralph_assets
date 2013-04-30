@@ -85,17 +85,17 @@ class AssetCategoryType(Choices):
     data_center = _("data center")
 
 
-class AssetManufacturer(TimeTrackable, EditorTrackable, Named.NonUnique):
+class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
     def __unicode__(self):
         return self.name
 
 
-class AssetModel(TimeTrackable, EditorTrackable, Named.NonUnique):
+class AssetModel(TimeTrackable, EditorTrackable, Named):
     manufacturer = models.ForeignKey(
-        AssetManufacturer, on_delete=models.PROTECT)
+        AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
     def __unicode__(self):
-        return "%s %s" % (self.manufacturer.name, self.name)
+        return "%s %s" % (self.manufacturer, self.name)
 
 
 class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
@@ -117,7 +117,7 @@ class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named.NonUnique):
+class Warehouse(TimeTrackable, EditorTrackable, Named):
     def __unicode__(self):
         return self.name
 
@@ -174,7 +174,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
-    sn = models.CharField(max_length=200, unique=True)
+    sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
     barcode = models.CharField(
         max_length=200, null=True, blank=True, unique=True
     )
@@ -252,9 +252,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         self.device_info.ralph_device = device
         self.device_info.save()
 
+    def get_parts_info(self):
+        return PartInfo.objects.filter(device=self)
+
     def get_parts(self):
-        parts = PartInfo.objects.filter(device=self)
-        return parts
+        return Asset.objects.filter(part_info__device=self)
 
     def has_parts(self):
         return PartInfo.objects.filter(device=self).exists()
@@ -265,7 +267,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         super(Asset, self).__init__(*args, **kwargs)
 
 
-class DeviceInfo(TimeTrackable, SavingUser):
+class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device = models.ForeignKey(
         'discovery.Device', null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -284,7 +286,7 @@ class DeviceInfo(TimeTrackable, SavingUser):
         super(DeviceInfo, self).__init__(*args, **kwargs)
 
 
-class OfficeInfo(TimeTrackable, SavingUser):
+class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
     license_key = models.CharField(max_length=255, blank=True)
     version = models.CharField(max_length=50, blank=True)
     attachment = models.FileField(
@@ -310,7 +312,7 @@ class OfficeInfo(TimeTrackable, SavingUser):
         super(OfficeInfo, self).__init__(*args, **kwargs)
 
 
-class PartInfo(TimeTrackable, SavingUser):
+class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
     barcode_salvaged = models.CharField(max_length=200, null=True, blank=True)
     source_device = models.ForeignKey(
         Asset, null=True, blank=True, related_name='source_device'

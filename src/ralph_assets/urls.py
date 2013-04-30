@@ -10,10 +10,21 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
 from ralph_assets.views import (
-    BackOfficeSearch, DataCenterSearch, BackOfficeAddDevice, BackOfficeAddPart,
-    DataCenterAddDevice, DataCenterAddPart, BackOfficeEditDevice,
-    DataCenterEditDevice, BackOfficeEditPart, DataCenterEditPart,
-    HistoryAsset, BackOfficeBulkEdit, DataCenterBulkEdit, DeleteAsset
+    BackOfficeAddDevice,
+    BackOfficeAddPart,
+    BackOfficeBulkEdit,
+    BackOfficeEditDevice,
+    BackOfficeEditPart,
+    BackOfficeSearch,
+    DataCenterAddDevice,
+    DataCenterAddPart,
+    DataCenterBulkEdit,
+    DataCenterSplitDevice,
+    DataCenterEditDevice,
+    DataCenterEditPart,
+    DataCenterSearch,
+    DeleteAsset,
+    HistoryAsset,
 )
 
 
@@ -39,7 +50,7 @@ urlpatterns = patterns(
         name='dc'),
     url(r'dc/edit/device/(?P<asset_id>[0-9]+)/$',
         login_required(DataCenterEditDevice.as_view()),
-        name='dc'),
+        name='dc_device_edit'),
     url(r'dc/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(DataCenterEditPart.as_view()),
         name='dc'),
@@ -55,6 +66,9 @@ urlpatterns = patterns(
     url(r'dc/delete/asset/$',
         login_required(DeleteAsset.as_view()),
         name='dc'),
+    url(r'dc/split/asset/(?P<asset_id>[0-9]+)/$',
+        login_required(DataCenterSplitDevice.as_view()),
+        name='dc_device_split'),
 
     url(r'back_office/search',
         login_required(BackOfficeSearch.as_view()),
