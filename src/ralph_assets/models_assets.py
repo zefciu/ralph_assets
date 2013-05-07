@@ -205,7 +205,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
-
+    slots = models.CharField(
+        verbose_name='Slots (for blade centers)',
+        max_length=50,
+        blank=True,
+    )
     admin_objects = AssetAdminManager()
     admin_objects_dc = DCAdminManager()
     admin_objects_bo = BOAdminManager()
