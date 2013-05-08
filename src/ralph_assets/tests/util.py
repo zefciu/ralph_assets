@@ -43,6 +43,7 @@ def create_manufacturer(name=DEFAULT_ASSET_DATA['manufacturer']):
     manufacturer, created = AssetManufacturer.objects.get_or_create(name=name)
     return manufacturer
 
+
 def create_warehouse(name=DEFAULT_ASSET_DATA['warehouse']):
     warehouse, created = Warehouse.objects.get_or_create(name=name)
     return warehouse
@@ -59,6 +60,7 @@ def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
         model.manufacturer = manufacturer
         model.save()
     return model
+
 
 def create_device(size=1):
     device = DeviceInfo(size=size)
