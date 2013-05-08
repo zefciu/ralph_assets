@@ -10,7 +10,7 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding field 'Asset.slots'
         db.add_column('ralph_assets_asset', 'slots',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=50, blank=True),
+                      self.gf('django.db.models.fields.FloatField')(default=0, max_length=64),
                       keep_default=False)
 
 
@@ -372,7 +372,7 @@ class Migration(SchemaMigration):
             'provider_order_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
             'request_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'slots': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
+            'slots': ('django.db.models.fields.FloatField', [], {'default': '0', 'max_length': '64'}),
             'sn': ('django.db.models.fields.CharField', [], {'max_length': '200', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'source': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '1'}),
