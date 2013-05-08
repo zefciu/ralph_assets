@@ -16,4 +16,5 @@ def get_assets():
             'ralph_id': device_info.ralph_device.id,
             'slots': asset.slots,
             'price': asset.price,
+            'is_deprecated': asset.is_deprecated()
         }

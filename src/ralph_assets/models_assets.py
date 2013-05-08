@@ -10,6 +10,8 @@ from __future__ import unicode_literals
 
 import os
 
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
@@ -269,6 +271,16 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(Asset, self).__init__(*args, **kwargs)
+
+    def is_deprecated(self):
+        if not self.support_period or not self.invoice_date:
+            return False
+        if isinstance(self.invoice_date, basestring):
+            self.invoice_date = datetime.strptime(self.invoice_date,'%Y-%m-%d')
+        deprecation_date = self.invoice_date + relativedelta(
+            months=self.support_period
+        )
+        return deprecation_date < datetime.today()
 
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
