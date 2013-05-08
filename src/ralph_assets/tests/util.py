@@ -55,8 +55,9 @@ def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
     else:
         manufacturer = create_manufacturer(manufacturer)
     model, created = AssetModel.objects.get_or_create(name=name)
-    model.manufacturer = manufacturer
-    model.save()
+    if created:
+        model.manufacturer = manufacturer
+        model.save()
     return model
 
 def create_device(size=1):
