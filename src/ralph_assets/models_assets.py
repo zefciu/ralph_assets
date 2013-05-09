@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import os
 
-from datetime import datetime
+import datetime
 from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -276,12 +276,15 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not self.support_period or not self.invoice_date:
             return False
         if isinstance(self.invoice_date, basestring):
-            self.invoice_date = datetime.strptime(self.invoice_date,'%Y-%m-%d')
+            self.invoice_date = datetime.datetime.strptime(
+                self.invoice_date, '%Y-%m-%d'
+            )
         deprecation_date = self.invoice_date + relativedelta(
             months=self.support_period
         )
-        return deprecation_date < datetime.today()
-
+        if isinstance(deprecation_date, datetime.datetime):
+            deprecation_date = deprecation_date.date()
+        return deprecation_date < datetime.datetime.today().date()
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device = models.ForeignKey(
