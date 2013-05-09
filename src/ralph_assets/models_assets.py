@@ -27,6 +27,7 @@ from uuid import uuid4
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
+from lck.django.common.models import WithConcurrentGetOrCreate
 
 
 SAVE_PRIORITY = 0
@@ -90,7 +91,7 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
         return self.name
 
 
-class AssetModel(TimeTrackable, EditorTrackable, Named):
+class AssetModel(TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
@@ -98,7 +99,7 @@ class AssetModel(TimeTrackable, EditorTrackable, Named):
         return "%s %s" % (self.manufacturer, self.name)
 
 
-class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
+class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
     name = models.CharField(max_length=50, unique=True)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -117,7 +118,7 @@ class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named):
+class Warehouse(TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate ):
     def __unicode__(self):
         return self.name
 
@@ -185,7 +186,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     support_period = models.PositiveSmallIntegerField(
-        verbose_name="support period in months")
+        default=0,
+        verbose_name="support period in months"
+    )
     support_type = models.CharField(max_length=150)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
@@ -199,11 +202,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=1024,
         blank=True,
     )
+    niw = models.CharField(max_length=50)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
+    deprecation_rate = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
 
     admin_objects = AssetAdminManager()
@@ -214,6 +219,20 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
+
+    @classmethod
+    def create(cls, base_args, device_info_args=None, part_info_args=None):
+        asset = Asset(**base_args)
+        if device_info_args:
+            d = DeviceInfo(**device_info_args)
+            d.save()
+            asset.device_info = d
+        elif part_info_args:
+            d = PartInfo(**part_info_args)
+            d.save()
+            asset.part_info = d
+        asset.save()
+        return asset
 
     def get_data_type(self):
         if self.device_info:
@@ -272,7 +291,11 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         'discovery.Device', null=True, blank=True, on_delete=models.SET_NULL
     )
     size = models.PositiveSmallIntegerField(
-        verbose_name='Size in units', default=1)
+        verbose_name='Size in units', default=1
+    )
+    u_level = models.CharField(max_length=10, null=True, blank=True)
+    u_height = models.CharField(max_length=10, null=True, blank=True)
+    box = models.CharField(max_length=10, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {}".format(
