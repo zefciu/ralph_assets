@@ -73,7 +73,7 @@ def create_asset(sn, **kwargs):
         kwargs.update(type=DEFAULT_ASSET_DATA['type'])
     if not kwargs.get('model'):
         kwargs.update(model=create_model())
-    if not kwargs.get('device'):
+    if not kwargs.get('device_info'):
         kwargs.update(device_info=create_device())
     if not kwargs.get('status'):
         kwargs.update(status=DEFAULT_ASSET_DATA['status'])
