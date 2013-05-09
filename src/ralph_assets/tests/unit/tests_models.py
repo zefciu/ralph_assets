@@ -10,10 +10,7 @@ import datetime
 from django.test import TestCase
 
 from ralph.business.models import Venture
-from ralph.discovery.models import (
-    Device,
-    DeviceType,
-)
+from ralph.discovery.models import Device, DeviceType
 from ralph.ui.tests.util import create_device
 from ralph_assets.models_assets import Asset, DeviceInfo
 from ralph_assets.tests.util import create_asset

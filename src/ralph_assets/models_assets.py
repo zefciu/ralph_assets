@@ -284,7 +284,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         )
         if isinstance(deprecation_date, datetime.datetime):
             deprecation_date = deprecation_date.date()
-        return deprecation_date < datetime.datetime.today().date()
+        return deprecation_date < datetime.date.today()
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device = models.ForeignKey(
