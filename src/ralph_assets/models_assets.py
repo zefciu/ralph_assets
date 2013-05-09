@@ -93,7 +93,8 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
         return self.name
 
 
-class AssetModel(TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+class AssetModel(
+        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
@@ -101,7 +102,8 @@ class AssetModel(TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreat
         return "%s %s" % (self.manufacturer, self.name)
 
 
-class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
+class AssetCategory(
+        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
     name = models.CharField(max_length=50, unique=True)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -120,7 +122,8 @@ class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGet
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate ):
+class Warehouse(TimeTrackable, EditorTrackable, Named,
+                WithConcurrentGetOrCreate):
     def __unicode__(self):
         return self.name
 
@@ -173,13 +176,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         verbose_name=_("source"), choices=AssetSource(), db_index=True
     )
     invoice_no = models.CharField(
-        max_length=30, db_index=True, null=True, blank=True
+        max_length=128, db_index=True, null=True, blank=True
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
-    sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
+    sn = models.CharField(max_length=200, null=True, blank=False, unique=True)
     barcode = models.CharField(
-        max_length=200, null=True, blank=True, unique=True
+        max_length=200, null=True, blank=False, unique=True
     )
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
@@ -204,13 +207,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=1024,
         blank=True,
     )
-    niw = models.CharField(max_length=50)
+    niw = models.CharField(max_length=50, null=True, blank=True)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
-    deprecation_rate = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
+    deprecation_rate = models.DecimalField(
+        decimal_places=3, max_digits=5, null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots (for blade centers)',
@@ -295,7 +299,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not self.support_period or not self.invoice_date:
             return False
         if isinstance(self.invoice_date, basestring):
-            self.invoice_date = datetime.strptime(self.invoice_date,'%Y-%m-%d')
+            self.invoice_date = datetime.strptime(
+                self.invoice_date, '%Y-%m-%d')
         deprecation_date = self.invoice_date + relativedelta(
             months=self.support_period
         )
@@ -311,7 +316,7 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     )
     u_level = models.CharField(max_length=10, null=True, blank=True)
     u_height = models.CharField(max_length=10, null=True, blank=True)
-    box = models.CharField(max_length=10, null=True, blank=True)
+    rack = models.CharField(max_length=10, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {}".format(
