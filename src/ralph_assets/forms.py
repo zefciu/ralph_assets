@@ -287,6 +287,7 @@ class BaseAddAssetForm(ModelForm):
             'delivery_date',
             'invoice_date',
             'production_use_date',
+            'slots',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -372,6 +373,7 @@ class BaseEditAssetForm(ModelForm):
             'invoice_date',
             'production_use_date',
             'deleted',
+            'slots',
         )
         widgets = {
             'request_date': DateWidget(),

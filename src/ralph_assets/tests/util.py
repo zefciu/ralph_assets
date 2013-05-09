@@ -40,14 +40,12 @@ SCREEN_ERROR_MESSAGES = dict(
 
 
 def create_manufacturer(name=DEFAULT_ASSET_DATA['manufacturer']):
-    manufacturer = AssetManufacturer(name=name)
-    manufacturer.save()
+    manufacturer, created = AssetManufacturer.objects.get_or_create(name=name)
     return manufacturer
 
 
 def create_warehouse(name=DEFAULT_ASSET_DATA['warehouse']):
-    warehouse = Warehouse(name=name)
-    warehouse.save()
+    warehouse, created = Warehouse.objects.get_or_create(name=name)
     return warehouse
 
 
@@ -55,11 +53,12 @@ def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
     """name = string, manufacturer = string"""
     if not manufacturer:
         manufacturer = create_manufacturer()
-    model = AssetModel(
-        manufacturer=create_manufacturer(manufacturer),
-        name=name,
-    )
-    model.save()
+    else:
+        manufacturer = create_manufacturer(manufacturer)
+    model, created = AssetModel.objects.get_or_create(name=name)
+    if created:
+        model.manufacturer = manufacturer
+        model.save()
     return model
 
 
