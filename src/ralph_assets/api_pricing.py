@@ -11,9 +11,8 @@ def get_assets():
     """Yields dicts describing all assets"""
     for asset in Asset.objects.all():
         yield {
-            'name': asset.sn,
             'asset_id': asset.id,
-            'ralph_id': device_info.ralph_device.id,
+            'ralph_id': asset.device_info.ralph_device.id,
             'slots': asset.slots,
             'price': asset.price,
             'is_deprecated': asset.is_deprecated()
