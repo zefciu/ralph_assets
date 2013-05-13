@@ -267,6 +267,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 device = Device.objects.get(sn=self.sn)
             elif self.barcode:
                 device = Device.objects.get(barcode=self.barcode)
+            else:
+                raise UserWarning("No barcode and no sn")
         except Device.DoesNotExist:
             try:
                 venture = Venture.objects.get(name='Stock')
@@ -313,9 +315,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             deprecation_date = deprecation_date.date()
         return deprecation_date < datetime.date.today()
 
+
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
-    ralph_device = models.ForeignKey(
-        'discovery.Device', null=True, blank=True, on_delete=models.SET_NULL
+    ralph_device_id = models.IntegerField(
+        verbose_name=_("device id"),
+        null=True,
+        blank=True,
+        unique=True,
+        default=None,
     )
     size = models.PositiveSmallIntegerField(
         verbose_name='Size in units', default=1
