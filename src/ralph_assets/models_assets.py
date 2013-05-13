@@ -263,7 +263,10 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def create_stock_device(self):
         try:
-            device = Device.objects.get(sn=self.sn)
+            if self.sn:
+                device = Device.objects.get(sn=self.sn)
+            elif self.barcode:
+                device = Device.objects.get(barcode=self.barcode)
         except Device.DoesNotExist:
             try:
                 venture = Venture.objects.get(name='Stock')
@@ -271,7 +274,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 venture = Venture(name='Stock', symbol='stock')
                 venture.save()
             device = Device.create(
-                sn=self.sn,
+                sn=self.sn or 'bc-' + self.barcode,
+                barcode=self.barcode,
                 model_name='Unknown',
                 model_type=DeviceType.unknown,
                 priority=SAVE_PRIORITY,
