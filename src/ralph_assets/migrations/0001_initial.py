@@ -97,7 +97,7 @@ class Migration(SchemaMigration):
             ('delivery_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
             ('production_use_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
             ('provider_order_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('deprecation_rate', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=5, decimal_places=3, blank=True)),
+            ('deprecation_rate', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=5, decimal_places=2, blank=True)),
             ('category', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetCategory'], null=True, blank=True)),
             ('slots', self.gf('django.db.models.fields.FloatField')(default=0, max_length=64)),
         ))
@@ -253,7 +253,7 @@ class Migration(SchemaMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'delivery_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '5', 'decimal_places': '3', 'blank': 'True'}),
+            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'invoice_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
