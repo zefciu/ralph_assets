@@ -49,7 +49,7 @@ class TestApiAssets(TestCase):
 			},
 		)
 		self.device_info = DeviceInfo(
-			ralph_device=self.device,
+			ralph_device_id=self.device.id,
 			size=6,
 		)
 		self.device_info.save()
@@ -57,16 +57,15 @@ class TestApiAssets(TestCase):
             sn='1111-1111-1111-1111',
             invoice_date='2012-11-28',
             support_period=1,
-            slots='12.0',
+            slots=12.0,
             price=100,
             device_info=self.device_info,
         )
 
 	def tests_api(self):
 		for item in get_assets():
-			self.assertEqual(item['name'], self.asset.sn)
 			self.assertEqual(item['asset_id'], self.asset.id)
-			self.assertEqual(item['ralph_id'], self.device_info.ralph_device.id)
+			self.assertEqual(item['ralph_id'], self.device_info.ralph_device_id)
 			self.assertEqual(item['slots'], self.asset.slots)
 			self.assertEqual(item['price'], self.asset.price)
 			self.assertEqual(item['is_deprecated'], self.asset.is_deprecated())
