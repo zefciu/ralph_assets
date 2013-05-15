@@ -284,7 +284,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 venture=venture,
                 name='Unknown',
             )
-        self.device_info.ralph_device = device
+        self.device_info.ralph_device_id = device
         self.device_info.save()
 
     def get_parts_info(self):
@@ -333,7 +333,7 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
 
     def __unicode__(self):
         return "{} - {}".format(
-            self.ralph_device,
+            self.ralph_device_id,
             self.size,
         )
 
