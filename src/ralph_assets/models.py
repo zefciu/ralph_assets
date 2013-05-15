@@ -26,6 +26,7 @@ from ralph_assets.models_assets import (
     Warehouse,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph.discovery.models import Device
 
 
 class DeviceLookup(LookupChannel):
@@ -40,6 +41,35 @@ class DeviceLookup(LookupChannel):
             )
         )
         return self.get_base_objects().filter(query).order_by('sn')[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+        <li class='asset-container'>
+            <span class='asset-model'>%s</span>
+            <span class='asset-barcode'>%s</span>
+            <span class='asset-sn'>%s</span>
+        </li>
+        """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+
+
+class RalphDeviceLookup(LookupChannel):
+    model = Device
+
+    def get_query(self, q, request):
+        query = Q(
+            Q(
+                Q(barcode__istartswith=q) |
+                Q(sn__istartswith=q) |
+                Q(model__name__icontains=q)
+            )
+        )
+        return Device.objects.filter(query).order_by('sn')[:10]
 
     def get_result(self, obj):
         return obj.id
@@ -73,6 +103,7 @@ class AssetModelLookup(LookupChannel):
 
     def format_item_display(self, obj):
         return '{}'.format(escape(obj.name))
+
 
 class AssetManufacturerLookup(LookupChannel):
     model = AssetModel

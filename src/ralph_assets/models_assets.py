@@ -29,6 +29,7 @@ from uuid import uuid4
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
+from lck.django.common.models import WithConcurrentGetOrCreate
 
 
 SAVE_PRIORITY = 0
@@ -92,7 +93,8 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
         return self.name
 
 
-class AssetModel(TimeTrackable, EditorTrackable, Named):
+class AssetModel(
+        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
 
@@ -100,7 +102,8 @@ class AssetModel(TimeTrackable, EditorTrackable, Named):
         return "%s %s" % (self.manufacturer, self.name)
 
 
-class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
+class AssetCategory(
+        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
     name = models.CharField(max_length=50, unique=True)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -119,7 +122,8 @@ class AssetCategory(MPTTModel, TimeTrackable, EditorTrackable):
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named):
+class Warehouse(TimeTrackable, EditorTrackable, Named,
+                WithConcurrentGetOrCreate):
     def __unicode__(self):
         return self.name
 
@@ -172,13 +176,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         verbose_name=_("source"), choices=AssetSource(), db_index=True
     )
     invoice_no = models.CharField(
-        max_length=30, db_index=True, null=True, blank=True
+        max_length=128, db_index=True, null=True, blank=True
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
-    sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
+    sn = models.CharField(max_length=200, null=True, blank=False, unique=True)
     barcode = models.CharField(
-        max_length=200, null=True, blank=True, unique=True
+        max_length=200, null=True, blank=False, unique=True
     )
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
@@ -187,7 +191,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     support_period = models.PositiveSmallIntegerField(
-        verbose_name="support period in months")
+        default=0,
+        verbose_name="support period in months"
+    )
     support_type = models.CharField(max_length=150)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
@@ -201,11 +207,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=1024,
         blank=True,
     )
+    niw = models.CharField(max_length=50, null=True, blank=True)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
+    deprecation_rate = models.DecimalField(
+        decimal_places=2, max_digits=5, null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots (for blade centers)',
@@ -220,6 +229,20 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
+
+    @classmethod
+    def create(cls, base_args, device_info_args=None, part_info_args=None):
+        asset = Asset(**base_args)
+        if device_info_args:
+            d = DeviceInfo(**device_info_args)
+            d.save()
+            asset.device_info = d
+        elif part_info_args:
+            d = PartInfo(**part_info_args)
+            d.save()
+            asset.part_info = d
+        asset.save()
+        return asset
 
     def get_data_type(self):
         if self.device_info:
@@ -240,7 +263,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def create_stock_device(self):
         try:
-            device = Device.objects.get(sn=self.sn)
+            if self.sn:
+                device = Device.objects.get(sn=self.sn)
+            elif self.barcode:
+                device = Device.objects.get(barcode=self.barcode)
+            else:
+                raise UserWarning("No barcode and no sn")
         except Device.DoesNotExist:
             try:
                 venture = Venture.objects.get(name='Stock')
@@ -248,7 +276,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 venture = Venture(name='Stock', symbol='stock')
                 venture.save()
             device = Device.create(
-                sn=self.sn,
+                sn=self.sn or 'bc-' + self.barcode,
+                barcode=self.barcode,
                 model_name='Unknown',
                 model_type=DeviceType.unknown,
                 priority=SAVE_PRIORITY,
@@ -284,14 +313,23 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         )
         if isinstance(deprecation_date, datetime.datetime):
             deprecation_date = deprecation_date.date()
-        return deprecation_date < datetime.datetime.today().date()
+        return deprecation_date < datetime.date.today()
+
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
-    ralph_device = models.ForeignKey(
-        'discovery.Device', null=True, blank=True, on_delete=models.SET_NULL
+    ralph_device_id = models.IntegerField(
+        verbose_name=_("device id"),
+        null=True,
+        blank=True,
+        unique=True,
+        default=None,
     )
     size = models.PositiveSmallIntegerField(
-        verbose_name='Size in units', default=1)
+        verbose_name='Size in units', default=1
+    )
+    u_level = models.CharField(max_length=10, null=True, blank=True)
+    u_height = models.CharField(max_length=10, null=True, blank=True)
+    rack = models.CharField(max_length=10, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {}".format(

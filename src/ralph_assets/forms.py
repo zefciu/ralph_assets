@@ -35,7 +35,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.ui.widgets import ButtonWidget, DateWidget, ReadOnlyWidget
+from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
 LOOKUPS = {
@@ -716,9 +716,9 @@ class SplitDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        self.fields['delete'].widget = ButtonWidget(
-            attrs={'class': 'btn-danger delete_row', 'value': '-'}
-        )
+        #self.fields['delete'].widget = ButtonWidget(
+        #    attrs={'class': 'btn-danger delete_row', 'value': '-'}
+        #)
 
     def clean(self):
         cleaned_data = super(SplitDevice, self).clean()
