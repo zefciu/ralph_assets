@@ -346,6 +346,40 @@ class BaseAddAssetForm(ModelForm):
         return data
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BaseEditAssetForm(ModelForm):
     class Meta:
         model = Asset
@@ -384,7 +418,7 @@ class BaseEditAssetForm(ModelForm):
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
-            'barcode': Textarea(attrs={'rows': 1}),
+            # 'barcode': Textarea(attrs={'rows': 1}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -527,6 +561,67 @@ class OfficeForm(ModelForm):
 
 class EditPartForm(BaseEditAssetForm):
     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class EditDeviceForm(BaseEditAssetForm):

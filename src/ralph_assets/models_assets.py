@@ -182,7 +182,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     invoice_date = models.DateField(null=True, blank=True)
     sn = models.CharField(max_length=200, null=True, blank=False, unique=True)
     barcode = models.CharField(
-        max_length=200, null=True, blank=False, unique=True
+        max_length=200, null=True, blank=True, unique=True, default=None
     )
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
