@@ -541,6 +541,10 @@ class EditDeviceForm(BaseEditAssetForm):
                     )
                 )
             )
+        if not cleaned_data.get('sn') and not cleaned_data.get('barcode'):
+            raise ValidationError(
+                _("If SN is empty - Barcode is required")
+            )
         return cleaned_data
 
 
