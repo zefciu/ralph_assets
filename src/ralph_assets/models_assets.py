@@ -180,9 +180,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
-    sn = models.CharField(max_length=200, null=True, blank=False, unique=True)
+    sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
     barcode = models.CharField(
-        max_length=200, null=True, blank=False, unique=True
+        max_length=200, null=True, blank=True, unique=True, default=None
     )
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
