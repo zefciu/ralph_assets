@@ -9,11 +9,22 @@ from ralph_assets.models_assets import Asset
 
 def get_assets():
     """Yields dicts describing all assets"""
-    for asset in Asset.objects_dc.all():
+    for asset in Asset.objects_dc.filter(part_info_id=None):
+        device_info = asset.device_info
         yield {
             'asset_id': asset.id,
-            'ralph_id': asset.device_info.ralph_device_id,
+            'ralph_id': device_info.ralph_device_id if device_info else None,
             'slots': asset.slots,
             'price': asset.price,
             'is_deprecated': asset.is_deprecated()
         }
+
+def get_asset_parts():
+    for asset in Asset.objects_dc.all():
+        for part in asset.get_parts():
+            yield {
+                'asset': asset,
+                'model': part.model,
+                'price': part.price,
+                'is_deprecated': part.is_deprecated(),
+            }

@@ -333,7 +333,7 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
 
     def __unicode__(self):
         return "{} - {}".format(
-            self.ralph_device,
+            self.ralph_device_id,
             self.size,
         )
 
