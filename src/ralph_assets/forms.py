@@ -577,6 +577,7 @@ class SearchAssetForm(Form):
         empty_label="---",
     )
     sn = CharField(required=False, label='SN')
+    barcode = CharField(required=False, label='Barcode')
 
     request_date_from = DateField(
         required=False, widget=DateWidget(attrs={
