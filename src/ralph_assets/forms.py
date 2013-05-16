@@ -345,41 +345,6 @@ class BaseAddAssetForm(ModelForm):
             )
         return data
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class BaseEditAssetForm(ModelForm):
     class Meta:
         model = Asset
@@ -561,67 +526,6 @@ class OfficeForm(ModelForm):
 
 class EditPartForm(BaseEditAssetForm):
     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class EditDeviceForm(BaseEditAssetForm):
