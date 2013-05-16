@@ -721,7 +721,7 @@ class EditDevice(Base):
             else:
                 messages.error(self.request, _("Please correct the errors."))
                 messages.error(self.request, self.asset_form.non_field_errors())
-        return self.get(*args, **kwargs)
+        return super(EditDevice, self).get(*args, **kwargs)
 
 
 class BackOfficeEditDevice(EditDevice, BackOfficeMixin):
