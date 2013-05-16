@@ -959,8 +959,9 @@ class DeleteAsset(AssetsMixin):
                 return HttpResponseRedirect(
                     '{}{}{}'.format(self.back_to, 'edit/device/', self.asset.id)
                 )
-            self.asset.deleted = True
-            self.asset.save(user=self.request.user)
+            # changed from softdelete to real-delete, because of
+            # key-constraints issues (sn/barcode) - to be resolved.
+            self.asset.delete_with_info()
             return HttpResponseRedirect(self.back_to)
 
 
