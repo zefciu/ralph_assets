@@ -26,7 +26,7 @@ def get_asset_parts():
             yield {
                 'asset_id': asset.id,
                 'ralph_id': device_info.ralph_device_id if device_info else None,
-                'model': part.model.name,
+                'model': part.model.name if part.model else None,
                 'price': part.price,
                 'is_deprecated': part.is_deprecated(),
             }
