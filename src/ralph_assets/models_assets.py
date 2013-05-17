@@ -315,6 +315,19 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             deprecation_date = deprecation_date.date()
         return deprecation_date < datetime.date.today()
 
+    def delete_with_info(self, *args, **kwargs):
+        """
+        Remove Asset with linked info-tables alltogether, because cascade
+        works bottom-up only.
+        """
+        if self.part_info:
+            self.part_info.delete()
+        elif self.office_info:
+            self.office_info.delete()
+        elif self.device_info:
+            self.device_info.delete()
+        return super(Asset, self).delete(*args, **kwargs)
+
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device_id = models.IntegerField(
