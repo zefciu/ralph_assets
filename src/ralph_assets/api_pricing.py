@@ -22,9 +22,11 @@ def get_assets():
 def get_asset_parts():
     for asset in Asset.objects_dc.all():
         for part in asset.get_parts():
+            device_info = asset.device_info
             yield {
-                'asset': asset,
-                'model': part.model,
+                'asset_id': asset.id,
+                'ralph_id': device_info.ralph_device_id if device_info else None,
+                'model': part.model.name if part.model else None,
                 'price': part.price,
                 'is_deprecated': part.is_deprecated(),
             }
