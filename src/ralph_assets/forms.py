@@ -44,6 +44,8 @@ LOOKUPS = {
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
+
 }
 
 
@@ -159,11 +161,20 @@ class DeviceForm(ModelForm):
         model = DeviceInfo
         fields = (
             'size',
+            'u_level',
+            'u_height',
+            'ralph_device_id',
         )
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.pop('mode')
         super(DeviceForm, self).__init__(*args, **kwargs)
+        self.fields['ralph_device_id'] = AutoCompleteSelectField(
+            LOOKUPS['ralph_device'],
+            required=False,
+            help_text='Enter barcode, sn, or model.',
+        )
+
         if mode == 'back_office':
             del self.fields['size']
 
@@ -345,6 +356,7 @@ class BaseAddAssetForm(ModelForm):
             )
         return data
 
+
 class BaseEditAssetForm(ModelForm):
     class Meta:
         model = Asset
@@ -439,6 +451,7 @@ class BaseEditAssetForm(ModelForm):
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         return self.cleaned_data
+
 
 class MoveAssetPartForm(Form):
     new_asset = AutoCompleteSelectField(
