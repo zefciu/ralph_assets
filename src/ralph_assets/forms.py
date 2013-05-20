@@ -66,7 +66,7 @@ class BaseAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'invoice_no', 'order_no', 'request_date',
+            'niw', 'type', 'model', 'invoice_no', 'order_no', 'request_date',
             'delivery_date', 'invoice_date', 'production_use_date',
             'provider_order_date', 'price', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider', 'status',
@@ -172,11 +172,14 @@ class DeviceForm(ModelForm):
         self.fields['ralph_device_id'] = AutoCompleteSelectField(
             LOOKUPS['ralph_device'],
             required=False,
-            help_text='Enter barcode, sn, or model.',
+            help_text='Enter ralph id, barcode, sn, or model.',
         )
 
         if mode == 'back_office':
             del self.fields['size']
+
+    def clean_ralph_device_id(self, *args, **kwargs):
+        return self.data['ralph_device_id'] or None
 
     def clean_size(self):
         size = self.cleaned_data.get('size')
@@ -278,6 +281,7 @@ class BaseAddAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
+            'niw',
             'sn',
             'type',
             'category',
@@ -361,6 +365,7 @@ class BaseEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
+            'niw',
             'sn',
             'type',
             'category',
@@ -495,7 +500,7 @@ class AddDeviceForm(BaseAddAssetForm):
                 barcode = barcode.strip()
                 if barcode in barcodes:
                     raise ValidationError(
-                        _("There are duplicate barcodes in field.")
+                        _("There are duplicate barcodes in the field.")
                     )
                 elif ' ' in barcode:
                     raise ValidationError(
@@ -593,6 +598,7 @@ class SearchAssetForm(Form):
         level_indicator='|---',
         empty_label="---",
     )
+    niw = CharField(required=False, label='Niw')
     sn = CharField(required=False, label='SN')
     barcode = CharField(required=False, label='Barcode')
 

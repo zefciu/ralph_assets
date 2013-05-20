@@ -230,6 +230,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
 
+    @property
+    def venture(self):
+        if not self.device_info or not self.device_info.ralph_device_id:
+            return None
+        else:
+            return Device.objects.get(pk=self.device_info.ralph_device_id).venture
+
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
         asset = Asset(**base_args)
