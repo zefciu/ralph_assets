@@ -331,7 +331,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device_id = models.IntegerField(
-        verbose_name=_("device id"),
+        verbose_name=_("Ralph device id"),
         null=True,
         blank=True,
         unique=True,
