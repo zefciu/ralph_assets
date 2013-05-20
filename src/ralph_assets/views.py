@@ -167,6 +167,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           bob_tag=True, export=True),
         _('Venture', field='venture', sort_expression='venture',
           bob_tag=True, export=True),
+        _('Price', field='price', sort_expression='price',
+          bob_tag=True, export=True),
         _('Actions', bob_tag=True),
         _('Barcode salvaged', field='barcode_salvaged',
           foreign_field_name='part_info', export=True),
