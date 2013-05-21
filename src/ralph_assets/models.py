@@ -65,6 +65,7 @@ class RalphDeviceLookup(LookupChannel):
         query = Q(
             Q(
                 Q(barcode__istartswith=q) |
+                Q(id__istartswith=q) |
                 Q(sn__istartswith=q) |
                 Q(model__name__icontains=q)
             )

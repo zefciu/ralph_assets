@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 from ralph_assets.models_assets import Asset
 
 
-def field_changes(instance, ignore=('id',)):
+def field_changes(instance, ignore=('id','ralph_device_id')):
     """Yield the name, original value and new value for each changed field.
     Skip all insignificant fields and those passed in ``ignore``.
     When creating asset, the first asset status will be added into the history.
