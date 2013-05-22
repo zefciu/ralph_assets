@@ -110,6 +110,5 @@ class TestApiAssets(TestCase):
             model = AssetModel.objects.get(name="Model1")
             self.assertEqual(item['model'], model.name)
             self.assertEqual(item['asset_id'], self.asset2.id)
-            self.assertEqual(item['asset_parent_id'], self.asset.id)
             self.assertEqual(item['sn'], self.asset.sn)
             self.assertEqual(item['barcode'], self.asset.barcode)
