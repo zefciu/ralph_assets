@@ -165,6 +165,10 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           bob_tag=True, export=True),
         _('Warehouse', field='warehouse', sort_expression='warehouse',
           bob_tag=True, export=True),
+        _('Venture', field='venture', sort_expression='venture',
+          bob_tag=True, export=True),
+        _('Price', field='price', sort_expression='price',
+          bob_tag=True, export=True),
         _('Actions', bob_tag=True),
         _('Barcode salvaged', field='barcode_salvaged',
           foreign_field_name='part_info', export=True),
@@ -179,11 +183,14 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('Support type', field='support_type', export=True),
         _('Support void_reporting', field='support_void_reporting',
           export=True),
+        _('Niw', field='niw', foreign_field_name='', export=True),
+        _('Deprecation rate', field='deprecation_rate', foreign_field_name='', export=True),
         _('Type', field='type', export=True),
     ]
 
     def handle_search_data(self):
         search_fields = [
+            'niw',
             'category',
             'invoice_no',
             'model',
@@ -194,6 +201,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'status',
             'deleted',
             'manufacturer',
+            'barcode',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -320,10 +328,10 @@ class BackOfficeSearch(BackOfficeMixin, AssetSearch):
     ]
 
     def __init__(self, *args, **kwargs):
-        super(BackOfficeSearch, self).__init__(*args, **kwargs)
         self.columns = (
             self.columns + self.columns_nested
         )
+        super(BackOfficeSearch, self).__init__(*args, **kwargs)
 
     def get_csv_data(self, queryset):
         data = super(BackOfficeSearch, self).get_csv_rows(
@@ -344,16 +352,22 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
     template_name = 'assets/search_asset.html'
     _ = DataTableColumnAssets
     columns_nested = [
-        _('Ralph device', field='ralph_device',
+        _('Ralph device id', field='ralph_device_id',
           foreign_field_name='device_info', export=True),
         _('Size', field='size', foreign_field_name='device_info', export=True),
+
+        _('Rack', field='rack', foreign_field_name='device_info', export=True),
+        _('U level', field='u_level', foreign_field_name='device_info', export=True),
+        _('U height', field='u_height', foreign_field_name='device_info', export=True),
+
+
     ]
 
     def __init__(self, *args, **kwargs):
-        super(DataCenterSearch, self).__init__(*args, **kwargs)
         self.columns = (
             self.columns + self.columns_nested
         )
+        super(DataCenterSearch, self).__init__(*args, **kwargs)
 
     def get_csv_data(self, queryset):
         data = super(DataCenterSearch, self).get_csv_rows(
@@ -668,7 +682,11 @@ class EditDevice(Base):
             instance=self.asset,
             mode=mode,
         )
-        self.device_info_form = DeviceForm(post_data, mode=mode)
+        self.device_info_form = DeviceForm(
+            post_data,
+            mode=mode,
+            instance=self.asset.device_info,
+        )
         self.part_form = MoveAssetPartForm(post_data)
         if 'move_parts' in post_data.keys():
             destination_asset = post_data.get('new_asset')
@@ -720,7 +738,7 @@ class EditDevice(Base):
             else:
                 messages.error(self.request, _("Please correct the errors."))
                 messages.error(self.request, self.asset_form.non_field_errors())
-        return self.get(*args, **kwargs)
+        return super(EditDevice, self).get(*args, **kwargs)
 
 
 class BackOfficeEditDevice(EditDevice, BackOfficeMixin):
@@ -958,8 +976,9 @@ class DeleteAsset(AssetsMixin):
                 return HttpResponseRedirect(
                     '{}{}{}'.format(self.back_to, 'edit/device/', self.asset.id)
                 )
-            self.asset.deleted = True
-            self.asset.save(user=self.request.user)
+            # changed from softdelete to real-delete, because of
+            # key-constraints issues (sn/barcode) - to be resolved.
+            self.asset.delete_with_info()
             return HttpResponseRedirect(self.back_to)
 
 

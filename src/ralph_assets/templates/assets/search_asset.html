@@ -73,6 +73,8 @@ form.form-inline {
                     <td>{{row.order_no}}</td>
                     <td>{{row.get_status_display}}</td>
                     <td>{{row.warehouse}}</td>
+                    <td>{{row.venture}}</td>
+                    <td>{{row.price}}</td>
                     <td>
 
                     <div class="btn-group">
@@ -85,8 +87,8 @@ form.form-inline {
                     {% if row.get_data_type == 'device' %}
                         <li><a href="./edit/device/{{row.id}}">Edit</a></li>
                         <li><a href="./history/device/{{row.id}}">History</a></li>
-                        {% if row.device_info.ralph_device.id%}
-                            <li><a href="{% url search 'info' row.device_info.ralph_device.id %}">View in Ralph</a></li>
+                        {% if row.device_info.ralph_device_id%}
+                            <li><a href="{% url search 'info' row.device_info.ralph_device_id %}">View in Ralph</a></li>
                         {% endif %}
                     {% else %}
                         <li><a href="./edit/part/{{row.id}}">Edit</a></li>
