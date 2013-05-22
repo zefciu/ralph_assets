@@ -16,6 +16,7 @@ def get_assets():
             'ralph_id': device_info.ralph_device_id if device_info else None,
             'slots': asset.slots,
             'price': asset.price,
+            'deprecation_rate': asset.deprecation_rate,
             'is_deprecated': asset.is_deprecated()
         }
 
@@ -28,5 +29,6 @@ def get_asset_parts():
                 'ralph_id': device_info.ralph_device_id if device_info else None,
                 'model': part.model.name if part.model else None,
                 'price': part.price,
+                'deprecation_rate': asset.deprecation_rate,
                 'is_deprecated': part.is_deprecated(),
             }
