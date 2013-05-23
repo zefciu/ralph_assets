@@ -30,7 +30,6 @@ def get_asset_parts():
             device_info = asset.device_info
             yield {
                 'asset_id': part.id,
-                'asset_parent_id':asset.id,
                 'barcode': asset.barcode,
                 'is_deprecated': part.is_deprecated(),
                 'model': part.model.name if part.model else None,
