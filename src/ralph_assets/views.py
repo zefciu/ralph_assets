@@ -1001,13 +1001,23 @@ class DataCenterSplitDevice(DataCenterMixin):
 
     def get(self, *args, **kwargs):
         self.asset_id = self.kwargs.get('asset_id')
-        self.asset = Asset.objects.get(id=self.asset_id)
+        self.asset = get_object_or_404(Asset, id=self.asset_id)
         if self.asset.has_parts():
             messages.error(self.request, _("This asset was splited."))
             return HttpResponseRedirect(
-                reverse('dc_device_edit', args=[self.asset.id,])
+                reverse('dc_device_edit', args=[self.asset.id, ])
             )
-        initial = self.get_proposed_components()
+        if self.asset.device_info.ralph_device_id:
+            initial = self.get_proposed_components()
+        else:
+            initial = []
+            messages.error(
+                self.request,
+                _(
+                    'Asset not linked with ralph device, proposed components '
+                    'not available'
+                ),
+            )
         extra = 0 if initial else 1
         AssetFormSet = formset_factory(form=SplitDevice, extra=extra)
         self.asset_formset = AssetFormSet(initial=initial)
@@ -1100,7 +1110,9 @@ class DataCenterSplitDevice(DataCenterMixin):
 
     def get_proposed_components(self):
         try:
-            components = list(get_device_components(sn=self.asset.sn))
+            components = list(get_device_components(
+                ralph_device_id=self.asset.device_info.ralph_device_id
+            ))
         except LookupError:
             components = []
         return components
