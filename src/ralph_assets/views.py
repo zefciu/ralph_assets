@@ -982,7 +982,7 @@ class DataCenterSplitDevice(DataCenterMixin):
 
     def get(self, *args, **kwargs):
         self.asset_id = self.kwargs.get('asset_id')
-        self.asset = Asset.objects.get(id=self.asset_id)
+        self.asset = get_object_or_404(Asset, id=self.asset_id)
         if self.asset.has_parts():
             messages.error(self.request, _("This asset was splited."))
             return HttpResponseRedirect(
@@ -1080,8 +1080,18 @@ class DataCenterSplitDevice(DataCenterMixin):
         return part_info
 
     def get_proposed_components(self):
-        try:
-            components = list(get_device_components(sn=self.asset.sn))
-        except LookupError:
+        sn = self.asset.sn
+        barcode = self.asset.barcode
+        if sn:
+            try:
+                components = list(get_device_components(sn=sn))
+            except LookupError:
+                pass
+        elif barcode:
+            try:
+                components = list(get_device_components(barcode=barcode))
+            except LookupError:
+                pass
+        else:
             components = []
         return components
