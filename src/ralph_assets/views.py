@@ -743,10 +743,11 @@ class EditDevice(Base):
 
     def get_history_link(self):
         mode = _get_mode(self.request)
+        asset_id = self.asset.id
         if mode == 'dc':
-            url = reverse('dc_device_history', args=[self.asset.id, ])
+            url = reverse('dc_device_history', args=[asset_id, ])
         elif mode == 'back_office':
-            url = reverse('back_office_device_history', args=[self.asset.id, ])
+            url = reverse('back_office_device_history', args=[asset_id, ])
         return url
 
 
@@ -774,6 +775,7 @@ class EditPart(Base):
             'edit_mode': True,
             'status_history': status_history,
             'history_link': self.get_history_link(),
+            'parent_link': self.get_parent_link(),
         })
         return ret
 
@@ -833,12 +835,24 @@ class EditPart(Base):
             messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditPart, self).get(*args, **kwargs)
 
+    def get_parent_link(self):
+        mode = _get_mode(self.request)
+        asset = self.asset.part_info.source_device
+        url = ''
+        if asset:
+            if mode == 'dc':
+                url = reverse('dc_device_edit', args=[asset.id, ])
+            elif mode == 'back_office':
+                url = reverse('back_office_device_edit', args=[asset.id, ])
+        return url
+
     def get_history_link(self):
         mode = _get_mode(self.request)
+        asset_id = self.asset.id
         if mode == 'dc':
-            url = reverse('dc_part_history', args=[self.asset.id, ])
+            url = reverse('dc_part_history', args=[asset_id, ])
         elif mode == 'back_office':
-            url = reverse('back_office_part_history', args=[self.asset.id, ])
+            url = reverse('back_office_part_history', args=[asset_id, ])
         return url
 
 

@@ -81,7 +81,7 @@ urlpatterns = patterns(
         name='back_office'),
     url(r'back_office/edit/device/(?P<asset_id>[0-9]+)/$',
         login_required(BackOfficeEditDevice.as_view()),
-        name='back_office'),
+        name='back_office_device_edit'),
     url(r'back_office/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(BackOfficeEditPart.as_view()),
         name='back_office'),
