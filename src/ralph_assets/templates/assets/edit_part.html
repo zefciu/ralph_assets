@@ -18,8 +18,16 @@
     </div>
   {% endfor %}
 </div>
+<div class="span6">
+    <h6>
+      <a href="{{ history_link }}">Full history</a>
+      {% if parent_link %}
+          | <a href="{{ parent_link }}">Parent</a>
+      {% endif %}
+    </h6>
+</div>
 {% if status_history %}
-    <div class="span6 ">
+    <div class="span6">
         <h5>Status history</h5>
         <table class="table table-striped table-bordered details-history">
             <thead><tr>

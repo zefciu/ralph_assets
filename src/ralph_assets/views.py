@@ -647,6 +647,7 @@ class EditDevice(Base):
             'status_history': status_history,
             'parts': self.parts,
             'asset': self.asset,
+            'history_link': self.get_history_link(),
         })
         return ret
 
@@ -740,6 +741,15 @@ class EditDevice(Base):
                 messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditDevice, self).get(*args, **kwargs)
 
+    def get_history_link(self):
+        mode = _get_mode(self.request)
+        asset_id = self.asset.id
+        if mode == 'dc':
+            url = reverse('dc_device_history', args=[asset_id, ])
+        elif mode == 'back_office':
+            url = reverse('back_office_device_history', args=[asset_id, ])
+        return url
+
 
 class BackOfficeEditDevice(EditDevice, BackOfficeMixin):
     sidebar_selected = None
@@ -764,31 +774,33 @@ class EditPart(Base):
             'form_id': 'edit_part_form',
             'edit_mode': True,
             'status_history': status_history,
+            'history_link': self.get_history_link(),
+            'parent_link': self.get_parent_link(),
         })
         return ret
 
     def get(self, *args, **kwargs):
-        asset = get_object_or_404(
+        self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if asset.device_info:  # it isn't part asset
+        if self.asset.device_info:  # it isn't part asset
             raise Http404()
         mode = _get_mode(self.request)
-        self.asset_form = EditPartForm(instance=asset, mode=mode)
-        self.office_info_form = OfficeForm(instance=asset.office_info)
-        self.part_info_form = BasePartForm(instance=asset.part_info, mode=mode)
+        self.asset_form = EditPartForm(instance=self.asset, mode=mode)
+        self.office_info_form = OfficeForm(instance=self.asset.office_info)
+        self.part_info_form = BasePartForm(instance=self.asset.part_info, mode=mode)
         return super(EditPart, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        asset = get_object_or_404(
+        self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
         self.asset_form = EditPartForm(
             self.request.POST,
-            instance=asset,
+            instance=self.asset,
             mode=mode
         )
         self.office_info_form = OfficeForm(
@@ -800,28 +812,48 @@ class EditPart(Base):
             self.part_info_form.is_valid()
         )):
             modifier_profile = self.request.user.get_profile()
-            asset = _update_asset(
-                modifier_profile, asset,
+            self.asset = _update_asset(
+                modifier_profile, self.asset,
                 self.asset_form.cleaned_data
             )
-            asset = _update_office_info(
-                modifier_profile.user, asset,
+            self.asset = _update_office_info(
+                modifier_profile.user, self.asset,
                 self.office_info_form.cleaned_data
             )
-            asset = _update_part_info(
-                modifier_profile.user, asset,
+            self.asset = _update_part_info(
+                modifier_profile.user, self.asset,
                 self.part_info_form.cleaned_data
             )
-            asset.save(user=self.request.user)
+            self.asset.save(user=self.request.user)
             messages.success(self.request, _("Part of asset was edited."))
             cat = self.request.path.split('/')[2]
             return HttpResponseRedirect(
-                '/assets/%s/edit/part/%s/' % (cat, asset.id)
+                '/assets/%s/edit/part/%s/' % (cat, self.asset.id)
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
             messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditPart, self).get(*args, **kwargs)
+
+    def get_parent_link(self):
+        mode = _get_mode(self.request)
+        asset = self.asset.part_info.source_device
+        url = ''
+        if asset:
+            if mode == 'dc':
+                url = reverse('dc_device_edit', args=[asset.id, ])
+            elif mode == 'back_office':
+                url = reverse('back_office_device_edit', args=[asset.id, ])
+        return url
+
+    def get_history_link(self):
+        mode = _get_mode(self.request)
+        asset_id = self.asset.id
+        if mode == 'dc':
+            url = reverse('dc_part_history', args=[asset_id, ])
+        elif mode == 'back_office':
+            url = reverse('back_office_part_history', args=[asset_id, ])
+        return url
 
 
 class BackOfficeEditPart(EditPart, BackOfficeMixin):
