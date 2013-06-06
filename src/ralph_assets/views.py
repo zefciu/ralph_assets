@@ -44,7 +44,6 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
-from ralph.discovery.models import Device
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
 
@@ -52,7 +51,9 @@ from ralph.util.api_assets import get_device_components
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-CONNECT_ASSET_WITH_DEVICE = getattr(settings, 'CONNECT_ASSET_WITH_DEVICE', False)
+CONNECT_ASSET_WITH_DEVICE = getattr(
+    settings, 'CONNECT_ASSET_WITH_DEVICE', False
+)
 
 
 class AssetsMixin(Base):
@@ -184,8 +185,13 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('Support void_reporting', field='support_void_reporting',
           export=True),
         _('Niw', field='niw', foreign_field_name='', export=True),
-        _('Deprecation rate', field='deprecation_rate', foreign_field_name='', export=True),
         _('Type', field='type', export=True),
+        _(
+            'Deprecation rate',
+            field='deprecation_rate',
+            foreign_field_name='', export=True,
+        ),
+
     ]
 
     def handle_search_data(self):
@@ -352,13 +358,36 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
     template_name = 'assets/search_asset.html'
     _ = DataTableColumnAssets
     columns_nested = [
-        _('Ralph device id', field='ralph_device_id',
-          foreign_field_name='device_info', export=True),
-        _('Size', field='size', foreign_field_name='device_info', export=True),
-
-        _('Rack', field='rack', foreign_field_name='device_info', export=True),
-        _('U level', field='u_level', foreign_field_name='device_info', export=True),
-        _('U height', field='u_height', foreign_field_name='device_info', export=True),
+        _(
+            'Ralph device id',
+            field='ralph_device_id',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'Size',
+            field='size',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'Rack',
+            field='rack',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'U level',
+            field='u_level',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'U height',
+            field='u_height',
+            foreign_field_name='device_info',
+            export=True,
+        ),
 
 
     ]
@@ -576,8 +605,10 @@ class DataCenterAddPart(AddPart, DataCenterMixin):
 
 @transaction.commit_on_success
 def _update_asset(modifier_profile, asset, asset_updated_data):
-    if ('barcode' not in asset_updated_data or
-        not asset_updated_data['barcode']):
+    if (
+        'barcode' not in asset_updated_data or
+        not asset_updated_data['barcode']
+    ):
         asset_updated_data['barcode'] = None
     asset_updated_data.update({'modified_by': modifier_profile})
     asset.__dict__.update(**asset_updated_data)
@@ -711,11 +742,14 @@ class EditDevice(Base):
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
             if self.asset.type in AssetType.BO.choices:
-                self.office_info_form = OfficeForm(request, self.request.FILES)
+                self.office_info_form = OfficeForm(
+                    self.request, self.request.FILES,
+                )
             if all((
                 self.asset_form.is_valid(),
                 self.device_info_form.is_valid(),
-                self.asset.type not in AssetType.BO.choices or self.office_info_form.is_valid()
+                self.asset.type not in AssetType.BO.choices or
+                self.office_info_form.is_valid()
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
@@ -738,7 +772,9 @@ class EditDevice(Base):
                 )
             else:
                 messages.error(self.request, _("Please correct the errors."))
-                messages.error(self.request, self.asset_form.non_field_errors())
+                messages.error(
+                    self.request, self.asset_form.non_field_errors(),
+                )
         return super(EditDevice, self).get(*args, **kwargs)
 
     def get_history_link(self):
@@ -789,7 +825,9 @@ class EditPart(Base):
         mode = _get_mode(self.request)
         self.asset_form = EditPartForm(instance=self.asset, mode=mode)
         self.office_info_form = OfficeForm(instance=self.asset.office_info)
-        self.part_info_form = BasePartForm(instance=self.asset.part_info, mode=mode)
+        self.part_info_form = BasePartForm(
+            instance=self.asset.part_info, mode=mode,
+        )
         return super(EditPart, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -958,20 +996,22 @@ class BulkEdit(Base):
 
 class BackOfficeBulkEdit(BulkEdit, BackOfficeMixin):
     sidebar_selected = None
+
     def get_context_data(self, **kwargs):
         ret = super(BackOfficeBulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'mode' : 'BO',
+            'mode': 'BO',
         })
         return ret
 
 
 class DataCenterBulkEdit(BulkEdit, DataCenterMixin):
     sidebar_selected = None
+
     def get_context_data(self, **kwargs):
         ret = super(DataCenterBulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'mode' : 'DC',
+            'mode': 'DC',
         })
         return ret
 
@@ -1002,11 +1042,12 @@ class DeleteAsset(AssetsMixin):
                         "or unassign them from device first. ".format(
                             self.asset,
                             ", ".join([str(part.asset) for part in parts])
-                        )
-                    )
+                        ))
                 )
                 return HttpResponseRedirect(
-                    '{}{}{}'.format(self.back_to, 'edit/device/', self.asset.id)
+                    '{}{}{}'.format(
+                        self.back_to, 'edit/device/', self.asset.id,
+                    )
                 )
             # changed from softdelete to real-delete, because of
             # key-constraints issues (sn/barcode) - to be resolved.
@@ -1111,7 +1152,9 @@ class DataCenterSplitDevice(DataCenterMixin):
             value = instance[name].value().strip()
             if value in duplicates_items:
                 if name in instance.errors:
-                    instance.errors[name].append('This %s is duplicated' % name)
+                    instance.errors[name].append(
+                        'This %s is duplicated' % name
+                    )
                 else:
                     instance.errors[name] = ['This %s is duplicated' % name]
         if duplicates_items:

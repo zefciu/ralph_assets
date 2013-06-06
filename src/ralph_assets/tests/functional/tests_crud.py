@@ -7,7 +7,13 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from ralph_assets.models_assets import *
+from ralph_assets.models_assets import (
+    AssetType,
+    AssetSource,
+    AssetStatus,
+    LicenseType,
+    OfficeInfo,
+)
 from ralph_assets.tests.util import (
     create_asset,
     create_category,
@@ -171,7 +177,6 @@ class TestAdding(TestCase):
         ).count()
         if new_view.context['office_info_form']:
             self.assertEqual(office, 1)
-            self.assertEqual(old_office_info, {})
             self.assertEqual(
                 new_office_info['license_key'], '0000-0000-0000-0000'
             )

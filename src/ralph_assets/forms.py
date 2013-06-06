@@ -53,9 +53,10 @@ class CodeWidget(forms.TextInput):
     def render(self, name, value, attrs=None, choices=()):
         formatted = escape(value) if value else ''
         return mark_safe('''
-        <div class='code_field' id="id_%s" name="%s" width=200 height=500 style='width:200px;height:500px;' >
-        %s</div>''' % (
-            escape(name), escape(name), formatted))
+        <div class='code_field' id="id_%s" name="%s" width=200 height=500
+        style='width:200px;height:500px;' >%s</div>''' % (
+            escape(name), escape(name), formatted,
+        ))
 
 
 class ModeNotSetException(Exception):
@@ -553,8 +554,9 @@ class EditDeviceForm(BaseEditAssetForm):
         if deleted and self.instance.has_parts():
             parts = self.instance.get_parts_info()
             raise ValidationError(
-                _("Cannot remove asset with parts assigned. Please remove "
-                        "or unassign them from device first. ".format(
+                _(
+                    "Cannot remove asset with parts assigned. Please remove "
+                    "or unassign them from device first. ".format(
                         ", ".join([part.asset.sn for part in parts])
                     )
                 )
@@ -686,12 +688,10 @@ class SearchAssetForm(Form):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.data_center
             )
-            channel = LOOKUPS['asset_dcdevice']
         elif mode == 'back_office':
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
-            channel = LOOKUPS['asset_bodevice']
 
 
 class DeleteAssetConfirmForm(Form):

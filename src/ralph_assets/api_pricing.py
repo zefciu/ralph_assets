@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from ralph_assets.models_assets import Asset
 
+
 def get_assets():
     """Yields dicts describing all assets"""
     for asset in Asset.objects_dc.filter(part_info_id=None):
@@ -24,6 +25,7 @@ def get_assets():
             'is_deprecated': asset.is_deprecated()
         }
 
+
 def get_asset_parts():
     for asset in Asset.objects_dc.all():
         for part in asset.get_parts():
@@ -34,7 +36,7 @@ def get_asset_parts():
                 'is_deprecated': part.is_deprecated(),
                 'model': part.model.name if part.model else None,
                 'price': part.price,
-                'ralph_id': device_info.ralph_device_id if device_info else None,
+                'ralph_id': device_info.ralph_device_id if device_info else None,  # noqa
                 'sn': asset.sn,
                 'deprecation_rate': asset.deprecation_rate,
                 'is_deprecated': part.is_deprecated(),
