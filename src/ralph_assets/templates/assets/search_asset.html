@@ -66,11 +66,11 @@ form.form-inline {
                             {% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}
                         </a>
                     </td>
-                    <td>{{row.sn}}</td>
-                    <td>{{row.barcode|default_if_none:'-'}}</td>
-                    <td>{{row.model.name}}</td>
-                    <td>{{row.invoice_no}}</td>
-                    <td>{{row.order_no}}</td>
+                    <td>{{row.sn|default:'-' }}</td>
+                    <td>{{row.barcode|default:'-' }}</td>
+                    <td>{{row.model.name|default:'-' }}</td>
+                    <td>{{row.invoice_no|default:'-' }}</td>
+                    <td>{{row.order_no|default:'-' }}</td>
                     <td>{{row.get_status_display}}</td>
                     <td>{{row.warehouse}}</td>
                     <td>{{row.venture}}</td>
