@@ -107,8 +107,8 @@ class TestValidations(TestCase):
             'form-0-support_type': 'standard1',
             'form-0-support_void_reporting': 'on',
             'form-0-provider': 'Provider 1',
-            'form-0-status': AssetStatus.in_progress.id,  # Select field; value = 2
-            'form-0-source': AssetSource.shipment.id,  # Select field; value = 1
+            'form-0-status': AssetStatus.in_progress.id,  # Select field; value = 2 # noqa
+            'form-0-source': AssetSource.shipment.id,  # Select field; value = 1 # noqa
             'form-1-id': 2,
             'form-1-type': AssetType.data_center.id,  # Select field; value = 1
             'form-1-model': '',
