@@ -13,8 +13,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from ralph.discovery.models_device import Device
 from ralph_assets.history import field_changes
-from ralph_assets.models_assets import Asset, DeviceInfo, PartInfo, OfficeInfo
+from ralph_assets.models_assets import (
+    Asset,
+    DeviceInfo,
+    PartInfo,
+    OfficeInfo,
+    AssetType,
+)
 
 
 class AssetHistoryChange(db.Model):
@@ -69,6 +76,21 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
             user=instance.saving_user,
             comment=instance.save_comment,
         ).save()
+
+
+@receiver(post_save, sender=Asset, dispatch_uid='ralph.get_or_create_ralph')
+def asset_get_or_create_ralph_post_save(
+    sender, instance, raw, using, **kwargs
+):
+    if instance.type == AssetType.data_center:
+        try:
+            ralph = Device.objects.get(sn=instance.sn)
+        except Device.DoesNotExist:
+            instance.create_stock_device()
+        else:
+            device_info = DeviceInfo.objects.get(id=instance.device_info_id)
+            device_info.ralph_device_id = ralph.id
+            device_info.save()
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
