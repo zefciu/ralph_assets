@@ -79,10 +79,13 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.get_or_create_ralph')
-def asset_getorcreate_ralph_post_save(sender, instance, raw, using, **kwargs):
+def asset_get_or_create_ralph_post_save(
+    sender, instance, raw, using, **kwargs,
+):
     if instance.type == AssetType.data_center:
-        ralph = Device.objects.filter(sn=instance.sn)
-        if not ralph:
+        try:
+            ralph = Device.objects.get(sn=instance.sn)
+        except Device.DoesNotExist:
             instance.create_stock_device()
         else:
             device_info = DeviceInfo.objects.get(id=instance.device_info_id)
