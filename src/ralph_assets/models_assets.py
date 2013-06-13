@@ -311,7 +311,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         super(Asset, self).__init__(*args, **kwargs)
 
     def is_deprecated(self):
-        return True if self.deprecation_rate > 0 else False
+        return False if self.deprecation_rate > 0 else True
 
     def delete_with_info(self, *args, **kwargs):
         """
