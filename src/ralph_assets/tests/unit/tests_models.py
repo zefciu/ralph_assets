@@ -8,11 +8,8 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from ralph.business.models import Venture
-from ralph.discovery.models import DeviceType
-from ralph.ui.tests.util import create_device
 from ralph_assets.api_pricing import get_assets, get_asset_parts
-from ralph_assets.models_assets import AssetModel, DeviceInfo, PartInfo
+from ralph_assets.models_assets import PartInfo, AssetModel
 from ralph_assets.tests.util import create_asset
 
 
@@ -36,67 +33,29 @@ class TestModelAsset(TestCase):
 
 class TestApiAssets(TestCase):
     def setUp(self):
-        venture = Venture(name='Infra').save()
-        self.device = create_device(
-            device={
-                'sn': 'srv-1',
-                'model_name': 'server',
-                'model_type': DeviceType.virtual_server,
-                'venture': venture,
-                'name': 'Srv 1',
-                'purchase_date': '2012-11-28',
-                'sn': 'aaaa-aaaa-aaaa-aaaa',
-                'barcode': 'bbbb-bbbb-bbbb-bbbb',
-            },
-        )
-        self.device_info = DeviceInfo(
-            ralph_device_id=self.device.id,
-            size=6,
-        )
-        self.device_info.save()
-
         self.asset = create_asset(
             sn='1111-1111-1111-1111',
             invoice_date='2012-11-28',
             support_period=1,
             slots=12.0,
             price=100,
-            device_info=self.device_info,
         )
-        self.device2 = create_device(
-            device={
-                'sn': 'srv-2',
-                'model_name': 'server',
-                'model_type': DeviceType.virtual_server,
-                'venture': venture,
-                'name': 'Srv 2',
-                'purchase_date': '2012-11-28',
-                'sn': 'cccc-cccc-cccc-cccc',
-                'barcode': 'dddd-dddd-dddd-dddd',
-            },
-        )
-        self.device_info2 = DeviceInfo(
-            ralph_device_id=self.device2.id,
-            size=6,
-        )
-        self.device_info.save()
-        self.part_info = PartInfo(device=self.asset)
-        self.part_info.save()
+        part_info = PartInfo(device=self.asset)
+        part_info.save()
         self.asset2 = create_asset(
             sn='1111-1111-1111-11132',
             invoice_date='2012-11-28',
             support_period=1,
             slots=12.0,
             price=100,
-            device_info=self.device_info2,
-            part_info=self.part_info,
+            part_info=part_info,
         )
 
     def tests_api_asset(self):
         for item in get_assets():
             self.assertEqual(item['asset_id'], self.asset.id)
             self.assertEqual(
-                item['ralph_id'], self.device_info.ralph_device_id,
+                item['ralph_id'], self.asset.device_info.ralph_device_id.id,
             )
             self.assertEqual(item['slots'], self.asset.slots)
             self.assertEqual(item['price'], self.asset.price)

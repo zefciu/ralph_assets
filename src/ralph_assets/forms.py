@@ -180,7 +180,9 @@ class DeviceForm(ModelForm):
             del self.fields['size']
 
     def clean_ralph_device_id(self, *args, **kwargs):
-        return self.data['ralph_device_id'] or None
+        if hasattr(self.data, 'ralph_device_id'):
+            return self.data['ralph_device_id']
+        return None
 
     def clean_size(self):
         size = self.cleaned_data.get('size')
