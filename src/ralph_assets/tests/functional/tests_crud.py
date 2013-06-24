@@ -61,6 +61,7 @@ class TestAdding(TestCase):
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
             category=self.category.id,
+            slots=1.0,
         )
         send_post = self.client.post(url, data_in_add_form)
         # If everything is ok, redirect us to /assets/dc/search
@@ -126,18 +127,10 @@ class TestAdding(TestCase):
             last_logged_user='James Bond',
             remarks='any remarks',
             category=self.category.id,
+            slots=5.0,
         )
-        post = self.client.post(url, data_in_edit_form, follow=True)
+        self.client.post(url, data_in_edit_form)
 
-        # if everything is ok, server return response code = 302, and
-        # redirect us to /assets/dc/search with target status code 200
-        self.assertRedirects(
-            post,
-            '/assets/dc/edit/device/1/',
-            status_code=302,
-            target_status_code=200,
-        )
-        # Fetch added data
         new_view = self.client.get('/assets/dc/edit/device/1/')
         new_fields = new_view.context['asset_form'].initial
         new_device_info = new_view.context['device_info_form'].initial

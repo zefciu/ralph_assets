@@ -50,6 +50,7 @@ class HistoryAssetsView(TestCase):
             'sn': '666-666-666',
             'barcode': '666666',
             'category': self.category.id,
+            'slots': 1.0,
         }
         self.asset_change_params = {
             'barcode': '777777',
@@ -60,6 +61,7 @@ class HistoryAssetsView(TestCase):
             'license_type': LicenseType.oem.id,
             'date_of_last_inventory': '2012-11-08',
             'last_logged_user': 'ralph',
+            'slots': 1.0,
         }
         self.asset = None
         self.add_bo_device_asset()
@@ -79,6 +81,7 @@ class HistoryAssetsView(TestCase):
         attrs = dict(
             self.asset_params.items() + self.asset_change_params.items()
         )
+        import pdb; pdb.set_trace()
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
 
@@ -136,6 +139,7 @@ class ConnectAssetWithDevice(TestCase):
             'warehouse': self.warehouse.id,
             'barcode': '7777',
             'category': self.category.id,
+            'slots': 0,
         }
         self.asset = None
 
@@ -162,9 +166,9 @@ class ConnectAssetWithDevice(TestCase):
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
         asset = Asset.objects.get(sn='777-777')
-        self.assertTrue(asset.device_info.ralph_device)
-        device = Device.objects.get(id=asset.device_info.ralph_device.id)
-        self.assertEqual(device, asset.device_info.ralph_device)
+        self.assertTrue(asset.device_info.ralph_device_id)
+        device = Device.objects.get(id=asset.device_info.ralph_device_id)
+        self.assertEqual(device.id, asset.device_info.ralph_device_id)
         self.assertEqual(device.model.name, 'Unknown')
         self.assertEqual(device.sn, '777-777')
         self.assertEqual(device.venture.name, 'Stock')
@@ -182,9 +186,9 @@ class ConnectAssetWithDevice(TestCase):
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
         asset = Asset.objects.get(sn='999-999')
-        self.assertTrue(asset.device_info.ralph_device)
-        device = Device.objects.get(id=asset.device_info.ralph_device.id)
-        self.assertEqual(device, asset.device_info.ralph_device)
+        self.assertTrue(asset.device_info.ralph_device_id)
+        device = Device.objects.get(id=asset.device_info.ralph_device_id)
+        self.assertEqual(device.id, asset.device_info.ralph_device_id)
 
     @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', False)
     def test_add_dc_device_asset_without_create_device(self):
@@ -197,5 +201,3 @@ class ConnectAssetWithDevice(TestCase):
         attrs['sn'] = '888-888',
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
-        asset = Asset.objects.get(sn='888-888')
-        self.assertIsNone(asset.device_info.ralph_device)
