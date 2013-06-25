@@ -51,6 +51,7 @@ class HistoryAssetsView(TestCase):
             'barcode': '666666',
             'category': self.category.id,
             'slots': 1.0,
+            'asset': True,  # Button name
         }
         self.asset_change_params = {
             'barcode': '777777',
@@ -61,7 +62,6 @@ class HistoryAssetsView(TestCase):
             'license_type': LicenseType.oem.id,
             'date_of_last_inventory': '2012-11-08',
             'last_logged_user': 'ralph',
-            'slots': 1.0,
         }
         self.asset = None
         self.add_bo_device_asset()
@@ -81,7 +81,6 @@ class HistoryAssetsView(TestCase):
         attrs = dict(
             self.asset_params.items() + self.asset_change_params.items()
         )
-        import pdb; pdb.set_trace()
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
 
@@ -140,6 +139,7 @@ class ConnectAssetWithDevice(TestCase):
             'barcode': '7777',
             'category': self.category.id,
             'slots': 0,
+            'asset': True,  # Button name
         }
         self.asset = None
 
