@@ -743,7 +743,7 @@ class EditDevice(Base):
         elif 'asset' in post_data.keys():
             if self.asset.type in AssetType.BO.choices:
                 self.office_info_form = OfficeForm(
-                    self.request, self.request.FILES,
+                    post_data, self.request.FILES,
                 )
             if all((
                 self.asset_form.is_valid(),

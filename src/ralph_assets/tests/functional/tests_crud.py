@@ -152,8 +152,6 @@ class TestAdding(TestCase):
                 remarks='any remarks',
             )
         ]
-
-        import pdb; pdb.set_trace()
         for data in correct_data:
             for key in data.keys():
                 self.assertNotEqual(
