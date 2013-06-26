@@ -122,7 +122,7 @@ class ConnectAssetWithDevice(TestCase):
         self.warehouse = Warehouse(name='test_warehouse')
         self.warehouse.save()
         self.asset_params = {
-            'type': 1,
+            'type': 1,  # data_center
             'model': self.model.id,
             'invoice_no': 666,
             'order_no': 2,

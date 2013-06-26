@@ -130,7 +130,8 @@ class TestAdding(TestCase):
             slots=5.0,
             asset=True,  # Button name
         )
-        new_view = self.client.post(url, data_in_edit_form)
+        self.client.post(url, data_in_edit_form)
+        new_view = self.client.get(url)
         new_fields = new_view.context['asset_form'].initial
         new_device_info = new_view.context['device_info_form'].initial
         if new_view.context['office_info_form']:
