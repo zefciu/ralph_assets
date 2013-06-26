@@ -19,16 +19,19 @@ class TestModelAsset(TestCase):
             sn='1111-1111-1111-1111',
             invoice_date='2012-11-28',
             support_period=1,
+            deprecation_rate=1.00,
         )
         self.asset2 = create_asset(
             sn='1111-1111-1111-1112',
             invoice_date='2012-11-28',
             support_period=120,
+            deprecation_rate=0.50,
         )
 
     def test_is_deperecation(self):
+        self.assertEqual(self.asset.get_deprecation_months(), 12)
+        self.assertEqual(self.asset2.get_deprecation_months(), 24)
         self.assertEqual(self.asset.is_deprecated(), True)
-        self.assertEqual(self.asset2.is_deprecated(), False)
 
 
 class TestApiAssets(TestCase):

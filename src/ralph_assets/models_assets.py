@@ -310,19 +310,16 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         self.saving_user = None
         super(Asset, self).__init__(*args, **kwargs)
 
+    def get_deprecation_months(self):
+        return (1 / self.deprecation_rate * 12) if self.deprecation_rate else 0
+
     def is_deprecated(self):
-        if not self.support_period or not self.invoice_date:
+        if not self.invoice_date:
             return False
-        if isinstance(self.invoice_date, basestring):
-            self.invoice_date = datetime.datetime.strptime(
-                self.invoice_date, '%Y-%m-%d'
-            )
         deprecation_date = self.invoice_date + relativedelta(
-            months=self.support_period
+            months=self.get_deprecation_months()
         )
-        if isinstance(deprecation_date, datetime.datetime):
-            deprecation_date = deprecation_date.date()
-        return deprecation_date < datetime.date.today()
+        return True if deprecation_date > datetime.date.today() else False
 
     def delete_with_info(self, *args, **kwargs):
         """
