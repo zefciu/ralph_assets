@@ -58,7 +58,7 @@ class TestApiAssets(TestCase):
         for item in get_assets():
             self.assertEqual(item['asset_id'], self.asset.id)
             self.assertEqual(
-                item['ralph_id'], self.asset.device_info.ralph_device_id.id,
+                item['ralph_id'], self.asset.device_info.ralph_device_id,
             )
             self.assertEqual(item['slots'], self.asset.slots)
             self.assertEqual(item['price'], self.asset.price)

@@ -42,7 +42,6 @@ class TestValidations(TestCase):
             ('asset_form', 'support_period'),
             ('asset_form', 'support_type'),
             ('asset_form', 'warehouse'),
-            ('asset_form', 'sn'),
             ('asset_form', 'category'),
         ]
 
@@ -80,9 +79,6 @@ class TestValidations(TestCase):
         # other fields error
         self.assertFormError(
             send_post, 'asset_form', 'support_period', 'Enter a whole number.'
-        )
-        self.assertFormError(
-            send_post, 'device_info_form', 'size', 'Enter a whole number.'
         )
         self.assertFormError(
             send_post, 'asset_form', 'invoice_date', 'Enter a valid date.'

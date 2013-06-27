@@ -61,6 +61,7 @@ class TestAdding(TestCase):
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
             category=self.category.id,
+            slots=1.0,
         )
         send_post = self.client.post(url, data_in_add_form)
         # If everything is ok, redirect us to /assets/dc/search
@@ -92,12 +93,12 @@ class TestAdding(TestCase):
 
     def test_send_data_via_edit_form(self):
         # Fetch data
-        view = self.client.get('/assets/dc/edit/device/1/')
+        url = '/assets/dc/edit/device/1/'
+        view = self.client.get(url)
         self.assertEqual(view.status_code, 200)
         old_fields = view.context['asset_form'].initial
         if view.context['device_info_form']:
             old_device_info = view.context['device_info_form'].initial
-        url = '/assets/dc/edit/device/1/'
         data_in_edit_form = dict(
             type=AssetType.data_center.id,  # 1
             model=self.model2.id,  # u'Model1'
@@ -126,24 +127,15 @@ class TestAdding(TestCase):
             last_logged_user='James Bond',
             remarks='any remarks',
             category=self.category.id,
+            slots=5.0,
+            asset=True,  # Button name
         )
-        post = self.client.post(url, data_in_edit_form, follow=True)
-
-        # if everything is ok, server return response code = 302, and
-        # redirect us to /assets/dc/search with target status code 200
-        self.assertRedirects(
-            post,
-            '/assets/dc/edit/device/1/',
-            status_code=302,
-            target_status_code=200,
-        )
-        # Fetch added data
-        new_view = self.client.get('/assets/dc/edit/device/1/')
+        self.client.post(url, data_in_edit_form)
+        new_view = self.client.get(url)
         new_fields = new_view.context['asset_form'].initial
         new_device_info = new_view.context['device_info_form'].initial
         if new_view.context['office_info_form']:
             new_office_info = new_view.context['office_info_form'].initial
-
         correct_data = [
             dict(
                 model=self.model2.id,
