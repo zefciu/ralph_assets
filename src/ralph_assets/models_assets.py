@@ -271,7 +271,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             raise UserWarning('Unknown asset data type!')
 
     def create_stock_device(self):
-        if self.type and self.type.name is not 'data_center':
+        if self.type is not AssetCategoryType.data_center:
             return
         try:
             if self.sn:
@@ -319,7 +319,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not self.invoice_date:
             return False
         deprecation_date = self.invoice_date + relativedelta(
-            months=self.get_deprecation_months()
+            months=int(self.get_deprecation_months()),
         )
         return True if deprecation_date > datetime.date.today() else False
 

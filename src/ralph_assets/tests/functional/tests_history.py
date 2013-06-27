@@ -11,7 +11,7 @@ from mock import patch
 
 from ralph_assets.models_assets import (
     AssetManufacturer, AssetModel, Warehouse, Asset, AssetStatus, LicenseType,
-    SAVE_PRIORITY)
+    SAVE_PRIORITY, AssetCategoryType)
 
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.tests.util import create_category
@@ -122,7 +122,7 @@ class ConnectAssetWithDevice(TestCase):
         self.warehouse = Warehouse(name='test_warehouse')
         self.warehouse.save()
         self.asset_params = {
-            'type': 1,  # data_center
+            'type': AssetCategoryType.data_center.id,
             'model': self.model.id,
             'invoice_no': 666,
             'order_no': 2,

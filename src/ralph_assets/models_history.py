@@ -84,13 +84,21 @@ def asset_get_or_create_ralph_post_save(
 ):
     if instance.type == AssetType.data_center:
         try:
-            ralph = Device.objects.get(sn=instance.sn)
-        except Device.DoesNotExist:
-            instance.create_stock_device()
-        else:
-            device_info = DeviceInfo.objects.get(id=instance.device_info_id)
-            device_info.ralph_device_id = ralph.id
+            ralph_id = instance.device_info.ralph_device_id
+        except AttributeError:
+            try:
+                ralph = Device.objects.get(sn=instance.sn)
+                ralph_id = ralph.id
+            except Device.DoesNotExist:
+                ralph_id = None
+        if ralph_id:
+            device_info = DeviceInfo.objects.get(
+                id=instance.device_info_id,
+            )
+            device_info.ralph_device_id = ralph_id
             device_info.save()
+        else:
+            instance.create_stock_device()
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
