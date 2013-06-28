@@ -245,20 +245,7 @@ class TestsStockDevice(TestCase):
         asset_params = self.asset_params
         asset_params['ralph_device_id'] = asset_device.id
         request = self.client.post('/assets/dc/add/device/', asset_params)
-        import pdb; pdb.set_trace()
         self.assertEqual(request.status_code, 302)
         asset = Asset.objects.get(sn='fake-sn')
         self.assertEqual(asset.device_info.ralph_device_id, asset_device.id)
         self.assertNotEqual(asset.sn, asset_device.sn)
-
-
-# 1. w formularzu jest ralph_device_id - done
-# 2. na stocku istnieje już device o danym sn
-# 3. tworzymy nowego device
-
-
-
-
-
-
-
