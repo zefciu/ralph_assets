@@ -11,7 +11,7 @@ from mock import patch
 
 from ralph_assets.models_assets import (
     AssetManufacturer, AssetModel, Warehouse, Asset, AssetStatus, LicenseType,
-    SAVE_PRIORITY, AssetCategoryType)
+    SAVE_PRIORITY, AssetType)
 
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.tests.util import create_category
@@ -51,6 +51,7 @@ class HistoryAssetsView(TestCase):
             'barcode': '666666',
             'category': self.category.id,
             'slots': 1.0,
+            'ralph_device_id': '',
             'asset': True,  # Button name
         }
         self.asset_change_params = {
@@ -122,7 +123,7 @@ class ConnectAssetWithDevice(TestCase):
         self.warehouse = Warehouse(name='test_warehouse')
         self.warehouse.save()
         self.asset_params = {
-            'type': AssetCategoryType.data_center.id,
+            'type': AssetType.data_center.id,
             'model': self.model.id,
             'invoice_no': 666,
             'order_no': 2,
@@ -139,21 +140,10 @@ class ConnectAssetWithDevice(TestCase):
             'barcode': '7777',
             'category': self.category.id,
             'slots': 0,
+            'ralph_device_id': '',
             'asset': True,  # Button name
         }
         self.asset = None
-
-    def create_device(self):
-        venture = Venture(name='TestVenture', symbol='testventure')
-        venture.save()
-        Device.create(
-            sn='999-999',
-            model_name='test_model',
-            model_type=DeviceType.unknown,
-            priority=SAVE_PRIORITY,
-            venture=venture,
-            name='test_device',
-        )
 
     @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', True)
     def test_add_dc_device_asset_with_create_device(self):
@@ -179,7 +169,6 @@ class ConnectAssetWithDevice(TestCase):
         exist with the same serial number as the Asset, then creates
         an link between the asset and the device
         """
-        self.create_device()
         url = '/assets/dc/add/device/'
         attrs = self.asset_params
         attrs['sn'] = '999-999',
@@ -201,3 +190,75 @@ class ConnectAssetWithDevice(TestCase):
         attrs['sn'] = '888-888',
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
+
+
+class TestsStockDevice(TestCase):
+    def setUp(self):
+        self.client = login_as_su()
+        self.category = create_category()
+        self.manufacturer = AssetManufacturer(name='test_manufacturer')
+        self.manufacturer.save()
+        self.model = AssetModel(
+            name='test_model', manufacturer=self.manufacturer
+        )
+        self.model.save()
+        self.warehouse = Warehouse(name='test_warehouse')
+        self.warehouse.save()
+        self.asset_params = {
+            'type': AssetType.data_center.id,
+            'model': self.model.id,
+            'invoice_no': 00001,
+            'order_no': 2,
+            'invoice_date': '2012-11-29',
+            'support_period': 36,
+            'support_type': 'door-to-door',
+            'support_void_reporting': 'on',
+            'provider': 'test_provider',
+            'status': AssetStatus.new.id,
+            'remarks': 'test_remarks',
+            'price': 10,
+            'size': 1,
+            'warehouse': self.warehouse.id,
+            'barcode': '7777',
+            'category': self.category.id,
+            'slots': 0,
+            'sn': 'fake-sn',
+            'ralph_device_id': '',
+            'asset': True,  # Button name
+        }
+
+    def create_device(self):
+        venture = Venture(name='TestVenture', symbol='testventure')
+        venture.save()
+        Device.create(
+            sn='000000001',
+            model_name='test_model',
+            model_type=DeviceType.unknown,
+            priority=SAVE_PRIORITY,
+            venture=venture,
+            name='test_device',
+        )
+        return Device.objects.get(sn='000000001')
+
+    def test_form_with_ralph_device_id(self):
+        asset_device = self.create_device()
+        asset_params = self.asset_params
+        asset_params['ralph_device_id'] = asset_device.id
+        request = self.client.post('/assets/dc/add/device/', asset_params)
+        import pdb; pdb.set_trace()
+        self.assertEqual(request.status_code, 302)
+        asset = Asset.objects.get(sn='fake-sn')
+        self.assertEqual(asset.device_info.ralph_device_id, asset_device.id)
+        self.assertNotEqual(asset.sn, asset_device.sn)
+
+
+# 1. w formularzu jest ralph_device_id - done
+# 2. na stocku istnieje już device o danym sn
+# 3. tworzymy nowego device
+
+
+
+
+
+
+

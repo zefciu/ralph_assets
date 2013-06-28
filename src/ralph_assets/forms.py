@@ -179,10 +179,8 @@ class DeviceForm(ModelForm):
         if mode == 'back_office':
             del self.fields['size']
 
-    def clean_ralph_device_id(self, *args, **kwargs):
-        if hasattr(self.data, 'ralph_device_id'):
-            return self.data['ralph_device_id']
-        return None
+    def clean_ralph_device_id(self):
+        return self.data['ralph_device_id'] or None
 
     def clean_size(self):
         size = self.cleaned_data.get('size')

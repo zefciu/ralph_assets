@@ -48,6 +48,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -64,6 +65,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -80,6 +82,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -96,6 +99,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -112,6 +116,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -129,6 +134,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -146,6 +152,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -163,6 +170,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -180,6 +188,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -197,6 +206,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -214,6 +224,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
             dict(
@@ -231,6 +242,7 @@ class TestMultivalueFields(TestCase):
                 size=1,
                 slots=1,
                 category=self.category.id,
+                ralph_device_id='',
                 asset=True,
             ),
         ]
@@ -303,6 +315,7 @@ class TestMultivalueFields(TestCase):
                     sn='serialnumber13',
                     barcode='barcode1',
                     remarks='asset12',
+                    ralph_device_id='',
                     size=1,
                 )
                 post = self.client.post(self.addform, duplicate)
