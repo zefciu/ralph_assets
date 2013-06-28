@@ -234,10 +234,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     def venture(self):
         if not self.device_info or not self.device_info.ralph_device_id:
             return None
-        else:
+        try:
             return Device.objects.get(
                 pk=self.device_info.ralph_device_id,
             ).venture
+        except Device.DoesNotExist:
+            return None
 
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
