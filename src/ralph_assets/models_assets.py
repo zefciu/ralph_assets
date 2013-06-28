@@ -271,7 +271,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             raise UserWarning('Unknown asset data type!')
 
     def create_stock_device(self):
-        if self.type is not AssetCategoryType.data_center:
+        if self.type is not AssetType.data_center:
             return
         try:
             if self.sn:
