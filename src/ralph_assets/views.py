@@ -185,6 +185,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('Support void_reporting', field='support_void_reporting',
           export=True),
         _('Niw', field='niw', foreign_field_name='', export=True),
+        _('Niw', field='device_info', foreign_field_name='ralph_device_id', export=True),
         _('Type', field='type', export=True),
         _(
             'Deprecation rate',

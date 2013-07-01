@@ -53,9 +53,13 @@ class AssetAdmin(ModelAdmin):
         'delivery_date',
         'invoice_date',
         'production_use_date',
-        'deleted'
+        'deleted',
     )
-    search_fields = ('sn', 'barcode')
+    search_fields = (
+        'sn',
+        'barcode',
+        'device_info__ralph_device_id',
+    )
     list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted')
 
 admin.site.register(Asset, AssetAdmin)
