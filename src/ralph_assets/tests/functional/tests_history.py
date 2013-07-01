@@ -241,14 +241,14 @@ class TestsStockDevice(TestCase):
         return Device.objects.get(sn='000000001')
 
     def test_form_with_ralph_device_id(self):
-        asset_device = self.create_device()
+        ralph_device = self.create_device()
         asset_params = self.asset_params
-        asset_params['ralph_device_id'] = asset_device.id
+        asset_params['ralph_device_id'] = ralph_device.id
         request = self.client.post('/assets/dc/add/device/', asset_params)
         self.assertEqual(request.status_code, 302)
         asset = Asset.objects.get(sn='fake-sn')
-        self.assertNotEqual(asset.sn, asset_device.sn)
-        self.assertEqual(asset.device_info.ralph_device_id, asset_device.id)
+        self.assertNotEqual(asset.sn, ralph_device.sn)
+        self.assertEqual(asset.device_info.ralph_device_id, ralph_device.id)
 
     def test_form_with_sn(self):
         asset_device = self.create_device()

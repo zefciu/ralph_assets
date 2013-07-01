@@ -8,7 +8,11 @@ from __future__ import unicode_literals
 from django.test import TestCase
 
 from ralph_assets.models_assets import AssetType, AssetStatus, AssetSource
-from ralph_assets.tests.util import create_asset, create_model, create_category
+from ralph_assets.tests.util import (
+    create_asset,
+    create_model,
+    create_category,
+)
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -76,12 +80,16 @@ class TestBulkEdit(TestCase):
             'form-1-status': AssetStatus.waiting_for_release.id,
             'form-1-source': AssetSource.shipment.id,
         }
-        post = self.client.post(url, post_data, follow=True)
+
+        post = self.client.post(url, post_data)
 
         # if everything is ok, server return response code = 302, and
         # redirect us to /assets/dc/search given response code 200
         self.assertRedirects(
-            post, url, status_code=302, target_status_code=200,
+            post,
+            url,
+            status_code=302,
+            target_status_code=200,
         )
 
         # Simulate reopening bulkedit form to check if data were written
