@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
+import datetime
 from django.test import TestCase
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
@@ -17,13 +17,13 @@ class TestModelAsset(TestCase):
     def setUp(self):
         self.asset = create_asset(
             sn='1111-1111-1111-1111',
-            invoice_date='2012-11-28',
+            invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             deprecation_rate=1.00,
         )
         self.asset2 = create_asset(
             sn='1111-1111-1111-1112',
-            invoice_date='2012-11-28',
+            invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=0.50,
         )
@@ -38,7 +38,7 @@ class TestApiAssets(TestCase):
     def setUp(self):
         self.asset = create_asset(
             sn='1111-1111-1111-1111',
-            invoice_date='2012-11-28',
+            invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
             price=100,
@@ -47,7 +47,7 @@ class TestApiAssets(TestCase):
         part_info.save()
         self.asset2 = create_asset(
             sn='1111-1111-1111-11132',
-            invoice_date='2012-11-28',
+            invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
             price=100,
@@ -69,7 +69,7 @@ class TestApiAssets(TestCase):
     def tests_api_asset_part(self):
         for item in get_asset_parts():
             self.assertEqual(item['price'], 100)
-            self.assertEqual(item['is_deprecated'], True)
+            self.assertEqual(item['is_deprecated'], False)
             model = AssetModel.objects.get(name="Model1")
             self.assertEqual(item['model'], model.name)
             self.assertEqual(item['asset_id'], self.asset2.id)
