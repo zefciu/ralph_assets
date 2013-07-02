@@ -61,6 +61,7 @@ class TestAdding(TestCase):
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
             category=self.category.id,
+            ralph_device_id='',
             slots=1.0,
         )
         send_post = self.client.post(url, data_in_add_form)
@@ -86,6 +87,8 @@ class TestAdding(TestCase):
             input = data_in_add_form[field]
             if field == 'size':
                 output = row_from_table.device_info.size
+            elif field == 'ralph_device_id':
+                output = ''  # test Hook
             else:
                 output = getattr(row_from_table, field)
             msg = 'Field: %s Input: %s Output: %s' % (field, input, output)
@@ -128,6 +131,7 @@ class TestAdding(TestCase):
             remarks='any remarks',
             category=self.category.id,
             slots=5.0,
+            ralph_device_id='',
             asset=True,  # Button name
         )
         self.client.post(url, data_in_edit_form)

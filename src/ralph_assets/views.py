@@ -185,7 +185,12 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('Support void_reporting', field='support_void_reporting',
           export=True),
         _('Niw', field='niw', foreign_field_name='', export=True),
-        _('Niw', field='device_info', foreign_field_name='ralph_device_id', export=True),
+        _(
+            'Ralph ID',
+            field='device_info',
+            foreign_field_name='ralph_device_id',
+            export=True
+        ),
         _('Type', field='type', export=True),
         _(
             'Deprecation rate',
@@ -209,6 +214,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'deleted',
             'manufacturer',
             'barcode',
+            'device_info',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -430,8 +436,11 @@ def _get_return_link(request):
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
     device_info = DeviceInfo()
-    if mode == 'data_center':
+    if mode == 'dc':
         device_info.size = device_info_data['size']
+        device_info.ralph_device_id = device_info_data['ralph_device_id']
+        device_info.u_level = device_info_data['u_level']
+        device_info.u_height = device_info_data['u_height']
     device_info.save(user=creator_profile.user)
     asset = Asset(
         device_info=device_info,
@@ -439,8 +448,6 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
         created_by=creator_profile,
         **asset_data
     )
-    if asset.type == AssetType.data_center.id and CONNECT_ASSET_WITH_DEVICE:
-        asset.create_stock_device()
     if barcode:
         asset.barcode = barcode
     asset.save(user=creator_profile.user)
