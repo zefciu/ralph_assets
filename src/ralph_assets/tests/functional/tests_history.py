@@ -8,11 +8,16 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from mock import patch
 
-
 from ralph_assets.models_assets import (
-    AssetManufacturer, AssetModel, Warehouse, Asset, AssetStatus, LicenseType,
-    SAVE_PRIORITY, AssetType)
-
+    AssetManufacturer,
+    AssetModel,
+    Warehouse,
+    Asset,
+    AssetStatus,
+    LicenseType,
+    SAVE_PRIORITY,
+    AssetType
+)
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.tests.util import create_category
 from ralph.business.models import Venture
