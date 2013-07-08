@@ -72,7 +72,7 @@ class AssetsMixin(Base):
         return ret
 
     def get_mainmenu_items(self):
-        return [
+        mainmenu = [
             MenuItem(
                 label='Data center',
                 name='dc',
@@ -86,6 +86,16 @@ class AssetsMixin(Base):
                 href='/assets/back_office',
             ),
         ]
+        if 'ralph_pricing' in settings.INSTALLED_APPS:
+            mainmenu.append(
+                MenuItem(
+                    label='Ralph Pricing',
+                    fugue_icon='fugue-money-coin',
+                    name='back_office',
+                    href='/pricing/all-ventures/',
+                ),
+            )
+        return mainmenu
 
 
 class DataCenterMixin(AssetsMixin):
