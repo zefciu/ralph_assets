@@ -399,8 +399,11 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
             foreign_field_name='device_info',
             export=True,
         ),
-
-
+        _(
+            'modified',
+            field='modified',
+            export=True,
+        ),
     ]
 
     def __init__(self, *args, **kwargs):
