@@ -88,7 +88,7 @@ class TestAdding(TestCase):
             if field == 'size':
                 output = row_from_table.device_info.size
             elif field == 'ralph_device_id':
-                output = ''  # test Hock
+                output = ''  # test Hook
             else:
                 output = getattr(row_from_table, field)
             msg = 'Field: %s Input: %s Output: %s' % (field, input, output)
