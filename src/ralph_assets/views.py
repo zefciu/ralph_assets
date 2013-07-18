@@ -376,6 +376,11 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
     _ = DataTableColumnAssets
     columns_nested = [
         _(
+            'asset id',
+            field='id',
+            export=True,
+        ),
+        _(
             'Ralph device id',
             field='ralph_device_id',
             foreign_field_name='device_info',
