@@ -29,7 +29,6 @@ class WarehouseAdmin(ModelAdmin):
 
 admin.site.register(Warehouse, WarehouseAdmin)
 
-
 class AssetAdmin(ModelAdmin):
     fields = (
         'sn',
@@ -61,6 +60,9 @@ class AssetAdmin(ModelAdmin):
         'device_info__ralph_device_id',
     )
     list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted')
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 admin.site.register(Asset, AssetAdmin)
 
