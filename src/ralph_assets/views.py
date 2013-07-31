@@ -51,9 +51,6 @@ from ralph.util.api_assets import get_device_components
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-CONNECT_ASSET_WITH_DEVICE = getattr(
-    settings, 'CONNECT_ASSET_WITH_DEVICE', False
-)
 
 
 class AssetsMixin(Base):

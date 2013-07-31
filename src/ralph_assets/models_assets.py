@@ -274,7 +274,6 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def create_stock_device(self):
         if self.type != AssetType.data_center.id:
-
             return
         try:
             if self.sn:
