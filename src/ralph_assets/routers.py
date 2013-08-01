@@ -11,4 +11,3 @@ class RalphAssetsRouter(BaseRouter):
 class RalphDiscoveryRouter(BaseRouter):
     db_name = 'ralph'
     app_name = 'discovery'
-

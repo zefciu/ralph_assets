@@ -18,9 +18,6 @@ from ralph_assets.models import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
-    OfficeInfo,
-    DeviceInfo,
-    PartInfo,
     Warehouse,
 )
 
@@ -32,34 +29,40 @@ class WarehouseAdmin(ModelAdmin):
 
 admin.site.register(Warehouse, WarehouseAdmin)
 
-
 class AssetAdmin(ModelAdmin):
     fields = (
-            'sn',
-            'type',
-            'category',
-            'model',
-            'status',
-            'warehouse',
-            'invoice_no',
-            'order_no',
-            'price',
-            'support_price',
-            'support_type',
-            'support_period',
-            'support_void_reporting',
-            'provider',
-            'remarks',
-            'barcode',
-            'request_date',
-            'provider_order_date',
-            'delivery_date',
-            'invoice_date',
-            'production_use_date',
-            'deleted'
+        'sn',
+        'type',
+        'category',
+        'model',
+        'status',
+        'warehouse',
+        'invoice_no',
+        'order_no',
+        'price',
+        'support_price',
+        'support_type',
+        'support_period',
+        'support_void_reporting',
+        'provider',
+        'remarks',
+        'barcode',
+        'request_date',
+        'provider_order_date',
+        'delivery_date',
+        'invoice_date',
+        'production_use_date',
+        'deleted',
     )
-    search_fields = ('sn', 'barcode')
+    search_fields = (
+        'sn',
+        'barcode',
+        'device_info__ralph_device_id',
+    )
     list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted')
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 admin.site.register(Asset, AssetAdmin)
 

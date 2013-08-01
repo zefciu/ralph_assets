@@ -156,7 +156,9 @@ class TestSearchForm(TestCase):
 
         # Test if search form find correct data
         self.assertItemsEqual(
-            [AssetStatus.name_from_id(asset.status) for asset in rows_from_table],
+            [AssetStatus.name_from_id(
+                asset.status,
+            ) for asset in rows_from_table],
             ['used']
         )
         self.assertEqual(rows_from_table[0].sn, '1236-1236-1236-1236')
@@ -192,6 +194,7 @@ class TestSearchForm(TestCase):
 
         for part in part_data:
             self.assertNotEqual(part.part_info, None)
+
 
 class TestSearchInvoiceDateFields(TestCase):
     def setUp(self):
@@ -266,6 +269,7 @@ class TestSearchInvoiceDateFields(TestCase):
 
         rows_from_table = content.context_data['bob_page'].object_list
         self.assertEqual(len(rows_from_table), 3)
+
 
 class TestSearchProviderDateFields(TestCase):
     def setUp(self):

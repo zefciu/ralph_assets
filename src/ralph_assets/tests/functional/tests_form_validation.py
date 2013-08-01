@@ -42,14 +42,16 @@ class TestValidations(TestCase):
             ('asset_form', 'support_period'),
             ('asset_form', 'support_type'),
             ('asset_form', 'warehouse'),
-            ('asset_form', 'sn'),
             ('asset_form', 'category'),
         ]
 
         self.model1 = create_model()
 
     def test_try_send_empty_add_form(self):
-        send_post = self.client.post('/assets/back_office/add/device/', {})
+        send_post = self.client.post(
+            '/assets/back_office/add/device/',
+            {'ralph_device_id': ''},  # Test hock
+        )
         self.assertEqual(send_post.status_code, 200)
 
         for field in self.required_fields:
@@ -58,7 +60,10 @@ class TestValidations(TestCase):
             )
 
     def test_try_send_empty_edit_form(self):
-        send_post = self.client.post('/assets/dc/edit/device/1/', {})
+        send_post = self.client.post(
+            '/assets/dc/edit/device/1/',
+            {'ralph_device_id': ''},  # Test hock
+        )
         self.assertEqual(send_post.status_code, 200)
 
         for field in self.required_fields:
@@ -73,6 +78,7 @@ class TestValidations(TestCase):
             'support_period': 'string',
             'size': 'string',
             'invoice_date': 'string',
+            'ralph_device_id': '',
         }
         send_post = self.client.post(url, post_data)
         self.assertEqual(send_post.status_code, 200)
@@ -80,9 +86,6 @@ class TestValidations(TestCase):
         # other fields error
         self.assertFormError(
             send_post, 'asset_form', 'support_period', 'Enter a whole number.'
-        )
-        self.assertFormError(
-            send_post, 'device_info_form', 'size', 'Enter a whole number.'
         )
         self.assertFormError(
             send_post, 'asset_form', 'invoice_date', 'Enter a valid date.'
@@ -107,8 +110,9 @@ class TestValidations(TestCase):
             'form-0-support_type': 'standard1',
             'form-0-support_void_reporting': 'on',
             'form-0-provider': 'Provider 1',
-            'form-0-status': AssetStatus.in_progress.id,  # Select field; value = 2
-            'form-0-source': AssetSource.shipment.id,  # Select field; value = 1
+            'form-0-status': AssetStatus.in_progress.id,  # Select field; value = 2 # noqa
+            'form-0-source': AssetSource.shipment.id,  # Select field; value = 1 # noqa
+            'form-0-ralph_device_id': '',
             'form-1-id': 2,
             'form-1-type': AssetType.data_center.id,  # Select field; value = 1
             'form-1-model': '',
@@ -123,6 +127,7 @@ class TestValidations(TestCase):
             'form-1-provider': 'Provider2',
             'form-1-status': '',
             'form-1-source': '',
+            'form-1-ralph_device_id': '',
         }
         send_post_with_empty_fields = self.client.post(url, post_data)
 

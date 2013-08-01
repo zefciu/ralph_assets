@@ -234,8 +234,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     def venture(self):
         if not self.device_info or not self.device_info.ralph_device_id:
             return None
-        else:
-            return Device.objects.get(pk=self.device_info.ralph_device_id).venture
+        try:
+            return Device.objects.get(
+                pk=self.device_info.ralph_device_id,
+            ).venture
+        except Device.DoesNotExist:
+            return None
 
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
@@ -269,6 +273,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             raise UserWarning('Unknown asset data type!')
 
     def create_stock_device(self):
+        if self.type != AssetType.data_center.id:
+            return
         try:
             if self.sn:
                 device = Device.objects.get(sn=self.sn)
@@ -308,19 +314,18 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         self.saving_user = None
         super(Asset, self).__init__(*args, **kwargs)
 
-    def is_deprecated(self):
-        if not self.support_period or not self.invoice_date:
-            return False
-        if isinstance(self.invoice_date, basestring):
-            self.invoice_date = datetime.datetime.strptime(
-                self.invoice_date, '%Y-%m-%d'
-            )
-        deprecation_date = self.invoice_date + relativedelta(
-            months=self.support_period
+    def get_deprecation_months(self):
+        return int(
+            (1 / self.deprecation_rate * 12) if self.deprecation_rate else 0
         )
-        if isinstance(deprecation_date, datetime.datetime):
-            deprecation_date = deprecation_date.date()
-        return deprecation_date < datetime.date.today()
+
+    def is_deprecated(self):
+        if not self.invoice_date:
+            return False
+        deprecation_date = self.invoice_date + relativedelta(
+            months=self.get_deprecation_months(),
+        )
+        return True if deprecation_date > datetime.date.today() else False
 
     def delete_with_info(self, *args, **kwargs):
         """

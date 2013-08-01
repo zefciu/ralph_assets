@@ -44,7 +44,6 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
-from ralph.discovery.models import Device
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
 
@@ -52,7 +51,6 @@ from ralph.util.api_assets import get_device_components
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-CONNECT_ASSET_WITH_DEVICE = getattr(settings, 'CONNECT_ASSET_WITH_DEVICE', False)
 
 
 class AssetsMixin(Base):
@@ -71,7 +69,7 @@ class AssetsMixin(Base):
         return ret
 
     def get_mainmenu_items(self):
-        return [
+        mainmenu = [
             MenuItem(
                 label='Data center',
                 name='dc',
@@ -85,6 +83,16 @@ class AssetsMixin(Base):
                 href='/assets/back_office',
             ),
         ]
+        if 'ralph_pricing' in settings.INSTALLED_APPS:
+            mainmenu.append(
+                MenuItem(
+                    label='Ralph Pricing',
+                    fugue_icon='fugue-money-coin',
+                    name='back_office',
+                    href='/pricing/all-ventures/',
+                ),
+            )
+        return mainmenu
 
 
 class DataCenterMixin(AssetsMixin):
@@ -184,8 +192,19 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('Support void_reporting', field='support_void_reporting',
           export=True),
         _('Niw', field='niw', foreign_field_name='', export=True),
-        _('Deprecation rate', field='deprecation_rate', foreign_field_name='', export=True),
+        _(
+            'Ralph ID',
+            field='device_info',
+            foreign_field_name='ralph_device_id',
+            export=True
+        ),
         _('Type', field='type', export=True),
+        _(
+            'Deprecation rate',
+            field='deprecation_rate',
+            foreign_field_name='', export=True,
+        ),
+
     ]
 
     def handle_search_data(self):
@@ -202,6 +221,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'deleted',
             'manufacturer',
             'barcode',
+            'device_info',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -352,15 +372,46 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
     template_name = 'assets/search_asset.html'
     _ = DataTableColumnAssets
     columns_nested = [
-        _('Ralph device id', field='ralph_device_id',
-          foreign_field_name='device_info', export=True),
-        _('Size', field='size', foreign_field_name='device_info', export=True),
-
-        _('Rack', field='rack', foreign_field_name='device_info', export=True),
-        _('U level', field='u_level', foreign_field_name='device_info', export=True),
-        _('U height', field='u_height', foreign_field_name='device_info', export=True),
-
-
+        _(
+            'asset id',
+            field='id',
+            export=True,
+        ),
+        _(
+            'Ralph device id',
+            field='ralph_device_id',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'Size',
+            field='size',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'Rack',
+            field='rack',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'U level',
+            field='u_level',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'U height',
+            field='u_height',
+            foreign_field_name='device_info',
+            export=True,
+        ),
+        _(
+            'modified',
+            field='modified',
+            export=True,
+        ),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -400,8 +451,11 @@ def _get_return_link(request):
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
     device_info = DeviceInfo()
-    if mode == 'data_center':
+    if mode == 'dc':
         device_info.size = device_info_data['size']
+        device_info.ralph_device_id = device_info_data['ralph_device_id']
+        device_info.u_level = device_info_data['u_level']
+        device_info.u_height = device_info_data['u_height']
     device_info.save(user=creator_profile.user)
     asset = Asset(
         device_info=device_info,
@@ -409,8 +463,6 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
         created_by=creator_profile,
         **asset_data
     )
-    if asset.type == AssetType.data_center.id and CONNECT_ASSET_WITH_DEVICE:
-        asset.create_stock_device()
     if barcode:
         asset.barcode = barcode
     asset.save(user=creator_profile.user)
@@ -576,8 +628,10 @@ class DataCenterAddPart(AddPart, DataCenterMixin):
 
 @transaction.commit_on_success
 def _update_asset(modifier_profile, asset, asset_updated_data):
-    if ('barcode' not in asset_updated_data or
-        not asset_updated_data['barcode']):
+    if (
+        'barcode' not in asset_updated_data or
+        not asset_updated_data['barcode']
+    ):
         asset_updated_data['barcode'] = None
     asset_updated_data.update({'modified_by': modifier_profile})
     asset.__dict__.update(**asset_updated_data)
@@ -647,6 +701,7 @@ class EditDevice(Base):
             'status_history': status_history,
             'parts': self.parts,
             'asset': self.asset,
+            'history_link': self.get_history_link(),
         })
         return ret
 
@@ -710,11 +765,14 @@ class EditDevice(Base):
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
             if self.asset.type in AssetType.BO.choices:
-                self.office_info_form = OfficeForm(request, self.request.FILES)
+                self.office_info_form = OfficeForm(
+                    post_data, self.request.FILES,
+                )
             if all((
                 self.asset_form.is_valid(),
                 self.device_info_form.is_valid(),
-                self.asset.type not in AssetType.BO.choices or self.office_info_form.is_valid()
+                self.asset.type not in AssetType.BO.choices or
+                self.office_info_form.is_valid()
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
@@ -737,8 +795,19 @@ class EditDevice(Base):
                 )
             else:
                 messages.error(self.request, _("Please correct the errors."))
-                messages.error(self.request, self.asset_form.non_field_errors())
+                messages.error(
+                    self.request, self.asset_form.non_field_errors(),
+                )
         return super(EditDevice, self).get(*args, **kwargs)
+
+    def get_history_link(self):
+        mode = _get_mode(self.request)
+        asset_id = self.asset.id
+        if mode == 'dc':
+            url = reverse('dc_device_history', args=[asset_id, ])
+        elif mode == 'back_office':
+            url = reverse('back_office_device_history', args=[asset_id, ])
+        return url
 
 
 class BackOfficeEditDevice(EditDevice, BackOfficeMixin):
@@ -764,31 +833,35 @@ class EditPart(Base):
             'form_id': 'edit_part_form',
             'edit_mode': True,
             'status_history': status_history,
+            'history_link': self.get_history_link(),
+            'parent_link': self.get_parent_link(),
         })
         return ret
 
     def get(self, *args, **kwargs):
-        asset = get_object_or_404(
+        self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if asset.device_info:  # it isn't part asset
+        if self.asset.device_info:  # it isn't part asset
             raise Http404()
         mode = _get_mode(self.request)
-        self.asset_form = EditPartForm(instance=asset, mode=mode)
-        self.office_info_form = OfficeForm(instance=asset.office_info)
-        self.part_info_form = BasePartForm(instance=asset.part_info, mode=mode)
+        self.asset_form = EditPartForm(instance=self.asset, mode=mode)
+        self.office_info_form = OfficeForm(instance=self.asset.office_info)
+        self.part_info_form = BasePartForm(
+            instance=self.asset.part_info, mode=mode,
+        )
         return super(EditPart, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        asset = get_object_or_404(
+        self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
         self.asset_form = EditPartForm(
             self.request.POST,
-            instance=asset,
+            instance=self.asset,
             mode=mode
         )
         self.office_info_form = OfficeForm(
@@ -800,28 +873,48 @@ class EditPart(Base):
             self.part_info_form.is_valid()
         )):
             modifier_profile = self.request.user.get_profile()
-            asset = _update_asset(
-                modifier_profile, asset,
+            self.asset = _update_asset(
+                modifier_profile, self.asset,
                 self.asset_form.cleaned_data
             )
-            asset = _update_office_info(
-                modifier_profile.user, asset,
+            self.asset = _update_office_info(
+                modifier_profile.user, self.asset,
                 self.office_info_form.cleaned_data
             )
-            asset = _update_part_info(
-                modifier_profile.user, asset,
+            self.asset = _update_part_info(
+                modifier_profile.user, self.asset,
                 self.part_info_form.cleaned_data
             )
-            asset.save(user=self.request.user)
+            self.asset.save(user=self.request.user)
             messages.success(self.request, _("Part of asset was edited."))
             cat = self.request.path.split('/')[2]
             return HttpResponseRedirect(
-                '/assets/%s/edit/part/%s/' % (cat, asset.id)
+                '/assets/%s/edit/part/%s/' % (cat, self.asset.id)
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
             messages.error(self.request, self.asset_form.non_field_errors())
         return super(EditPart, self).get(*args, **kwargs)
+
+    def get_parent_link(self):
+        mode = _get_mode(self.request)
+        asset = self.asset.part_info.source_device
+        url = ''
+        if asset:
+            if mode == 'dc':
+                url = reverse('dc_device_edit', args=[asset.id, ])
+            elif mode == 'back_office':
+                url = reverse('back_office_device_edit', args=[asset.id, ])
+        return url
+
+    def get_history_link(self):
+        mode = _get_mode(self.request)
+        asset_id = self.asset.id
+        if mode == 'dc':
+            url = reverse('dc_part_history', args=[asset_id, ])
+        elif mode == 'back_office':
+            url = reverse('back_office_part_history', args=[asset_id, ])
+        return url
 
 
 class BackOfficeEditPart(EditPart, BackOfficeMixin):
@@ -926,20 +1019,22 @@ class BulkEdit(Base):
 
 class BackOfficeBulkEdit(BulkEdit, BackOfficeMixin):
     sidebar_selected = None
+
     def get_context_data(self, **kwargs):
         ret = super(BackOfficeBulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'mode' : 'BO',
+            'mode': 'BO',
         })
         return ret
 
 
 class DataCenterBulkEdit(BulkEdit, DataCenterMixin):
     sidebar_selected = None
+
     def get_context_data(self, **kwargs):
         ret = super(DataCenterBulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'mode' : 'DC',
+            'mode': 'DC',
         })
         return ret
 
@@ -970,11 +1065,12 @@ class DeleteAsset(AssetsMixin):
                         "or unassign them from device first. ".format(
                             self.asset,
                             ", ".join([str(part.asset) for part in parts])
-                        )
-                    )
+                        ))
                 )
                 return HttpResponseRedirect(
-                    '{}{}{}'.format(self.back_to, 'edit/device/', self.asset.id)
+                    '{}{}{}'.format(
+                        self.back_to, 'edit/device/', self.asset.id,
+                    )
                 )
             # changed from softdelete to real-delete, because of
             # key-constraints issues (sn/barcode) - to be resolved.
@@ -1001,13 +1097,23 @@ class DataCenterSplitDevice(DataCenterMixin):
 
     def get(self, *args, **kwargs):
         self.asset_id = self.kwargs.get('asset_id')
-        self.asset = Asset.objects.get(id=self.asset_id)
+        self.asset = get_object_or_404(Asset, id=self.asset_id)
         if self.asset.has_parts():
             messages.error(self.request, _("This asset was splited."))
             return HttpResponseRedirect(
-                reverse('dc_device_edit', args=[self.asset.id,])
+                reverse('dc_device_edit', args=[self.asset.id, ])
             )
-        initial = self.get_proposed_components()
+        if self.asset.device_info.ralph_device_id:
+            initial = self.get_proposed_components()
+        else:
+            initial = []
+            messages.error(
+                self.request,
+                _(
+                    'Asset not linked with ralph device, proposed components '
+                    'not available'
+                ),
+            )
         extra = 0 if initial else 1
         AssetFormSet = formset_factory(form=SplitDevice, extra=extra)
         self.asset_formset = AssetFormSet(initial=initial)
@@ -1069,7 +1175,9 @@ class DataCenterSplitDevice(DataCenterMixin):
             value = instance[name].value().strip()
             if value in duplicates_items:
                 if name in instance.errors:
-                    instance.errors[name].append('This %s is duplicated' % name)
+                    instance.errors[name].append(
+                        'This %s is duplicated' % name
+                    )
                 else:
                     instance.errors[name] = ['This %s is duplicated' % name]
         if duplicates_items:
@@ -1100,7 +1208,9 @@ class DataCenterSplitDevice(DataCenterMixin):
 
     def get_proposed_components(self):
         try:
-            components = list(get_device_components(sn=self.asset.sn))
+            components = list(get_device_components(
+                ralph_device_id=self.asset.device_info.ralph_device_id
+            ))
         except LookupError:
             components = []
         return components
