@@ -88,6 +88,25 @@ class RalphDeviceLookup(LookupChannel):
         """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
 
 
+class AssetLookup(LookupChannel):
+    model = Asset
+
+    def get_query(self, q, request):
+        return Asset.objects.filter(
+            Q(barcode__icontains=q) |
+            Q(sn__icontains=q)
+        ).order_by('sn', 'barcode')[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return '{}'.format(escape(obj.name))
+
+
 class AssetModelLookup(LookupChannel):
     model = AssetModel
 
