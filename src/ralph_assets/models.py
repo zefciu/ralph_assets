@@ -98,13 +98,13 @@ class AssetLookup(LookupChannel):
         ).order_by('sn', 'barcode')[:10]
 
     def get_result(self, obj):
-        return obj.name
+        return obj.id
 
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return '{}'.format(escape(obj.name))
+        return '{}'.format(escape(repr(obj)))
 
 
 class AssetModelLookup(LookupChannel):
