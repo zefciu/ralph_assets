@@ -104,7 +104,7 @@ class AssetLookup(LookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return '{}'.format(escape(repr(obj)))
+        return '{}'.format(escape(unicode(obj)))
 
 
 class AssetModelLookup(LookupChannel):
