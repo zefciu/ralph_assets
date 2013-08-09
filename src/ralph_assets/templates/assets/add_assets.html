@@ -11,7 +11,7 @@
     <div class="span6 well">
       {% for field in asset_form %}{% if field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
       <div class="control-group{% if field.errors %} error{% endif %}">
-        <label class="control-label">{{ field.label }}</label>
+        <label class="control-label {% if field.field.required %}required{% endif %}">{{ field.label }}</label>
         <div class="form-field controls">
           {{ field }}
           {% if field.errors %}
