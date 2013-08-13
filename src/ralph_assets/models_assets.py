@@ -9,27 +9,29 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-
 import datetime
+
 from dateutil.relativedelta import relativedelta
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from lck.django.choices import Choices
 from lck.django.common.models import (
     EditorTrackable,
     Named,
     SoftDeletable,
     TimeTrackable,
-    ViewableSoftDeletableManager
+    WithConcurrentGetOrCreate,
+    ViewableSoftDeletableManager,
 )
-from lck.django.choices import Choices
+
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from uuid import uuid4
 
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
-from lck.django.common.models import WithConcurrentGetOrCreate
 
 
 SAVE_PRIORITY = 0
@@ -297,8 +299,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 venture=venture,
                 name='Unknown',
             )
-        self.device_info.ralph_device_id = device
-        self.device_info.save()
+        if self.device_info:
+            self.device_info.ralph_device_id = device
+            self.device_info.save()
 
     def get_parts_info(self):
         return PartInfo.objects.filter(device=self)
