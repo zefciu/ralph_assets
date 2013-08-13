@@ -11,15 +11,13 @@ Change Log
 
 Released on August 08, 2013
 
-* Added ajax lookup for Asset by barcode and/or sn
+* Added ajax autocomlation for Asset by barcode and/or sn.
 
-* Disable admin delete for Asset
+* Disabled admin deletetion for Assets.
 
-* Added link to ralph_pricing
+* Added link to the Pricing App.
 
-* Enlargement search
-
-* Increasing version to Ralph version
+* Added field: last modification, asset_id to csv file.
 
 1.0.0
 ~~~~~
