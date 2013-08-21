@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
 from django.db.models import Q
 from django.db.transaction import commit_on_success
 
@@ -43,7 +42,7 @@ def get_asset(device_id):
         'asset_id': asset.id,
         'model': asset.model.name,
         'manufacturer': asset.model.manufacturer.name,
-        'source': str(AssetSource.from_id(asset.source)),
+        'source': unicode(AssetSource.from_id(asset.source)),
         'invoice_no': asset.invoice_no,
         'order_no': asset.order_no,
         'invoice_date': asset.invoice_date,
@@ -55,7 +54,7 @@ def get_asset(device_id):
         'support_type': asset.support_type,
         'support_void_reporting': asset.support_void_reporting,
         'provider': asset.provider,
-        'status': str(AssetStatus.from_id(asset.status)),
+        'status': unicode(AssetStatus.from_id(asset.status)),
         'remarks': asset.remarks,
         'niw': asset.niw,
         'warehouse': asset.warehouse.name,
@@ -79,7 +78,7 @@ def is_asset_assigned(asset_id, exclude_devices=[]):
     return Asset.objects.exclude(
         device_info__ralph_device_id__in=exclude_devices,
     ).filter(
-        id=asset_id,
+        pk=asset_id,
         device_info__ralph_device_id__isnull=False,
     ).exists()
 
