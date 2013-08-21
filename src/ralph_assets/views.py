@@ -222,6 +222,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'manufacturer',
             'barcode',
             'device_info',
+            'source',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -499,7 +500,6 @@ class AddDevice(Base):
                 if f_name in ["barcode", "sn"]:
                     continue
                 asset_data[f_name] = f_value
-            asset_data['source'] = AssetSource.shipment
             serial_numbers = self.asset_form.cleaned_data['sn']
             barcodes = self.asset_form.cleaned_data['barcode']
             ids = []
@@ -589,7 +589,6 @@ class AddPart(Base):
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
-            asset_data['source'] = AssetSource.shipment
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']

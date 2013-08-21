@@ -37,6 +37,7 @@ class AssetAdmin(ModelAdmin):
         'model',
         'status',
         'warehouse',
+        'source',
         'invoice_no',
         'order_no',
         'price',

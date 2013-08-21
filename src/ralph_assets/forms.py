@@ -29,6 +29,7 @@ from ralph_assets.models import (
     Asset,
     AssetCategory,
     AssetCategoryType,
+    AssetSource,
     AssetStatus,
     AssetType,
     DeviceInfo,
@@ -130,6 +131,9 @@ class BulkEditAssetForm(ModelForm):
             'device_info': HiddenInput(),
         }
     barcode = BarcodeField(max_length=200, required=False)
+    source = ChoiceField(
+        choices=AssetSource(),
+    )
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
@@ -289,6 +293,7 @@ class BaseAddAssetForm(ModelForm):
             'model',
             'status',
             'warehouse',
+            'source',
             'invoice_no',
             'order_no',
             'price',
@@ -334,6 +339,9 @@ class BaseAddAssetForm(ModelForm):
         level_indicator='|---',
         empty_label="---",
     )
+    source = ChoiceField(
+        choices=AssetSource(),
+    )
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.get('mode')
@@ -374,6 +382,7 @@ class BaseEditAssetForm(ModelForm):
             'model',
             'status',
             'warehouse',
+            'source',
             'invoice_no',
             'order_no',
             'price',
@@ -423,6 +432,9 @@ class BaseEditAssetForm(ModelForm):
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
         empty_label="---",
+    )
+    source = ChoiceField(
+        choices=AssetSource(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -601,6 +613,10 @@ class SearchAssetForm(Form):
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
         empty_label="---",
+    )
+    source = ChoiceField(
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     niw = CharField(required=False, label='Niw')
     sn = CharField(required=False, label='SN')
