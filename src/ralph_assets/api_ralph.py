@@ -5,7 +5,33 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ralph_assets.models_assets import Asset, AssetSource, AssetStatus
+
+from django.db.models import Q
+from django.db.transaction import commit_on_success
+
+from ralph_assets.models import (
+    Asset,
+    AssetSource,
+    AssetStatus,
+    DCDeviceLookup,
+)
+
+
+class UnassignedDCDeviceLookup(DCDeviceLookup):
+    def get_query(self, q, request):
+        query = Q(
+            Q(device_info__gt=0) &
+            Q(
+                Q(device_info__ralph_device_id__isnull=True) |
+                Q(device_info__ralph_device_id=0)
+            ) &
+            Q(
+                Q(barcode__istartswith=q) |
+                Q(sn__istartswith=q) |
+                Q(model__name__icontains=q)
+            )
+        )
+        return self.get_base_objects().filter(query).order_by('sn')[:10]
 
 
 def get_asset(device_id):
@@ -47,4 +73,36 @@ def get_asset(device_id):
         'u_height': asset.device_info.u_height,
         'rack': asset.device_info.rack,
     }
+
+
+def is_asset_assigned(asset_id, exclude_devices=[]):
+    return Asset.objects.exclude(
+        device_info__ralph_device_id__in=exclude_devices,
+    ).filter(
+        id=asset_id,
+        device_info__ralph_device_id__isnull=False,
+    ).exists()
+
+
+@commit_on_success
+def assign_asset(device, asset):
+    try:
+        previous_asset = Asset.objects.get(
+            device_info__ralph_device_id=device.id,
+        )
+    except Asset.DoesNotExist:
+        pass
+    else:
+        previous_asset.device_info.ralph_device_id = None
+        previous_asset.device_info.save()
+    asset.device_info.ralph_device_id = device.id
+    asset.device_info.save()
+
+
+__all__ = [
+    'assign_asset',
+    'get_asset',
+    'is_asset_assigned',
+    'UnassignedDCDeviceLookup',
+]
 
