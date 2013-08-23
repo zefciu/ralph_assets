@@ -6,7 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.db.models import Q
-from django.db.transaction import commit_on_success
+from lck.django.common import nested_commit_on_success
 
 from ralph_assets.models import (
     Asset,
@@ -18,19 +18,19 @@ from ralph_assets.models import (
 
 class UnassignedDCDeviceLookup(DCDeviceLookup):
     def get_query(self, q, request):
-        query = Q(
-            Q(device_info__gt=0) &
-            Q(
+        query = (
+            Q(device_info__gt=0) & (
                 Q(device_info__ralph_device_id__isnull=True) |
                 Q(device_info__ralph_device_id=0)
-            ) &
-            Q(
+            ) & (
                 Q(barcode__istartswith=q) |
                 Q(sn__istartswith=q) |
                 Q(model__name__icontains=q)
             )
         )
-        return self.get_base_objects().filter(query).order_by('sn')[:10]
+        return self.get_base_objects().filter(
+            query,
+        ).distinct().order_by('sn')[:10]
 
 
 def get_asset(device_id):
@@ -42,7 +42,7 @@ def get_asset(device_id):
         'asset_id': asset.id,
         'model': asset.model.name,
         'manufacturer': asset.model.manufacturer.name,
-        'source': unicode(AssetSource.from_id(asset.source)),
+        'source': AssetSource.from_id(asset.source).raw,
         'invoice_no': asset.invoice_no,
         'order_no': asset.order_no,
         'invoice_date': asset.invoice_date,
@@ -54,7 +54,7 @@ def get_asset(device_id):
         'support_type': asset.support_type,
         'support_void_reporting': asset.support_void_reporting,
         'provider': asset.provider,
-        'status': unicode(AssetStatus.from_id(asset.status)),
+        'status': AssetStatus.from_id(asset.status).raw,
         'remarks': asset.remarks,
         'niw': asset.niw,
         'warehouse': asset.warehouse.name,
@@ -79,23 +79,29 @@ def is_asset_assigned(asset_id, exclude_devices=[]):
         device_info__ralph_device_id__in=exclude_devices,
     ).filter(
         pk=asset_id,
-        device_info__ralph_device_id__isnull=False,
+        device_info__ralph_device_id__gt=0,
     ).exists()
 
 
-@commit_on_success
-def assign_asset(device, asset):
+@nested_commit_on_success
+def assign_asset(device_id, asset_id=None):
     try:
         previous_asset = Asset.objects.get(
-            device_info__ralph_device_id=device.id,
+            device_info__ralph_device_id=device_id,
         )
     except Asset.DoesNotExist:
         pass
     else:
         previous_asset.device_info.ralph_device_id = None
         previous_asset.device_info.save()
-    asset.device_info.ralph_device_id = device.id
-    asset.device_info.save()
+    if asset_id:
+        try:
+            new_asset = Asset.objects.get(pk=asset_id)
+        except Asset.DoesNotExist:
+            return False
+        new_asset.device_info.ralph_device_id = device_id
+        new_asset.device_info.save()
+    return True
 
 
 __all__ = [
