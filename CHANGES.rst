@@ -1,6 +1,11 @@
 Change Log
 ----------
 
+1.2.7
+~~~~~
+
+* Added API for Ralph
+
 1.2.6
 ~~~~~
 
