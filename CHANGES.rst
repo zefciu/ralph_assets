@@ -4,7 +4,9 @@ Change Log
 1.2.7
 ~~~~~
 
-* Added API for Ralph
+* Added API for Ralph.
+
+* Required form fields are now labelled accordingly.
 
 1.2.6
 ~~~~~
