@@ -101,7 +101,6 @@ def asset_get_or_create_ralph_post_save(
         instance.create_stock_device()
 
 
-
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
 def device_info_post_save(sender, instance, raw, using, **kwargs):
     """A hook for creating ``HistoryChange`` entries

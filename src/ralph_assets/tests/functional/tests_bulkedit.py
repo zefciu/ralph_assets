@@ -81,12 +81,15 @@ class TestBulkEdit(TestCase):
             'form-1-source': AssetSource.shipment.id,
         }
 
-        post = self.client.post(url, post_data)
+        response = self.client.post(url, post_data, follow=True)
+
+        # Find success message
+        self.assertTrue('Changes saved.' in response.content)
 
         # if everything is ok, server return response code = 302, and
         # redirect us to /assets/dc/search given response code 200
         self.assertRedirects(
-            post,
+            response,
             url,
             status_code=302,
             target_status_code=200,
@@ -129,6 +132,3 @@ class TestBulkEdit(TestCase):
                     unicode(getattr(fields[counter], key)), unicode(data[key])
                 )
             counter += 1
-
-        # Find success message
-        self.assertTrue('Changes saved.' in post.content)

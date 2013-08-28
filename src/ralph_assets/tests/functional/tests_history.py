@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.test import TestCase
-from mock import patch
 
 from ralph_assets.models_assets import (
     AssetManufacturer,
@@ -58,6 +57,7 @@ class HistoryAssetsView(TestCase):
             'slots': 1.0,
             'ralph_device_id': '',
             'asset': True,  # Button name
+            'source': 1,
         }
         self.asset_change_params = {
             'barcode': '777777',
@@ -147,10 +147,10 @@ class ConnectAssetWithDevice(TestCase):
             'slots': 0,
             'ralph_device_id': '',
             'asset': True,  # Button name
+            'source': 1,
         }
         self.asset = None
 
-    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', True)
     def test_add_dc_device_asset_with_create_device(self):
         """Test check situation, when Asset is created and
         the device is created with Asset serial_number
@@ -168,7 +168,6 @@ class ConnectAssetWithDevice(TestCase):
         self.assertEqual(device.sn, '777-777')
         self.assertEqual(device.venture.name, 'Stock')
 
-    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', True)
     def test_add_dc_device_asset_with_linked_device(self):
         """Test check situation, when Asset is created and device already
         exist with the same serial number as the Asset, then creates
@@ -184,7 +183,6 @@ class ConnectAssetWithDevice(TestCase):
         device = Device.objects.get(id=asset.device_info.ralph_device_id)
         self.assertEqual(device.id, asset.device_info.ralph_device_id)
 
-    @patch('ralph_assets.views.CONNECT_ASSET_WITH_DEVICE', False)
     def test_add_dc_device_asset_without_create_device(self):
         """Test check situation, when link beetwen the asset and the device
         is not created. This situation occurs when
@@ -230,6 +228,7 @@ class TestsStockDevice(TestCase):
             'sn': 'fake-sn',
             'ralph_device_id': '',
             'asset': True,  # Button name
+            'source': 1,
         }
 
     def create_device(self):
