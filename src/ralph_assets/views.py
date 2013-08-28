@@ -37,7 +37,6 @@ from ralph_assets.models import (
     Asset,
     AssetModel,
     AssetCategory,
-    AssetSource,
     DeviceInfo,
     OfficeInfo,
     PartInfo,

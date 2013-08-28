@@ -29,6 +29,7 @@ class WarehouseAdmin(ModelAdmin):
 
 admin.site.register(Warehouse, WarehouseAdmin)
 
+
 class AssetAdmin(ModelAdmin):
     fields = (
         'sn',

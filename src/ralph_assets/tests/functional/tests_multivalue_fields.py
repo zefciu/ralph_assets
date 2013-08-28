@@ -50,6 +50,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -67,6 +68,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -84,6 +86,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -101,6 +104,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -118,6 +122,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -136,6 +141,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -154,6 +160,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -172,6 +179,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -190,6 +198,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -208,6 +217,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -226,6 +236,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -244,6 +255,7 @@ class TestMultivalueFields(TestCase):
                 category=self.category.id,
                 ralph_device_id='',
                 asset=True,
+                source=1,
             ),
         ]
         # Add form testing

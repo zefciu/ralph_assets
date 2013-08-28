@@ -110,4 +110,3 @@ __all__ = [
     'is_asset_assigned',
     'UnassignedDCDeviceLookup',
 ]
-
