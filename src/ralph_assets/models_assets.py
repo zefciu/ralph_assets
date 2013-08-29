@@ -120,6 +120,10 @@ class AssetCategory(
     class MPTTMeta:
         order_insertion_by = ['name']
 
+    class Meta:
+        verbose_name = _("Asset category")
+        verbose_name_plural = _("Asset categories")
+
     def __unicode__(self):
         return self.name
 
