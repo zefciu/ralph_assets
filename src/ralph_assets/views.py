@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import re
+
 from collections import Counter
 
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -50,6 +52,8 @@ from ralph.util.api_assets import get_device_components
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
+
+quotation_marks = re.compile(r"^\".+\"$")
 
 
 class AssetsMixin(Base):
@@ -228,13 +232,22 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         for field in search_fields:
             field_value = self.request.GET.get(field)
             if field_value:
+                exact = False
+                # if search term is enclosed in "", we want exact matches
+                if isinstance(field_value, basestring) and \
+                        quotation_marks.search(field_value):
+                    exact = True
+                    field_value = field_value[1:-1]
                 if field == 'part_info':
                     if field_value == 'device':
                         all_q &= Q(part_info__isnull=True)
                     elif field_value == 'part':
                         all_q &= Q(part_info__gte=0)
                 elif field == 'model':
-                    all_q &= Q(model__name__startswith=field_value)
+                    if exact:
+                        all_q &= Q(model__name=field_value)
+                    else:
+                        all_q &= Q(model__name__icontains=field_value)
                 elif field == 'category':
                     part = self.get_search_category_part(field_value)
                     if part:
@@ -243,7 +256,42 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                     if field_value.lower() == 'on':
                         all_q &= Q(deleted__in=(True, False))
                 elif field == 'manufacturer':
-                    all_q &= Q(model__manufacturer__name=field_value)
+                    if exact:
+                        all_q &= Q(model__manufacturer__name=field_value)
+                    else:
+                        all_q &= Q(
+                            model__manufacturer__name__icontains=field_value
+                        )
+                elif field == 'barcode':
+                    if exact:
+                        all_q &= Q(barcode=field_value)
+                    else:
+                        all_q &= Q(barcode__contains=field_value)
+                elif field == 'sn':
+                    if exact:
+                        all_q &= Q(sn=field_value)
+                    else:
+                        all_q &= Q(sn__icontains=field_value)
+                elif field == 'niw':
+                    if exact:
+                        all_q &= Q(niw=field_value)
+                    else:
+                        all_q &= Q(niw__icontains=field_value)
+                elif field == 'provider':
+                    if exact:
+                        all_q &= Q(provider=field_value)
+                    else:
+                        all_q &= Q(provider__icontains=field_value)
+                elif field == 'order_no':
+                    if exact:
+                        all_q &= Q(order_no=field_value)
+                    else:
+                        all_q &= Q(order_no__icontains=field_value)
+                elif field == 'invoice_no':
+                    if exact:
+                        all_q &= Q(invoice_no=field_value)
+                    else:
+                        all_q &= Q(invoice_no__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

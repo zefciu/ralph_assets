@@ -591,10 +591,12 @@ class SearchAssetForm(Form):
     model = AutoCompleteField(
         LOOKUPS['asset_model'],
         required=False,
+        help_text=None,
     )
     manufacturer = AutoCompleteField(
         LOOKUPS['asset_manufacturer'],
         required=False,
+        help_text=None,
     )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
