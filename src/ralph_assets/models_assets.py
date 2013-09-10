@@ -27,6 +27,8 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
@@ -369,6 +371,22 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(DeviceInfo, self).__init__(*args, **kwargs)
+
+
+@receiver(post_save, sender=Device, dispatch_uid='ralph_assets.device_delete')
+def device_post_save(sender, instance, **kwargs):
+    """
+    A hook for cleaning ``ralph_device_id`` in ``DeviceInfo`` when device
+    linked to it gets soft-deleted (hence post-save signal instead of
+    pre-delete or post-delete).
+    """
+    if instance.deleted:
+        try:
+            di = DeviceInfo.objects.get(ralph_device_id=instance.id)
+            di.ralph_device_id = None
+            di.save()
+        except DeviceInfo.DoesNotExist:
+            pass
 
 
 class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
