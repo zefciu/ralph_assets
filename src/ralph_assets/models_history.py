@@ -85,17 +85,22 @@ def create_asset_post_save(sender, instance, created, **kwargs):
     """
     if instance.type == AssetType.data_center and created is True:
         try:
-            ralph_device_sn = Device.objects.get(sn=instance.sn)
-        except Device.DoesNotExist:
-            pass
-        else:
-            device_info, create = DeviceInfo.objects.get_or_create(
-                id=instance.device_info.id,
-            )
-            device_info.ralph_device_id = ralph_device_sn.id
-            device_info.save()
-            return True
-        instance.create_stock_device()
+            ralph_device_id = instance.device_info.ralph_device_id
+        except AttributeError:
+            ralph_device_id = None
+        if not ralph_device_id:
+            try:
+                ralph_device_sn = Device.objects.get(sn=instance.sn)
+            except Device.DoesNotExist:
+                pass
+            else:
+                device_info, create = DeviceInfo.objects.get_or_create(
+                    id=instance.device_info.id,
+                )
+                device_info.ralph_device_id = ralph_device_sn.id
+                device_info.save()
+                return True
+            instance.create_stock_device()
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
