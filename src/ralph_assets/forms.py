@@ -10,15 +10,16 @@ import re
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
 from django.forms import (
+    BooleanField,
     CharField,
     ChoiceField,
     DateField,
     Form,
     IntegerField,
     ModelForm,
+    TextInput,
     ValidationError,
 )
-from django import forms
 from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
@@ -50,7 +51,7 @@ LOOKUPS = {
 }
 
 
-class CodeWidget(forms.TextInput):
+class CodeWidget(TextInput):
     def render(self, name, value, attrs=None, choices=()):
         formatted = escape(value) if value else ''
         return mark_safe('''
@@ -169,7 +170,10 @@ class DeviceForm(ModelForm):
             'u_level',
             'u_height',
             'ralph_device_id',
+            'force_unlink',
         )
+
+    force_unlink = BooleanField(required=False, label="Force unlink")
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.pop('mode')
@@ -179,7 +183,6 @@ class DeviceForm(ModelForm):
             required=False,
             help_text='Enter ralph id, barcode, sn, or model.',
         )
-
         if mode == 'back_office':
             del self.fields['size']
 
@@ -193,6 +196,33 @@ class DeviceForm(ModelForm):
                 _("Invalid size, use range 0 to 65535")
             )
         return size
+
+    def clean(self):
+        ralph_device_id = self.cleaned_data.get('ralph_device_id')
+        force_unlink = self.cleaned_data.get('force_unlink')
+        if ralph_device_id:
+            q = None
+            try:
+                q = self.instance.__class__.objects.get(
+                    ralph_device_id=ralph_device_id
+                )
+            except DeviceInfo.DoesNotExist:
+                pass
+            if q:
+                # if we want to assign ralph_device_id that belongs to another
+                # Asset/DeviceInfo...
+                if str(q.ralph_device_id) == ralph_device_id and \
+                        q.id != self.instance.id:
+                    if force_unlink:
+                        q.ralph_device_id = None
+                        q.save()
+                    else:
+                        self._errors["ralph_device_id"] = self.error_class([
+                            _("Device with this Ralph device id already exist."
+                              "Please tick 'force unlink' checkbox if you want"
+                              " to unlink it.")
+                        ])
+        return self.cleaned_data
 
 
 class BasePartForm(ModelForm):
@@ -695,7 +725,8 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='')
-    deleted = forms.BooleanField(required=False, label="Include deleted")
+    unlinked = BooleanField(required=False, label="Is unlinked")
+    deleted = BooleanField(required=False, label="Include deleted")
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -737,9 +768,9 @@ class SplitDevice(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
-    delete = forms.BooleanField(required=False)
-    model_user = forms.CharField()
-    model_proposed = forms.CharField(required=False)
+    delete = BooleanField(required=False)
+    model_user = CharField()
+    model_proposed = CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(SplitDevice, self).__init__(*args, **kwargs)

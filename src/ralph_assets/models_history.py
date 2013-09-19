@@ -78,15 +78,12 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
         ).save()
 
 
-@receiver(post_save, sender=Asset, dispatch_uid='ralph.get_or_create_ralph')
-def asset_get_or_create_ralph_post_save(
-    sender, instance, raw, using, **kwargs
-):
-    try:
-        ralph_device_id = instance.device_info.ralph_device_id
-    except AttributeError:
-        ralph_device_id = None
-    if instance.type == AssetType.data_center and not ralph_device_id:
+@receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
+def create_asset_post_save(sender, instance, created, **kwargs):
+    """When a new DC asset is created, try to match it with
+    an existing device or create a dummy device.
+    """
+    if instance.type == AssetType.data_center and created is True:
         try:
             ralph_device_sn = Device.objects.get(sn=instance.sn)
         except Device.DoesNotExist:
