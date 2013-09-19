@@ -38,10 +38,13 @@ def get_asset(device_id):
         asset = Asset.objects.get(device_info__ralph_device_id=device_id)
     except Asset.DoesNotExist:
         return
+    manufacturer_name = ''
+    if asset.model.manufacturer:
+        manufacturer_name = asset.model.manufacturer.name
     return {
         'asset_id': asset.id,
         'model': asset.model.name,
-        'manufacturer': asset.model.manufacturer.name,
+        'manufacturer': manufacturer_name,
         'source': AssetSource.from_id(asset.source).raw,
         'invoice_no': asset.invoice_no,
         'order_no': asset.order_no,
