@@ -83,11 +83,12 @@ def create_asset_post_save(sender, instance, created, **kwargs):
     """When a new DC asset is created, try to match it with
     an existing device or create a dummy device.
     """
-    if instance.type == AssetType.data_center and created is True:
+    if created and instance.type == AssetType.data_center:
+        ralph_device_id = None
         try:
             ralph_device_id = instance.device_info.ralph_device_id
         except AttributeError:
-            ralph_device_id = None
+            pass
         if not ralph_device_id:
             try:
                 ralph_device_sn = Device.objects.get(sn=instance.sn)

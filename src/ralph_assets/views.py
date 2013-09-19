@@ -293,8 +293,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
-                elif field == 'unlinked':
-                    if field_value.lower() == 'on':
+                elif field == 'unlinked' and field_value.lower() == 'on':
                         all_q &= ~Q(device_info=None)
                         all_q &= Q(device_info__ralph_device_id=None)
                 else:

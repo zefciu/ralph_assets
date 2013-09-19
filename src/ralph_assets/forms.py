@@ -172,7 +172,6 @@ class DeviceForm(ModelForm):
             'ralph_device_id',
             'force_unlink',
         )
-
     force_unlink = BooleanField(required=False, label="Force unlink")
 
     def __init__(self, *args, **kwargs):
@@ -201,27 +200,29 @@ class DeviceForm(ModelForm):
         ralph_device_id = self.cleaned_data.get('ralph_device_id')
         force_unlink = self.cleaned_data.get('force_unlink')
         if ralph_device_id:
-            q = None
+            device_info = None
             try:
-                q = self.instance.__class__.objects.get(
+                device_info = self.instance.__class__.objects.get(
                     ralph_device_id=ralph_device_id
                 )
             except DeviceInfo.DoesNotExist:
                 pass
-            if q:
+            if device_info:
                 # if we want to assign ralph_device_id that belongs to another
                 # Asset/DeviceInfo...
-                if str(q.ralph_device_id) == ralph_device_id and \
-                        q.id != self.instance.id:
+                if (str(device_info.ralph_device_id) == ralph_device_id and
+                        device_info.id != self.instance.id):
                     if force_unlink:
-                        q.ralph_device_id = None
-                        q.save()
+                        device_info.ralph_device_id = None
+                        device_info.save()
                     else:
-                        self._errors["ralph_device_id"] = self.error_class([
-                            _("Device with this Ralph device id already exist."
-                              "Please tick 'force unlink' checkbox if you want"
-                              " to unlink it.")
-                        ])
+                        self._errors["ralph_device_id"] = self.error_class(
+                            [
+                                _("Device with this Ralph device id already"
+                                   " exist. Please tick 'force unlink'"
+                                   " checkbox if you want to unlink it.")
+                            ]
+                        )
         return self.cleaned_data
 
 
