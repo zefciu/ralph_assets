@@ -226,6 +226,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'barcode',
             'device_info',
             'source',
+            'deprecation_rate',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -292,6 +293,17 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'deprecation_rate':
+                    deprecation_rate_query_map = {
+                        'null': Q(deprecation_rate__isnull=True),
+                        'deprecated': Q(deprecation_rate=0),
+                        '6': Q(deprecation_rate__gt=0, deprecation_rate__lte=6),
+                        '12': Q(deprecation_rate__gt=6, deprecation_rate__lte=12),
+                        '24': Q(deprecation_rate__gt=12, deprecation_rate__lte=24),
+                        '48': Q(deprecation_rate__gt=24, deprecation_rate__lte=48),
+                        '48<': Q(deprecation_rate__gt=48),
+                    }
+                    all_q &= deprecation_rate_query_map[field_value] 
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
