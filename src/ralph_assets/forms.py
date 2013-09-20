@@ -697,6 +697,18 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='')
+    deprecation_rate = ChoiceField(
+        required=False, choices=[('', '----'),
+                                 ('null', 'None'),
+                                 ('48>', '48 <'),
+                                 ('48', '24 < * <= 48'),
+                                 ('24', '12 < * <= 24'),
+                                 ('12', '6 < * <= 12'),
+                                 ('6', '* <= 6'),
+                                 ('deprecated', 'Deprecated'),],
+        label='Deprecation'
+    )
+
     invoice_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
