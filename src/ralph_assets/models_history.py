@@ -13,14 +13,12 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
-from ralph.discovery.models_device import Device
 from ralph_assets.history import field_changes
 from ralph_assets.models_assets import (
     Asset,
     DeviceInfo,
     PartInfo,
     OfficeInfo,
-    AssetType,
 )
 
 
@@ -76,32 +74,6 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
             user=instance.saving_user,
             comment=instance.save_comment,
         ).save()
-
-
-@receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
-def create_asset_post_save(sender, instance, created, **kwargs):
-    """When a new DC asset is created, try to match it with
-    an existing device or create a dummy device.
-    """
-    if created and instance.type == AssetType.data_center:
-        ralph_device_id = None
-        try:
-            ralph_device_id = instance.device_info.ralph_device_id
-        except AttributeError:
-            pass
-        if not ralph_device_id:
-            try:
-                ralph_device_sn = Device.objects.get(sn=instance.sn)
-            except Device.DoesNotExist:
-                pass
-            else:
-                device_info, create = DeviceInfo.objects.get_or_create(
-                    id=instance.device_info.id,
-                )
-                device_info.ralph_device_id = ralph_device_sn.id
-                device_info.save()
-                return True
-            instance.create_stock_device()
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
