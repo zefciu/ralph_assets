@@ -281,16 +281,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             raise UserWarning('Unknown asset data type!')
 
     def create_stock_device(self):
-        if self.type != AssetType.data_center.id:
+        if not self.type == AssetType.data_center:
             return
-        try:
-            if self.sn:
-                device = Device.objects.get(sn=self.sn)
-            elif self.barcode:
-                device = Device.objects.get(barcode=self.barcode)
-            else:
-                raise UserWarning("No barcode and no sn")
-        except Device.DoesNotExist:
+        if not self.device_info.ralph_device_id:
             try:
                 venture = Venture.objects.get(name='Stock')
             except Venture.DoesNotExist:
@@ -305,8 +298,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
                 venture=venture,
                 name='Unknown',
             )
-        if self.device_info:
-            self.device_info.ralph_device_id = device
+            self.device_info.ralph_device_id = device.id
             self.device_info.save()
 
     def get_parts_info(self):
@@ -348,6 +340,16 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         elif self.device_info:
             self.device_info.delete()
         return super(Asset, self).delete(*args, **kwargs)
+
+
+@receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
+def create_asset_post_save(sender, instance, created, **kwargs):
+    """When a new DC asset without a device linked to it is created, try to
+    match it with an existing device or create a dummy (stock) device and
+    match with it instead.
+    """
+    if created and not instance.device_info.ralph_device_id:
+        instance.create_stock_device()
 
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):

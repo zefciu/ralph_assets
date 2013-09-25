@@ -12,6 +12,12 @@ Change Log
 
 * Added partial and exact searches to assets.
 
+* Unlinking assets from devices (and searching for unlinked assets) is now
+  possible.
+
+* Added searching assets by ``ralph_device_id``. Added option to create stock
+  devices for unlinked assets.
+
 
 
 1.2.6

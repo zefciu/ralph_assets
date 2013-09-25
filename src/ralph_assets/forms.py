@@ -10,15 +10,16 @@ import re
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
 from django.forms import (
+    BooleanField,
     CharField,
     ChoiceField,
     DateField,
     Form,
     IntegerField,
     ModelForm,
+    TextInput,
     ValidationError,
 )
-from django import forms
 from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
@@ -36,6 +37,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
+from ralph.discovery.models_device import Device
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
@@ -50,7 +52,7 @@ LOOKUPS = {
 }
 
 
-class CodeWidget(forms.TextInput):
+class CodeWidget(TextInput):
     def render(self, name, value, attrs=None, choices=()):
         formatted = escape(value) if value else ''
         return mark_safe('''
@@ -170,18 +172,25 @@ class DeviceForm(ModelForm):
             'u_height',
             'ralph_device_id',
         )
+    force_unlink = BooleanField(required=False, label="Force unlink")
+    create_stock = BooleanField(
+        required=False,
+        label="Create stock device",
+    )
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.pop('mode')
+        exclude = kwargs.pop('exclude', None)
         super(DeviceForm, self).__init__(*args, **kwargs)
         self.fields['ralph_device_id'] = AutoCompleteSelectField(
             LOOKUPS['ralph_device'],
             required=False,
             help_text='Enter ralph id, barcode, sn, or model.',
         )
-
         if mode == 'back_office':
             del self.fields['size']
+        if exclude == 'create_stock':
+            del self.fields['create_stock']
 
     def clean_ralph_device_id(self):
         return self.data['ralph_device_id'] or None
@@ -193,6 +202,82 @@ class DeviceForm(ModelForm):
                 _("Invalid size, use range 0 to 65535")
             )
         return size
+
+    def clean_create_stock(self):
+        create_stock = self.cleaned_data.get('create_stock', False)
+        if create_stock:
+            if not self.cleaned_data.get('ralph_device_id'):
+                return create_stock
+            else:
+                raise ValidationError(
+                    _("'Ralph device id' field should be blank")
+                )
+        else:
+            return create_stock
+
+    def clean(self):
+        ralph_device_id = self.cleaned_data.get('ralph_device_id')
+        force_unlink = self.cleaned_data.get('force_unlink')
+        create_stock = self.cleaned_data.get('create_stock')
+        if ralph_device_id:
+            device_info = None
+            try:
+                device_info = self.instance.__class__.objects.get(
+                    ralph_device_id=ralph_device_id
+                )
+            except DeviceInfo.DoesNotExist:
+                pass
+            if device_info:
+                # if we want to assign ralph_device_id that belongs to another
+                # Asset/DeviceInfo...
+                if (str(device_info.ralph_device_id) == ralph_device_id and
+                        device_info.id != self.instance.id):
+                    if force_unlink:
+                        device_info.ralph_device_id = None
+                        device_info.save()
+                    else:
+                        msg = _(
+                            'Device with this Ralph device id already exist '
+                            '<a href="../{}">(click here to see it)</a>. '
+                            'Please tick "Force unlink" checkbox if you want '
+                            'to unlink it.'
+                        )
+                        self._errors["ralph_device_id"] = self.error_class([
+                            mark_safe(msg.format(escape(device_info.asset.id)))
+                        ])
+        if create_stock:
+            device_found_sn = None
+            device_found_barcode = None
+            try:
+                device_found_sn = Device.objects.get(sn=self.instance.asset.sn)
+            except Device.DoesNotExist:
+                pass
+            else:
+                msg = _(
+                    'Cannot create stock device - device with this sn '
+                    'already exists <a href="/ui/search/info/{}?">'
+                    '(click here to see it)</a>.'
+                )
+                self._errors['create_stock'] = self.error_class([
+                    mark_safe(msg.format(escape(device_found_sn.id)))
+                ])
+            if not device_found_sn and self.instance.asset.barcode:
+                try:
+                    device_found_barcode = Device.objects.get(
+                        barcode=self.instance.asset.barcode,
+                    )
+                except Device.DoesNotExist:
+                    pass
+                else:
+                    msg = _(
+                        'Cannot create stock device - device with this barcode'
+                        ' already exists <a href="/ui/search/info/{}?">'
+                        '(click here to see it)</a>.'
+                    )
+                    self._errors['create_stock'] = self.error_class([
+                        mark_safe(msg.format(escape(device_found_barcode.id)))
+                    ])
+        return self.cleaned_data
 
 
 class BasePartForm(ModelForm):
@@ -623,7 +708,10 @@ class SearchAssetForm(Form):
     niw = CharField(required=False, label='Niw')
     sn = CharField(required=False, label='SN')
     barcode = CharField(required=False, label='Barcode')
-
+    ralph_device_id = IntegerField(
+        required=False,
+        label='Ralph device id',
+    )
     request_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
@@ -674,10 +762,9 @@ class SearchAssetForm(Form):
                                  ('24', '12 < * <= 24'),
                                  ('12', '6 < * <= 12'),
                                  ('6', '* <= 6'),
-                                 ('deprecated', 'Deprecated'),],
+                                 ('deprecated', 'Deprecated'), ],
         label='Deprecation'
     )
-
     invoice_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
@@ -707,7 +794,8 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='')
-    deleted = forms.BooleanField(required=False, label="Include deleted")
+    unlinked = BooleanField(required=False, label="Is unlinked")
+    deleted = BooleanField(required=False, label="Include deleted")
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -749,9 +837,9 @@ class SplitDevice(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
-    delete = forms.BooleanField(required=False)
-    model_user = forms.CharField()
-    model_proposed = forms.CharField(required=False)
+    delete = BooleanField(required=False)
+    model_user = CharField()
+    model_proposed = CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(SplitDevice, self).__init__(*args, **kwargs)

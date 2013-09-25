@@ -53,7 +53,7 @@ SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
 
-quotation_marks = re.compile(r"^\".+\"$")
+QUOTATION_MARKS = re.compile(r"^\".+\"$")
 
 
 class AssetsMixin(Base):
@@ -227,6 +227,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'device_info',
             'source',
             'deprecation_rate',
+            'unlinked',
+            'ralph_device_id',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -236,7 +238,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                 exact = False
                 # if search term is enclosed in "", we want exact matches
                 if isinstance(field_value, basestring) and \
-                        quotation_marks.search(field_value):
+                        QUOTATION_MARKS.search(field_value):
                     exact = True
                     field_value = field_value[1:-1]
                 if field == 'part_info':
@@ -303,7 +305,17 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         '48': Q(deprecation_rate__gt=24, deprecation_rate__lte=48),
                         '48<': Q(deprecation_rate__gt=48),
                     }
-                    all_q &= deprecation_rate_query_map[field_value] 
+                    all_q &= deprecation_rate_query_map[field_value]
+                elif field == 'unlinked' and field_value.lower() == 'on':
+                        all_q &= ~Q(device_info=None)
+                        all_q &= Q(device_info__ralph_device_id=None)
+                elif field == 'ralph_device_id':
+                    if exact:
+                        all_q &= Q(device_info__ralph_device_id=field_value)
+                    else:
+                        all_q &= Q(
+                            device_info__ralph_device_id__icontains=field_value
+                        )
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -545,13 +557,20 @@ class AddDevice(Base):
     def get(self, *args, **kwargs):
         mode = _get_mode(self.request)
         self.asset_form = AddDeviceForm(mode=mode)
-        self.device_info_form = DeviceForm(mode=mode)
+        self.device_info_form = DeviceForm(
+            mode=mode,
+            exclude='create_stock',
+        )
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         mode = _get_mode(self.request)
         self.asset_form = AddDeviceForm(self.request.POST, mode=mode)
-        self.device_info_form = DeviceForm(self.request.POST, mode=mode)
+        self.device_info_form = DeviceForm(
+            self.request.POST,
+            mode=mode,
+            exclude='create_stock',
+        )
         if self.asset_form.is_valid() and self.device_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
@@ -777,7 +796,7 @@ class EditDevice(Base):
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
-            mode=mode
+            mode=mode,
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
@@ -845,6 +864,8 @@ class EditDevice(Base):
                     modifier_profile.user, self.asset,
                     self.device_info_form.cleaned_data
                 )
+                if self.device_info_form.cleaned_data.get('create_stock'):
+                    self.asset.create_stock_device()
                 self.asset.save(user=self.request.user)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
