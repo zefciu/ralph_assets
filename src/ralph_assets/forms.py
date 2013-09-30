@@ -218,7 +218,6 @@ class DeviceForm(ModelForm):
     def clean(self):
         ralph_device_id = self.cleaned_data.get('ralph_device_id')
         force_unlink = self.cleaned_data.get('force_unlink')
-        create_stock = self.cleaned_data.get('create_stock')
         if ralph_device_id:
             device_info = None
             try:
@@ -245,38 +244,6 @@ class DeviceForm(ModelForm):
                         self._errors["ralph_device_id"] = self.error_class([
                             mark_safe(msg.format(escape(device_info.asset.id)))
                         ])
-        if create_stock:
-            device_found_sn = None
-            device_found_barcode = None
-            try:
-                device_found_sn = Device.objects.get(sn=self.instance.asset.sn)
-            except Device.DoesNotExist:
-                pass
-            else:
-                msg = _(
-                    'Cannot create stock device - device with this sn '
-                    'already exists <a href="/ui/search/info/{}?">'
-                    '(click here to see it)</a>.'
-                )
-                self._errors['create_stock'] = self.error_class([
-                    mark_safe(msg.format(escape(device_found_sn.id)))
-                ])
-            if not device_found_sn and self.instance.asset.barcode:
-                try:
-                    device_found_barcode = Device.objects.get(
-                        barcode=self.instance.asset.barcode,
-                    )
-                except Device.DoesNotExist:
-                    pass
-                else:
-                    msg = _(
-                        'Cannot create stock device - device with this barcode'
-                        ' already exists <a href="/ui/search/info/{}?">'
-                        '(click here to see it)</a>.'
-                    )
-                    self._errors['create_stock'] = self.error_class([
-                        mark_safe(msg.format(escape(device_found_barcode.id)))
-                    ])
         return self.cleaned_data
 
 
