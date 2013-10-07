@@ -45,6 +45,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
+from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
 
@@ -178,6 +179,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           bob_tag=True, export=True),
         _('Venture', field='venture', sort_expression='venture',
           bob_tag=True, export=True),
+        _('Department', field='department', foreign_field_name='venture',
+          export=True),
         _('Price', field='price', sort_expression='price',
           bob_tag=True, export=True),
         _('Actions', bob_tag=True),
@@ -362,6 +365,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         )
                     elif nested_field_name == 'part_info':
                         cell = self.get_cell(asset.part_info, field, PartInfo)
+                    elif nested_field_name == 'venture':
+                        cell = self.get_cell(asset.venture, field, Venture)
                     else:
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
