@@ -1,11 +1,12 @@
 {% extends 'assets/base.html' %}
+{% load bob %}
 
 {% block content %}
 <div class="row">
   <h3>{% block form_title %}{% endblock %}</h3>
 </div>
 
-<form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %}>
+<form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
   {% csrf_token %}
   <div class="row">
     <div class="span6 well">
