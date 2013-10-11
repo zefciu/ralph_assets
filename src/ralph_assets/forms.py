@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
+import functools
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
 from django.forms import (
