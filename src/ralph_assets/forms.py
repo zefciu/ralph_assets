@@ -167,7 +167,6 @@ class DeviceForm(ModelForm):
     class Meta:
         model = DeviceInfo
         fields = (
-            'size',
             'u_level',
             'u_height',
             'ralph_device_id',
@@ -187,21 +186,12 @@ class DeviceForm(ModelForm):
             required=False,
             help_text='Enter ralph id, barcode, sn, or model.',
         )
-        if mode == 'back_office':
-            del self.fields['size']
         if exclude == 'create_stock':
             del self.fields['create_stock']
 
     def clean_ralph_device_id(self):
         return self.data['ralph_device_id'] or None
 
-    def clean_size(self):
-        size = self.cleaned_data.get('size')
-        if size not in range(0, 65536):
-            raise ValidationError(
-                _("Invalid size, use range 0 to 65535")
-            )
-        return size
 
     def clean_create_stock(self):
         create_stock = self.cleaned_data.get('create_stock', False)

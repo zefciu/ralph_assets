@@ -360,12 +360,14 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         unique=True,
         default=None,
     )
-    size = models.PositiveSmallIntegerField(
-        verbose_name='Size in units', default=1
-    )
     u_level = models.CharField(max_length=10, null=True, blank=True)
     u_height = models.CharField(max_length=10, null=True, blank=True)
     rack = models.CharField(max_length=10, null=True, blank=True)
+
+    @property
+    def size(self):
+        """Deprecated. Kept for backwards compatibility."""
+        return int(self.u_height)
 
     def __unicode__(self):
         return "{} - {}".format(

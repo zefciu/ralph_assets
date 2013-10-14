@@ -454,14 +454,7 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
             field='ralph_device_id',
             foreign_field_name='device_info',
             export=True,
-        ),
-        _(
-            'Size',
-            field='size',
-            foreign_field_name='device_info',
-            export=True,
-        ),
-        _(
+        ), _(
             'Rack',
             field='rack',
             foreign_field_name='device_info',
@@ -524,7 +517,6 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
     device_info = DeviceInfo()
     if mode == 'dc':
-        device_info.size = device_info_data['size']
         device_info.ralph_device_id = device_info_data['ralph_device_id']
         device_info.u_level = device_info_data['u_level']
         device_info.u_height = device_info_data['u_height']
