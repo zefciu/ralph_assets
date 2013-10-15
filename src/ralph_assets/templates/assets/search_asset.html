@@ -79,6 +79,13 @@ form.form-inline {
                     <td>{{row.venture}}</td>
                     <td>{{row.price}}</td>
                     <td>
+                        {% if row.device_info.ralph_device_id %}
+                            <i class="fugue-icon fugue-tick-circle"></i>
+                        {% else %}
+                            <i class="fugue-icon fugue-cross-octagon"></i>
+                        {% endif %}
+                    </td>
+                    <td>
 
                     <div class="btn-group">
                       <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">

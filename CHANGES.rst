@@ -20,6 +20,8 @@ Change Log
 
 * Fixed creating assets with ``add part`` button.
 
+* Column ``department`` added to csv report in ``search DC assets``.
+
 
 
 1.2.6

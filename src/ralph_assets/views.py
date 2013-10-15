@@ -45,6 +45,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models_history import AssetHistoryChange
+from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
 
@@ -178,8 +179,11 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           bob_tag=True, export=True),
         _('Venture', field='venture', sort_expression='venture',
           bob_tag=True, export=True),
+        _('Department', field='department', foreign_field_name='venture',
+          export=True),
         _('Price', field='price', sort_expression='price',
           bob_tag=True, export=True),
+        _('Discovered', bob_tag=True),
         _('Actions', bob_tag=True),
         _('Barcode salvaged', field='barcode_salvaged',
           foreign_field_name='part_info', export=True),
@@ -362,6 +366,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         )
                     elif nested_field_name == 'part_info':
                         cell = self.get_cell(asset.part_info, field, PartInfo)
+                    elif nested_field_name == 'venture':
+                        cell = self.get_cell(asset.venture, field, Venture)
                     else:
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
@@ -454,14 +460,7 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
             field='ralph_device_id',
             foreign_field_name='device_info',
             export=True,
-        ),
-        _(
-            'Size',
-            field='size',
-            foreign_field_name='device_info',
-            export=True,
-        ),
-        _(
+        ), _(
             'Rack',
             field='rack',
             foreign_field_name='device_info',
@@ -524,7 +523,6 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
     device_info = DeviceInfo()
     if mode == 'dc':
-        device_info.size = device_info_data['size']
         device_info.ralph_device_id = device_info_data['ralph_device_id']
         device_info.u_level = device_info_data['u_level']
         device_info.u_height = device_info_data['u_height']

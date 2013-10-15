@@ -167,7 +167,6 @@ class DeviceForm(ModelForm):
     class Meta:
         model = DeviceInfo
         fields = (
-            'size',
             'u_level',
             'u_height',
             'ralph_device_id',
@@ -187,21 +186,12 @@ class DeviceForm(ModelForm):
             required=False,
             help_text='Enter ralph id, barcode, sn, or model.',
         )
-        if mode == 'back_office':
-            del self.fields['size']
         if exclude == 'create_stock':
             del self.fields['create_stock']
 
     def clean_ralph_device_id(self):
         return self.data['ralph_device_id'] or None
 
-    def clean_size(self):
-        size = self.cleaned_data.get('size')
-        if size not in range(0, 65536):
-            raise ValidationError(
-                _("Invalid size, use range 0 to 65535")
-            )
-        return size
 
     def clean_create_stock(self):
         create_stock = self.cleaned_data.get('create_stock', False)
@@ -218,7 +208,6 @@ class DeviceForm(ModelForm):
     def clean(self):
         ralph_device_id = self.cleaned_data.get('ralph_device_id')
         force_unlink = self.cleaned_data.get('force_unlink')
-        create_stock = self.cleaned_data.get('create_stock')
         if ralph_device_id:
             device_info = None
             try:
@@ -245,38 +234,6 @@ class DeviceForm(ModelForm):
                         self._errors["ralph_device_id"] = self.error_class([
                             mark_safe(msg.format(escape(device_info.asset.id)))
                         ])
-        if create_stock:
-            device_found_sn = None
-            device_found_barcode = None
-            try:
-                device_found_sn = Device.objects.get(sn=self.instance.asset.sn)
-            except Device.DoesNotExist:
-                pass
-            else:
-                msg = _(
-                    'Cannot create stock device - device with this sn '
-                    'already exists <a href="/ui/search/info/{}?">'
-                    '(click here to see it)</a>.'
-                )
-                self._errors['create_stock'] = self.error_class([
-                    mark_safe(msg.format(escape(device_found_sn.id)))
-                ])
-            if not device_found_sn and self.instance.asset.barcode:
-                try:
-                    device_found_barcode = Device.objects.get(
-                        barcode=self.instance.asset.barcode,
-                    )
-                except Device.DoesNotExist:
-                    pass
-                else:
-                    msg = _(
-                        'Cannot create stock device - device with this barcode'
-                        ' already exists <a href="/ui/search/info/{}?">'
-                        '(click here to see it)</a>.'
-                    )
-                    self._errors['create_stock'] = self.error_class([
-                        mark_safe(msg.format(escape(device_found_barcode.id)))
-                    ])
         return self.cleaned_data
 
 

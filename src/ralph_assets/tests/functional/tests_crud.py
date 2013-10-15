@@ -52,7 +52,6 @@ class TestAdding(TestCase):
             support_void_reporting=True,
             provider='Provider2',
             status=AssetStatus.new.id,  # 1
-            size=1,
             price=11,
             request_date='2001-01-02',
             delivery_date='2001-01-03',
@@ -85,9 +84,7 @@ class TestAdding(TestCase):
         # Test comparison input data and output data
         for field in data_in_add_form:
             input = data_in_add_form[field]
-            if field == 'size':
-                output = row_from_table.device_info.size
-            elif field == 'ralph_device_id':
+            if field == 'ralph_device_id':
                 output = ''  # test Hook
             else:
                 output = getattr(row_from_table, field)
@@ -100,8 +97,6 @@ class TestAdding(TestCase):
         view = self.client.get(url)
         self.assertEqual(view.status_code, 200)
         old_fields = view.context['asset_form'].initial
-        if view.context['device_info_form']:
-            old_device_info = view.context['device_info_form'].initial
         data_in_edit_form = dict(
             type=AssetType.data_center.id,  # 1
             model=self.model2.id,  # u'Model1'
@@ -113,7 +108,6 @@ class TestAdding(TestCase):
             support_void_reporting=True,
             provider='Provider2',
             status=AssetStatus.in_progress.id,  # 1
-            size=2,
             invoice_date='2001-02-02',
             request_date='2001-01-02',
             delivery_date='2001-01-03',
@@ -137,7 +131,6 @@ class TestAdding(TestCase):
         self.client.post(url, data_in_edit_form)
         new_view = self.client.get(url)
         new_fields = new_view.context['asset_form'].initial
-        new_device_info = new_view.context['device_info_form'].initial
         if new_view.context['office_info_form']:
             new_office_info = new_view.context['office_info_form'].initial
         correct_data = [
@@ -166,8 +159,6 @@ class TestAdding(TestCase):
                     unicode(new_fields[key]), unicode(data[key])
                 )
 
-        self.assertNotEqual(old_device_info['size'], new_device_info['size'])
-        self.assertEqual(new_device_info['size'], 2)
         office = OfficeInfo.objects.filter(
             license_key='0000-0000-0000-0000'
         ).count()
