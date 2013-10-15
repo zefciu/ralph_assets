@@ -18,6 +18,8 @@ Change Log
 * Added searching assets by ``ralph_device_id``. Added option to create stock
   devices for unlinked assets.
 
+* Fixed creating assets with ``add part`` button.
+
 * Column ``department`` added to csv report in ``search DC assets``.
 
 
