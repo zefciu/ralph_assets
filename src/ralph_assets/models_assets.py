@@ -317,7 +317,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def get_deprecation_months(self):
         return int(
-            (1 / self.deprecation_rate * 12) if self.deprecation_rate else 0
+            (1 / (self.deprecation_rate / 100) * 12)
+            if self.deprecation_rate else 0
         )
 
     def is_deprecated(self):
