@@ -48,6 +48,7 @@ from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
+from ralph.util.reports import Report
 
 
 SAVE_PRIORITY = 200
@@ -214,7 +215,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
 
     ]
 
-    def handle_search_data(self):
+    def handle_search_data(self, get_csv=False):
         search_fields = [
             'niw',
             'category',
@@ -338,7 +339,10 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                 all_q &= Q(**{date + '__gte': start})
             if end:
                 all_q &= Q(**{date + '__lte': end})
-        self.data_table_query(self.get_all_items(all_q))
+        if get_csv:
+            return self.get_csv_data(self.get_all_items(all_q))
+        else:
+            self.data_table_query(self.get_all_items(all_q))
 
     def get_search_category_part(self, field_value):
         try:
@@ -1294,3 +1298,12 @@ class DataCenterSplitDevice(DataCenterMixin):
         except LookupError:
             components = []
         return components
+
+def do_csv_dc_search(request, *args, **kwargs):
+    """The asynchronous version of DataCenterSearch"""
+    view = DataCenterSearch()
+    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
+    view.request = request
+    return view.handle_search_data(get_csv=True)
+
+csv_dc_search = Report.as_view(get_result=do_csv_dc_search)
