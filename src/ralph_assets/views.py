@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
+from rq import get_current_job
 
 from collections import Counter
 
@@ -361,6 +362,9 @@ class AssetSearch(AssetsMixin, DataTableMixin):
 
     def get_csv_rows(self, queryset, type, model):
         data = [self.get_csv_header()]
+        total = queryset.count()
+        processed = 0
+        job = get_current_job()
         for asset in queryset:
             row = ['part', ] if asset.part_info else ['device', ]
             for item in self.columns:
@@ -379,6 +383,11 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
             data.append(row)
+            processed += 1
+            job.meta['progress'] = processed / total
+            job.save()
+        job.meta['progress'] = 1
+        job.save()
         return data
 
     def get_all_items(self, q_object):
@@ -399,6 +408,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'columns': self.columns,
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
+            'csv_url': self.request.path_info + '/csv',
         })
         return ret
 
