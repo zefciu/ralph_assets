@@ -1306,4 +1306,8 @@ def do_csv_dc_search(request, *args, **kwargs):
     view.request = request
     return view.handle_search_data(get_csv=True)
 
-csv_dc_search = Report.as_view(get_result=do_csv_dc_search)
+def csv_dc_search_response(request, result):
+    return DataCenterSearch().make_csv_response(result)
+
+csv_dc_search = Report.as_view(
+    get_result=do_csv_dc_search, get_response = csv_dc_search_response)

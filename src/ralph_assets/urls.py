@@ -40,8 +40,11 @@ urlpatterns = patterns(
         RedirectView.as_view(url='/assets/back_office/search'),
         name='dc'),
 
-    url(r'dc/search',
+    url(r'dc/search/csv',
         login_required(csv_dc_search),
+        name='dc'),
+    url(r'dc/search',
+        login_required(DataCenterSearch.as_view()),
         name='dc'),
     url(r'dc/add/device/',
         login_required(DataCenterAddDevice.as_view()),

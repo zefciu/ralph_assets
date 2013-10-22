@@ -122,7 +122,10 @@ form.form-inline {
                 </tbody>
             </table>
 
-            {% pagination bob_page url_query=url_query show_all=0 show_csv=1 fugue_icons=1 export_variable_name=export_variable_name %}
+            {% pagination bob_page url_query=url_query show_all=0 show_csv=1 async_csv=1 fugue_icons=1 export_variable_name=export_variable_name %}
+            <div class="progress" id='async-progress'>
+                <div class="progress-bar"></div>
+            </div>
             <div class="btn-group">
               <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
                 Bulk actions...
