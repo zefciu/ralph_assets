@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
+import datetime
 from rq import get_current_job
 
 from collections import Counter
@@ -385,6 +386,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             data.append(row)
             processed += 1
             job.meta['progress'] = processed / total
+            if not job.meta['start_progress']:
+                job.meta['start_progress'] = datetime.datetime.now()
             job.save()
         job.meta['progress'] = 1
         job.save()

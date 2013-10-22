@@ -46,6 +46,7 @@ form.form-inline {
                     trigger: $('.pagination').find('a').last(),
                     progressBar: '#async-progress',
                     url: '{{ csv_url }}',
+                    etaEl: '#eta'
                 });
             });
         });
@@ -130,7 +131,8 @@ form.form-inline {
             </table>
 
             {% pagination bob_page url_query=url_query show_all=0 show_csv=1 fugue_icons=1 export_variable_name=export_variable_name %}
-            <div class="progress" id='async-progress'>
+            <div id="eta"></div>
+            <div class="progress" id="async-progress">
                 <div class="bar"></div>
             </div>
             <div class="btn-group">
