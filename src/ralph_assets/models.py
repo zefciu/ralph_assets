@@ -6,8 +6,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import difflib
-
 from ajax_select import LookupChannel
 from django.utils.html import escape
 from django.db.models import Q
@@ -173,38 +171,6 @@ class BODeviceLookup(DeviceLookup):
         return Asset.objects_bo
 
 
-class AssetLookupFuzzy(AssetLookup):
-    def get_query(self, query, request):
-        dev = Device.objects.filter(model__name='unknown')
-        dev_ids = [d.id for d in dev]
-        assets = Asset.objects.select_related(
-            'model__name',
-        ).filter(
-            Q(device_info__ralph_device_id=None) |
-            Q(device_info__ralph_device_id__in=dev_ids),
-        ).filter(part_info=None)
-
-        def comparator(asset):
-            seq = "".join(
-                map(lambda x: x if x else "", [
-                    asset.sn,
-                    asset.barcode,
-                    asset.model.name,
-                ])
-            ).replace(" ", "").lower()
-            ratio = difflib.SequenceMatcher(
-                None,
-                seq,
-                query.replace(" ", "").lower()
-            ).ratio()
-            if ratio:
-                return 1 / ratio
-            return 999
-
-        assets = sorted(assets, key=comparator)
-        return assets[:10]
-
-
 __all__ = [
     'Asset',
     'AssetCategory',
@@ -224,5 +190,4 @@ __all__ = [
     'BODeviceLookup',
     'AssetModelLookup',
     'AssetHistoryChange',
-    'AssetLookupFuzzy',
 ]
