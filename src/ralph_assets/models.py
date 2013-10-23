@@ -180,9 +180,10 @@ class AssetLookupFuzzy(AssetLookup):
         assets = Asset.objects.select_related(
             'model__name',
         ).filter(
-            Q(device_info__ralph_device_id = None) |
-            Q(device_info__ralph_device_id__in= dev_ids),
-        ).filter(part_info = None)
+            Q(device_info__ralph_device_id=None) |
+            Q(device_info__ralph_device_id__in=dev_ids),
+        ).filter(part_info=None)
+
         def comparator(asset):
             seq = "".join(
                 map(lambda x: x if x else "", [
@@ -192,16 +193,16 @@ class AssetLookupFuzzy(AssetLookup):
                 ])
             ).replace(" ", "").lower()
             ratio = difflib.SequenceMatcher(
-                    None,
-                    seq,
-                    query.replace(" ", "").lower()
-                ).ratio()
+                None,
+                seq,
+                query.replace(" ", "").lower()
+            ).ratio()
             if ratio:
                 return 1 / ratio
             return 999
+
         assets = sorted(assets, key=comparator)
         return assets[:10]
-
 
 
 __all__ = [
