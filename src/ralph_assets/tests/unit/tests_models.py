@@ -19,13 +19,13 @@ class TestModelAsset(TestCase):
             sn='1111-1111-1111-1111',
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
-            deprecation_rate=1.00,
+            deprecation_rate=100,
         )
         self.asset2 = create_asset(
             sn='1111-1111-1111-1112',
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
-            deprecation_rate=0.50,
+            deprecation_rate=50,
         )
 
     def test_is_deperecation(self):
