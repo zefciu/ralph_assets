@@ -27,7 +27,7 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
@@ -405,6 +405,16 @@ def device_post_save(sender, instance, **kwargs):
             di.save()
         except DeviceInfo.DoesNotExist:
             pass
+
+
+@receiver(post_delete, sender=Device, dispatch_uid='ralph_assets.device_delete')
+def device_post_delete(sender, instance, **kwargs):
+    try:
+        di = DeviceInfo.objects.get(ralph_device_id=instance.id)
+        di.ralph_device_id = None
+        di.save()
+    except DeviceInfo.DoesNotExist:
+        pass
 
 
 class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
