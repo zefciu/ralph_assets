@@ -385,12 +385,14 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                     row.append(unicode(cell))
             data.append(row)
             processed += 1
-            job.meta['progress'] = processed / total
-            if not job.meta['start_progress']:
-                job.meta['start_progress'] = datetime.datetime.now()
+            if job:
+                job.meta['progress'] = processed / total
+                if not job.meta['start_progress']:
+                    job.meta['start_progress'] = datetime.datetime.now()
+                job.save()
+        if job:
+            job.meta['progress'] = 1
             job.save()
-        job.meta['progress'] = 1
-        job.save()
         return data
 
     def get_all_items(self, q_object):
