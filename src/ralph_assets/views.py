@@ -304,7 +304,6 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         'null': Q(deprecation_rate__isnull=True),
                         'deprecated': Q(deprecation_rate=0),
                         '6': Q(deprecation_rate__gt=0,
-                               deprecation_rate__lte=6),
                         '12': Q(deprecation_rate__gt=6,
                                 deprecation_rate__lte=12),
                         '24': Q(deprecation_rate__gt=12,
