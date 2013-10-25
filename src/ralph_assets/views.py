@@ -307,6 +307,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         'null': Q(deprecation_rate__isnull=True),
                         'deprecated': Q(deprecation_rate=0),
                         '6': Q(deprecation_rate__gt=0,
+                               deprecation_rate__lte=6),
                         '12': Q(deprecation_rate__gt=6,
                                 deprecation_rate__lte=12),
                         '24': Q(deprecation_rate__gt=12,
@@ -1314,6 +1315,7 @@ class DataCenterSplitDevice(DataCenterMixin):
             components = []
         return components
 
+
 def do_csv_dc_search(request, *args, **kwargs):
     """The asynchronous version of DataCenterSearch"""
     view = DataCenterSearch()
@@ -1321,8 +1323,9 @@ def do_csv_dc_search(request, *args, **kwargs):
     view.request = request
     return view.handle_search_data(get_csv=True)
 
+
 def csv_dc_search_response(request, result):
     return DataCenterSearch().make_csv_response(result)
 
 csv_dc_search = Report.as_view(
-    get_result=do_csv_dc_search, get_response = csv_dc_search_response)
+    get_result=do_csv_dc_search, get_response=csv_dc_search_response)
