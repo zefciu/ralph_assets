@@ -13,6 +13,7 @@ from ralph_assets.models import (
     AssetSource,
     AssetStatus,
     DCDeviceLookup,
+    AssetLookupFuzzy,
 )
 
 
@@ -112,4 +113,5 @@ __all__ = [
     'get_asset',
     'is_asset_assigned',
     'UnassignedDCDeviceLookup',
+    'AssetLookupFuzzy',
 ]

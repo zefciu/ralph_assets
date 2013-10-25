@@ -28,7 +28,7 @@ from ralph_assets.models_assets import (
     Warehouse,
 )
 from ralph_assets.models_history import AssetHistoryChange
-from ralph.discovery.models import Device
+from ralph.discovery.models import Device, DeviceType
 
 
 class DeviceLookup(LookupChannel):
@@ -175,8 +175,9 @@ class BODeviceLookup(DeviceLookup):
 
 class AssetLookupFuzzy(AssetLookup):
     def get_query(self, query, request):
-        dev = Device.objects.filter(model__name='unknown')
-        dev_ids = [d.id for d in dev]
+        dev_ids = Device.objects.filter(
+            model__type=DeviceType.unknown,
+        ).values_list('id', flat=True)
         assets = Asset.objects.select_related(
             'model__name',
         ).filter(
@@ -186,16 +187,18 @@ class AssetLookupFuzzy(AssetLookup):
 
         def comparator(asset):
             seq = "".join(
-                map(lambda x: x if x else "", [
-                    asset.sn,
-                    asset.barcode,
-                    asset.model.name,
-                ])
+                [part or '' for part in
+                    [
+                        asset.sn,
+                        asset.barcode,
+                        asset.model.name,
+                    ]
+                ]
             ).replace(" ", "").lower()
             ratio = difflib.SequenceMatcher(
                 None,
                 seq,
-                query.replace(" ", "").lower()
+                query.replace(" ", "").lower(),
             ).ratio()
             if ratio:
                 return 1 / ratio
