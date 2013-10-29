@@ -6,6 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import difflib
+
 from ajax_select import LookupChannel
 from django.utils.html import escape
 from django.db.models import Q
