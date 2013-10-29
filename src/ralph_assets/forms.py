@@ -26,6 +26,7 @@ from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from mptt.forms import TreeNodeChoiceField
+from bob.forms import DependencyForm, SHOW, Dependency
 
 from ralph_assets.models import (
     Asset,
@@ -325,7 +326,13 @@ def _sn_additional_validation(serial_numbers):
         raise ValidationError(msg)
 
 
-class BaseAddAssetForm(ModelForm):
+class BaseAddAssetForm(DependencyForm, ModelForm):
+    @property
+    def dependencies(self):
+        blade_systems = AssetCategory.objects.filter(is_blade=True).all()  
+        yield Dependency('slots', 'category', blade_systems, SHOW)
+    
+
     class Meta:
         model = Asset
         fields = (
