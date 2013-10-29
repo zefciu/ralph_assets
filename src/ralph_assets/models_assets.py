@@ -228,7 +228,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     slots = models.FloatField(
         verbose_name='Slots',
         help_text=('For blade centers: the number of slots available in this '
-            'device. For blade devices: the number of slots occupied.'),
+                   'device. For blade devices: the number of slots occupied.'),
         max_length=64,
         default=0,
     )
