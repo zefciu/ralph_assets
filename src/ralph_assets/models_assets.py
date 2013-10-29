@@ -225,7 +225,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         decimal_places=2, max_digits=5, null=True, blank=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
     slots = models.FloatField(
-        verbose_name='Slots (for blade centers)',
+        verbose_name='Slots',
+        help_text=('For blade centers: the number of slots available in this '
+            'device. For blade devices: the number of slots occupied.'),
         max_length=64,
         default=0,
     )
