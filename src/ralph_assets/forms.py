@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
-import functools
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
 from django.forms import (
@@ -39,7 +38,6 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph.discovery.models_device import Device
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
@@ -180,7 +178,7 @@ class DeviceForm(ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        mode = kwargs.pop('mode')
+        kwargs.pop('mode')
         exclude = kwargs.pop('exclude', None)
         super(DeviceForm, self).__init__(*args, **kwargs)
         self.fields['ralph_device_id'] = AutoCompleteSelectField(
@@ -193,7 +191,6 @@ class DeviceForm(ModelForm):
 
     def clean_ralph_device_id(self):
         return self.data['ralph_device_id'] or None
-
 
     def clean_create_stock(self):
         create_stock = self.cleaned_data.get('create_stock', False)
@@ -329,9 +326,8 @@ def _sn_additional_validation(serial_numbers):
 class BaseAddAssetForm(DependencyForm, ModelForm):
     @property
     def dependencies(self):
-        blade_systems = AssetCategory.objects.filter(is_blade=True).all()  
+        blade_systems = AssetCategory.objects.filter(is_blade=True).all()
         yield Dependency('slots', 'category', blade_systems, SHOW)
-    
 
     class Meta:
         model = Asset

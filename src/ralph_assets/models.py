@@ -192,8 +192,7 @@ class AssetLookupFuzzy(AssetLookup):
                         asset.sn,
                         asset.barcode,
                         asset.model.name,
-                    ]
-                ]
+                    ]]
             ).replace(" ", "").lower()
             ratio = difflib.SequenceMatcher(
                 None,
@@ -207,7 +206,7 @@ class AssetLookupFuzzy(AssetLookup):
         assets = sorted(assets, key=comparator)
         return assets[:10]
 
-    def format_match(self,obj):
+    def format_match(self, obj):
         ret = obj.__unicode__()
         ret += " - {}".format(obj.invoice_no)
         return ret
