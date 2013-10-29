@@ -371,11 +371,7 @@ def _sn_additional_validation(serial_numbers):
 class BaseAddAssetForm(DependencyForm, ModelForm):
     @property
     def dependencies(self):
-        blade_systems = [
-            AssetCategory.objects.get(pk=20),
-            AssetCategory.objects.get(pk=22),
-        ]
-    
+        blade_systems = AssetCategory.objects.filter(is_blade=True).all()  
         yield Dependency('slots', 'category', blade_systems, SHOW)
     
 

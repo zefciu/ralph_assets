@@ -112,6 +112,7 @@ class AssetCategory(
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
+    is_blade = models.BooleanField()
     parent = TreeForeignKey(
         'self',
         null=True,
