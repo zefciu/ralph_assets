@@ -1,6 +1,10 @@
 Change Log
 ----------
 
+* Merged the u_height and size attributes
+
+* Dynamically requiring 'slots' for blade categories
+
 1.2.7
 ~~~~~
 
