@@ -1,8 +1,15 @@
 Change Log
 ----------
+HEAD
+~~~~
+
+* Merged the u_height and size attributes
+
+* Dynamically requiring 'slots' for blade categories
 
 1.2.7
 ~~~~~
+Released on October 03, 2013
 
 * Added API for Ralph.
 
