@@ -1,5 +1,7 @@
 Change Log
 ----------
+HEAD
+~~~~
 
 * Merged the u_height and size attributes
 
@@ -7,6 +9,7 @@ Change Log
 
 1.2.7
 ~~~~~
+Released on October 03, 2013
 
 * Added API for Ralph.
 
