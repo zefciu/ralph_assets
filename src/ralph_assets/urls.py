@@ -23,6 +23,7 @@ from ralph_assets.views import (
     DataCenterEditDevice,
     DataCenterEditPart,
     DataCenterSearch,
+    csv_dc_search,
     DeleteAsset,
     HistoryAsset,
 )
@@ -39,6 +40,9 @@ urlpatterns = patterns(
         RedirectView.as_view(url='/assets/back_office/search'),
         name='dc'),
 
+    url(r'dc/search/csv',
+        login_required(csv_dc_search),
+        name='dc'),
     url(r'dc/search',
         login_required(DataCenterSearch.as_view()),
         name='dc'),

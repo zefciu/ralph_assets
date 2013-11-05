@@ -6,6 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
+import datetime
+from rq import get_current_job
 
 from collections import Counter
 
@@ -48,6 +50,7 @@ from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
+from ralph.util.reports import Report
 
 
 SAVE_PRIORITY = 200
@@ -214,7 +217,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
 
     ]
 
-    def handle_search_data(self):
+    def handle_search_data(self, get_csv=False):
         search_fields = [
             'niw',
             'category',
@@ -339,7 +342,10 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                 all_q &= Q(**{date + '__gte': start})
             if end:
                 all_q &= Q(**{date + '__lte': end})
-        self.data_table_query(self.get_all_items(all_q))
+        if get_csv:
+            return self.get_csv_data(self.get_all_items(all_q))
+        else:
+            self.data_table_query(self.get_all_items(all_q))
 
     def get_search_category_part(self, field_value):
         try:
@@ -358,6 +364,9 @@ class AssetSearch(AssetsMixin, DataTableMixin):
 
     def get_csv_rows(self, queryset, type, model):
         data = [self.get_csv_header()]
+        total = queryset.count()
+        processed = 0
+        job = get_current_job()
         for asset in queryset:
             row = ['part', ] if asset.part_info else ['device', ]
             for item in self.columns:
@@ -376,6 +385,15 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
             data.append(row)
+            processed += 1
+            if job:
+                job.meta['progress'] = processed / total
+                if not job.meta['start_progress']:
+                    job.meta['start_progress'] = datetime.datetime.now()
+                job.save()
+        if job:
+            job.meta['progress'] = 1
+            job.save()
         return data
 
     def get_all_items(self, q_object):
@@ -396,6 +414,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'columns': self.columns,
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
+            'csv_url': self.request.path_info + '/csv',
         })
         return ret
 
@@ -1295,3 +1314,18 @@ class DataCenterSplitDevice(DataCenterMixin):
         except LookupError:
             components = []
         return components
+
+
+def do_csv_dc_search(request, *args, **kwargs):
+    """The asynchronous version of DataCenterSearch"""
+    view = DataCenterSearch()
+    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
+    view.request = request
+    return view.handle_search_data(get_csv=True)
+
+
+def csv_dc_search_response(request, result):
+    return DataCenterSearch().make_csv_response(result)
+
+csv_dc_search = Report.as_view(
+    get_result=do_csv_dc_search, get_response=csv_dc_search_response)
