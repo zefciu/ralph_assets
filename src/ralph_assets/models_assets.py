@@ -330,7 +330,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )
-        return True if deprecation_date > datetime.date.today() else False
+        return deprecation_date < datetime.date.today()
 
     def delete_with_info(self, *args, **kwargs):
         """
