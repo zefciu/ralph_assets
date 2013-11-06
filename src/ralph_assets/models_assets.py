@@ -379,8 +379,7 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     @property
     def size(self):
         """Deprecated. Kept for backwards compatibility."""
-        if self.u_height:
-            return int(self.u_height)
+        return 0
 
     def __unicode__(self):
         return "{} - {}".format(
