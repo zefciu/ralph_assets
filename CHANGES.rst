@@ -1,11 +1,13 @@
 Change Log
 ----------
-HEAD
+1.2.9
 ~~~~
 
 * Merged the u_height and size attributes
 
 * Dynamically requiring 'slots' for blade categories
+
+* Fixed unit tests
 
 1.2.7
 ~~~~~
