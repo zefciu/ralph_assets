@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import mock
 from django.test import TestCase
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
@@ -13,6 +14,23 @@ from ralph_assets.models_assets import PartInfo, AssetModel
 from ralph_assets.tests.util import create_asset
 
 
+date = datetime.date
+class MockDateMeta(type(datetime.date)):
+
+    def __instancecheck__(self, instance):
+        if isinstance(instance, date):
+            return True
+
+class MockDate(datetime.date):
+    __metaclass__ = MockDateMeta
+
+    @classmethod
+    def today(cls):
+        """All tests are run assuming it's 2014-03-29"""
+        return cls(2014, 03, 29)
+
+
+@mock.patch('datetime.date', MockDate)
 class TestModelAsset(TestCase):
     def setUp(self):
         self.asset = create_asset(
@@ -31,9 +49,11 @@ class TestModelAsset(TestCase):
     def test_is_deperecation(self):
         self.assertEqual(self.asset.get_deprecation_months(), 12)
         self.assertEqual(self.asset2.get_deprecation_months(), 24)
-        # self.assertEqual(self.asset.is_deprecated(), True)
+        self.assertEqual(self.asset.is_deprecated(), True)
+        self.assertEqual(self.asset2.is_deprecated(), False)
 
 
+@mock.patch('datetime.date', MockDate)
 class TestApiAssets(TestCase):
     def setUp(self):
         self.asset = create_asset(
@@ -42,6 +62,7 @@ class TestApiAssets(TestCase):
             support_period=1,
             slots=12.0,
             price=100,
+            deprecation_rate=100,
         )
         part_info = PartInfo(device=self.asset)
         part_info.save()
@@ -52,6 +73,7 @@ class TestApiAssets(TestCase):
             slots=12.0,
             price=100,
             part_info=part_info,
+            deprecation_rate=50,
         )
 
     def tests_api_asset(self):
