@@ -14,23 +14,6 @@ from ralph_assets.models_assets import PartInfo, AssetModel
 from ralph_assets.tests.util import create_asset
 
 
-date = datetime.date
-class MockDateMeta(type(datetime.date)):
-
-    def __instancecheck__(self, instance):
-        if isinstance(instance, date):
-            return True
-
-class MockDate(datetime.date):
-    __metaclass__ = MockDateMeta
-
-    @classmethod
-    def today(cls):
-        """All tests are run assuming it's 2014-03-29"""
-        return cls(2014, 03, 29)
-
-
-@mock.patch('datetime.date', MockDate)
 class TestModelAsset(TestCase):
     def setUp(self):
         self.asset = create_asset(
@@ -62,7 +45,6 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset3.is_deprecated(date), True)
 
 
-@mock.patch('datetime.date', MockDate)
 class TestApiAssets(TestCase):
     def setUp(self):
         self.asset = create_asset(
