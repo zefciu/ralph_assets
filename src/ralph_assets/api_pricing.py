@@ -8,14 +8,17 @@ from __future__ import unicode_literals
 from ralph_assets.models_assets import Asset
 
 
-def get_assets():
+def get_assets(date):
     """Yields dicts describing all assets"""
-    for asset in Asset.objects_dc.filter(part_info_id=None):
+    for asset in Asset.objects_dc.filter(
+        part_info_id=None,
+        delivery_date__gte=date,
+    ):
         device_info = asset.device_info
         yield {
             'asset_id': asset.id,
             'barcode': asset.barcode,
-            'is_deprecated': asset.is_deprecated(),
+            'is_deprecated': asset.is_deprecated(date=date),
             'price': asset.price,
             'ralph_id': device_info.ralph_device_id if device_info else None,
             'slots': asset.slots,
