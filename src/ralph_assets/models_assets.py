@@ -224,6 +224,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     provider_order_date = models.DateField(null=True, blank=True)
     deprecation_rate = models.DecimalField(
         decimal_places=2, max_digits=5, null=True, blank=True)
+    force_deprecation = models.BooleanField(help_text=(
+        'Check if you no longer want to bill for this asset'
+    ))
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots',
@@ -325,6 +328,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         )
 
     def is_deprecated(self):
+        if self.force_deprecation:
+            return True
         if not self.invoice_date:
             return False
         deprecation_date = self.invoice_date + relativedelta(
