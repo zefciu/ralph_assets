@@ -45,6 +45,13 @@ class TestModelAsset(TestCase):
             support_period=120,
             deprecation_rate=50,
         )
+        self.asset3 = create_asset(
+            sn='1111-1111-1111-1113',
+            invoice_date=datetime.date(2012, 11, 28),
+            support_period=120,
+            deprecation_rate=50,
+            force_deprecation=True,
+        )
 
     def test_is_deperecation(self):
         date = datetime.date(2014, 03, 29)
@@ -52,6 +59,7 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset2.get_deprecation_months(), 24)
         self.assertEqual(self.asset.is_deprecated(date), True)
         self.assertEqual(self.asset2.is_deprecated(date), False)
+        self.assertEqual(self.asset3.is_deprecated(date), True)
 
 
 @mock.patch('datetime.date', MockDate)
