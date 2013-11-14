@@ -355,6 +355,7 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
             'invoice_date',
             'production_use_date',
             'deprecation_rate',
+            'force_deprecation',
             'slots',
         )
         widgets = {
@@ -447,6 +448,7 @@ class BaseEditAssetForm(ModelForm):
             'production_use_date',
             'deleted',
             'deprecation_rate',
+            'force_deprecation',
             'slots',
         )
         widgets = {
