@@ -418,20 +418,9 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
                 _("Category must be selected from the subcategory")
             )
         return data
-    
+
     def clean_production_year(self):
-        data = self.cleaned_data["production_year"]
-         # Matches any 4-digit number:
-        year_re = re.compile('^\d{4}$')
-        if not year_re.match(str(data)):
-            raise ValidationError(u'%s is not a valid year.' % data)
-         # Check not before this year:
-        year = int(data)
-        thisyear = time.localtime()[0]
-        if year > thisyear:
-            raise ValidationError(u'%s is a year in the future.'
-                u' Please enter a current or past year.' % data)
-        return data
+        return validate_production_year(self)
 
 
 class BaseEditAssetForm(ModelForm):
@@ -531,25 +520,30 @@ class BaseEditAssetForm(ModelForm):
                 _("Category must be selected from the subcategory")
             )
         return data
-    
+
     def clean_production_year(self):
-        data = self.cleaned_data["production_year"]
-         # Matches any 4-digit number:
-        year_re = re.compile('^\d{4}$')
-        if not year_re.match(str(data)):
-            raise ValidationError(u'%s is not a valid year.' % data)
-         # Check not before this year:
-        year = int(data)
-        thisyear = time.localtime()[0]
-        if year > thisyear:
-            raise ValidationError(u'%s is a year in the future.'
-                u' Please enter a current or past year.' % data)
-        return data
+        return validate_production_year(self)
 
     def clean(self):
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         return self.cleaned_data
+
+
+def validate_production_year(asset):
+    data = asset.cleaned_data["production_year"]
+    # Matches any 4-digit number:
+    year_re = re.compile('^\d{4}$')
+    if not year_re.match(str(data)):
+        raise ValidationError(u'%s is not a valid year.' % data)
+    # Check not before this year:
+    year = int(data)
+    thisyear = time.localtime()[0]
+    if year > thisyear:
+        raise ValidationError(
+            u'%s is a year in the future.'
+            u' Please enter a current or past year.' % data)
+    return data
 
 
 class MoveAssetPartForm(Form):

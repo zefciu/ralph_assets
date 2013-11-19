@@ -8,12 +8,12 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'AssetCategory.is_blade'
+        # Adding field 'AssetCategory.production_year'
         db.add_column('ralph_assets_asset', 'production_year',
                       self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True))
 
     def backwards(self, orm):
-        # Deleting field 'AssetCategory.is_blade'
+        # Deleting field 'AssetCategory.production_year'
         db.delete_column('ralph_assets_asset', 'production_year')
 
 
