@@ -12,7 +12,7 @@ def get_assets(date):
     """Yields dicts describing all assets"""
     for asset in Asset.objects_dc.filter(
         part_info_id=None,
-        delivery_date__gte=date,
+        invoice_date__gte=date,
     ):
         device_info = asset.device_info
         yield {
