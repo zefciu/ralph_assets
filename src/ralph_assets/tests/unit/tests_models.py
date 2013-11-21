@@ -39,6 +39,7 @@ class TestModelAsset(TestCase):
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=50,
+            force_deprecation=True,
         )
         dev1 = Device.create(
             [('1', 'sda', 0)],
@@ -63,9 +64,12 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset3.is_discovered(), False)
 
     def test_is_deperecation(self):
+        date = datetime.date(2014, 03, 29)
         self.assertEqual(self.asset.get_deprecation_months(), 12)
         self.assertEqual(self.asset2.get_deprecation_months(), 24)
-        # self.assertEqual(self.asset.is_deprecated(), True)
+        self.assertEqual(self.asset.is_deprecated(date), True)
+        self.assertEqual(self.asset2.is_deprecated(date), False)
+        self.assertEqual(self.asset3.is_deprecated(date), True)
 
 
 class TestApiAssets(TestCase):
@@ -76,6 +80,7 @@ class TestApiAssets(TestCase):
             support_period=1,
             slots=12.0,
             price=100,
+            deprecation_rate=100,
         )
         part_info = PartInfo(device=self.asset)
         part_info.save()
@@ -86,17 +91,22 @@ class TestApiAssets(TestCase):
             slots=12.0,
             price=100,
             part_info=part_info,
+            deprecation_rate=50,
         )
 
     def tests_api_asset(self):
-        for item in get_assets():
+        date = datetime.date(2014, 03, 29)
+        for item in get_assets(date):
             self.assertEqual(item['asset_id'], self.asset.id)
             self.assertEqual(
                 item['ralph_id'], self.asset.device_info.ralph_device_id,
             )
             self.assertEqual(item['slots'], self.asset.slots)
             self.assertEqual(item['price'], self.asset.price)
-            self.assertEqual(item['is_deprecated'], self.asset.is_deprecated())
+            self.assertEqual(
+                item['is_deprecated'],
+                self.asset.is_deprecated(date)
+            )
             self.assertEqual(item['sn'], self.asset.sn)
             self.assertEqual(item['barcode'], self.asset.barcode)
 
