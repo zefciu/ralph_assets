@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import mock
 from django.test import TestCase
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts

@@ -25,7 +25,6 @@ def get_assets(date):
             'sn': asset.sn,
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,
-            'is_deprecated': asset.is_deprecated()
         }
 
 
