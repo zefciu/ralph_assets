@@ -12,7 +12,7 @@ def get_assets(date):
     """Yields dicts describing all assets"""
     for asset in Asset.objects_dc.filter(
         part_info_id=None,
-        delivery_date__gte=date,
+        invoice_date__lte=date,
     ):
         device_info = asset.device_info
         yield {
@@ -25,7 +25,6 @@ def get_assets(date):
             'sn': asset.sn,
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,
-            'is_deprecated': asset.is_deprecated()
         }
 
 
