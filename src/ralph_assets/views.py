@@ -50,7 +50,7 @@ from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
-from ralph.util.reports import Report
+from ralph.util.reports import Report, get_result
 
 
 SAVE_PRIORITY = 200
@@ -466,11 +466,6 @@ class BackOfficeSearch(BackOfficeMixin, AssetSearch):
             return Asset.admin_objects_bo.filter(query)
         return Asset.objects_bo.filter(query)
 
-def dc_search_get_result(request, *args, **kwargs):
-    view = DataCenterSearch()
-    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
-    view.request = request
-    return view.handle_search_data(get_csv=True)
 
 class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
     header = 'Search DC Assets'
@@ -513,7 +508,9 @@ class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
         ),
     ]
 
-    get_result = staticmethod(dc_search_get_result)
+    def get_result(self, request, *args, **kwargs):
+        self.form = SearchAssetForm(request.GET, mode=_get_mode(request))
+        return self.handle_search_data(get_csv=True)
     
     def get_response(self, request, result):
         if self.export == 'csv':
