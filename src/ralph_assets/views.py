@@ -466,8 +466,13 @@ class BackOfficeSearch(BackOfficeMixin, AssetSearch):
             return Asset.admin_objects_bo.filter(query)
         return Asset.objects_bo.filter(query)
 
+def dc_search_get_result(request, *args, **kwargs):
+    view = DataCenterSearch()
+    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
+    view.request = request
+    return view.handle_search_data(get_csv=True)
 
-class DataCenterSearch(DataCenterMixin, AssetSearch):
+class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
     header = 'Search DC Assets'
     sidebar_selected = 'search'
     template_name = 'assets/search_asset.html'
@@ -508,11 +513,22 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
         ),
     ]
 
+    get_result = staticmethod(dc_search_get_result)
+    
+    def get_response(self, request, result):
+        if self.export == 'csv':
+            return self.make_csv_response(result)
+
     def __init__(self, *args, **kwargs):
         self.columns = (
             self.columns + self.columns_nested
         )
         super(DataCenterSearch, self).__init__(*args, **kwargs)
+
+    def is_async(self, request, *args, **kwargs):
+        self.export = request.GET.get('export')
+        return self.export == 'csv'
+
 
     def get_csv_data(self, queryset):
         data = super(DataCenterSearch, self).get_csv_rows(
@@ -1314,18 +1330,3 @@ class DataCenterSplitDevice(DataCenterMixin):
         except LookupError:
             components = []
         return components
-
-
-def do_csv_dc_search(request, *args, **kwargs):
-    """The asynchronous version of DataCenterSearch"""
-    view = DataCenterSearch()
-    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
-    view.request = request
-    return view.handle_search_data(get_csv=True)
-
-
-def csv_dc_search_response(request, result):
-    return DataCenterSearch().make_csv_response(result)
-
-csv_dc_search = Report.as_view(
-    get_result=do_csv_dc_search, get_response=csv_dc_search_response)
