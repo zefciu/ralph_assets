@@ -50,7 +50,7 @@ from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
-from ralph.util.reports import Report, get_result
+from ralph.util.reports import Report, set_progress
 
 
 SAVE_PRIORITY = 200
@@ -386,14 +386,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                     row.append(unicode(cell))
             data.append(row)
             processed += 1
-            if job:
-                job.meta['progress'] = processed / total
-                if not job.meta['start_progress']:
-                    job.meta['start_progress'] = datetime.datetime.now()
-                job.save()
-        if job:
-            job.meta['progress'] = 1
-            job.save()
+            set_progress(job, processed / total)
+        set_progress(job, 1)
         return data
 
     def get_all_items(self, q_object):
