@@ -228,6 +228,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         'Check if you no longer want to bill for this asset'
     ))
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    production_year = models.PositiveSmallIntegerField(null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots',
         help_text=('For blade centers: the number of slots available in this '

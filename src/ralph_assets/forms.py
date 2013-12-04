@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
+import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
 from django.forms import (
@@ -74,7 +75,7 @@ class BaseAssetForm(ModelForm):
             'delivery_date', 'invoice_date', 'production_use_date',
             'provider_order_date', 'price', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider', 'status',
-            'remarks', 'sn', 'barcode', 'warehouse',
+            'remarks', 'sn', 'barcode', 'warehouse', 'production_year',
         )
         widgets = {
             'remarks': Textarea(attrs={'rows': 3}),
@@ -122,7 +123,7 @@ class BulkEditAssetForm(ModelForm):
             'support_period', 'support_type', 'support_void_reporting',
             'provider', 'source', 'status', 'request_date',
             'delivery_date', 'invoice_date', 'production_use_date',
-            'provider_order_date',
+            'provider_order_date', 'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -144,7 +145,7 @@ class BulkEditAssetForm(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status',
+            'provider', 'source', 'status', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -357,6 +358,7 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
+            'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -417,6 +419,9 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
             )
         return data
 
+    def clean_production_year(self):
+        return validate_production_year(self)
+
 
 class BaseEditAssetForm(ModelForm):
     class Meta:
@@ -450,6 +455,7 @@ class BaseEditAssetForm(ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
+            'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -515,10 +521,29 @@ class BaseEditAssetForm(ModelForm):
             )
         return data
 
+    def clean_production_year(self):
+        return validate_production_year(self)
+
     def clean(self):
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         return self.cleaned_data
+
+
+def validate_production_year(asset):
+    data = asset.cleaned_data["production_year"]
+    # Matches any 4-digit number:
+    year_re = re.compile('^\d{4}$')
+    if not year_re.match(str(data)):
+        raise ValidationError(u'%s is not a valid year.' % data)
+    # Check not before this year:
+    year = int(data)
+    thisyear = time.localtime()[0]
+    if year > thisyear:
+        raise ValidationError(
+            u'%s is a year in the future.'
+            u' Please enter a current or past year.' % data)
+    return data
 
 
 class MoveAssetPartForm(Form):
@@ -790,7 +815,7 @@ class SplitDevice(ModelForm):
             'support_period', 'support_type', 'support_void_reporting',
             'provider', 'source', 'status', 'request_date', 'delivery_date',
             'invoice_date', 'production_use_date', 'provider_order_date',
-            'warehouse',
+            'warehouse', 'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -811,7 +836,7 @@ class SplitDevice(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'warehouse',
+            'provider', 'source', 'status', 'warehouse', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
