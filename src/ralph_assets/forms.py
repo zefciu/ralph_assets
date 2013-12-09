@@ -323,12 +323,32 @@ def _sn_additional_validation(serial_numbers):
         raise ValidationError(msg)
 
 
-class BaseAddAssetForm(DependencyForm, ModelForm):
+class DependencyAssetForm(DependencyForm):
     @property
     def dependencies(self):
-        blade_systems = AssetCategory.objects.filter(is_blade=True).all()
-        yield Dependency('slots', 'category', blade_systems, SHOW)
+        yield Dependency(
+            'slots',
+            'category',
+            AssetCategory.objects.filter(is_blade=True).all(),
+            SHOW,
+        )
 
+        yield Dependency(
+            'power_consumption',
+            'category',
+            AssetCategory.objects.filter(is_power_consumption=True).all(),
+            SHOW,
+        )
+
+        yield Dependency(
+            'place_of_collocation',
+            'category',
+            AssetCategory.objects.filter(is_place_of_collocation=True).all(),
+            SHOW,
+        )
+
+
+class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     class Meta:
         model = Asset
         fields = (
@@ -357,6 +377,8 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
+            'power_consumption',
+            'place_of_collocation',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -418,7 +440,7 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
         return data
 
 
-class BaseEditAssetForm(ModelForm):
+class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     class Meta:
         model = Asset
         fields = (
@@ -450,6 +472,8 @@ class BaseEditAssetForm(ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
+            'power_consumption',
+            'place_of_collocation',
         )
         widgets = {
             'request_date': DateWidget(),

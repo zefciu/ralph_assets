@@ -22,6 +22,8 @@ def get_assets(date):
             'price': asset.price,
             'ralph_id': device_info.ralph_device_id if device_info else None,
             'slots': asset.slots,
+            'power_consumption': asset.power_consumption,
+            'place_of_collocation': asset.place_of_collocation,
             'sn': asset.sn,
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,

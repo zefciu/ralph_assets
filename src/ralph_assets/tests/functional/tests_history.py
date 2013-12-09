@@ -55,6 +55,8 @@ class HistoryAssetsView(TestCase):
             'barcode': '666666',
             'category': self.category.id,
             'slots': 1.0,
+            'power_consumption': '1000kWh',
+            'place_of_collocation': 'D2',
             'ralph_device_id': '',
             'asset': True,  # Button name
             'source': 1,
@@ -145,6 +147,8 @@ class ConnectAssetWithDevice(TestCase):
             'barcode': '7777',
             'category': self.category.id,
             'slots': 0,
+            'power_consumption': '20kWh',
+            'place_of_collocation': 'D4',
             'ralph_device_id': '',
             'asset': True,  # Button name
             'source': 1,
@@ -225,6 +229,8 @@ class TestsStockDevice(TestCase):
             'barcode': '7777',
             'category': self.category.id,
             'slots': 0,
+            'power_consumption': '20kWh',
+            'place_of_collocation': 'D4',
             'sn': 'fake-sn',
             'ralph_device_id': '',
             'asset': True,  # Button name

@@ -10,7 +10,7 @@ from django.test import TestCase
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
 from ralph_assets.models_assets import PartInfo, AssetModel
-from ralph_assets.tests.util import create_asset
+from ralph_assets.tests.util import create_asset, create_category
 
 
 class TestModelAsset(TestCase):
@@ -51,6 +51,8 @@ class TestApiAssets(TestCase):
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
+            power_consumption='1000kWh',
+            place_of_collocation='D2',
             price=100,
             deprecation_rate=100,
         )
@@ -61,6 +63,8 @@ class TestApiAssets(TestCase):
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
+            power_consumption='1000kWh',
+            place_of_collocation='D2',
             price=100,
             part_info=part_info,
             deprecation_rate=50,
@@ -75,6 +79,14 @@ class TestApiAssets(TestCase):
             )
             self.assertEqual(item['slots'], self.asset.slots)
             self.assertEqual(item['price'], self.asset.price)
+            self.assertEqual(
+                item['power_consumption'],
+                self.asset.power_consumption
+            )
+            self.assertEqual(
+                item['place_of_collocation'],
+                self.asset.place_of_collocation
+            )
             self.assertEqual(
                 item['is_deprecated'],
                 self.asset.is_deprecated(date)

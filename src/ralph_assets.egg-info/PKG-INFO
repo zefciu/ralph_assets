@@ -1,0 +1,90 @@
+Metadata-Version: 1.1
+Name: ralph-assets
+Version: 1.2.12
+Summary: Assets management module for Ralph
+Home-page: http://ralph.allegrogroup.com/
+Author: Grupa Allegro Sp. z o.o. and Contributors
+Author-email: it-ralph-dev@allegro.pl
+License: Apache Software License v2.0
+Description: =====
+        Assets module for Ralph
+        =====
+        
+        Assets module brings Offline Stock management functionality to the Ralph.
+        It maintains ordering, purchasing and releasing the device to the user.
+        It is not limited to datacenter. You can maintain processes for backoffice assets 
+        as well.
+        
+        Ralph is an asset management system for your data center. It lets you see what
+        hardware and software is installed. It also lets you keep track of who is using
+        every device, for what, and how much it costs.
+        
+        
+        Change Log
+        ----------
+        1.2.9
+        ~~~~
+        
+        * Merged the u_height and size attributes
+        
+        * Dynamically requiring 'slots' for blade categories
+        
+        * Fixed unit tests
+        
+        1.2.7
+        ~~~~~
+        Released on October 03, 2013
+        
+        * Added API for Ralph.
+        
+        * Required form fields are now labelled accordingly.
+        
+        * ``ralph_device_id`` get automatically cleaned when when Device linked to it gets deleted.
+        
+        * Added partial and exact searches to assets.
+        
+        * Unlinking assets from devices (and searching for unlinked assets) is now
+          possible.
+        
+        * Added searching assets by ``ralph_device_id``. Added option to create stock
+          devices for unlinked assets.
+        
+        * Fixed creating assets with ``add part`` button.
+        
+        * Column ``department`` added to csv report in ``search DC assets``.
+        
+        
+        
+        1.2.6
+        ~~~~~
+        
+        Released on August 08, 2013
+        
+        * Added ajax autocomlation for Asset by barcode and/or sn.
+        
+        * Disabled admin deletetion for Assets.
+        
+        * Added link to the Pricing App.
+        
+        * Added field: last modification, asset_id to csv file.
+        
+        
+        
+        1.0.0
+        ~~~~~
+        
+        * initial release
+        
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Framework :: Django
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Natural Language :: English
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows :: Windows NT/2000
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 2 :: Only
+Classifier: Topic :: Internet :: WWW/HTTP

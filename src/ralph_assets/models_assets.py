@@ -113,6 +113,8 @@ class AssetCategory(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
     is_blade = models.BooleanField()
+    is_power_consumption = models.BooleanField(default=False)
+    is_place_of_collocation = models.BooleanField(default=False)
     parent = TreeForeignKey(
         'self',
         null=True,
@@ -228,6 +230,16 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         'Check if you no longer want to bill for this asset'
     ))
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    power_consumption = models.CharField(
+        max_length=25,
+        null=True,
+        blank=True
+    )
+    place_of_collocation = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
     slots = models.FloatField(
         verbose_name='Slots',
         help_text=('For blade centers: the number of slots available in this '
