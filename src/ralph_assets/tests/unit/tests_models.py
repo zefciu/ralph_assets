@@ -59,9 +59,9 @@ class TestModelAsset(TestCase):
         dev2.save()
 
     def test_is_discovered(self):
-        self.assertEqual(self.asset.is_discovered(), True)
-        self.assertEqual(self.asset2.is_discovered(), False)
-        self.assertEqual(self.asset3.is_discovered(), False)
+        self.assertEqual(self.asset.is_discovered, True)
+        self.assertEqual(self.asset2.is_discovered, False)
+        self.assertEqual(self.asset3.is_discovered, False)
 
     def test_is_deperecation(self):
         date = datetime.date(2014, 03, 29)
