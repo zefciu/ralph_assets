@@ -10,7 +10,7 @@ from django.test import TestCase
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
 from ralph_assets.models_assets import PartInfo, AssetModel
-from ralph_assets.tests.util import create_asset, create_category
+from ralph_assets.tests.util import create_asset
 
 
 class TestModelAsset(TestCase):
