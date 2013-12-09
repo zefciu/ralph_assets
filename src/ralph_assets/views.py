@@ -185,7 +185,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           export=True),
         _('Price', field='price', sort_expression='price',
           bob_tag=True, export=True),
-        _('Discovered', bob_tag=True),
+        _('Discovered', bob_tag=True, field='is_discovered', export=True,
+            foreign_field_name='is_discovered'),
         _('Actions', bob_tag=True),
         _('Barcode salvaged', field='barcode_salvaged',
           foreign_field_name='part_info', export=True),
@@ -380,6 +381,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         cell = self.get_cell(asset.part_info, field, PartInfo)
                     elif nested_field_name == 'venture':
                         cell = self.get_cell(asset.venture, field, Venture)
+                    elif nested_field_name == 'is_discovered':
+                        cell = unicode(asset.is_discovered)
                     else:
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
