@@ -1,5 +1,9 @@
 Change Log
 ----------
+HEAD:
+
+* fixes of Discovered column. Also it shows now on csv reports.
+
 1.2.9
 ~~~~
 
