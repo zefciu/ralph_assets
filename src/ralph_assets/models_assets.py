@@ -408,7 +408,7 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         if not self.ralph_device_id:
             return None
         try:
-            dev = Device.objects.get(id = self.ralph_device_id)
+            dev = Device.objects.get(id=self.ralph_device_id)
             return dev
         except Device.DoesNotExist:
             return None

@@ -383,7 +383,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                     elif nested_field_name == 'venture':
                         cell = self.get_cell(asset.venture, field, Venture)
                     elif nested_field_name == 'is_discovered':
-                        cell = str(asset.is_discovered)
+                        cell = unicode(asset.is_discovered)
                     else:
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
