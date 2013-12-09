@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
-import datetime
 from rq import get_current_job
 
 from collections import Counter
@@ -505,7 +504,7 @@ class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
     def get_result(self, request, *args, **kwargs):
         self.form = SearchAssetForm(request.GET, mode=_get_mode(request))
         return self.handle_search_data(get_csv=True)
-    
+
     def get_response(self, request, result):
         if self.export == 'csv':
             return self.make_csv_response(result)
@@ -519,7 +518,6 @@ class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
     def is_async(self, request, *args, **kwargs):
         self.export = request.GET.get('export')
         return self.export == 'csv'
-
 
     def get_csv_data(self, queryset):
         data = super(DataCenterSearch, self).get_csv_rows(
