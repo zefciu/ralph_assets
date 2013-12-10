@@ -233,12 +233,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     power_consumption = models.CharField(
         max_length=25,
         null=True,
-        blank=True
+        blank=True,
     )
     place_of_collocation = models.CharField(
         max_length=50,
         null=True,
-        blank=True
+        blank=True,
     )
     slots = models.FloatField(
         verbose_name='Slots',
