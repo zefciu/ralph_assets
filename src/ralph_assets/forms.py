@@ -327,7 +327,7 @@ class DependencyAssetForm(DependencyForm):
     '''
     Containt common solution for add asset and edit asset section.
     Launches a plugin which depending on the category field gives the
-    opportunity to complete fields such slots, power consumption and 
+    opportunity to complete fields such slots, power consumption and
     place of collocation
     '''
     @property
