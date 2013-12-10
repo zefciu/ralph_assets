@@ -6,7 +6,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import mock
 from django.test import TestCase
+
+from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
 from ralph_assets.models_assets import PartInfo, AssetModel
@@ -21,12 +24,16 @@ class TestModelAsset(TestCase):
             support_period=1,
             deprecation_rate=100,
         )
+        self.asset.device_info.ralph_device_id = 666
+        self.asset.device_info.save()
         self.asset2 = create_asset(
             sn='1111-1111-1111-1112',
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=50,
         )
+        self.asset2.device_info.ralph_device_id = 667
+        self.asset2.device_info.save()
         self.asset3 = create_asset(
             sn='1111-1111-1111-1113',
             invoice_date=datetime.date(2012, 11, 28),
@@ -34,6 +41,27 @@ class TestModelAsset(TestCase):
             deprecation_rate=50,
             force_deprecation=True,
         )
+        dev1 = Device.create(
+            [('1', 'sda', 0)],
+            model_name='xxx',
+            model_type=DeviceType.rack_server,
+            allow_stub=1,
+        )
+        dev1.id = 666
+        dev1.save()
+        dev2 = Device.create(
+            [('1', 'dawdwad', 0)],
+            model_name='Unknown',
+            model_type=DeviceType.unknown,
+            allow_stub=1,
+        )
+        dev2.id = 667
+        dev2.save()
+
+    def test_is_discovered(self):
+        self.assertEqual(self.asset.is_discovered, True)
+        self.assertEqual(self.asset2.is_discovered, False)
+        self.assertEqual(self.asset3.is_discovered, False)
 
     def test_is_deperecation(self):
         date = datetime.date(2014, 03, 29)

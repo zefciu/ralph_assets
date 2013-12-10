@@ -45,7 +45,6 @@ form.form-inline {
                 reports.setup({
                     trigger: $('.pagination').find('a').last(),
                     progressBar: '#async-progress',
-                    url: '{{ csv_url }}',
                     etaEl: '#eta'
                 });
             });
@@ -87,7 +86,7 @@ form.form-inline {
                     <td>{{row.venture}}</td>
                     <td>{{row.price}}</td>
                     <td>
-                        {% if row.device_info.ralph_device_id %}
+                        {% if row.is_discovered %}
                             <i class="fugue-icon fugue-tick-circle"></i>
                         {% else %}
                             <i class="fugue-icon fugue-cross-octagon"></i>

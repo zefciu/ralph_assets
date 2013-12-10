@@ -363,6 +363,17 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             self.device_info.delete()
         return super(Asset, self).delete(*args, **kwargs)
 
+    @property
+    def is_discovered(self):
+        if self.part_info:
+            if self.part_info.device:
+                return self.part_info.device.is_discovered()
+            return False
+        dev = self.device_info.get_ralph_device()
+        if not dev or not dev.model:
+            return False
+        return dev.model.type != DeviceType.unknown.id
+
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
 def create_asset_post_save(sender, instance, created, **kwargs):
@@ -404,6 +415,15 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
             self.ralph_device_id,
             self.size,
         )
+
+    def get_ralph_device(self):
+        if not self.ralph_device_id:
+            return None
+        try:
+            dev = Device.objects.get(id=self.ralph_device_id)
+            return dev
+        except Device.DoesNotExist:
+            return None
 
     def __init__(self, *args, **kwargs):
         self.save_comment = None
