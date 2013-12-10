@@ -31,6 +31,7 @@ def get_assets(date):
 
 
 def get_asset_parts():
+    """Yields dicts describing parts of assets"""
     for asset in Asset.objects_dc.all():
         for part in asset.get_parts():
             device_info = asset.device_info
