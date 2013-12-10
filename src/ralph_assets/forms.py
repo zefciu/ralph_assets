@@ -324,6 +324,12 @@ def _sn_additional_validation(serial_numbers):
 
 
 class DependencyAssetForm(DependencyForm):
+    '''
+    Containt common solution for add asset and edit asset section.
+    Launches a plugin which depending on the category field gives the
+    opportunity to complete fields such slots, power consumption and 
+    place of collocation
+    '''
     @property
     def dependencies(self):
         yield Dependency(
@@ -349,6 +355,9 @@ class DependencyAssetForm(DependencyForm):
 
 
 class BaseAddAssetForm(DependencyAssetForm, ModelForm):
+    '''
+    Base class to display form used to add new asset
+    '''
     class Meta:
         model = Asset
         fields = (
@@ -441,6 +450,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
 
 class BaseEditAssetForm(DependencyAssetForm, ModelForm):
+    '''
+    Base class to display form used to edit new asset
+    '''
     class Meta:
         model = Asset
         fields = (

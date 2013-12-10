@@ -172,6 +172,9 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
+    '''
+    Asset model contain fields with basic information about single asset
+    '''
     device_info = models.OneToOneField(
         'DeviceInfo', null=True, blank=True, on_delete=models.CASCADE
     )
