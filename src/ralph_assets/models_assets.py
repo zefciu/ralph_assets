@@ -230,10 +230,10 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         'Check if you no longer want to bill for this asset'
     ))
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
-    power_consumption = models.CharField(
-        max_length=25,
+    power_consumption = models.IntegerField(
         null=True,
         blank=True,
+        default=0,
     )
     place_of_collocation = models.CharField(
         max_length=50,
