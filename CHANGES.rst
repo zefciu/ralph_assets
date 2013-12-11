@@ -1,7 +1,15 @@
 Change Log
 ----------
 
+1.2.13
+~~~~~~~
+
 * fixes of Discovered column. Also it shows now on csv reports.
+
+1.2.12
+~~~~~~~
+
+* Improved the csv exporting system
 
 1.2.11
 ~~~~~~~
