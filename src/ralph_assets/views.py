@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
-import datetime
 from rq import get_current_job
 
 from collections import Counter
@@ -50,7 +49,7 @@ from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
-from ralph.util.reports import Report
+from ralph.util.reports import Report, set_progress
 
 
 SAVE_PRIORITY = 200
@@ -186,7 +185,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
           export=True),
         _('Price', field='price', sort_expression='price',
           bob_tag=True, export=True),
-        _('Discovered', bob_tag=True),
+        _('Discovered', bob_tag=True, field='is_discovered', export=True,
+            foreign_field_name='is_discovered'),
         _('Actions', bob_tag=True),
         _('Barcode salvaged', field='barcode_salvaged',
           foreign_field_name='part_info', export=True),
@@ -381,19 +381,15 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         cell = self.get_cell(asset.part_info, field, PartInfo)
                     elif nested_field_name == 'venture':
                         cell = self.get_cell(asset.venture, field, Venture)
+                    elif nested_field_name == 'is_discovered':
+                        cell = unicode(asset.is_discovered)
                     else:
                         cell = self.get_cell(asset, field, Asset)
                     row.append(unicode(cell))
             data.append(row)
             processed += 1
-            if job:
-                job.meta['progress'] = processed / total
-                if not job.meta['start_progress']:
-                    job.meta['start_progress'] = datetime.datetime.now()
-                job.save()
-        if job:
-            job.meta['progress'] = 1
-            job.save()
+            set_progress(job, processed / total)
+        set_progress(job, 1)
         return data
 
     def get_all_items(self, q_object):
@@ -467,7 +463,7 @@ class BackOfficeSearch(BackOfficeMixin, AssetSearch):
         return Asset.objects_bo.filter(query)
 
 
-class DataCenterSearch(DataCenterMixin, AssetSearch):
+class DataCenterSearch(Report, DataCenterMixin, AssetSearch):
     header = 'Search DC Assets'
     sidebar_selected = 'search'
     template_name = 'assets/search_asset.html'
@@ -508,11 +504,23 @@ class DataCenterSearch(DataCenterMixin, AssetSearch):
         ),
     ]
 
+    def get_result(self, request, *args, **kwargs):
+        self.form = SearchAssetForm(request.GET, mode=_get_mode(request))
+        return self.handle_search_data(get_csv=True)
+
+    def get_response(self, request, result):
+        if self.export == 'csv':
+            return self.make_csv_response(result)
+
     def __init__(self, *args, **kwargs):
         self.columns = (
             self.columns + self.columns_nested
         )
         super(DataCenterSearch, self).__init__(*args, **kwargs)
+
+    def is_async(self, request, *args, **kwargs):
+        self.export = request.GET.get('export')
+        return self.export == 'csv'
 
     def get_csv_data(self, queryset):
         data = super(DataCenterSearch, self).get_csv_rows(
@@ -1314,18 +1322,3 @@ class DataCenterSplitDevice(DataCenterMixin):
         except LookupError:
             components = []
         return components
-
-
-def do_csv_dc_search(request, *args, **kwargs):
-    """The asynchronous version of DataCenterSearch"""
-    view = DataCenterSearch()
-    view.form = SearchAssetForm(request.GET, mode=_get_mode(request))
-    view.request = request
-    return view.handle_search_data(get_csv=True)
-
-
-def csv_dc_search_response(request, result):
-    return DataCenterSearch().make_csv_response(result)
-
-csv_dc_search = Report.as_view(
-    get_result=do_csv_dc_search, get_response=csv_dc_search_response)
