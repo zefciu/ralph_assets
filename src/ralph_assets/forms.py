@@ -332,6 +332,14 @@ class DependencyAssetForm(DependencyForm):
     '''
     @property
     def dependencies(self):
+        """
+        On the basis of data from the database fives the opportunity
+        to complete fields such slots, power consumption and 
+        place of collocation
+
+        :yields object: Logic to test if category is in selected categories 
+        :ytype object:
+        """
         yield Dependency(
             'slots',
             'category',
