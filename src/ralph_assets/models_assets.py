@@ -99,8 +99,23 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
 
 class AssetModel(
         TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    '''
+    Asset models describing hardware and contain standard information like
+    created at
+    '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
+    category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    power_consumption = models.IntegerField(
+        verbose_name = "Power consumption (W)",
+        blank=True,
+        default=0,
+    )
+    place_of_collocation = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
@@ -113,8 +128,6 @@ class AssetCategory(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
     is_blade = models.BooleanField()
-    is_power_consumption = models.BooleanField(default=False)
-    is_place_of_collocation = models.BooleanField(default=False)
     parent = TreeForeignKey(
         'self',
         null=True,
@@ -233,16 +246,6 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         'Check if you no longer want to bill for this asset'
     ))
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
-    power_consumption = models.IntegerField(
-        null=True,
-        blank=True,
-        default=0,
-    )
-    place_of_collocation = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-    )
     slots = models.FloatField(
         verbose_name='Slots',
         help_text=('For blade centers: the number of slots available in this '

@@ -21,6 +21,8 @@ from ralph_assets.models_assets import (
 DEFAULT_ASSET_DATA = dict(
     manufacturer='Manufacturer1',
     model='Model1',
+    power_consumption=100,
+    place_of_collocation='D4',
     warehouse='Warehouse',
     type=AssetType.data_center,
     status=AssetStatus.new,
@@ -55,7 +57,10 @@ def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
         manufacturer = create_manufacturer()
     else:
         manufacturer = create_manufacturer(manufacturer)
-    model, created = AssetModel.objects.get_or_create(name=name)
+    model, created = AssetModel.objects.get_or_create(
+        name=name,
+        place_of_collocation='D2',
+        power_consumption=100)
     if created:
         model.manufacturer = manufacturer
         model.save()

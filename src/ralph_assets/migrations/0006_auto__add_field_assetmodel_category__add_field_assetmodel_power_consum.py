@@ -3,67 +3,45 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+from ralph_assets.models_assets import Asset
 
 
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Deleting model 'MyTestModel'
-        db.delete_table('ralph_assets_mytestmodel')
-
-        # Deleting model 'MyRelatedTestModel'
-        db.delete_table('ralph_assets_myrelatedtestmodel')
-
-        # Adding field 'Asset.power_consumption'
-        db.add_column('ralph_assets_asset', 'power_consumption',
-                      self.gf('django.db.models.fields.CharField')(max_length=25, null=True, blank=True),
+        # Adding field 'AssetModel.category'
+        db.add_column('ralph_assets_assetmodel', 'category',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetCategory'], null=True, blank=True),
                       keep_default=False)
 
-        # Adding field 'Asset.place_of_collocation'
-        db.add_column('ralph_assets_asset', 'place_of_collocation',
+        # Adding field 'AssetModel.power_consumption'
+        db.add_column('ralph_assets_assetmodel', 'power_consumption',
+                      self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
+                      keep_default=False)
+
+        # Adding field 'AssetModel.place_of_collocation'
+        db.add_column('ralph_assets_assetmodel', 'place_of_collocation',
                       self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True),
                       keep_default=False)
 
-        # Adding field 'AssetCategory.is_power_consumption'
-        db.add_column('ralph_assets_assetcategory', 'is_power_consumption',
-                      self.gf('django.db.models.fields.BooleanField')(default=False),
-                      keep_default=False)
-
-        # Adding field 'AssetCategory.is_place_of_collocation'
-        db.add_column('ralph_assets_assetcategory', 'is_place_of_collocation',
-                      self.gf('django.db.models.fields.BooleanField')(default=False),
-                      keep_default=False)
+        # Migrate categories from assets to assets models
+        for asset in Asset.objects.values_list(
+            'category_id', 'model_id').filter():
+            db.execute(
+                "UPDATE ralph_assets_assetmodel SET category_id = %s "
+                "WHERE id = %s",
+            asset)
 
 
     def backwards(self, orm):
-        # Adding model 'MyTestModel'
-        db.create_table('ralph_assets_mytestmodel', (
-            ('field2', self.gf('django.db.models.fields.DateTimeField')()),
-            ('field1', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        ))
-        db.send_create_signal('ralph_assets', ['MyTestModel'])
+        # Deleting field 'AssetModel.category'
+        db.delete_column('ralph_assets_assetmodel', 'category_id')
 
-        # Adding model 'MyRelatedTestModel'
-        db.create_table('ralph_assets_myrelatedtestmodel', (
-            ('count', self.gf('django.db.models.fields.IntegerField')(default=0)),
-            ('description', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('my_test_model', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.MyTestModel'])),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        ))
-        db.send_create_signal('ralph_assets', ['MyRelatedTestModel'])
+        # Deleting field 'AssetModel.power_consumption'
+        db.delete_column('ralph_assets_assetmodel', 'power_consumption')
 
-        # Deleting field 'Asset.power_consumption'
-        db.delete_column('ralph_assets_asset', 'power_consumption')
-
-        # Deleting field 'Asset.place_of_collocation'
-        db.delete_column('ralph_assets_asset', 'place_of_collocation')
-
-        # Deleting field 'AssetCategory.is_power_consumption'
-        db.delete_column('ralph_assets_assetcategory', 'is_power_consumption')
-
-        # Deleting field 'AssetCategory.is_place_of_collocation'
-        db.delete_column('ralph_assets_assetcategory', 'is_place_of_collocation')
+        # Deleting field 'AssetModel.place_of_collocation'
+        db.delete_column('ralph_assets_assetmodel', 'place_of_collocation')
 
 
     models = {
@@ -139,8 +117,6 @@ class Migration(SchemaMigration):
             'office_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.OfficeInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'part_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.PartInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
-            'place_of_collocation': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'power_consumption': ('django.db.models.fields.CharField', [], {'max_length': '25', 'null': 'True', 'blank': 'True'}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
             'production_use_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
@@ -165,8 +141,6 @@ class Migration(SchemaMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_blade': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_place_of_collocation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_power_consumption': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
@@ -204,13 +178,16 @@ class Migration(SchemaMigration):
         'ralph_assets.assetmodel': {
             'Meta': {'object_name': 'AssetModel'},
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetCategory']", 'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'place_of_collocation': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
         },
         'ralph_assets.deviceinfo': {
             'Meta': {'object_name': 'DeviceInfo'},
