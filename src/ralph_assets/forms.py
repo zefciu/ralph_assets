@@ -327,37 +327,21 @@ class DependencyAssetForm(DependencyForm):
     '''
     Containt common solution for add asset and edit asset section.
     Launches a plugin which depending on the category field gives the
-    opportunity to complete fields such slots, power consumption and
-    place of collocation
+    opportunity to complete fields such slots
     '''
     @property
     def dependencies(self):
         """
         On the basis of data from the database fives the opportunity
-        to complete fields such slots, power consumption and
-        place of collocation
+        to complete fields such slots
 
-        :yields object: Logic to test if category is in selected categories
-        :ytype object:
+        :returns object: Logic to test if category is in selected categories
+        :rtype object:
         """
         yield Dependency(
             'slots',
             'category',
             AssetCategory.objects.filter(is_blade=True).all(),
-            SHOW,
-        )
-
-        yield Dependency(
-            'power_consumption',
-            'category',
-            AssetCategory.objects.filter(is_power_consumption=True).all(),
-            SHOW,
-        )
-
-        yield Dependency(
-            'place_of_collocation',
-            'category',
-            AssetCategory.objects.filter(is_place_of_collocation=True).all(),
             SHOW,
         )
 
@@ -394,8 +378,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
-            'power_consumption',
-            'place_of_collocation',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -492,8 +474,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'deprecation_rate',
             'force_deprecation',
             'slots',
-            'power_consumption',
-            'place_of_collocation',
         )
         widgets = {
             'request_date': DateWidget(),
