@@ -15,6 +15,13 @@ def get_assets(date):
         invoice_date__lte=date,
     ):
         device_info = asset.device_info
+
+        # Something like 'get_if_exist' is needed
+        venture = asset.venture
+        venture_symbol = None
+        if venture:
+            venture_symbol = venture.symbol
+
         yield {
             'asset_id': asset.id,
             'barcode': asset.barcode,
@@ -25,6 +32,8 @@ def get_assets(date):
             'sn': asset.sn,
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,
+            'power_consumption': asset.model.power_consumption,
+            'venture_symbol': venture_symbol,
         }
 
 
