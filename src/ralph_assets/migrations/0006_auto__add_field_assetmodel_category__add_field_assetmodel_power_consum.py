@@ -19,6 +19,11 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
                       keep_default=False)
 
+        # Adding field 'AssetModel.number_of_cpu'
+        db.add_column('ralph_assets_assetmodel', 'number_of_cpu',
+                      self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
+                      keep_default=False)
+
         # Adding field 'AssetModel.place_of_collocation'
         db.add_column('ralph_assets_assetmodel', 'place_of_collocation',
                       self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True),
@@ -32,13 +37,15 @@ class Migration(SchemaMigration):
                 "WHERE id = %s",
             asset)
 
-
     def backwards(self, orm):
         # Deleting field 'AssetModel.category'
         db.delete_column('ralph_assets_assetmodel', 'category_id')
 
         # Deleting field 'AssetModel.power_consumption'
         db.delete_column('ralph_assets_assetmodel', 'power_consumption')
+
+        # Deleting field 'AssetModel.number_of_cpu'
+        db.delete_column('ralph_assets_assetmodel', 'number_of_cpu')
 
         # Deleting field 'AssetModel.place_of_collocation'
         db.delete_column('ralph_assets_assetmodel', 'place_of_collocation')
@@ -186,6 +193,7 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'number_of_cpu': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
             'place_of_collocation': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
         },
