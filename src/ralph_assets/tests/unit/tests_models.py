@@ -126,3 +126,7 @@ class TestApiAssets(TestCase):
                 item['place_of_collocation'],
                 model.place_of_collocation,
             )
+            self.assertEqual(
+                item['number_of_cpu'],
+                model.number_of_cpu,
+            )
