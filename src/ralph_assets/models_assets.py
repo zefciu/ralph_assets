@@ -28,6 +28,7 @@ from uuid import uuid4
 
 from django.db import models
 from django.db.models.signals import post_save
+from django.db.utils import DatabaseError
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
@@ -453,7 +454,7 @@ def device_post_save(sender, instance, **kwargs):
             di = DeviceInfo.objects.get(ralph_device_id=instance.id)
             di.ralph_device_id = None
             di.save()
-        except DeviceInfo.DoesNotExist:
+        except (DeviceInfo.DoesNotExist, DatabaseError):
             pass
 
 

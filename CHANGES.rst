@@ -1,8 +1,19 @@
 Change Log
 ----------
-HEAD:
 
 * fixes of Discovered column. Also it shows now on csv reports.
+
+1.2.11
+~~~~~~~
+
+* Basing deprecation on invoice date instead of delivery date
+
+1.2.10
+~~~~~~~~~~~
+
+* Pricing api uses only devices that existed on given date
+
+* Pricing api can use forced deprecation
 
 1.2.9
 ~~~~
