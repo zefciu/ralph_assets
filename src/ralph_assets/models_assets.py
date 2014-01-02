@@ -256,6 +256,19 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         except Device.DoesNotExist:
             return None
 
+    @property
+    def cores_count(self):
+        """Returns cores count assigned to device in Ralph"""
+        # TODO: get cores information from asset model
+        if not self.device_info or not self.device_info.ralph_device_id:
+            return None
+        try:
+            return Device.objects.get(
+                pk=self.device_info.ralph_device_id,
+            ).get_core_count()
+        except Device.DoesNotExist:
+            return None
+
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
         asset = Asset(**base_args)
