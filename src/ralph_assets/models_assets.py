@@ -224,7 +224,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
     deprecation_rate = models.DecimalField(
-        decimal_places=2, max_digits=5, null=True, blank=True)
+        decimal_places=2,
+        max_digits=5,
+        null=True,
+        blank=True,
+        default=25
+    )
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
