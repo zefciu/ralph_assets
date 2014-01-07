@@ -10,8 +10,8 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         """
-        Replaces deprecation_rate to 0 in every DailyDevice where it was
-        None/null previously
+        Replaces deprecation_rate to 0 in every Asset where it was None/null
+        previously
         """
         for asset in orm.Asset.objects.filter(
             deprecation_rate=None
