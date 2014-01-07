@@ -227,7 +227,6 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     deprecation_rate = models.DecimalField(
         decimal_places=2,
         max_digits=5,
-        null=True,
         blank=True,
         default=settings.DEFAULT_DEPRECATION_RATE,
     )
