@@ -29,6 +29,7 @@ def get_assets(date):
         if venture:
             venture_symbol = venture.symbol
 
+        venture_info = asset.venture
         yield {
             'asset_id': asset.id,
             'barcode': asset.barcode,
@@ -42,6 +43,9 @@ def get_assets(date):
             'power_consumption': asset.model.power_consumption,
             'venture_symbol': venture_symbol,
             'warehouse_id': asset.warehouse_id,
+            'venture_id': venture_info.id if venture_info else None,
+            'is_blade': asset.category.is_blade if asset.category else None,
+            'cores_count': asset.cores_count,
         }
 
 

@@ -12,7 +12,7 @@ from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
 from ralph_assets.models_assets import PartInfo, AssetModel
-from ralph_assets.tests.util import create_asset
+from ralph_assets.tests.util import create_asset, create_category
 
 
 class TestModelAsset(TestCase):
@@ -73,6 +73,9 @@ class TestModelAsset(TestCase):
 
 class TestApiAssets(TestCase):
     def setUp(self):
+        self.category = create_category()
+        self.category.is_blade = True
+        self.category.save()
         self.asset = create_asset(
             sn='1111-1111-1111-1111',
             invoice_date=datetime.date(2012, 11, 28),
@@ -80,7 +83,9 @@ class TestApiAssets(TestCase):
             slots=12.0,
             price=100,
             deprecation_rate=100,
+            category=self.category,
         )
+
         part_info = PartInfo(device=self.asset)
         part_info.save()
         self.asset2 = create_asset(
@@ -91,6 +96,7 @@ class TestApiAssets(TestCase):
             price=100,
             part_info=part_info,
             deprecation_rate=50,
+            category=self.category,
         )
 
     def tests_api_asset(self):
@@ -108,6 +114,9 @@ class TestApiAssets(TestCase):
             )
             self.assertEqual(item['sn'], self.asset.sn)
             self.assertEqual(item['barcode'], self.asset.barcode)
+            self.assertEqual(item['venture_id'], self.asset.venture.id)
+            self.assertEqual(item['is_blade'], self.category.is_blade)
+            self.assertEqual(item['cores_count'], self.asset.cores_count)
 
     def tests_api_asset_part(self):
         for item in get_asset_parts():

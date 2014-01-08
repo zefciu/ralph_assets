@@ -136,6 +136,13 @@ class BulkEditAssetForm(ModelForm):
     source = ChoiceField(
         choices=AssetSource(),
     )
+    model = AutoCompleteSelectField(
+        LOOKUPS['asset_model'],
+        required=True,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmodel/add/?name=',
+        )
+    )
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
