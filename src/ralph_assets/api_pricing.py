@@ -5,8 +5,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ralph_assets.models_assets import Asset
+from ralph_assets.models_assets import Asset, Warehouse
 
+def get_warehouses():
+    """Yields dicts describing all warehouses"""
+    for warehouse in Warehouse.objects.all():
+        yield {
+            'warehouse_id': warehouse.id,
+            'warehouse_name': warehouse.name,
+        }
 
 def get_assets(date):
     """Yields dicts describing all assets"""
@@ -35,6 +42,7 @@ def get_assets(date):
             'power_consumption': asset.model.power_consumption,
             'number_of_cpu': asset.model.number_of_cpu,
             'venture_symbol': venture_symbol,
+            'warehouse_id': asset.warehouse_id,
         }
 
 
