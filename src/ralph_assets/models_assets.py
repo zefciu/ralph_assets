@@ -112,11 +112,7 @@ class AssetModel(
         blank=True,
         default=0,
     )
-    number_of_cpu = models.IntegerField(
-        blank=True,
-        default=0,
-    )
-    place_of_collocation = models.CharField(
+    height_of_device = models.CharField(
         max_length=50,
         null=True,
         blank=True,

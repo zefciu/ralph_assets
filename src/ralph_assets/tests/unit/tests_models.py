@@ -123,10 +123,6 @@ class TestApiAssets(TestCase):
                 model.power_consumption,
             )
             self.assertEqual(
-                item['place_of_collocation'],
-                model.place_of_collocation,
-            )
-            self.assertEqual(
-                item['number_of_cpu'],
-                model.number_of_cpu,
+                item['height_of_device'],
+                model.height_of_device,
             )

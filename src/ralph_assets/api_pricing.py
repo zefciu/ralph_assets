@@ -40,7 +40,6 @@ def get_assets(date):
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,
             'power_consumption': asset.model.power_consumption,
-            'number_of_cpu': asset.model.number_of_cpu,
             'venture_symbol': venture_symbol,
             'warehouse_id': asset.warehouse_id,
         }
@@ -62,6 +61,5 @@ def get_asset_parts():
                 'deprecation_rate': asset.deprecation_rate,
                 'is_deprecated': part.is_deprecated(),
                 'power_consumption': part.model.power_consumption,
-                'place_of_collocation': part.model.place_of_collocation,
-                'number_of_cpu': asset.model.number_of_cpu,
+                'height_of_device': part.model.height_of_device,
             }
