@@ -26,6 +26,7 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from uuid import uuid4
 
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.db.utils import DatabaseError
@@ -224,7 +225,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
     deprecation_rate = models.DecimalField(
-        decimal_places=2, max_digits=5, null=True, blank=True)
+        decimal_places=2,
+        max_digits=5,
+        blank=True,
+        default=settings.DEFAULT_DEPRECATION_RATE,
+    )
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
