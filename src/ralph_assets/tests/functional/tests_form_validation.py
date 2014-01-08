@@ -100,7 +100,7 @@ class TestValidations(TestCase):
             'form-MAX_NUM_FORMS': u'',
             'form-0-id': 1,
             'form-0-type': AssetType.data_center.id,  # Select field; value = 1
-            'form-0-model': self.model1.name,  # u'Model1'
+            'form-0-model': self.model1.id,
             'form-0-invoice_no': 'Invoice No1',
             'form-0-order_no': 'Order No1',
             'form-0-invoice_date': 'wrong_field_data',
