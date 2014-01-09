@@ -127,11 +127,3 @@ class TestApiAssets(TestCase):
             self.assertEqual(item['asset_id'], self.asset2.id)
             self.assertEqual(item['sn'], self.asset.sn)
             self.assertEqual(item['barcode'], self.asset.barcode)
-            self.assertEqual(
-                item['power_consumption'],
-                model.power_consumption,
-            )
-            self.assertEqual(
-                item['height_of_device'],
-                model.height_of_device,
-            )
