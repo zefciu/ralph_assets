@@ -19,14 +19,9 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
                       keep_default=False)
 
-        # Adding field 'AssetModel.number_of_cpu'
-        db.add_column('ralph_assets_assetmodel', 'number_of_cpu',
+        # Adding field 'AssetModel.height_of_device'
+        db.add_column('ralph_assets_assetmodel', 'height_of_device',
                       self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
-                      keep_default=False)
-
-        # Adding field 'AssetModel.place_of_collocation'
-        db.add_column('ralph_assets_assetmodel', 'place_of_collocation',
-                      self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True),
                       keep_default=False)
 
         # Migrate categories from assets to assets models
@@ -44,11 +39,8 @@ class Migration(SchemaMigration):
         # Deleting field 'AssetModel.power_consumption'
         db.delete_column('ralph_assets_assetmodel', 'power_consumption')
 
-        # Deleting field 'AssetModel.number_of_cpu'
-        db.delete_column('ralph_assets_assetmodel', 'number_of_cpu')
-
-        # Deleting field 'AssetModel.place_of_collocation'
-        db.delete_column('ralph_assets_assetmodel', 'place_of_collocation')
+        # Deleting field 'AssetModel.height_of_device'
+        db.delete_column('ralph_assets_assetmodel', 'height_of_device')
 
 
     models = {
@@ -111,7 +103,7 @@ class Migration(SchemaMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'delivery_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
+            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -188,13 +180,12 @@ class Migration(SchemaMigration):
             'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetCategory']", 'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
+            'height_of_device': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
-            'number_of_cpu': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
-            'place_of_collocation': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
         },
         'ralph_assets.deviceinfo': {

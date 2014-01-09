@@ -113,10 +113,10 @@ class AssetModel(
         blank=True,
         default=0,
     )
-    height_of_device = models.CharField(
-        max_length=50,
-        null=True,
+    height_of_device = models.IntegerField(
+        verbose_name="Height of device",
         blank=True,
+        default=0,
     )
 
     def __unicode__(self):

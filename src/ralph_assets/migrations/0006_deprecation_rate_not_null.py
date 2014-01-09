@@ -16,8 +16,6 @@ class Migration(DataMigration):
         for asset in orm.Asset.objects.filter(
             deprecation_rate=None
         ):
-            tmpl = u'Changed deprecation rate null -> 0 in asset {0} (SN: {1})'
-            print(tmpl.format(asset.id, asset.sn))
             asset.deprecation_rate = 0
             asset.save()
 

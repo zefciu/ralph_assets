@@ -331,16 +331,16 @@ def _sn_additional_validation(serial_numbers):
 
 
 class DependencyAssetForm(DependencyForm):
-    '''
-    Containt common solution for add asset and edit asset section.
+    """
+    Containts common solution for adding asset and editing asset section.
     Launches a plugin which depending on the category field gives the
-    opportunity to complete fields such slots
-    '''
+    opportunity to complete fields such as slots
+    """
     @property
     def dependencies(self):
         """
-        On the basis of data from the database fives the opportunity
-        to complete fields such slots
+        On the basis of data from the database gives the opportunity
+        to complete fields such as slots
 
         :returns object: Logic to test if category is in selected categories
         :rtype object:
@@ -448,7 +448,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
 class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
-    Base class to display form used to edit new asset
+    Base class to display form used to edit asset
     '''
     class Meta:
         model = Asset
