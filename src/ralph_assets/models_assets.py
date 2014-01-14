@@ -101,8 +101,23 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
 
 class AssetModel(
         TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    '''
+    Asset models describing hardware and contain standard information like
+    created at
+    '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
+    category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    power_consumption = models.IntegerField(
+        verbose_name="Power consumption",
+        blank=True,
+        default=0,
+    )
+    height_of_device = models.IntegerField(
+        verbose_name="Height of device",
+        blank=True,
+        default=0,
+    )
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
@@ -172,6 +187,9 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
+    '''
+    Asset model contain fields with basic information about single asset
+    '''
     device_info = models.OneToOneField(
         'DeviceInfo', null=True, blank=True, on_delete=models.CASCADE
     )

@@ -1,26 +1,47 @@
 # -*- coding: utf-8 -*-
 import datetime
-
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
+from ralph_assets.models_assets import Asset
 
 
-class Migration(DataMigration):
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        """
-        Replaces deprecation_rate to 0 in every Asset where it was None/null
-        previously
-        """
-        for asset in orm.Asset.objects.filter(
-            deprecation_rate=None
-        ):
-            asset.deprecation_rate = 0
-            asset.save()
+        # Adding field 'AssetModel.category'
+        db.add_column('ralph_assets_assetmodel', 'category',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetCategory'], null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'AssetModel.power_consumption'
+        db.add_column('ralph_assets_assetmodel', 'power_consumption',
+                      self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
+                      keep_default=False)
+
+        # Adding field 'AssetModel.height_of_device'
+        db.add_column('ralph_assets_assetmodel', 'height_of_device',
+                      self.gf('django.db.models.fields.IntegerField')(default=0, blank=True),
+                      keep_default=False)
+
+        # Migrate categories from assets to assets models
+        for asset in Asset.objects.values_list(
+            'category_id', 'model_id').filter():
+            db.execute(
+                "UPDATE ralph_assets_assetmodel SET category_id = %s "
+                "WHERE id = %s",
+            asset)
 
     def backwards(self, orm):
-        pass
+        # Deleting field 'AssetModel.category'
+        db.delete_column('ralph_assets_assetmodel', 'category_id')
+
+        # Deleting field 'AssetModel.power_consumption'
+        db.delete_column('ralph_assets_assetmodel', 'power_consumption')
+
+        # Deleting field 'AssetModel.height_of_device'
+        db.delete_column('ralph_assets_assetmodel', 'height_of_device')
+
 
     models = {
         'account.profile': {
@@ -82,7 +103,7 @@ class Migration(DataMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'delivery_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
+            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -156,13 +177,16 @@ class Migration(DataMigration):
         'ralph_assets.assetmodel': {
             'Meta': {'object_name': 'AssetModel'},
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetCategory']", 'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
+            'height_of_device': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
         },
         'ralph_assets.deviceinfo': {
             'Meta': {'object_name': 'DeviceInfo'},
@@ -214,4 +238,3 @@ class Migration(DataMigration):
     }
 
     complete_apps = ['ralph_assets']
-    symmetrical = True

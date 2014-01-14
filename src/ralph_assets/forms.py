@@ -330,12 +330,33 @@ def _sn_additional_validation(serial_numbers):
         raise ValidationError(msg)
 
 
-class BaseAddAssetForm(DependencyForm, ModelForm):
+class DependencyAssetForm(DependencyForm):
+    """
+    Containts common solution for adding asset and editing asset section.
+    Launches a plugin which depending on the category field gives the
+    opportunity to complete fields such as slots
+    """
     @property
     def dependencies(self):
-        blade_systems = AssetCategory.objects.filter(is_blade=True).all()
-        yield Dependency('slots', 'category', blade_systems, SHOW)
+        """
+        On the basis of data from the database gives the opportunity
+        to complete fields such as slots
 
+        :returns object: Logic to test if category is in selected categories
+        :rtype object:
+        """
+        yield Dependency(
+            'slots',
+            'category',
+            AssetCategory.objects.filter(is_blade=True).all(),
+            SHOW,
+        )
+
+
+class BaseAddAssetForm(DependencyAssetForm, ModelForm):
+    '''
+    Base class to display form used to add new asset
+    '''
     class Meta:
         model = Asset
         fields = (
@@ -425,7 +446,10 @@ class BaseAddAssetForm(DependencyForm, ModelForm):
         return data
 
 
-class BaseEditAssetForm(ModelForm):
+class BaseEditAssetForm(DependencyAssetForm, ModelForm):
+    '''
+    Base class to display form used to edit asset
+    '''
     class Meta:
         model = Asset
         fields = (
