@@ -54,6 +54,7 @@ class AssetAdmin(ModelAdmin):
         'delivery_date',
         'invoice_date',
         'production_use_date',
+        'production_year',
         'deleted',
     )
     search_fields = (
