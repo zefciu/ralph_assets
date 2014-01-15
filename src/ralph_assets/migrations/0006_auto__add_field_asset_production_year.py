@@ -8,14 +8,14 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-
-        # Changing field 'Asset.deprecation_rate'
-        db.alter_column('ralph_assets_asset', 'deprecation_rate', self.gf('django.db.models.fields.DecimalField')(max_digits=5, decimal_places=2))
+        # Adding field 'AssetCategory.production_year'
+        db.add_column('ralph_assets_asset', 'production_year',
+                      self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True))
 
     def backwards(self, orm):
+        # Deleting field 'AssetCategory.production_year'
+        db.delete_column('ralph_assets_asset', 'production_year')
 
-        # Changing field 'Asset.deprecation_rate'
-        db.alter_column('ralph_assets_asset', 'deprecation_rate', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=5, decimal_places=2))
 
     models = {
         'account.profile': {
@@ -77,7 +77,7 @@ class Migration(SchemaMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'delivery_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
+            'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -92,6 +92,7 @@ class Migration(SchemaMigration):
             'part_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.PartInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
             'production_use_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
+			'production_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'provider_order_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
