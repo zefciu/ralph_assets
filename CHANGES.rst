@@ -10,7 +10,7 @@ Change Log
 
 * Created a method in API to retrieve warehouses
 
-* Added fields like venture_id, is_blade, cores_count, power_consumption, height_of_device and warehouse_id to get_asset API
+* Added fields like venture_id, is_blade, cores_count, power_consumption, height_of_device and warehouse_id to get_assets API
 
 * Added fields like power_consumption and height_of_device to AssetModel model
 
