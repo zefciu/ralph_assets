@@ -1,4 +1,4 @@
-Change Log
+ Change Log
 ----------
 
 1.3.0
@@ -6,17 +6,17 @@ Change Log
  
 * Fix bulk edit autocomplete
 
-* Add 25 as default value of deprecation_rate
+* Added 25 as default value of deprecation_rate
 
-* Create a method in API to retrieve warehouses
+* Created a method in API to retrieve warehouses
 
-* Add fields like venture_id, is_blade, cores_count, power_consumption, height_of_device and warehouse_id to get_asset API
+* Added fields like venture_id, is_blade, cores_count, power_consumption, height_of_device and warehouse_id to get_asset API
 
-* Add fields like power_consumption and height_of_device to AssetModel model
+* Added fields like power_consumption and height_of_device to AssetModel model
 
-* Move category from Asset model to AssetModel model
+* Moved category from Asset model to AssetModel model
 
-* Add cores_count method as property to Asset model
+* Added cores_count method as property to Asset model
 
 
 1.2.13
