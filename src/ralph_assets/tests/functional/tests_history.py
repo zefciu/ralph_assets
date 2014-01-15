@@ -58,7 +58,8 @@ class HistoryAssetsView(TestCase):
             'ralph_device_id': '',
             'asset': True,  # Button name
             'source': 1,
-            'deprecation_rate': 0,
+            'deprecation_rate': 0.0,
+            'production_year': 2011,
         }
         self.asset_change_params = {
             'barcode': '777777',
@@ -150,6 +151,7 @@ class ConnectAssetWithDevice(TestCase):
             'asset': True,  # Button name
             'source': 1,
             'deprecation_rate': 0,
+            'production_year': 2011,
         }
         self.asset = None
 
@@ -232,6 +234,7 @@ class TestsStockDevice(TestCase):
             'asset': True,  # Button name
             'source': 1,
             'deprecation_rate': 0,
+            'production_year': 2011,
         }
 
     def create_device(self):

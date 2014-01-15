@@ -63,6 +63,7 @@ class TestAdding(TestCase):
             ralph_device_id='',
             slots=1.0,
             deprecation_rate=0,
+            production_year=2011,
         )
         send_post = self.client.post(url, data_in_add_form)
         # If everything is ok, redirect us to /assets/dc/search
@@ -129,6 +130,7 @@ class TestAdding(TestCase):
             ralph_device_id='',
             asset=True,  # Button name
             deprecation_rate=0,
+            production_year=2011,
         )
         self.client.post(url, data_in_edit_form)
         new_view = self.client.get(url)
