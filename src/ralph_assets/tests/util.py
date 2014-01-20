@@ -21,6 +21,8 @@ from ralph_assets.models_assets import (
 DEFAULT_ASSET_DATA = dict(
     manufacturer='Manufacturer1',
     model='Model1',
+    power_consumption=100,
+    height_of_device='D4',
     warehouse='Warehouse',
     type=AssetType.data_center,
     status=AssetStatus.new,

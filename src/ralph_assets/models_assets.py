@@ -26,6 +26,7 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from uuid import uuid4
 
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.db.utils import DatabaseError
@@ -100,8 +101,23 @@ class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
 
 class AssetModel(
         TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    '''
+    Asset models describing hardware and contain standard information like
+    created at
+    '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
+    category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    power_consumption = models.IntegerField(
+        verbose_name="Power consumption",
+        blank=True,
+        default=0,
+    )
+    height_of_device = models.IntegerField(
+        verbose_name="Height of device",
+        blank=True,
+        default=0,
+    )
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
@@ -171,6 +187,9 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
+    '''
+    Asset model contain fields with basic information about single asset
+    '''
     device_info = models.OneToOneField(
         'DeviceInfo', null=True, blank=True, on_delete=models.CASCADE
     )
@@ -224,7 +243,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     production_use_date = models.DateField(null=True, blank=True)
     provider_order_date = models.DateField(null=True, blank=True)
     deprecation_rate = models.DecimalField(
-        decimal_places=2, max_digits=5, null=True, blank=True)
+        decimal_places=2,
+        max_digits=5,
+        blank=True,
+        default=settings.DEFAULT_DEPRECATION_RATE,
+    )
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
@@ -254,6 +277,19 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             return Device.objects.get(
                 pk=self.device_info.ralph_device_id,
             ).venture
+        except Device.DoesNotExist:
+            return None
+
+    @property
+    def cores_count(self):
+        """Returns cores count assigned to device in Ralph"""
+        # TODO: get cores information from asset model
+        if not self.device_info or not self.device_info.ralph_device_id:
+            return None
+        try:
+            return Device.objects.get(
+                pk=self.device_info.ralph_device_id,
+            ).get_core_count()
         except Device.DoesNotExist:
             return None
 

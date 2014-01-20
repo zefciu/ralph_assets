@@ -5,7 +5,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ralph_assets.models_assets import Asset
+from ralph_assets.models_assets import Asset, Warehouse
+
+
+def get_warehouses():
+    """Yields dicts describing all warehouses"""
+    for warehouse in Warehouse.objects.all():
+        yield {
+            'warehouse_id': warehouse.id,
+            'warehouse_name': warehouse.name,
+        }
 
 
 def get_assets(date):
@@ -15,6 +24,8 @@ def get_assets(date):
         invoice_date__lte=date,
     ):
         device_info = asset.device_info
+
+        venture_info = asset.venture
         yield {
             'asset_id': asset.id,
             'barcode': asset.barcode,
@@ -25,10 +36,17 @@ def get_assets(date):
             'sn': asset.sn,
             'price': asset.price,
             'deprecation_rate': asset.deprecation_rate,
+            'power_consumption': asset.model.power_consumption,
+            'height_of_device': asset.model.height_of_device,
+            'warehouse_id': asset.warehouse_id,
+            'venture_id': venture_info.id if venture_info else None,
+            'is_blade': asset.category.is_blade if asset.category else None,
+            'cores_count': asset.cores_count,
         }
 
 
 def get_asset_parts():
+    """Yields dicts describing parts of assets"""
     for asset in Asset.objects_dc.all():
         for part in asset.get_parts():
             device_info = asset.device_info
