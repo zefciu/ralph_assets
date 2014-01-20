@@ -169,6 +169,8 @@ class AssetSearch(AssetsMixin, DataTableMixin):
         _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
         _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
           export=True),
+        _('Invoice date', field='invoice_date', sort_expression='model',
+          bob_tag=True, export=True),
         _('Model', field='model', sort_expression='model', bob_tag=True,
           export=True),
         _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
