@@ -35,7 +35,8 @@ setup(
         'django-mptt==0.5.5',
     ],
     entry_points={
-        'console_scripts': [
+        'django.pluggable_app': [
+            'assets = ralph_assets.app:Assets',
         ],
     },
     classifiers=[

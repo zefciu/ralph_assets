@@ -28,7 +28,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.db.utils import DatabaseError
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
@@ -455,6 +455,17 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(DeviceInfo, self).__init__(*args, **kwargs)
+
+
+@receiver(
+    post_delete,
+    sender=Device,
+    dispatch_uid='discovery.device.post_delete',
+)
+def device_post_delete(sender, instance, **kwargs):
+    for deviceinfo in DeviceInfo.objects.filter(ralph_device_id=instance.id):
+        deviceinfo.ralph_device_id = None
+        deviceinfo.save()
 
 
 @receiver(post_save, sender=Device, dispatch_uid='ralph_assets.device_delete')
