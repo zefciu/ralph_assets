@@ -51,6 +51,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -69,6 +71,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -87,6 +91,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -105,6 +111,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -123,6 +131,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -142,6 +152,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -161,6 +173,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -180,6 +194,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -199,6 +215,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -218,6 +236,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -237,6 +257,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
             dict(
                 type=AssetType.data_center.id,
@@ -256,6 +278,8 @@ class TestMultivalueFields(TestCase):
                 ralph_device_id='',
                 asset=True,
                 source=1,
+                deprecation_rate=0,
+                production_year=2011,
             ),
         ]
         # Add form testing
