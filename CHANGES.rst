@@ -10,7 +10,7 @@ Change Log
 1.3.1
 ~~~~~~~
 
-* add invoice date column to search table
+* Add invoice date column to search table
 
 
 1.3.0
