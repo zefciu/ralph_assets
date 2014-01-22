@@ -1,10 +1,16 @@
 Change Log
 ----------
 
+1.3.2
+~~~~~~~
+
+* cores_count from Asset returns 0 instead of None
+
+
 1.3.1
 ~~~~~~~
 
-* Add invoice date column to search table
+* add invoice date column to search table
 
 
 1.3.0
