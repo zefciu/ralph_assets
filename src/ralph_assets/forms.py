@@ -362,7 +362,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         model = Asset
         fields = (
             'niw',
-            'sn',
             'type',
             'category',
             'model',
