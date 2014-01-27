@@ -144,6 +144,18 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+    def clean(self):
+        if (self.cleaned_data.get('invoice_no', False) 
+            and not self.cleaned_data.get('invoice_date', False)):
+            self._errors["invoice_date"] = self.error_class([
+                _("Invoice date cannot be empty")
+            ])
+        if (self.cleaned_data.get('invoice_date', False) 
+            and not self.cleaned_data.get('invoice_no', False)):
+            self._errors["invoice_no"] = self.error_class([
+                _("Invoice number cannot be empty")
+            ])
+        return self.cleaned_data
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
