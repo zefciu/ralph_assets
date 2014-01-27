@@ -10,9 +10,7 @@ from ralph.app import RalphModule
 
 
 class Assets(RalphModule):
-    """Scrooge main application. The 'ralph_pricing' name is retained
-    internally for historical reasons, while we try to use 'scrooge' as
-    displayed name."""
+    """Assets main application."""
 
     url_prefix = 'assets'
     module_name = 'ralph_assets'
