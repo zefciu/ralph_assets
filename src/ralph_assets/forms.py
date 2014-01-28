@@ -53,60 +53,8 @@ LOOKUPS = {
 }
 
 
-class CodeWidget(TextInput):
-    def render(self, name, value, attrs=None, choices=()):
-        formatted = escape(value) if value else ''
-        return mark_safe('''
-        <div class='code_field' id="id_%s" name="%s" width=200 height=500
-        style='width:200px;height:500px;' >%s</div>''' % (
-            escape(name), escape(name), formatted,
-        ))
-
-
 class ModeNotSetException(Exception):
     pass
-
-
-class BaseAssetForm(ModelForm):
-    class Meta:
-        model = Asset
-        fields = (
-            'niw', 'type', 'model', 'invoice_no', 'order_no', 'request_date',
-            'delivery_date', 'invoice_date', 'production_use_date',
-            'provider_order_date', 'price', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'status',
-            'remarks', 'sn', 'barcode', 'warehouse', 'production_year',
-        )
-        widgets = {
-            'remarks': Textarea(attrs={'rows': 3}),
-            'support_type': Textarea(attrs={'rows': 5}),
-        }
-    model = AutoCompleteSelectField(
-        LOOKUPS['asset_model'],
-        required=True,
-        plugin_options=dict(
-            add_link='/admin/ralph_assets/assetmodel/add/?name=',
-        )
-    )
-    warehouse = AutoCompleteSelectField(
-        LOOKUPS['asset_warehouse'],
-        required=True,
-        plugin_options=dict(
-            add_link='/admin/ralph_assets/warehouse/add/?name=',
-        )
-    )
-
-    def __init__(self, *args, **kwargs):
-        mode = kwargs.get('mode')
-        if mode:
-            del kwargs['mode']
-        super(BaseAssetForm, self).__init__(*args, **kwargs)
-        if mode == "dc":
-            self.fields['type'].choices = [
-                (c.id, c.desc) for c in AssetType.DC.choices]
-        elif mode == "back_office":
-            self.fields['type'].choices = [
-                (c.id, c.desc) for c in AssetType.BO.choices]
 
 
 class BarcodeField(CharField):
