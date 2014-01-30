@@ -115,6 +115,12 @@ class BarcodeField(CharField):
 
 
 class BulkEditAssetForm(ModelForm):
+    '''
+        Form model for bulkedit assets, contains column definition and
+        validadtion. Most important are sn and barcode fields. When you type
+        sn you can place many sn numbers separated by pressing enter.
+        Barcode count must be the same like sn count.
+    '''
     class Meta:
         model = Asset
         fields = (
@@ -278,6 +284,13 @@ class BasePartForm(ModelForm):
 
 
 def _validate_multivalue_data(data):
+    '''
+        Check if data is a correct string with serial numbers and split
+        it to list
+
+        :param string: string with serial numbers splited by new line or comma
+        :return list: list of serial numbers
+    '''
     error_msg = _("Field can't be empty. Please put the items separated "
                   "by new line or comma.")
     data = data.strip()
@@ -302,6 +315,15 @@ def _validate_multivalue_data(data):
 
 
 def _check_serial_numbers_uniqueness(serial_numbers):
+    '''
+        Check serial numbers uniqueness. If find any not unique
+        serial number then return false status with information
+        about not unique serial numbers
+
+        :param list serial_numbers: list of serial numbers
+        :return tuple: status and not unique serial numbers or empty list
+        :rtype tuple:
+    '''
     assets = Asset.objects.filter(sn__in=serial_numbers)
     if not assets:
         return True, []
@@ -312,6 +334,15 @@ def _check_serial_numbers_uniqueness(serial_numbers):
 
 
 def _check_barcodes_uniqueness(barcodes):
+    '''
+        Check barcodes uniqueness. If find any not unique
+        barcode then return false status with information
+        about not unique barcode
+
+        :param list barcodes: list of barcodes
+        :return tuple: status and not unique barcodes or empty list
+        :rtype tuple:
+    '''
     assets = Asset.objects.filter(barcode__in=barcodes)
     if not assets:
         return True, []
@@ -322,6 +353,11 @@ def _check_barcodes_uniqueness(barcodes):
 
 
 def _sn_additional_validation(serial_numbers):
+    '''
+        Raise ValidationError if any of serial numbers is not unique
+
+        :param list serial_numbers: list of serial numbers
+    '''
     is_unique, not_unique_sn = _check_serial_numbers_uniqueness(serial_numbers)
     if not is_unique:
         # ToDo: links to assets with duplicate sn
@@ -356,7 +392,7 @@ class DependencyAssetForm(DependencyForm):
 
 class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     '''
-    Base class to display form used to add new asset
+        Base class to display form used to add new asset
     '''
     class Meta:
         model = Asset
@@ -452,7 +488,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
 class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
-    Base class to display form used to edit asset
+        Base class to display form used to edit asset
     '''
     class Meta:
         model = Asset
@@ -583,6 +619,9 @@ class MoveAssetPartForm(Form):
 
 
 class AddPartForm(BaseAddAssetForm):
+    '''
+        Add new part for device
+    '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
@@ -594,6 +633,9 @@ class AddPartForm(BaseAddAssetForm):
 
 
 class AddDeviceForm(BaseAddAssetForm):
+    '''
+        Add new device form 
+    '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
@@ -606,6 +648,10 @@ class AddDeviceForm(BaseAddAssetForm):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
 
     def clean_sn(self):
+        '''
+            Validate if sn is correct and change string with serial numbers
+            to list
+        '''
         data = _validate_multivalue_data(self.cleaned_data["sn"])
         _sn_additional_validation(data)
         return data
