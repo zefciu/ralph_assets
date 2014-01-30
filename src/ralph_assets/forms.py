@@ -18,7 +18,6 @@ from django.forms import (
     Form,
     IntegerField,
     ModelForm,
-    TextInput,
     ValidationError,
 )
 from django.forms.widgets import HiddenInput, Textarea
@@ -583,7 +582,7 @@ class AddPartForm(BaseAddAssetForm):
 
 class AddDeviceForm(BaseAddAssetForm):
     '''
-        Add new device form 
+        Add new device form
     '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
