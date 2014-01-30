@@ -150,6 +150,7 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
         invoice_date = self.cleaned_data.get('invoice_date', False)
@@ -157,7 +158,7 @@ class BulkEditAssetForm(ModelForm):
             self._errors["invoice_date"] = self.error_class([
                 _("Invoice date cannot be empty")
             ])
-        if invoice_date and not inovice_no:
+        if invoice_date and not invoice_no:
             self._errors["invoice_no"] = self.error_class([
                 _("Invoice number cannot be empty")
             ])
@@ -647,7 +648,7 @@ class AddPartForm(BaseAddAssetForm):
 
 class AddDeviceForm(BaseAddAssetForm):
     '''
-        Add new device form 
+        Add new device form
     '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
