@@ -154,13 +154,20 @@ class BulkEditAssetForm(ModelForm):
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
         invoice_date = self.cleaned_data.get('invoice_date', False)
-        if invoice_no and not invoice_date:
-            self._errors["invoice_date"] = self.error_class([
-                _("Invoice date cannot be empty")
-            ])
-        if invoice_date and not invoice_no:
-            self._errors["invoice_no"] = self.error_class([
-                _("Invoice number cannot be empty")
+        if 'invoice_date' not in self.errors:
+            if invoice_no and not invoice_date:
+                self._errors["invoice_date"] = self.error_class([
+                    _("Invoice date cannot be empty.")
+                ])
+        if 'invoice_on' not in self.errors:
+            if invoice_date and not invoice_no:
+                self._errors["invoice_no"] = self.error_class([
+                    _("Invoice number cannot be empty.")
+                ])
+        if 'sn' in self.changed_data and\
+            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+            self._errors["sn"] = self.error_class([
+                _("Asset with this Sn already exists.")
             ])
         return self.cleaned_data
 
