@@ -1,0 +1,34 @@
+{% extends 'assets/base.html' %}
+{% load bob %}
+
+{% block content %}
+
+{% if wizard.steps.current == 'confirm' %}
+<table>
+    <thead>
+        <th>Asset id</th>
+        {% for name in all_columns %}
+        <th>{{ name }}</th>
+        {% endfor %}
+    </thead>
+    <tbody>
+    {% for row in table%}
+        <tr>
+            {% for col in row %}
+                <td>{{ col }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<form id="{{ form_id }}" class="form form-horizontal" method="POST" enctype="multipart/form-data">
+    <table>
+    {% csrf_token %}
+    {{ wizard.management_form }}
+    {{ wizard.form }}
+    </table>
+    <button name="asset" type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'assets/base.html' %}
+{% load bob %}
+
+{% block content %}
+<p>
+Import done
+</p>
+{% if failed_assets %}
+<p>
+The following assets couldn't be found:
+<ul>
+    {% for asset_id in failed_assets %}
+        <li>{{ asset_id }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+</p>
+
+{% endblock %}
