@@ -143,7 +143,7 @@ class BackOfficeMixin(AssetsMixin):
     mainmenu_selected = 'back_office'
 
     def get_sidebar_items(self):
-        sidebar_menu = super(DataCenterMixin, self).get_sidebar_items()
+        sidebar_menu = super(BackOfficeMixin, self).get_sidebar_items()
         items = (
             ('/assets/back_office/add/device/', 'Add device',
                 'fugue-block--plus'),
