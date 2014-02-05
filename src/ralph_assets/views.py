@@ -107,11 +107,21 @@ class AssetsMixin(Base):
             )
         return mainmenu
 
+    def get_sidebar_items(self):
+        return [
+            MenuItem(
+                label='XLS import',
+                fugue_icon='fugue-document-excel',
+                href='/assets/xls/',
+            ),
+        ]
+
 
 class DataCenterMixin(AssetsMixin):
     mainmenu_selected = 'dc'
 
     def get_sidebar_items(self):
+        sidebar_menu = super(DataCenterMixin, self).get_sidebar_items()
         items = (
             ('/assets/dc/add/device', 'Add device', 'fugue-block--plus'),
             ('/assets/dc/add/part', 'Add part', 'fugue-block--plus'),
@@ -125,7 +135,7 @@ class DataCenterMixin(AssetsMixin):
              fugue_icon=t[2],
              href=t[0]
              ) for t in items]
-        )
+        ) + sidebar_menu
         return sidebar_menu
 
 
@@ -133,6 +143,7 @@ class BackOfficeMixin(AssetsMixin):
     mainmenu_selected = 'back_office'
 
     def get_sidebar_items(self):
+        sidebar_menu = super(DataCenterMixin, self).get_sidebar_items()
         items = (
             ('/assets/back_office/add/device/', 'Add device',
                 'fugue-block--plus'),
@@ -147,7 +158,7 @@ class BackOfficeMixin(AssetsMixin):
                 fugue_icon=t[2],
                 href=t[0]
             ) for t in items]
-        )
+        ) + sidebar_menu
         return sidebar_menu
 
 
