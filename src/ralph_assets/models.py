@@ -16,6 +16,7 @@ from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
     AssetCategoryType,
+    AssetType,
     AssetManufacturer,
     AssetModel,
     AssetSource,
@@ -117,8 +118,8 @@ class AssetModelLookup(LookupChannel):
     model = AssetModel
 
     def get_query(self, q, request):
-        return AssetModel.objects.filter(
-            Q(name__icontains=q)
+        return self.model.objects.filter(
+            Q(name__icontains=q) & (Q(type=self.type) | Q(type=None))
         ).order_by('name')[:10]
 
     def get_result(self, obj):
@@ -130,6 +131,12 @@ class AssetModelLookup(LookupChannel):
     def format_item_display(self, obj):
         return '{}'.format(escape(obj.name))
 
+
+class DCAssetModelLookup(AssetModelLookup):
+    type = AssetType.data_center
+
+class BOAssetModelLookup(AssetModelLookup):
+    type = AssetType.back_office
 
 class AssetManufacturerLookup(LookupChannel):
     model = AssetModel
@@ -232,6 +239,7 @@ __all__ = [
     'DeviceLookup',
     'DCDeviceLookup',
     'BODeviceLookup',
-    'AssetModelLookup',
+    'DCAssetModelLookup',
+    'BOAssetModelLookup',
     'AssetHistoryChange',
 ]
