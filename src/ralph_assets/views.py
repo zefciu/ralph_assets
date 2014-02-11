@@ -15,7 +15,7 @@ import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
-from django.contrib.formtools.wizard.views import SessionWizardView 
+from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.files.storage import FileSystemStorage
 from django.core.paginator import Paginator
 from django.core.urlresolvers import resolve, reverse
@@ -39,8 +39,6 @@ from ralph_assets.forms import (
     MoveAssetPartForm,
     OfficeForm,
     SearchAssetForm,
-    XlsUploadForm,
-    XlsConfirmForm,
     AssetColumnChoiceField,
 )
 from ralph_assets.models import (
@@ -1360,7 +1358,7 @@ class XlsUploadView(SessionWizardView):
             if not sheet:
                 continue
             names_per_sheet[sheet_name] = col_names = [
-                cell.value for cell in  sheet[0][1:]
+                cell.value for cell in sheet[0][1:]
             ]
             data_per_sheet[sheet_name] = {}
             for row in sheet[1:]:
@@ -1395,16 +1393,14 @@ class XlsUploadView(SessionWizardView):
                     mappings[k] = v
             self.storage.data['mappings'] = mappings
         return form
-        
 
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
-        
         if self.steps.current == 'confirm':
             mappings = self.storage.data['mappings']
             data_per_sheet = self.storage.data['data_per_sheet']
             all_columns = list(mappings.values())
-            data_dicts = {} 
+            data_dicts = {}
             for sheet_name, sheet_data in data_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
                     data_dicts.setdefault(asset_id, {})
@@ -1419,7 +1415,6 @@ class XlsUploadView(SessionWizardView):
             data['all_columns'] = all_columns
             data['table'] = table
         return data
-
 
     @transaction.commit_on_success
     def done(self, form_list):
@@ -1437,7 +1432,6 @@ class XlsUploadView(SessionWizardView):
                     setattr(asset, mappings[key], value)
                 asset.save()
         ctx_data = self.get_context_data(None)
-        
         ctx_data['failed_assets'] = failed_assets
         return render(
             self.request,
