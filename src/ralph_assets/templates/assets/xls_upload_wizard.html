@@ -1,18 +1,19 @@
 {% extends 'assets/base.html' %}
 {% load bob %}
+{% load i18n %}
 
 {% block content %}
 
 {% if wizard.steps.current == 'confirm' %}
 <table>
     <thead>
-        <th>Asset id</th>
+        <th>{% trans "Asset id" %}</th>
         {% for name in all_columns %}
         <th>{{ name }}</th>
         {% endfor %}
     </thead>
     <tbody>
-    {% for row in table%}
+    {% for row in table %}
         <tr>
             {% for col in row %}
                 <td>{{ col }}</td>
@@ -29,6 +30,6 @@
     {{ wizard.management_form }}
     {{ wizard.form }}
     </table>
-    <button name="asset" type="submit" class="btn btn-primary">Submit</button>
+    <button name="asset" type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
 </form>
 {% endblock %}

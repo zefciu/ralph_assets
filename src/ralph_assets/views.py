@@ -8,9 +8,10 @@ from __future__ import unicode_literals
 import re
 from rq import get_current_job
 
-from collections import Counter
 import itertools as it
+from collections import Counter
 
+import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
@@ -25,7 +26,6 @@ from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import ugettext_lazy as _
-import xlrd
 
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -112,7 +112,7 @@ class AssetsMixin(Base):
             MenuItem(
                 label='XLS import',
                 fugue_icon='fugue-document-excel',
-                href='/assets/xls/',
+                href=reverse('xls_upload'),
             ),
         ]
 
