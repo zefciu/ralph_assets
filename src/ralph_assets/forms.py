@@ -72,11 +72,11 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'device_info', 'invoice_no', 'order_no',
-            'sn', 'barcode', 'price', 'support_price',
+            'type', 'model', 'device_info', 'invoice_no', 'invoice_date',
+            'order_no', 'sn', 'barcode', 'price', 'support_price',
             'support_period', 'support_type', 'support_void_reporting',
             'provider', 'source', 'status', 'request_date',
-            'delivery_date', 'invoice_date', 'production_use_date',
+            'delivery_date', 'production_use_date',
             'provider_order_date', 'production_year',
         )
         widgets = {
@@ -98,6 +98,26 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+
+    def clean(self):
+        invoice_no = self.cleaned_data.get('invoice_no', False)
+        invoice_date = self.cleaned_data.get('invoice_date', False)
+        if 'invoice_date' not in self.errors:
+            if invoice_no and not invoice_date:
+                self._errors["invoice_date"] = self.error_class([
+                    _("Invoice date cannot be empty.")
+                ])
+        if 'invoice_on' not in self.errors:
+            if invoice_date and not invoice_no:
+                self._errors["invoice_no"] = self.error_class([
+                    _("Invoice number cannot be empty.")
+                ])
+        if 'sn' in self.changed_data and\
+            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+            self._errors["sn"] = self.error_class([
+                _("Asset with this Sn already exists.")
+            ])
+        return self.cleaned_data
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
