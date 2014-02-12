@@ -72,12 +72,12 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'device_info', 'invoice_no', 'invoice_date',
-            'order_no', 'sn', 'barcode', 'price', 'support_price',
-            'support_period', 'support_type', 'support_void_reporting',
-            'provider', 'source', 'status', 'request_date',
-            'delivery_date', 'production_use_date',
-            'provider_order_date', 'production_year',
+            'type', 'model', 'warehouse', 'device_info', 'invoice_no',
+            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
+            'deprecation_rate', 'support_price', 'support_period',
+            'support_type', 'support_void_reporting', 'provider',
+            'source', 'status', 'request_date', 'delivery_date',
+            'production_use_date', 'provider_order_date', 'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -112,8 +112,10 @@ class BulkEditAssetForm(ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
-        if 'sn' in self.changed_data and\
-            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+        serial_number_unique = _check_serial_numbers_uniqueness(
+            [self.cleaned_data['sn']]
+        )[0]
+        if 'sn' in self.changed_data and not serial_number_unique:
             self._errors["sn"] = self.error_class([
                 _("Asset with this Sn already exists.")
             ])
