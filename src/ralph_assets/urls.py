@@ -25,7 +25,10 @@ from ralph_assets.views import (
     DataCenterSearch,
     DeleteAsset,
     HistoryAsset,
+    XlsUploadView,
 )
+
+from ralph_assets.forms import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(
@@ -97,4 +100,9 @@ urlpatterns = patterns(
     url(r'back_office/delete/asset/$',
         login_required(DeleteAsset.as_view()),
         name='back_office'),
+    url(
+        r'xls/$',
+        login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
+        name='xls_upload',
+    ),
 )
