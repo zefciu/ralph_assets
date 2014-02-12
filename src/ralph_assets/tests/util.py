@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from random import randint
+
 from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
@@ -108,3 +110,61 @@ def create_category(type='data_center', name=DEFAULT_ASSET_DATA['category']):
     subcategory.parent = category
     subcategory.save()
     return subcategory
+
+def get_bulk_edit_post_data_part(*args, **kwargs):
+    id = kwargs.get('id')
+
+    model_id = kwargs.get('model')
+    if model_id is None:
+        model = create_model()
+        model_id = model.id
+
+    sn = kwargs.get('sn')
+    if sn is None:
+        sn = '-'.join([str(randint(1000, 9999)) for i in xrange(4)])
+
+    barcode = kwargs.get('barcode')
+    if barcode is None:
+        barcode = 'bc-{0}'.format(str(randint(1000, 9999)))
+
+    return {
+        'form-{0}-id'.format(id-1): id,
+        'form-{0}-type'.format(id-1):\
+            kwargs.get('type', AssetType.data_center.id),
+        'form-{0}-model'.format(id-1): model_id,
+        'form-{0}-invoice_no'.format(id-1):\
+            kwargs.get('invoice_no', 'Invoice No0'),
+        'form-{0}-invoice_date'.format(id-1):\
+            kwargs.get('invoice_date', '2014-01-01'),
+        'form-{0}-order_no'.format(id-1):\
+            kwargs.get('order_no', 'Order No0'),
+        'form-{0}-sn'.format(id-1): sn,
+        'form-{0}-barcode'.format(id-1): barcode,
+        'form-{0}-support_period'.format(id-1):\
+            kwargs.get('support_period', 24),
+        'form-{0}-support_type'.format(id-1):\
+            kwargs.get('support_type', 'standard0'),
+        'form-{0}-support_void_reporting'.format(id-1):\
+            kwargs.get('support_void_reporting', 'on'),
+        'form-{0}-provider'.format(id-1):\
+            kwargs.get('provider', 'Provider 0'),
+        'form-{0}-status'.format(id-1):\
+            kwargs.get('status', AssetStatus.in_progress.id),
+        'form-{0}-source'.format(id-1):\
+            kwargs.get('source', AssetSource.shipment.id),
+        'form-{0}-ralph_device_id'.format(id-1):\
+            kwargs.get('ralph_device_id', ''),
+        'form-{0}-price'.format(id-1):\
+            kwargs.get('price', 10),
+    }
+
+def get_bulk_edit_post_data(*args, **kwargs):
+    post_data = {
+        'form-TOTAL_FORMS': u'{0}'.format(len(args)),
+        'form-INITIAL_FORMS': u'{0}'.format(len(args)),
+        'form-MAX_NUM_FORMS': u'',
+    }
+    for i, data in enumerate(args):
+        data['id'] = i + 1
+        post_data.update(get_bulk_edit_post_data_part(**data))
+    return post_data

@@ -13,6 +13,7 @@ from ralph_assets.tests.util import (
     create_category,
     create_model,
     SCREEN_ERROR_MESSAGES,
+    get_bulk_edit_post_data,
 )
 from ralph.ui.tests.global_utils import login_as_su
 
@@ -28,6 +29,10 @@ class TestValidations(TestCase):
         self.category = create_category()
         self.first_asset = create_asset(
             sn='1234-1234-1234-1234',
+            category=self.category,
+        )
+        self.second_asset = create_asset(
+            sn='5678-5678-5678-5678',
             category=self.category,
         )
 
@@ -92,43 +97,27 @@ class TestValidations(TestCase):
         )
 
     def test_send_wrong_data_in_bulkedit_form(self):
-        url = '/assets/dc/bulkedit/?select=%s&select=%s' % (
-            self.first_asset.id, self.asset_with_duplicated_sn.id)
-        post_data = {
-            'form-TOTAL_FORMS': u'2',
-            'form-INITIAL_FORMS': u'2',
-            'form-MAX_NUM_FORMS': u'',
-            'form-0-id': 1,
-            'form-0-type': AssetType.data_center.id,  # Select field; value = 1
-            'form-0-model': self.model1.id,
-            'form-0-invoice_no': 'Invoice No1',
-            'form-0-order_no': 'Order No1',
-            'form-0-invoice_date': 'wrong_field_data',
-            'form-0-sn': '1111-1111-1111-1111',
-            'form-0-barcode': 'bc-1234',
-            'form-0-support_period': 24,
-            'form-0-support_type': 'standard1',
-            'form-0-support_void_reporting': 'on',
-            'form-0-provider': 'Provider 1',
-            'form-0-status': AssetStatus.in_progress.id,  # Select field; value = 2 # noqa
-            'form-0-source': AssetSource.shipment.id,  # Select field; value = 1 # noqa
-            'form-0-ralph_device_id': '',
-            'form-1-id': 2,
-            'form-1-type': AssetType.data_center.id,  # Select field; value = 1
-            'form-1-model': '',
-            'form-1-invoice_no': 'Invoice No2',
-            'form-1-order_no': 'Order No2',
-            'form-1-invoice_date': '2011-02-03',
-            'form-1-sn': '2222-2222-2222-2222',
-            'form-1-barcode': 'bc-12345',
-            'form-1-support_period': 48,
-            'form-1-support_type': 'standard2',
-            'form-1-support_void_reporting': 'off',
-            'form-1-provider': 'Provider2',
-            'form-1-status': '',
-            'form-1-source': '',
-            'form-1-ralph_device_id': '',
-        }
+        url = '/assets/dc/bulkedit/?select=%s&select=%s&select=%s' % (
+            self.first_asset.id,
+            self.second_asset.id,
+            self.asset_with_duplicated_sn.id,
+        )
+        post_data = get_bulk_edit_post_data(
+            {
+                'invoice_date': 'wrong_field_data',
+                'sn': '1111-1111-1111-1111',
+            },
+            {
+                'invoice_date': '',
+                'model': '',
+                'status': '',
+                'source': '',
+            },
+            {
+                'invoice_no': '',
+            }
+        )
+
         send_post_with_empty_fields = self.client.post(url, post_data)
 
         # Try to send post with empty field send_post should be false
@@ -154,6 +143,11 @@ class TestValidations(TestCase):
                 row=0, field='sn', error='Asset with this Sn already exists.',
             ),
             dict(
+                row=1,
+                field='invoice_date',
+                error='Invoice date cannot be empty.',
+            ),
+            dict(
                 row=1, field='model', error='This field is required.',
             ),
             dict(
@@ -161,6 +155,11 @@ class TestValidations(TestCase):
             ),
             dict(
                 row=1, field='status', error='This field is required.',
+            ),
+            dict(
+                row=2,
+                field='invoice_no',
+                error='Invoice number cannot be empty.',
             )
         ]
         for bulk in bulk_data:

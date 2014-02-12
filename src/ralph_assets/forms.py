@@ -15,10 +15,10 @@ from django.forms import (
     CharField,
     ChoiceField,
     DateField,
+    FileField,
     Form,
     IntegerField,
     ModelForm,
-    TextInput,
     ValidationError,
 )
 from django.forms.widgets import HiddenInput, Textarea
@@ -53,60 +53,8 @@ LOOKUPS = {
 }
 
 
-class CodeWidget(TextInput):
-    def render(self, name, value, attrs=None, choices=()):
-        formatted = escape(value) if value else ''
-        return mark_safe('''
-        <div class='code_field' id="id_%s" name="%s" width=200 height=500
-        style='width:200px;height:500px;' >%s</div>''' % (
-            escape(name), escape(name), formatted,
-        ))
-
-
 class ModeNotSetException(Exception):
     pass
-
-
-class BaseAssetForm(ModelForm):
-    class Meta:
-        model = Asset
-        fields = (
-            'niw', 'type', 'model', 'invoice_no', 'order_no', 'request_date',
-            'delivery_date', 'invoice_date', 'production_use_date',
-            'provider_order_date', 'price', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'status',
-            'remarks', 'sn', 'barcode', 'warehouse', 'production_year',
-        )
-        widgets = {
-            'remarks': Textarea(attrs={'rows': 3}),
-            'support_type': Textarea(attrs={'rows': 5}),
-        }
-    model = AutoCompleteSelectField(
-        LOOKUPS['asset_model'],
-        required=True,
-        plugin_options=dict(
-            add_link='/admin/ralph_assets/assetmodel/add/?name=',
-        )
-    )
-    warehouse = AutoCompleteSelectField(
-        LOOKUPS['asset_warehouse'],
-        required=True,
-        plugin_options=dict(
-            add_link='/admin/ralph_assets/warehouse/add/?name=',
-        )
-    )
-
-    def __init__(self, *args, **kwargs):
-        mode = kwargs.get('mode')
-        if mode:
-            del kwargs['mode']
-        super(BaseAssetForm, self).__init__(*args, **kwargs)
-        if mode == "dc":
-            self.fields['type'].choices = [
-                (c.id, c.desc) for c in AssetType.DC.choices]
-        elif mode == "back_office":
-            self.fields['type'].choices = [
-                (c.id, c.desc) for c in AssetType.BO.choices]
 
 
 class BarcodeField(CharField):
@@ -125,10 +73,10 @@ class BulkEditAssetForm(ModelForm):
         model = Asset
         fields = (
             'type', 'model', 'warehouse', 'device_info', 'invoice_no',
-            'order_no', 'sn', 'barcode', 'price', 'deprecation_rate',
-            'support_price', 'support_period', 'support_type',
-            'support_void_reporting', 'provider', 'source', 'status',
-            'request_date', 'delivery_date', 'invoice_date',
+            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
+            'deprecation_rate', 'support_price', 'support_period',
+            'support_type', 'support_void_reporting', 'provider',
+            'source', 'status', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
         )
         widgets = {
@@ -150,6 +98,26 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+
+    def clean(self):
+        invoice_no = self.cleaned_data.get('invoice_no', False)
+        invoice_date = self.cleaned_data.get('invoice_date', False)
+        if 'invoice_date' not in self.errors:
+            if invoice_no and not invoice_date:
+                self._errors["invoice_date"] = self.error_class([
+                    _("Invoice date cannot be empty.")
+                ])
+        if 'invoice_on' not in self.errors:
+            if invoice_date and not invoice_no:
+                self._errors["invoice_no"] = self.error_class([
+                    _("Invoice number cannot be empty.")
+                ])
+        if 'sn' in self.changed_data and\
+            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+            self._errors["sn"] = self.error_class([
+                _("Asset with this Sn already exists.")
+            ])
+        return self.cleaned_data
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
@@ -398,7 +366,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         model = Asset
         fields = (
             'niw',
-            'sn',
             'type',
             'category',
             'model',
@@ -635,7 +602,7 @@ class AddPartForm(BaseAddAssetForm):
 
 class AddDeviceForm(BaseAddAssetForm):
     '''
-        Add new device form 
+        Add new device form
     '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
@@ -949,3 +916,32 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
+
+
+class AssetColumnChoiceField(ChoiceField):
+    def __init__(self, *args, **kwargs):
+        kwargs['choices'] = [
+            (field.name, unicode(field.verbose_name))
+            for field in Asset._meta.fields if field.name != 'id'
+        ]
+        super(AssetColumnChoiceField, self).__init__(*args, **kwargs)
+
+
+class XlsUploadForm(Form):
+    """The first step for uploading the XLS file for asset bulk update."""
+    file = FileField()
+
+
+class XlsColumnChoiceForm(Form):
+    """The column choice. This form will be filled on the fly."""
+
+
+class XlsConfirmForm(Form):
+    """The confirmation of XLS submission. A form with a button only."""
+
+
+XLS_UPLOAD_FORMS = [
+    ('upload', XlsUploadForm),
+    ('column_choice', XlsColumnChoiceForm),
+    ('confirm', XlsConfirmForm),
+]
