@@ -962,7 +962,7 @@ class AssetColumnChoiceField(ChoiceField):
 
 
 class XlsUploadForm(Form):
-    """The first step for for uploading the XLS file for asset bulk update."""
+    """The first step for uploading the XLS file for asset bulk update."""
     file = FileField()
 
 
