@@ -165,6 +165,6 @@ def get_bulk_edit_post_data(*args, **kwargs):
         'form-MAX_NUM_FORMS': u'',
     }
     for i, data in enumerate(args):
-        data['id'] = i+1
+        data['id'] = i + 1
         post_data.update(get_bulk_edit_post_data_part(**data))
     return post_data
