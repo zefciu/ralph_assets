@@ -42,6 +42,7 @@ from ralph_assets.forms import (
     SearchAssetForm,
     AssetColumnChoiceField,
 )
+from ralph_assets.forms_sam import LicenceForm
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -651,6 +652,10 @@ class AddDevice(AssetsBase):
         else:
             messages.error(self.request, _("Please correct the errors."))
         return super(AddDevice, self).get(*args, **kwargs)
+
+
+
+
 
 
 @transaction.commit_on_success
@@ -1390,3 +1395,14 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             'assets/xls_upload_wizard_done.html',
             ctx_data
         )
+
+
+class AddLicence(Base):
+    """Add a new licence."""
+
+    template_name = 'assets/add_device.html'
+
+    def __init__(self, request, mode, *args, **kwargs):
+        self.request = request
+        self.mode = mode
+        self.form = LicenceForm(mode=mode)
