@@ -265,6 +265,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     admin_objects_bo = BOAdminManager()
     objects_dc = DCManager()
     objects_bo = BOManager()
+    task_link = models.URLField(
+        max_length=200, null=True, blank=True, unique=False
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
