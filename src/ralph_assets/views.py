@@ -10,7 +10,6 @@ from rq import get_current_job
 
 import itertools as it
 from collections import Counter
-
 import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
@@ -107,39 +106,38 @@ class AssetsBase(Base):
 
     def get_sidebar_items(self):
         if self.mode == 'dc':
-            items = (
-                ('/assets/dc/add/device', 'Add device', 'fugue-block--plus'),
-                ('/assets/dc/add/part', 'Add part', 'fugue-block--plus'),
-                ('/assets/dc/search', 'Search', 'fugue-magnifier'),
-                ('/admin/ralph_assets', 'Admin', 'fugue-toolbox')
-            )
-            sidebar_caption = _('Data center actions')
+            sidebar_caption = _('Back office actions')
             self.mainmenu_selected = 'dc'
         else:
-            items = (
-                ('/assets/back_office/add/device/', 'Add device',
-                    'fugue-block--plus'),
-                ('/assets/back_office/add/part/', 'Add part',
-                    'fugue-block--plus'),
-                ('/assets/back_office/search', 'Search', 'fugue-magnifier'),
-            )
-            sidebar_caption = _('Back office actions')
+            sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'back office'
+        items = (
+            ('add_device', 'Add device', 'fugue-block--plus'),
+            ('add_part', 'Add part', 'fugue-block--plus'),
+            ('asset_search', 'Search', 'fugue-magnifier'),
+        )
         sidebar_menu = (
             [MenuHeader(sidebar_caption)] +
             [MenuItem(
-                label=t[1],
-                fugue_icon=t[2],
-                href=t[0]
-            ) for t in items]
+                label=label,
+                fugue_icon=icon,
+                href=reverse(view, kwargs={
+                    'mode': self.mode
+                })
+            ) for view, label, icon in items]
         )
-        sidebar_menu.append(
+        sidebar_menu += [
             MenuItem(
                 label='XLS import',
                 fugue_icon='fugue-document-excel',
                 href=reverse('xls_upload'),
+            ),
+            MenuItem(
+                label='Admin',
+                fugue_icon='fugue-toolbox',
+                href='admin/ralph_assets',
             )
-        )
+        ]
         return sidebar_menu
 
     def set_mode(self, mode):
