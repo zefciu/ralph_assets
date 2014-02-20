@@ -231,7 +231,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             field='deprecation_rate',
             foreign_field_name='', export=True,
         ),
-
+        #TODO: add task_link here?
     ]
 
     def handle_search_data(self, get_csv=False):
@@ -253,6 +253,7 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             'deprecation_rate',
             'unlinked',
             'ralph_device_id',
+            'task_link',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -344,6 +345,11 @@ class AssetSearch(AssetsMixin, DataTableMixin):
                         all_q &= Q(
                             device_info__ralph_device_id__icontains=field_value
                         )
+                elif field == 'task_link':
+                    if exact:
+                        all_q &= Q(task_link=field_value)
+                    else:
+                        all_q &= Q(task_link__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
