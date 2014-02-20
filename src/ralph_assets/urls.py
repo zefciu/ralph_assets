@@ -19,7 +19,10 @@ from ralph_assets.views import (
     AssetSearch,
     DeleteAsset,
     HistoryAsset,
+    XlsUploadView,
 )
+
+from ralph_assets.forms import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(
@@ -63,4 +66,9 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
+    url(
+        r'xls/$',
+        login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
+        name='xls_upload',
+    ),
 )

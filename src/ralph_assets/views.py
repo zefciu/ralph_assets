@@ -8,11 +8,15 @@ from __future__ import unicode_literals
 import re
 from rq import get_current_job
 
+import itertools as it
 from collections import Counter
 
+import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
+from django.contrib.formtools.wizard.views import SessionWizardView
+from django.core.files.storage import FileSystemStorage
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -20,7 +24,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.forms import (
@@ -35,6 +39,7 @@ from ralph_assets.forms import (
     MoveAssetPartForm,
     OfficeForm,
     SearchAssetForm,
+    AssetColumnChoiceField,
 )
 from ralph_assets.models import (
     Asset,
@@ -128,12 +133,19 @@ class AssetsBase(Base):
                 href=t[0]
             ) for t in items]
         )
+        sidebar_menu.append(
+            MenuItem(
+                label='XLS import',
+                fugue_icon='fugue-document-excel',
+                href=reverse('xls_upload'),
+            )
+        )
         return sidebar_menu
 
     def set_mode(self, mode):
         self.mode = mode
 
-    def dispatch(self, request, mode, *args, **kwargs):
+    def dispatch(self, request, mode=None, *args, **kwargs):
         self.request = request
         self.set_mode(mode)
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
@@ -1262,3 +1274,107 @@ class SplitDeviceView(AssetsBase):
         except LookupError:
             components = []
         return components
+
+
+class XlsUploadView(SessionWizardView, AssetsBase):
+    """The wizard view for xls upload."""
+    template_name = 'assets/xls_upload_wizard.html'
+    file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
+    sidebar_selected = None
+    mainmenu_selected = 'dc'
+
+    def _process_xls(self, file_):
+        book = xlrd.open_workbook(
+            filename=file_.name,
+            file_contents=file_.read(),
+        )
+        names_per_sheet = {}
+        data_per_sheet = {}
+        for sheet_name, sheet in (
+            (sheet_name, book.sheet_by_name(sheet_name)) for
+            sheet_name in book.sheet_names()
+        ):
+            if not sheet:
+                continue
+            name_row = sheet.row(0)
+            names_per_sheet[sheet_name] = col_names = [
+                cell.value for cell in name_row[1:]
+            ]
+            data_per_sheet[sheet_name] = {}
+            for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
+                asset_id = int(row[0].value)
+                data_per_sheet[sheet_name][asset_id] = {}
+                for key, cell in it.izip(col_names, row[1:]):
+                    data_per_sheet[sheet_name][asset_id][key] = cell.value
+        return names_per_sheet, data_per_sheet
+
+    def get_form(self, step=None, data=None, files=None):
+        form = super(XlsUploadView, self).get_form(step, data, files)
+        if step == 'column_choice':
+            file_ = self.get_cleaned_data_for_step('upload')['file']
+            names_per_sheet, data_per_sheet = self._process_xls(file_)
+            self.storage.data['names_per_sheet'] = names_per_sheet
+            self.storage.data['data_per_sheet'] = data_per_sheet
+            for name_list in names_per_sheet.values():
+                for name in name_list:
+                    form.fields[name] = AssetColumnChoiceField(
+                        label=name
+                    )
+        elif step == 'confirm':
+            mappings = {}
+            all_names = set(sum((
+                list(name_list)
+                for name_list in self.storage.data['names_per_sheet'].values()
+            ), []))
+            for k, v in self.get_cleaned_data_for_step(
+                'column_choice'
+            ).items():
+                if k in all_names:
+                    mappings[k] = v
+            self.storage.data['mappings'] = mappings
+        return form
+
+    def get_context_data(self, form, **kwargs):
+        data = super(XlsUploadView, self).get_context_data(form, **kwargs)
+        if self.steps.current == 'confirm':
+            mappings = self.storage.data['mappings']
+            data_per_sheet = self.storage.data['data_per_sheet']
+            all_columns = list(mappings.values())
+            data_dicts = {}
+            for sheet_name, sheet_data in data_per_sheet.items():
+                for asset_id, asset_data in sheet_data.items():
+                    data_dicts.setdefault(asset_id, {})
+                    for key, value in asset_data.items():
+                        data_dicts[asset_id][mappings[key]] = value
+            table = []
+            for asset_id, asset_data in data_dicts.items():
+                row = [asset_id]
+                for column in all_columns:
+                    row.append(asset_data.get(column, ''))
+                table.append(row)
+            data['all_columns'] = all_columns
+            data['table'] = table
+        return data
+
+    @transaction.commit_on_success
+    def done(self, form_list):
+        mappings = self.storage.data['mappings']
+        data_per_sheet = self.storage.data['data_per_sheet']
+        failed_assets = []
+        for sheet_name, sheet_data in data_per_sheet.items():
+            for asset_id, asset_data in sheet_data.items():
+                try:
+                    asset = Asset.objects.get(pk=asset_id)
+                except Asset.DoesNotExist:
+                    failed_assets.append(asset_id)
+                    continue
+                for key, value in asset_data.items():
+                    setattr(asset, mappings[key], value)
+                asset.save()
+        ctx_data = self.get_context_data(None)
+        ctx_data['failed_assets'] = failed_assets
+        return render(
+            self.request,
+            'assets/xls_upload_wizard_done.html',
+            ctx_data
+        )
