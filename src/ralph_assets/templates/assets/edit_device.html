@@ -85,7 +85,7 @@
           {% if not asset.has_parts %}
             {% spaceless %}
             <div class="pull-left">
-              <a href="{% url dc_device_split asset.id %}" class="btn btn-danger">
+              <a href="{% url device_split mode='dc' asset_id=asset.id %}" class="btn btn-danger">
                 <i class="fugue-icon fugue-cutter"></i>&nbsp;Split device
               </a>
             </div>
