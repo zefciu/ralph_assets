@@ -35,6 +35,8 @@ from ralph_assets.forms import (
     SplitDevice,
     DeviceForm,
     EditDeviceForm,
+    BackOfficeEditDeviceForm,
+    DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -843,6 +845,10 @@ class EditDevice(Base):
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
         mode = _get_mode(self.request)
+        EditDeviceForm = (
+            BackOfficeEditDeviceForm if mode == 'back_office'
+            else DataCenterEditDeviceForm
+        )
         self.asset_form = EditDeviceForm(instance=self.asset, mode=mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)

@@ -703,6 +703,19 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
+class BackOfficeEditDeviceForm(EditDeviceForm):
+
+    def __init__(self, *args, **kwargs):
+        #TODO:
+        # if BO add dependecny(status, tasklink, [..], ??)
+        super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+
+    pass
+
+
 class SearchAssetForm(Form):
     """returns search asset form for DC and BO.
 
