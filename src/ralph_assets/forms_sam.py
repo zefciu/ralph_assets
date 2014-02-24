@@ -8,8 +8,9 @@ from ralph_assets import models_sam
 class LicenceForm(forms.ModelForm):
     """Licence add/edit form for licences."""
 
-    def __init__(self, mode):
+    def __init__(self, mode, *args, **kwargs):
         self.mode = mode
+        super(LicenceForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = models_sam.Licence

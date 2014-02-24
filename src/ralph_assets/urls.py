@@ -21,6 +21,7 @@ from ralph_assets.views import (
     HistoryAsset,
     XlsUploadView,
     AddLicence,
+    EditLicence,
 )
 
 from ralph_assets.forms import XLS_UPLOAD_FORMS
@@ -76,5 +77,10 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',
-    )
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
+        login_required(EditLicence.as_view()),
+        name='edit_licence',
+    ),
 )

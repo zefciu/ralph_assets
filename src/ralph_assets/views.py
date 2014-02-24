@@ -1397,12 +1397,57 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         )
 
 
-class AddLicence(Base):
-    """Add a new licence."""
+class LicenceFormView(AssetsBase):
+    """Base view that displays licence form."""
 
-    template_name = 'assets/add_device.html'
+    template_name = 'assets/add_licence.html'
+    sidebar_selected = None
 
-    def __init__(self, request, mode, *args, **kwargs):
-        self.request = request
-        self.mode = mode
-        self.form = LicenceForm(mode=mode)
+    def _get_form(self, data=None, **kwargs):
+        self.form = LicenceForm(
+            mode=self.mode, data=data, **kwargs
+        )
+
+    def get_context_data(self, **kwargs):
+        ret = super(LicenceFormView, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'add_licence_form',
+            'edit_mode': False,
+        })
+        return ret
+
+class AddLicence(LicenceFormView):
+    """Add a new licence"""
+
+    def get(self, request, *args, **kwargs):
+        self._get_form()
+        return super(AddLicence, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        mode = self.mode
+        self._get_form(request.POST)
+        try:
+            licence = self.form.save()
+            return HttpResponseRedirect(licence.url)
+        except ValueError:
+            return super(AddLicence, self).post(request, *args, **kwargs)
+
+
+class EditLicence(LicenceFormView):
+    """Edit licence"""
+
+    def get(self, request, licence_id, *args, **kwargs):
+        licence = Licence.objects.get(pk=licence_id)
+        self._get_form(instance=licence)
+        return super(AddLicence, self).get(request, *args, **kwargs)
+
+    def post(self, request, licence_id, *args, **kwargs):
+        licence = Licence.objects.get(pk=licence_id)
+        mode = self.mode
+        self._get_form(request.POST, instance=licence)
+        try:
+            licence = f.save()
+            return HttpResponseRedirect(licence.url)
+        except ValueError:
+            return super(AddLicence, self).post(request, *args, **kwargs)

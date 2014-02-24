@@ -1,22 +1,20 @@
 {% extends 'assets/base.html' %}
 {% load bob %}
+{% load i18n %}
 
 {% block content %}
 <div class="row">
-  <h3>{% block form_title %}{% endblock %}</h3>
+    <h3>{% block form_title %}{% trans "Add licence" %}{% endblock %}</h3>
 </div>
 
 <form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
   {% csrf_token %}
   <div class="row">
     <div class="span6 well">
-      {% for field in asset_form %}{% if field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
+      {% for field in form %}
         {% field_wrapper field %}
-      {% endif %}{% endfor %}
-      {% block additional_inputs %}{% endblock %}
+      {% endfor %}
     </div>
-    {% block multivalue_inputs %}{% endblock %}
-    {% block office_info_inputs %}{% endblock %}
   </div>
   <div class="row">
     <div class="span12">

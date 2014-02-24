@@ -68,5 +68,13 @@ class Licence(MPTTModel, Named, TimeTrackable, WithConcurrentGetOrCreate):
         max_length=200,
         null=True,
     )
-    asset_type = models.PositiveSmallIntegerField(choices=AssetType())
+    asset_type = models.PositiveSmallIntegerField(
+        choices=AssetType(), null=True
+    )
     used = models.IntegerField()
+
+    @property
+    def url(self):
+        return reverse('edit_licence', kwargs={
+            'id': self.id,
+        })
