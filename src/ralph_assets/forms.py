@@ -706,9 +706,23 @@ class EditDeviceForm(BaseEditAssetForm):
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
-        #TODO:
-        # if BO add dependecny(status, tasklink, [..], ??)
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(BaseEditAssetForm, self).clean()
+        required_status = {
+            asset_status.id: asset_status.name for asset_status in [
+                AssetStatus.loan, AssetStatus.liquidated,
+                AssetStatus.in_service, AssetStatus.reserved
+            ]
+        }
+        if cleaned_data.get('status') in required_status.keys():
+            if not self.data.get('task_link'):
+                msg = 'This field is required, for status: {}'.format(
+                    required_status.get(cleaned_data['status'], '')
+                )
+                self._errors["task_link"] = self.error_class([msg])
+        return cleaned_data
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):

@@ -812,6 +812,13 @@ def _update_part_info(user, asset, part_info_data):
 class EditDevice(Base):
     template_name = 'assets/edit_device.html'
 
+    def _get_form_by_mode(self, mode):
+        EditDeviceForm = (
+            BackOfficeEditDeviceForm if mode == 'back_office'
+            else DataCenterEditDeviceForm
+        )
+        return EditDeviceForm
+
     def initialize_vars(self):
         self.parts = []
         self.office_info_form = None
@@ -845,10 +852,7 @@ class EditDevice(Base):
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
         mode = _get_mode(self.request)
-        EditDeviceForm = (
-            BackOfficeEditDeviceForm if mode == 'back_office'
-            else DataCenterEditDeviceForm
-        )
+        EditDeviceForm = self._get_form_by_mode(mode)
         self.asset_form = EditDeviceForm(instance=self.asset, mode=mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
@@ -867,6 +871,7 @@ class EditDevice(Base):
             id=kwargs.get('asset_id')
         )
         mode = _get_mode(self.request)
+        EditDeviceForm = self._get_form_by_mode(mode)
         self.asset_form = EditDeviceForm(
             post_data,
             instance=self.asset,
