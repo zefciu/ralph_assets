@@ -127,7 +127,7 @@ class AssetsBase(Base):
                 label=label,
                 fugue_icon=icon,
                 href=reverse(view, kwargs={
-                    'mode': self.mode
+                    'mode': (self.mode or 'dc')
                 })
             ) for view, label, icon in items]
         )
