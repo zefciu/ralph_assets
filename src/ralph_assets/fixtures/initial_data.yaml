@@ -1,0 +1,26 @@
+%YAML 1.2
+---
+-
+    model: ralph_assets.LicenceType
+    pk: 1
+    fields:
+        name: Licence Type 1
+
+-
+    model: ralph_assets.LicenceType
+    pk: 2
+    fields:
+        name: Licence Type 2
+
+-
+    model: ralph_assets.SoftwareCategory
+    pk: 1
+    fields:
+        name: MS Office 365
+
+-
+    model: ralph_assets.SoftwareCategory
+    pk: 2
+    fields:
+        name: Adobe Photoshop CC
+

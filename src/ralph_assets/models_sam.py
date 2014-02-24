@@ -1,5 +1,6 @@
 """SAM module models."""
 
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
@@ -19,7 +20,7 @@ class SoftwareCategory(Named):
     """The category of the licensed software"""
 
 
-class Licence(MPTTModel, Named, TimeTrackable, WithConcurrentGetOrCreate):
+class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     """A set of licences for a single software with a single expiration date"""
     manufacturer = models.ForeignKey(
         AssetManufacturer,
@@ -69,12 +70,16 @@ class Licence(MPTTModel, Named, TimeTrackable, WithConcurrentGetOrCreate):
         null=True,
     )
     asset_type = models.PositiveSmallIntegerField(
-        choices=AssetType(), null=True
+        choices=AssetType()
     )
     used = models.IntegerField()
 
     @property
     def url(self):
         return reverse('edit_licence', kwargs={
-            'id': self.id,
+            'licence_id': self.id,
+            'mode': {
+                AssetType.data_center: 'dc',
+                AssetType.back_office: 'back_office',
+            }[self.asset_type],
         })

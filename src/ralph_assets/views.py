@@ -48,6 +48,7 @@ from ralph_assets.models import (
     AssetModel,
     AssetCategory,
     DeviceInfo,
+    Licence,
     OfficeInfo,
     PartInfo,
 )
@@ -138,7 +139,7 @@ class AssetsBase(Base):
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='admin/ralph_assets',
+                href='/admin/ralph_assets',
             )
         ]
         return sidebar_menu
@@ -1417,6 +1418,20 @@ class LicenceFormView(AssetsBase):
         })
         return ret
 
+    def _save(self):
+        try:
+            licence = self.form.save(commit=False)
+            if licence.asset_type is None:
+                licence.asset_type = {
+                    'dc': AssetType.data_center,
+                    'back_office': AssetType.back_office,
+                }[self.mode]
+            licence.save()
+            return HttpResponseRedirect(licence.url)
+        except ValueError:
+            return super(AddLicence, self).get(request, *args, **kwargs)
+
+
 class AddLicence(LicenceFormView):
     """Add a new licence"""
 
@@ -1427,11 +1442,7 @@ class AddLicence(LicenceFormView):
     def post(self, request, *args, **kwargs):
         mode = self.mode
         self._get_form(request.POST)
-        try:
-            licence = self.form.save()
-            return HttpResponseRedirect(licence.url)
-        except ValueError:
-            return super(AddLicence, self).post(request, *args, **kwargs)
+        return self._save()
 
 
 class EditLicence(LicenceFormView):
@@ -1440,14 +1451,10 @@ class EditLicence(LicenceFormView):
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
         self._get_form(instance=licence)
-        return super(AddLicence, self).get(request, *args, **kwargs)
+        return super(EditLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
         mode = self.mode
         self._get_form(request.POST, instance=licence)
-        try:
-            licence = f.save()
-            return HttpResponseRedirect(licence.url)
-        except ValueError:
-            return super(AddLicence, self).post(request, *args, **kwargs)
+        return self._save()
