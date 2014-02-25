@@ -723,7 +723,6 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
-
     pass
 
 
