@@ -10,6 +10,7 @@ from ajax_select.fields import AutoCompleteField, AutoCompleteWidget
 from django import forms
 
 from ralph_assets import models_sam
+from ralph_assets.models_assets import MODE2ASSET_TYPE
 
 
 class SoftwareCategoryWidget(AutoCompleteWidget):
@@ -62,10 +63,10 @@ class LicenceForm(forms.ModelForm):
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
+        if result['software_category'].asset_type is None:
+            result['software_category'].asset_type = MODE2ASSET_TYPE[self.mode]
         if result['software_category'].pk is None:
             result['software_category'].save()
-        import ipdb; ipdb.set_trace()
-        
         return result
 
     class Meta:

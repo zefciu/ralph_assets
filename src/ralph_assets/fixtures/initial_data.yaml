@@ -17,10 +17,12 @@
     pk: 1
     fields:
         name: MS Office 365
+        asset_type: 101
 
 -
     model: ralph_assets.SoftwareCategory
     pk: 2
     fields:
         name: Adobe Photoshop CC
+        asset_type: 101
 

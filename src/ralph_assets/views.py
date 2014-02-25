@@ -52,7 +52,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph_assets.models_assets import AssetType
+from ralph_assets.models_assets import AssetType, MODE2ASSET_TYPE
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
@@ -1424,10 +1424,7 @@ class LicenceFormView(AssetsBase):
         try:
             licence = self.form.save(commit=False)
             if licence.asset_type is None:
-                licence.asset_type = {
-                    'dc': AssetType.data_center,
-                    'back_office': AssetType.back_office,
-                }[self.mode]
+                licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
             return HttpResponseRedirect(licence.url)
         except ValueError:
@@ -1464,3 +1461,4 @@ class EditLicence(LicenceFormView):
         mode = self.mode
         self._get_form(request.POST, instance=licence)
         return self._save(request, *args, **kwargs)
+

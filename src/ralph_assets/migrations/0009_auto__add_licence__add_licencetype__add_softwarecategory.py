@@ -46,6 +46,7 @@ class Migration(SchemaMigration):
         db.create_table('ralph_assets_softwarecategory', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+            ('asset_type', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
         ))
         db.send_create_signal('ralph_assets', ['SoftwareCategory'])
 
@@ -276,6 +277,7 @@ class Migration(SchemaMigration):
         },
         'ralph_assets.softwarecategory': {
             'Meta': {'object_name': 'SoftwareCategory'},
+            'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
