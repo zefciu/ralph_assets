@@ -26,7 +26,7 @@ from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, SHOW, Dependency
+from bob.forms import DependencyForm, REQUIRE, SHOW, Dependency
 
 from ralph_assets.models import (
     Asset,
@@ -705,24 +705,21 @@ class EditDeviceForm(BaseEditAssetForm):
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
-    def __init__(self, *args, **kwargs):
-        super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-
-    def clean(self):
-        cleaned_data = super(BaseEditAssetForm, self).clean()
-        required_status = {
-            asset_status.id: asset_status.name for asset_status in [
-                AssetStatus.loan, AssetStatus.liquidated,
-                AssetStatus.in_service, AssetStatus.reserved
-            ]
-        }
-        if cleaned_data.get('status') in required_status.keys():
-            if not self.data.get('task_link'):
-                msg = 'This field is required, for status: {}'.format(
-                    required_status.get(cleaned_data['status'], '')
-                )
-                self._errors["task_link"] = self.error_class([msg])
-        return cleaned_data
+    @property
+    def dependencies(self):
+        for prop in super(BackOfficeEditDeviceForm, self).dependencies:
+            yield prop
+        yield Dependency(
+            'task_link',
+            'status',
+            [
+                status.id for status in [
+                    AssetStatus.loan, AssetStatus.liquidated,
+                    AssetStatus.in_service, AssetStatus.reserved
+                ]
+            ],
+            REQUIRE,
+        )
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
