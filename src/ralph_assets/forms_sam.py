@@ -1,8 +1,51 @@
+# -*- coding: utf-8 -*-
 """Forms for SAM module."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from ajax_select.fields import AutoCompleteField, AutoCompleteWidget
 from django import forms
 
 from ralph_assets import models_sam
+
+
+class SoftwareCategoryWidget(AutoCompleteWidget):
+    """A widget for SoftwareCategoryField."""
+
+    def render(self, name, value, attrs=None):
+        if isinstance(value, basestring):
+            sc_name = value
+        else:
+            try:
+                sc_name = models_sam.SoftwareCategory.objects.get(
+                    pk=value
+                ).name
+            except models_sam.SoftwareCategory.DoesNotExist:
+                sc_name = ''
+        return super(
+            SoftwareCategoryWidget, self
+        ).render(name, sc_name, attrs)
+
+
+class SoftwareCategoryField(AutoCompleteField):
+    """A field that either finds or creates a SoftwareCategory. NOTE:
+    these values are *not* saved. The view should save it after validating
+    the whole form"""
+
+
+    def clean(self, value):
+        value = super(SoftwareCategoryField, self).clean(value)
+        try:
+            return models_sam.SoftwareCategory.objects.get(
+                name=value
+            )
+        except models_sam.SoftwareCategory.DoesNotExist:
+            return models_sam.SoftwareCategory(
+                name=value
+            )
 
 
 class LicenceForm(forms.ModelForm):
@@ -11,6 +54,19 @@ class LicenceForm(forms.ModelForm):
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
         super(LicenceForm, self).__init__(*args, **kwargs)
+
+    software_category = SoftwareCategoryField(
+        ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
+        widget=SoftwareCategoryWidget,
+    )
+
+    def clean(self, *args, **kwargs):
+        result = super(LicenceForm, self).clean(*args, **kwargs)
+        if result['software_category'].pk is None:
+            result['software_category'].save()
+        import ipdb; ipdb.set_trace()
+        
+        return result
 
     class Meta:
         model = models_sam.Licence

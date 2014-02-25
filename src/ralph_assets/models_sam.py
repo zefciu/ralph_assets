@@ -1,7 +1,9 @@
 """SAM module models."""
 
+from ajax_select import LookupChannel
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
     Named,
@@ -18,6 +20,9 @@ class LicenceType(Named):
 
 class SoftwareCategory(Named):
     """The category of the licensed software"""
+    asset_type = models.PositiveSmallIntegerField(
+        choices=AssetType()
+    )
 
 
 class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
@@ -74,6 +79,13 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     )
     used = models.IntegerField()
 
+    def __str__(self):
+        return "{} x {} - {}".format(
+            self.number_bought,
+            self.software_category.name,
+            self.bought_date,
+        )
+
     @property
     def url(self):
         return reverse('edit_licence', kwargs={
@@ -83,3 +95,20 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
                 AssetType.back_office: 'back_office',
             }[self.asset_type],
         })
+
+class SoftwareCategoryLookup(LookupChannel):
+    model = SoftwareCategory
+
+    def get_query(self, q, request):
+        return SoftwareCategory.objects.filter(
+            name__icontains=q
+        ).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return escape(obj.name)

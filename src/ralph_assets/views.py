@@ -119,6 +119,7 @@ class AssetsBase(Base):
             ('add_device', 'Add device', 'fugue-block--plus'),
             ('add_part', 'Add part', 'fugue-block--plus'),
             ('asset_search', 'Search', 'fugue-magnifier'),
+            ('add_licence', 'Add Licence', 'fugue-cheque-sign'),
         )
         sidebar_menu = (
             [MenuHeader(sidebar_caption)] +
@@ -1415,10 +1416,11 @@ class LicenceFormView(AssetsBase):
             'form': self.form,
             'form_id': 'add_licence_form',
             'edit_mode': False,
+            'caption': self.caption
         })
         return ret
 
-    def _save(self):
+    def _save(self, request, *args, **kwargs):
         try:
             licence = self.form.save(commit=False)
             if licence.asset_type is None:
@@ -1429,11 +1431,13 @@ class LicenceFormView(AssetsBase):
             licence.save()
             return HttpResponseRedirect(licence.url)
         except ValueError:
-            return super(AddLicence, self).get(request, *args, **kwargs)
+            return super(LicenceFormView, self).get(request, *args, **kwargs)
 
 
 class AddLicence(LicenceFormView):
     """Add a new licence"""
+
+    caption = _('Add Licence')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1442,11 +1446,13 @@ class AddLicence(LicenceFormView):
     def post(self, request, *args, **kwargs):
         mode = self.mode
         self._get_form(request.POST)
-        return self._save()
+        return self._save(request, *args, **kwargs)
 
 
 class EditLicence(LicenceFormView):
     """Edit licence"""
+
+    caption = _('Edit Licence')
 
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
@@ -1457,4 +1463,4 @@ class EditLicence(LicenceFormView):
         licence = Licence.objects.get(pk=licence_id)
         mode = self.mode
         self._get_form(request.POST, instance=licence)
-        return self._save()
+        return self._save(request, *args, **kwargs)
