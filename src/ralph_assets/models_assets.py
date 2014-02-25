@@ -266,7 +266,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     objects_dc = DCManager()
     objects_bo = BOManager()
     task_link = models.URLField(
-        max_length=200, null=True, blank=True, unique=False
+        max_length=2048, null=True, blank=True, unique=False
     )
 
     def __unicode__(self):
