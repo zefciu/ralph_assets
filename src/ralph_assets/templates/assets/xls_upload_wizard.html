@@ -4,7 +4,26 @@
 
 {% block content %}
 
+{% if wizard.steps.current == 'upload' %}
+{% blocktrans %}
+<p>Upload an XLS file. This file should:
+<ul>
+    <li>Contain asset ids as the first column</li>
+    <li>The first row should contain labels for columns</li>
+</ul>
+</p>
+{% endblocktrans %}
+{% endif %}
+{% if wizard.steps.current == 'column_choice' %}
+{% blocktrans %}
+<p>Match the names from XLS file with the asset fields.</p>
+{% endblocktrans %}
+{% endif %}
 {% if wizard.steps.current == 'confirm' %}
+{% blocktrans %}
+<p>This data got extracted from provided XLS file. Please make sure the data
+is OK. Submitting the data is irreversible.</p>
+{% endblocktrans %}
 <table>
     <thead>
         <th>{% trans "Asset id" %}</th>
