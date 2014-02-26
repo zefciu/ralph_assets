@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
@@ -16,6 +22,7 @@ from ralph_assets.views import (
     XlsUploadView,
     AddLicence,
     EditLicence,
+    LicenceList,
 )
 
 from ralph_assets.forms import XLS_UPLOAD_FORMS
@@ -66,6 +73,11 @@ urlpatterns = patterns(
         r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/$',
+        login_required(LicenceList.as_view()),
+        name='add_licence',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/add_licence/$',

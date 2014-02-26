@@ -20,7 +20,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
@@ -51,6 +51,7 @@ from ralph_assets.models import (
     Licence,
     OfficeInfo,
     PartInfo,
+    SoftwareCategory,
 )
 from ralph_assets.models_assets import AssetType, MODE2ASSET_TYPE
 from ralph_assets.models_history import AssetHistoryChange
@@ -1416,7 +1417,7 @@ class LicenceFormView(AssetsBase):
             'form': self.form,
             'form_id': 'add_licence_form',
             'edit_mode': False,
-            'caption': self.caption
+            'caption': self.caption,
         })
         return ret
 
@@ -1462,3 +1463,20 @@ class EditLicence(LicenceFormView):
         self._get_form(request.POST, instance=licence)
         return self._save(request, *args, **kwargs)
 
+
+class LicenceList(AssetsBase):
+    """The licence list."""
+
+    template_name = "assets/licence_list.html"
+    sidebar_selected = None
+
+    def get_context_data(self, *args, **kwargs):
+        data = super(LicenceList, self).get_context_data(
+            *args, **kwargs
+        )
+        data['categories'] = SoftwareCategory.objects.annotate(
+            used=Sum('licence__used')
+        ).filter(
+            asset_type = MODE2ASSET_TYPE[self.mode]
+        )
+        return data

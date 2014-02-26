@@ -1,4 +1,10 @@
+# -*- coding: utf-8 -*-
 """SAM module models."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from ajax_select import LookupChannel
 from django.core.urlresolvers import reverse
@@ -10,9 +16,10 @@ from lck.django.common.models import (
     TimeTrackable,
     WithConcurrentGetOrCreate,
 )
-from ralph_assets.models_assets import AssetManufacturer, AssetType
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
+
+from ralph_assets.models_assets import AssetManufacturer, AssetType
 
 class LicenceType(Named):
     """The type of a licence"""
@@ -23,6 +30,12 @@ class SoftwareCategory(Named):
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
+
+    @property
+    def licences(self):
+        """Iterate over licences."""
+        for licence in self.licence_set.all():
+            yield licence
 
 
 class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
