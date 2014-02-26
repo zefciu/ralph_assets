@@ -10,6 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -23,11 +24,9 @@ from django.forms import (
 )
 from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
-from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, REQUIRE, SHOW, Dependency
-
 from ralph_assets.models import (
     Asset,
     AssetCategory,
