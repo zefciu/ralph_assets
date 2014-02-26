@@ -233,7 +233,6 @@ class AssetSearch(AssetsMixin, DataTableMixin):
             field='deprecation_rate',
             foreign_field_name='', export=True,
         ),
-        #TODO: add task_link here?
     ]
 
     def handle_search_data(self, get_csv=False):
