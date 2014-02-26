@@ -34,6 +34,8 @@ from ralph_assets.forms import (
     SplitDevice,
     DeviceForm,
     EditDeviceForm,
+    BackOfficeEditDeviceForm,
+    DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -226,7 +228,6 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             field='deprecation_rate',
             foreign_field_name='', export=True,
         ),
-
     ]
 
     def set_mode(self, mode):
@@ -264,6 +265,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'deprecation_rate',
             'unlinked',
             'ralph_device_id',
+            'task_link',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -355,6 +357,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(
                             device_info__ralph_device_id__icontains=field_value
                         )
+                elif field == 'task_link':
+                    if exact:
+                        all_q &= Q(task_link=field_value)
+                    else:
+                        all_q &= Q(task_link__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -702,6 +709,13 @@ class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 
+    def _get_form_by_mode(self, mode):
+        EditDeviceForm = (
+            BackOfficeEditDeviceForm if mode == 'back_office'
+            else DataCenterEditDeviceForm
+        )
+        return EditDeviceForm
+
     def initialize_vars(self):
         self.parts = []
         self.office_info_form = None
@@ -734,13 +748,13 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        mode = self.mode
-        self.asset_form = EditDeviceForm(instance=self.asset, mode=mode)
+        EditDeviceForm = self._get_form_by_mode(self.mode)
+        self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
-            mode=mode,
+            mode=self.mode,
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
@@ -752,15 +766,15 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        mode = self.mode
+        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(
             post_data,
             instance=self.asset,
-            mode=mode,
+            mode=self.mode,
         )
         self.device_info_form = DeviceForm(
             post_data,
-            mode=mode,
+            mode=self.mode,
             instance=self.asset.device_info,
         )
         self.part_form = MoveAssetPartForm(post_data)

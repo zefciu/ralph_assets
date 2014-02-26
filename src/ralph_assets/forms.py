@@ -10,6 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -23,11 +24,9 @@ from django.forms import (
 )
 from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
-from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, SHOW, Dependency
-
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -492,6 +491,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'task_link',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -563,7 +563,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     def clean(self):
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
-        return self.cleaned_data
+        cleaned_data = super(BaseEditAssetForm, self).clean()
+        return cleaned_data
 
 
 def validate_production_year(asset):
@@ -701,6 +702,29 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
+class BackOfficeEditDeviceForm(EditDeviceForm):
+
+    @property
+    def dependencies(self):
+        for prop in super(BackOfficeEditDeviceForm, self).dependencies:
+            yield prop
+        yield Dependency(
+            'task_link',
+            'status',
+            [
+                status.id for status in [
+                    AssetStatus.loan, AssetStatus.liquidated,
+                    AssetStatus.in_service, AssetStatus.reserved
+                ]
+            ],
+            REQUIRE,
+        )
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+    pass
+
+
 class SearchAssetForm(Form):
     """returns search asset form for DC and BO.
 
@@ -830,6 +854,7 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    task_link = CharField(required=False, label='Task link')
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
