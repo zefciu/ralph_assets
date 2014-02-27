@@ -657,10 +657,6 @@ class AddDevice(AssetsBase):
         return super(AddDevice, self).get(*args, **kwargs)
 
 
-
-
-
-
 @transaction.commit_on_success
 def _update_asset(modifier_profile, asset, asset_updated_data):
     if (
