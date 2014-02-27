@@ -20,7 +20,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
@@ -42,15 +42,18 @@ from ralph_assets.forms import (
     SearchAssetForm,
     AssetColumnChoiceField,
 )
+from ralph_assets.forms_sam import LicenceForm
 from ralph_assets.models import (
     Asset,
     AssetModel,
     AssetCategory,
     DeviceInfo,
+    Licence,
     OfficeInfo,
     PartInfo,
+    SoftwareCategory,
 )
-from ralph_assets.models_assets import AssetType
+from ralph_assets.models_assets import AssetType, MODE2ASSET_TYPE
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
@@ -114,9 +117,11 @@ class AssetsBase(Base):
             sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'back office'
         items = (
-            ('add_device', 'Add device', 'fugue-block--plus'),
-            ('add_part', 'Add part', 'fugue-block--plus'),
-            ('asset_search', 'Search', 'fugue-magnifier'),
+            ('add_device', _('Add device'), 'fugue-block--plus'),
+            ('add_part', _('Add part'), 'fugue-block--plus'),
+            ('asset_search', _('Search'), 'fugue-magnifier'),
+            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
+            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
         )
         sidebar_menu = (
             [MenuHeader(sidebar_caption)] +
@@ -137,7 +142,7 @@ class AssetsBase(Base):
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='admin/ralph_assets',
+                href='/admin/ralph_assets',
             )
         ]
         return sidebar_menu
@@ -464,7 +469,6 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def get_result(self, request, *args, **kwargs):
         self.set_mode(kwargs['mode'])
-        self.form = SearchAssetForm(request.GET, mode=self.mode)
         return self.handle_search_data(get_csv=True)
 
     def get_response(self, request, result):
@@ -1390,3 +1394,85 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             'assets/xls_upload_wizard_done.html',
             ctx_data
         )
+
+
+class LicenceFormView(AssetsBase):
+    """Base view that displays licence form."""
+
+    template_name = 'assets/add_licence.html'
+    sidebar_selected = None
+
+    def _get_form(self, data=None, **kwargs):
+        self.form = LicenceForm(
+            mode=self.mode, data=data, **kwargs
+        )
+
+    def get_context_data(self, **kwargs):
+        ret = super(LicenceFormView, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'add_licence_form',
+            'edit_mode': False,
+            'caption': self.caption,
+        })
+        return ret
+
+    def _save(self, request, *args, **kwargs):
+        try:
+            licence = self.form.save(commit=False)
+            if licence.asset_type is None:
+                licence.asset_type = MODE2ASSET_TYPE[self.mode]
+            licence.save()
+            return HttpResponseRedirect(licence.url)
+        except ValueError:
+            return super(LicenceFormView, self).get(request, *args, **kwargs)
+
+
+class AddLicence(LicenceFormView):
+    """Add a new licence"""
+
+    caption = _('Add Licence')
+
+    def get(self, request, *args, **kwargs):
+        self._get_form()
+        return super(AddLicence, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        mode = self.mode
+        self._get_form(request.POST)
+        return self._save(request, *args, **kwargs)
+
+
+class EditLicence(LicenceFormView):
+    """Edit licence"""
+
+    caption = _('Edit Licence')
+
+    def get(self, request, licence_id, *args, **kwargs):
+        licence = Licence.objects.get(pk=licence_id)
+        self._get_form(instance=licence)
+        return super(EditLicence, self).get(request, *args, **kwargs)
+
+    def post(self, request, licence_id, *args, **kwargs):
+        licence = Licence.objects.get(pk=licence_id)
+        mode = self.mode
+        self._get_form(request.POST, instance=licence)
+        return self._save(request, *args, **kwargs)
+
+
+class LicenceList(AssetsBase):
+    """The licence list."""
+
+    template_name = "assets/licence_list.html"
+    sidebar_selected = None
+
+    def get_context_data(self, *args, **kwargs):
+        data = super(LicenceList, self).get_context_data(
+            *args, **kwargs
+        )
+        data['categories'] = SoftwareCategory.objects.annotate(
+            used=Sum('licence__used')
+        ).filter(
+            asset_type = MODE2ASSET_TYPE[self.mode]
+        )
+        return data

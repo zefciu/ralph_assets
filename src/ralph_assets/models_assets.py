@@ -58,6 +58,11 @@ class AssetType(Choices):
     back_office = _("back office")
     administration = _("administration")
 
+MODE2ASSET_TYPE = {
+    'dc': AssetType.data_center,
+    'back_office': AssetType.back_office,
+}
+
 
 class AssetStatus(Choices):
     _ = Choices.Choice

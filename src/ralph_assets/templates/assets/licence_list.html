@@ -1,0 +1,35 @@
+{% extends 'assets/base.html' %}
+{% load bob %}
+{% load i18n %}
+
+{% block content %}
+<table class="table tree">
+    <thead>
+        <th>{% trans "Name" %}</th>
+        <th>{% trans "Used" %}</th>
+    </thead>
+    {% for category in categories %}
+        <tr class="treegrid-{{ forloop.counter }}">
+            <td>{{ category.name }}</td>
+            <td>{{ category.used }}</td>
+        </tr>
+        {% for licence in category.licences %}
+            <tr class="treegrid-parent-{{ forloop.parentloop.counter }}">
+                <td><a href="{{ licence.url }}">{{ licence }}</a></td>
+                <td>{{ licence.used }}</td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+ </table>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script type="text/javascript">
+$(function() {
+    $('.tree').treegrid({
+        'initialState': 'collapsed'
+    });
+});
+</script>
+{% endblock scripts %}
