@@ -15,7 +15,7 @@
         </tr>
         {% for licence in category.licences %}
             <tr class="treegrid-parent-{{ forloop.parentloop.counter }}">
-                <td>{{ licence }}</td>
+                <td><a href="{{ licence.url }}">{{ licence }}</a></td>
                 <td>{{ licence.used }}</td>
             </tr>
         {% endfor %}
