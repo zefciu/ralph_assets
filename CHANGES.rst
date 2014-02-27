@@ -1,6 +1,18 @@
 Change Log
 ----------
 
+1.4.0
+~~~~~~~
+
+* Changed limit in sn field when add/edit new device
+
+* Visual grouping fields invoice_date and invoice_report when bulk edit assets
+
+* Added deprecation rate field to bulk edit assets
+
+* Added warehouse field to bulk edit assets
+
+
 1.3.2
 ~~~~~~~
 
