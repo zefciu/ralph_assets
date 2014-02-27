@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 from ajax_select.fields import AutoCompleteField, AutoCompleteWidget
 from django import forms
 
+from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 
@@ -86,4 +87,7 @@ class LicenceForm(forms.ModelForm):
             'accounting_id',
             'used',
         )
-        widgets = {}
+        widgets = {
+            'bought_date': DateWidget,
+            'valid_thru': DateWidget,
+        }

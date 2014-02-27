@@ -77,7 +77,7 @@ urlpatterns = patterns(
     url(
         r'(?P<mode>(back_office|dc))/sam/$',
         login_required(LicenceList.as_view()),
-        name='add_licence',
+        name='licence_list',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/add_licence/$',

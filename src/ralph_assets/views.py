@@ -117,10 +117,11 @@ class AssetsBase(Base):
             sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'back office'
         items = (
-            ('add_device', 'Add device', 'fugue-block--plus'),
-            ('add_part', 'Add part', 'fugue-block--plus'),
-            ('asset_search', 'Search', 'fugue-magnifier'),
-            ('add_licence', 'Add Licence', 'fugue-cheque-sign'),
+            ('add_device', _('Add device'), 'fugue-block--plus'),
+            ('add_part', _('Add part'), 'fugue-block--plus'),
+            ('asset_search', _('Search'), 'fugue-magnifier'),
+            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
+            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
         )
         sidebar_menu = (
             [MenuHeader(sidebar_caption)] +
@@ -468,7 +469,6 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def get_result(self, request, *args, **kwargs):
         self.set_mode(kwargs['mode'])
-        self.form = SearchAssetForm(request.GET, mode=self.mode)
         return self.handle_search_data(get_csv=True)
 
     def get_response(self, request, result):
