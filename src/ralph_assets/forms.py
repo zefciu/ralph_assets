@@ -10,6 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -23,11 +24,9 @@ from django.forms import (
 )
 from django.forms.widgets import HiddenInput, Textarea
 from django.utils.html import escape
-from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, SHOW, Dependency
-
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -72,12 +71,12 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'device_info', 'invoice_no', 'invoice_date',
-            'order_no', 'sn', 'barcode', 'price', 'support_price',
-            'support_period', 'support_type', 'support_void_reporting',
-            'provider', 'source', 'status', 'request_date',
-            'delivery_date', 'production_use_date',
-            'provider_order_date', 'production_year',
+            'type', 'model', 'warehouse', 'device_info', 'invoice_no',
+            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
+            'deprecation_rate', 'support_price', 'support_period',
+            'support_type', 'support_void_reporting', 'provider',
+            'source', 'status', 'request_date', 'delivery_date',
+            'production_use_date', 'provider_order_date', 'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -112,8 +111,10 @@ class BulkEditAssetForm(ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
-        if 'sn' in self.changed_data and\
-            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+        serial_number_unique = _check_serial_numbers_uniqueness(
+            [self.cleaned_data['sn']]
+        )[0]
+        if 'sn' in self.changed_data and not serial_number_unique:
             self._errors["sn"] = self.error_class([
                 _("Asset with this Sn already exists.")
             ])
@@ -490,6 +491,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'task_link',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -561,7 +563,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     def clean(self):
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
-        return self.cleaned_data
+        cleaned_data = super(BaseEditAssetForm, self).clean()
+        return cleaned_data
 
 
 def validate_production_year(asset):
@@ -699,6 +702,29 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
+class BackOfficeEditDeviceForm(EditDeviceForm):
+
+    @property
+    def dependencies(self):
+        for prop in super(BackOfficeEditDeviceForm, self).dependencies:
+            yield prop
+        yield Dependency(
+            'task_link',
+            'status',
+            [
+                status.id for status in [
+                    AssetStatus.loan, AssetStatus.liquidated,
+                    AssetStatus.in_service, AssetStatus.reserved
+                ]
+            ],
+            REQUIRE,
+        )
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+    pass
+
+
 class SearchAssetForm(Form):
     """returns search asset form for DC and BO.
 
@@ -828,6 +854,7 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    task_link = CharField(required=False, label='Task link')
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
