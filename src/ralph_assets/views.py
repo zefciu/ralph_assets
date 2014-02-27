@@ -41,6 +41,8 @@ from ralph_assets.forms import (
     OfficeForm,
     SearchAssetForm,
     AssetColumnChoiceField,
+    BackOfficeSearchAssetForm,
+    DataCenterSearchAssetForm,
 )
 from ralph_assets.models import (
     Asset,
@@ -237,13 +239,15 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                 'back_office': 'BO',
             }[mode]
         )
-        self.form = SearchAssetForm(self.request.GET, mode=mode)
         if mode == 'dc':
             self.objects = Asset.objects_dc
             self.admin_objects = Asset.admin_objects_dc
+            search_form = DataCenterSearchAssetForm
         elif mode == 'back_office':
             self.objects = Asset.objects_bo
             self.admin_objects = Asset.admin_objects_bo
+            search_form = BackOfficeSearchAssetForm
+        self.form = search_form(self.request.GET, mode=mode)
         super(_AssetSearch, self).set_mode(mode)
 
     def handle_search_data(self, get_csv=False):
@@ -266,6 +270,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'unlinked',
             'ralph_device_id',
             'task_link',
+            'imei',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -362,6 +367,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(task_link=field_value)
                     else:
                         all_q &= Q(task_link__icontains=field_value)
+                elif field == 'imei':
+                    if exact:
+                        all_q &= Q(office_info__imei=field_value)
+                    else:
+                        all_q &= Q(office_info__imei__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -464,7 +474,6 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def get_result(self, request, *args, **kwargs):
         self.set_mode(kwargs['mode'])
-        self.form = SearchAssetForm(request.GET, mode=self.mode)
         return self.handle_search_data(get_csv=True)
 
     def get_response(self, request, result):
