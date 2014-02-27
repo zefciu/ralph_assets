@@ -720,8 +720,8 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     @property
     def dependencies(self):
-        for prop in super(BackOfficeEditDeviceForm, self).dependencies:
-            yield prop
+        for dep in super(BackOfficeEditDeviceForm, self).dependencies:
+            yield dep
         yield Dependency(
             'task_link',
             'status',
