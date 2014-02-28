@@ -68,6 +68,8 @@ class BulkEditAssetForm(ModelForm):
         sn you can place many sn numbers separated by pressing enter.
         Barcode count must be the same like sn count.
     '''
+    # TODO: add dependency
+
     class Meta:
         model = Asset
         fields = (
@@ -75,7 +77,7 @@ class BulkEditAssetForm(ModelForm):
             'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'request_date', 'delivery_date',
+            'source', 'status', 'task_link', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
         )
         widgets = {
@@ -127,7 +129,7 @@ class BulkEditAssetForm(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year',
+            'provider', 'source', 'status', 'task_link', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
