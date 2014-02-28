@@ -64,6 +64,8 @@ class LicenceForm(forms.ModelForm):
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
+        if result.get('software_category') is None:
+            return result
         if result['software_category'].asset_type is None:
             result['software_category'].asset_type = MODE2ASSET_TYPE[self.mode]
         if result['software_category'].pk is None:

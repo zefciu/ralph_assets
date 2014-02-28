@@ -1423,6 +1423,7 @@ class LicenceFormView(AssetsBase):
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
+            messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
@@ -1432,6 +1433,7 @@ class AddLicence(LicenceFormView):
     """Add a new licence"""
 
     caption = _('Add Licence')
+    message = _('Licence added')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1447,6 +1449,7 @@ class EditLicence(LicenceFormView):
     """Edit licence"""
 
     caption = _('Edit Licence')
+    message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
