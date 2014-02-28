@@ -1473,9 +1473,11 @@ class LicenceList(AssetsBase):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
-        data['categories'] = SoftwareCategory.objects.annotate(
+        page = self.request.GET.get('page', 1)
+        categories = SoftwareCategory.objects.annotate(
             used=Sum('licence__used')
         ).filter(
             asset_type = MODE2ASSET_TYPE[self.mode]
         )
+        data['categories'] = Paginator(categories, 10).page(page)
         return data
