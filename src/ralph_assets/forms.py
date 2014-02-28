@@ -470,6 +470,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'category',
             'model',
             'status',
+            'task_link',
             'warehouse',
             'source',
             'invoice_no',
@@ -493,7 +494,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'task_link',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -750,6 +750,7 @@ class SearchAssetForm(Form):
         required=False, choices=[('', '----')] + AssetStatus(),
         label='Status'
     )
+    task_link = CharField(required=False, label='Task link')
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],
@@ -856,7 +857,6 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
-    task_link = CharField(required=False, label='Task link')
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
