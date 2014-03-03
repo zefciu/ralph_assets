@@ -127,6 +127,10 @@ def get_bulk_edit_post_data_part(*args, **kwargs):
     if barcode is None:
         barcode = 'bc-{0}'.format(str(randint(1000, 9999)))
 
+    warehouse = kwargs.get('warehouse')
+    if warehouse is None:
+        warehouse = create_warehouse()
+
     return {
         'form-{0}-id'.format(id-1): id,
         'form-{0}-type'.format(id-1):\
@@ -156,6 +160,7 @@ def get_bulk_edit_post_data_part(*args, **kwargs):
             kwargs.get('ralph_device_id', ''),
         'form-{0}-price'.format(id-1):\
             kwargs.get('price', 10),
+        'form-{0}-warehouse'.format(id-1): warehouse.id,
     }
 
 def get_bulk_edit_post_data(*args, **kwargs):
