@@ -68,8 +68,6 @@ class BulkEditAssetForm(ModelForm):
         sn you can place many sn numbers separated by pressing enter.
         Barcode count must be the same like sn count.
     '''
-    # TODO: add dependency
-
     class Meta:
         model = Asset
         fields = (
@@ -705,23 +703,7 @@ class EditDeviceForm(BaseEditAssetForm):
 
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
-
-    @property
-    def dependencies(self):
-        for prop in super(BackOfficeEditDeviceForm, self).dependencies:
-            yield prop
-        yield Dependency(
-            'task_link',
-            'status',
-            [
-                status.id for status in [
-                    AssetStatus.loan, AssetStatus.liquidated,
-                    AssetStatus.in_service, AssetStatus.reserved
-                ]
-            ],
-            REQUIRE,
-        )
-
+    pass
 
 class DataCenterEditDeviceForm(EditDeviceForm):
     pass
