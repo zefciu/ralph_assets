@@ -614,7 +614,10 @@ class AddDeviceForm(BaseAddAssetForm):
         label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
-    task_url = CharField(required=False, label='Task url')
+    task_url = CharField(
+        required=False, label='Task url',
+        help_text=('External workflow system URL')
+    )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
