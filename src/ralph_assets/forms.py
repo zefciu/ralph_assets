@@ -621,7 +621,7 @@ class AddDeviceForm(BaseAddAssetForm):
         # insert task_url after 'status' field
         after_status = 5
         new_order = self.fields.keyOrder[:-1]
-        new_order.insert('task_url', after_status)
+        new_order.insert(after_status, 'task_url')
         self.fields.keyOrder = new_order
 
     def clean_sn(self):
