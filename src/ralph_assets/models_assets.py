@@ -272,7 +272,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     objects_bo = BOManager()
     task_url = models.URLField(
         max_length=2048, null=True, blank=True, unique=False,
-        help_text=('Link to issue in "issue tracking" service'),
+        help_text=('URL to issue in "issue tracking" service'),
     )
 
     def __unicode__(self):

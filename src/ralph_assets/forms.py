@@ -614,9 +614,15 @@ class AddDeviceForm(BaseAddAssetForm):
         label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
+    task_url = CharField(required=False, label='Task url')
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
+        # insert task_url after 'status' field
+        after_status = 5
+        new_order = self.fields.keyOrder[:-1]
+        new_order.insert('task_url', after_status)
+        self.fields.keyOrder = new_order
 
     def clean_sn(self):
         '''
