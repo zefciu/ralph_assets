@@ -75,7 +75,7 @@ class BulkEditAssetForm(ModelForm):
             'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'task_link', 'request_date', 'delivery_date',
+            'source', 'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
         )
         widgets = {
@@ -127,7 +127,7 @@ class BulkEditAssetForm(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'task_link', 'production_year',
+            'provider', 'source', 'status', 'task_url', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -468,7 +468,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'category',
             'model',
             'status',
-            'task_link',
+            'task_url',
             'warehouse',
             'source',
             'invoice_no',
@@ -732,7 +732,7 @@ class SearchAssetForm(Form):
         required=False, choices=[('', '----')] + AssetStatus(),
         label='Status'
     )
-    task_link = CharField(required=False, label='Task link')
+    task_url = CharField(required=False, label='Task url')
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],

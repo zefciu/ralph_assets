@@ -8,15 +8,15 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'Asset.task_link'
-        db.add_column('ralph_assets_asset', 'task_link',
-                      self.gf('django.db.models.fields.URLField')(max_length=200, null=True, blank=True),
+        # Adding field 'Asset.task_url'
+        db.add_column('ralph_assets_asset', 'task_url',
+                      self.gf('django.db.models.fields.URLField')(max_length=2048, null=True, blank=True),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'Asset.task_link'
-        db.delete_column('ralph_assets_asset', 'task_link')
+        # Deleting field 'Asset.task_url'
+        db.delete_column('ralph_assets_asset', 'task_url')
 
 
     models = {
@@ -107,7 +107,7 @@ class Migration(SchemaMigration):
             'support_price': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'support_type': ('django.db.models.fields.CharField', [], {'max_length': '150'}),
             'support_void_reporting': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'task_link': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
+            'task_url': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
             'warehouse': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Warehouse']", 'on_delete': 'models.PROTECT'})
         },
@@ -178,6 +178,36 @@ class Migration(SchemaMigration):
             'u_height': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True', 'blank': 'True'}),
             'u_level': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True', 'blank': 'True'})
         },
+        'ralph_assets.licence': {
+            'Meta': {'object_name': 'Licence'},
+            'accounting_id': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True'}),
+            'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'bought_date': ('django.db.models.fields.DateField', [], {}),
+            'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
+            'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'niw': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'number_bought': ('django.db.models.fields.IntegerField', [], {}),
+            'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.Licence']"}),
+            'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
+            'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'sn': ('django.db.models.fields.CharField', [], {'max_length': '200', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
+            'software_category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.SoftwareCategory']", 'on_delete': 'models.PROTECT'}),
+            'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'used': ('django.db.models.fields.IntegerField', [], {}),
+            'valid_thru': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'})
+        },
+        'ralph_assets.licencetype': {
+            'Meta': {'object_name': 'LicenceType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
+        },
         'ralph_assets.officeinfo': {
             'Meta': {'object_name': 'OfficeInfo'},
             'attachment': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'blank': 'True'}),
@@ -202,6 +232,12 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'source_device': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'source_device'", 'null': 'True', 'to': "orm['ralph_assets.Asset']"})
+        },
+        'ralph_assets.softwarecategory': {
+            'Meta': {'object_name': 'SoftwareCategory'},
+            'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
         'ralph_assets.warehouse': {
             'Meta': {'object_name': 'Warehouse'},

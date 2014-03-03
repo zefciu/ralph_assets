@@ -270,7 +270,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'deprecation_rate',
             'unlinked',
             'ralph_device_id',
-            'task_link',
+            'task_url',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -362,11 +362,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(
                             device_info__ralph_device_id__icontains=field_value
                         )
-                elif field == 'task_link':
+                elif field == 'task_url':
                     if exact:
-                        all_q &= Q(task_link=field_value)
+                        all_q &= Q(task_url=field_value)
                     else:
-                        all_q &= Q(task_link__icontains=field_value)
+                        all_q &= Q(task_url__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
