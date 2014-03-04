@@ -371,6 +371,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'category',
             'model',
             'status',
+            'task_url',
             'warehouse',
             'source',
             'invoice_no',
@@ -614,17 +615,9 @@ class AddDeviceForm(BaseAddAssetForm):
         label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
-    task_url = CharField(
-        required=False, label='Task url',
-        help_text=_('External workflow system URL')
-    )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
-        # insert task_url after 'status' field
-        self.fields.keyOrder.pop(self.fields.keyOrder.index('task_url'))
-        after_status = self.fields.keyOrder.index('status') + 1
-        self.fields.keyOrder.insert(after_status, 'task_url')
 
     def clean_sn(self):
         '''
