@@ -976,12 +976,11 @@ class BulkEdit(Base):
                     instance.save(user=self.request.user)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
-        # XXX: returns always static text?
         form_error = self.asset_formset.get_form_error()
         if form_error:
             messages.error(
                 self.request,
-                _(("Please correct errors (if any) and check both"
+                _(("Please correct errors and check both"
                   "\"serial numbers\" and \"barcodes\" for duplicates"))
             )
         else:
