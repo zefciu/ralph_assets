@@ -10,7 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import Dependency, DependencyForm, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -622,10 +622,9 @@ class AddDeviceForm(BaseAddAssetForm):
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
         # insert task_url after 'status' field
-        after_status = 5
-        new_order = self.fields.keyOrder[:-1]
-        new_order.insert(after_status, 'task_url')
-        self.fields.keyOrder = new_order
+        self.fields.keyOrder.pop(self.fields.keyOrder.index('task_url'))
+        after_status = self.fields.keyOrder.index('status') + 1
+        self.fields.keyOrder.insert(after_status, 'task_url')
 
     def clean_sn(self):
         '''
@@ -713,6 +712,7 @@ class EditDeviceForm(BaseEditAssetForm):
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
     pass
+
 
 class DataCenterEditDeviceForm(EditDeviceForm):
     pass
