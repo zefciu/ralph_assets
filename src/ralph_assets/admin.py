@@ -18,8 +18,13 @@ from ralph_assets.models import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    LicenceType,
+    SoftwareCategory,
     Warehouse,
 )
+
+admin.site.register(SoftwareCategory)
+admin.site.register(LicenceType)
 
 
 class WarehouseAdmin(ModelAdmin):

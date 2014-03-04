@@ -22,10 +22,14 @@ from ralph_assets.models_assets import (
     AssetStatus,
     AssetType,
     DeviceInfo,
-    LicenseType,
     OfficeInfo,
     PartInfo,
     Warehouse,
+)
+from ralph_assets.models_sam import (
+    Licence,
+    LicenceType,
+    SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.discovery.models import Device, DeviceType

@@ -20,6 +20,9 @@ from ralph_assets.views import (
     DeleteAsset,
     HistoryAsset,
     XlsUploadView,
+    AddLicence,
+    EditLicence,
+    LicenceList,
 )
 
 from ralph_assets.forms import XLS_UPLOAD_FORMS
@@ -70,5 +73,20 @@ urlpatterns = patterns(
         r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/$',
+        login_required(LicenceList.as_view()),
+        name='licence_list',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/add_licence/$',
+        login_required(AddLicence.as_view()),
+        name='add_licence',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
+        login_required(EditLicence.as_view()),
+        name='edit_licence',
     ),
 )
