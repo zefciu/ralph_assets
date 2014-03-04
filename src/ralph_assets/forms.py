@@ -616,7 +616,7 @@ class AddDeviceForm(BaseAddAssetForm):
     )
     task_url = CharField(
         required=False, label='Task url',
-        help_text=('External workflow system URL')
+        help_text=_('External workflow system URL')
     )
 
     def __init__(self, *args, **kwargs):
