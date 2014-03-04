@@ -710,14 +710,6 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
-class BackOfficeEditDeviceForm(EditDeviceForm):
-    pass
-
-
-class DataCenterEditDeviceForm(EditDeviceForm):
-    pass
-
-
 class SearchAssetForm(Form):
     """returns search asset form for DC and BO.
 

@@ -34,8 +34,6 @@ from ralph_assets.forms import (
     SplitDevice,
     DeviceForm,
     EditDeviceForm,
-    BackOfficeEditDeviceForm,
-    DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -713,13 +711,6 @@ class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 
-    def _get_form_by_mode(self, mode):
-        EditDeviceForm = (
-            BackOfficeEditDeviceForm if mode == 'back_office'
-            else DataCenterEditDeviceForm
-        )
-        return EditDeviceForm
-
     def initialize_vars(self):
         self.parts = []
         self.office_info_form = None
@@ -752,7 +743,6 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
@@ -770,7 +760,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(
             post_data,
             instance=self.asset,
