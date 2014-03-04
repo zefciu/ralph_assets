@@ -8,9 +8,7 @@ from __future__ import unicode_literals
 import re
 from rq import get_current_job
 
-import itertools as it
 from collections import Counter
-import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
@@ -1291,44 +1289,21 @@ class SplitDeviceView(AssetsBase):
 
 
 class XlsUploadView(SessionWizardView, AssetsBase):
-    """The wizard view for xls upload."""
+    """The wizard view for xls/csv upload."""
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
     sidebar_selected = None
     mainmenu_selected = 'dc'
 
-    def _process_xls(self, file_):
-        book = xlrd.open_workbook(
-            filename=file_.name,
-            file_contents=file_.read(),
-        )
-        names_per_sheet = {}
-        data_per_sheet = {}
-        for sheet_name, sheet in (
-            (sheet_name, book.sheet_by_name(sheet_name)) for
-            sheet_name in book.sheet_names()
-        ):
-            if not sheet:
-                continue
-            name_row = sheet.row(0)
-            names_per_sheet[sheet_name] = col_names = [
-                cell.value for cell in name_row[1:]
-            ]
-            data_per_sheet[sheet_name] = {}
-            for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
-                asset_id = int(row[0].value)
-                data_per_sheet[sheet_name][asset_id] = {}
-                for key, cell in it.izip(col_names, row[1:]):
-                    data_per_sheet[sheet_name][asset_id][key] = cell.value
-        return names_per_sheet, data_per_sheet
 
     def get_form(self, step=None, data=None, files=None):
         form = super(XlsUploadView, self).get_form(step, data, files)
         if step == 'column_choice':
-            file_ = self.get_cleaned_data_for_step('upload')['file']
-            names_per_sheet, data_per_sheet = self._process_xls(file_)
+            names_per_sheet, update_per_sheet, add_per_sheet =\
+                self.get_cleaned_data_for_step('upload')['file']
             self.storage.data['names_per_sheet'] = names_per_sheet
-            self.storage.data['data_per_sheet'] = data_per_sheet
+            self.storage.data['update_per_sheet'] = update_per_sheet
+            self.storage.data['add_per_sheet'] = add_per_sheet
             for name_list in names_per_sheet.values():
                 for name in name_list:
                     form.fields[name] = AssetColumnChoiceField(
@@ -1352,10 +1327,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
             mappings = self.storage.data['mappings']
-            data_per_sheet = self.storage.data['data_per_sheet']
+            update_per_sheet = self.storage.data['update_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
-            for sheet_name, sheet_data in data_per_sheet.items():
+            for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
                     data_dicts.setdefault(asset_id, {})
                     for key, value in asset_data.items():
@@ -1373,9 +1348,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     @transaction.commit_on_success
     def done(self, form_list):
         mappings = self.storage.data['mappings']
-        data_per_sheet = self.storage.data['data_per_sheet']
+        update_per_sheet = self.storage.data['update_per_sheet']
         failed_assets = []
-        for sheet_name, sheet_data in data_per_sheet.items():
+        for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
                     asset = Asset.objects.get(pk=asset_id)

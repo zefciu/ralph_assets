@@ -38,6 +38,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
+from ralph_assets.forms_import import DataUploadField
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
@@ -984,7 +985,7 @@ class AssetColumnChoiceField(ChoiceField):
 
 class XlsUploadForm(Form):
     """The first step for uploading the XLS file for asset bulk update."""
-    file = FileField()
+    file = DataUploadField()
 
 
 class XlsColumnChoiceForm(Form):
