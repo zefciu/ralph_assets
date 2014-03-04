@@ -1328,6 +1328,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if self.steps.current == 'confirm':
             mappings = self.storage.data['mappings']
             update_per_sheet = self.storage.data['update_per_sheet']
+            add_per_sheet = self.storage.data['add_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
@@ -1335,14 +1336,26 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     data_dicts.setdefault(asset_id, {})
                     for key, value in asset_data.items():
                         data_dicts[asset_id][mappings[key]] = value
-            table = []
+            update_table = []
             for asset_id, asset_data in data_dicts.items():
                 row = [asset_id]
                 for column in all_columns:
                     row.append(asset_data.get(column, ''))
-                table.append(row)
+                update_table.append(row)
+            add_table = []
+            for sheet_name, sheet_data in add_per_sheet.items():
+                for asset_data in sheet_data:
+                    asset_data = dict(
+                        (mappings[k], v) for (k, v) in asset_data.items()
+                    )
+                    row = []
+                    for column in all_columns:
+                        row.append(asset_data.get(column, ''))
+                    add_table.append(row) 
+            
             data['all_columns'] = all_columns
-            data['table'] = table
+            data['update_table'] = update_table
+            data['add_table'] = add_table
         return data
 
     @transaction.commit_on_success

@@ -45,9 +45,10 @@ class DataUploadField(forms.FileField):
                         update_per_sheet[sheet_name][asset_id][key] = cell.value
             else:
                 for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
-                    add_per_sheet[sheet_name].append([
-                        cell.value for cell in row
-                    ])
+                    asset_data = {}
+                    add_per_sheet[sheet_name].append(asset_data)
+                    for key, cell in it.izip(col_names, row):
+                        asset_data[key] = cell.value
 
         return names_per_sheet, update_per_sheet, add_per_sheet
 
@@ -66,7 +67,11 @@ class DataUploadField(forms.FileField):
                     update_per_sheet['csv'][asset_id][key] = value
         else:
             for row in reader:
-                add_per_sheet['csv'].append(row)
+                asset_data = {}
+                add_per_sheet['csv'].append(asset_data)
+                for key, value in it.izip(name_row, row[:]):
+                    asset_data[key] = value
+                
         names_per_sheet = {'csv': name_row}
         
         return names_per_sheet, update_per_sheet, add_per_sheet

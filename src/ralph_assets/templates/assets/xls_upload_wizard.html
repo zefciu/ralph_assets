@@ -24,6 +24,7 @@
 <p>This data got extracted from provided XLS file. Please make sure the data
 is OK. Submitting the data is irreversible.</p>
 {% endblocktrans %}
+<h1>Assets to be updated</h1>
 <table>
     <thead>
         <th>{% trans "Asset id" %}</th>
@@ -32,7 +33,24 @@ is OK. Submitting the data is irreversible.</p>
         {% endfor %}
     </thead>
     <tbody>
-    {% for row in table %}
+    {% for row in update_table %}
+        <tr>
+            {% for col in row %}
+                <td>{{ col }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h1>Assets to be added</h1>
+<table>
+    <thead>
+        {% for name in all_columns %}
+        <th>{{ name }}</th>
+        {% endfor %}
+    </thead>
+    <tbody>
+    {% for row in add_table %}
         <tr>
             {% for col in row %}
                 <td>{{ col }}</td>
