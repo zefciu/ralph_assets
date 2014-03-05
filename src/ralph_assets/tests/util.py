@@ -20,6 +20,8 @@ from ralph_assets.models_assets import (
     Warehouse
 )
 
+import cgi
+
 DEFAULT_ASSET_DATA = dict(
     manufacturer='Manufacturer1',
     model='Model1',
@@ -33,7 +35,10 @@ DEFAULT_ASSET_DATA = dict(
 )
 
 SCREEN_ERROR_MESSAGES = dict(
-    duplicated_sn_or_bc='Please correct duplicated serial numbers or barcodes.',  # noqa
+    duplicated_sn_or_bc=cgi.escape((
+        "Please correct errors and check both"
+        "\"serial numbers\" and \"barcodes\" for duplicates"
+    ), quote=True),
     duplicated_sn_in_field='There are duplicate serial numbers in field.',
     contain_white_character="Serial number can't contain white characters.",
     django_required='This field is required.',
