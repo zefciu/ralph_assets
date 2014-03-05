@@ -33,13 +33,11 @@ from ralph_assets.forms import (
     BulkEditAssetForm,
     SplitDevice,
     DeviceForm,
-    EditDeviceForm,
     BackOfficeEditDeviceForm,
     DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    SearchAssetForm,
     AssetColumnChoiceField,
     BackOfficeSearchAssetForm,
     DataCenterSearchAssetForm,
@@ -766,7 +764,9 @@ class EditDevice(AssetsBase):
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
-            self.asset_form.fields['imei'].initial = self.asset.office_info.imei
+            self.asset_form.fields['imei'].initial = (
+                self.asset.office_info.imei
+            )
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -895,7 +895,9 @@ class EditPart(AssetsBase):
         mode = self.mode
         self.asset_form = EditPartForm(instance=self.asset, mode=mode)
         if self.asset.office_info:
-            self.asset_form.fields['imei'].initial = self.asset.office_info.imei
+            self.asset_form.fields['imei'].initial = (
+                self.asset.office_info.imei
+            )
         self.office_info_form = OfficeForm(instance=self.asset.office_info)
         self.part_info_form = BasePartForm(
             instance=self.asset.part_info, mode=mode,
