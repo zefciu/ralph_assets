@@ -110,7 +110,7 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self):
-        if self.mode == 'dc':
+        if self.mode == 'back_office':
             sidebar_caption = _('Back office actions')
             self.mainmenu_selected = 'dc'
         else:
