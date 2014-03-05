@@ -378,6 +378,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'niw',
             'type',
             'category',
+            'imei',
             'model',
             'status',
             'warehouse',
@@ -432,6 +433,11 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     source = ChoiceField(
         choices=AssetSource(),
     )
+    imei = CharField(
+        min_length=15, max_length=18, validators=[validate_imei],
+        label=_("IMEI"), required=False,
+    )
+
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.get('mode')
@@ -475,6 +481,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'sn',
             'type',
             'category',
+            'imei',
             'model',
             'status',
             'warehouse',
@@ -534,6 +541,10 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     source = ChoiceField(
         choices=AssetSource(),
+    )
+    imei = CharField(
+        min_length=15, max_length=18, validators=[validate_imei],
+        label=_("IMEI"), required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -678,14 +689,9 @@ class AddDeviceForm(BaseAddAssetForm):
 
 
 class OfficeForm(ModelForm):
-    imei = CharField(
-        min_length=15, max_length=18, validators=[validate_imei],
-        label=u'IMEI'
-    )
-
     class Meta:
         model = OfficeInfo
-        exclude = ('created', 'modified')
+        exclude = ('imei', 'created', 'modified')
         widgets = {
             'date_of_last_inventory': DateWidget(),
         }
