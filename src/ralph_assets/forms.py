@@ -361,13 +361,13 @@ class DependencyAssetForm(DependencyForm):
         :rtype object:
         """
         deps = [
-            yield Dependency(
+            Dependency(
                 'slots',
                 'category',
                 AssetCategory.objects.filter(is_blade=True).all(),
                 SHOW,
             ),
-            yield Dependency(
+            Dependency(
                 'imei',
                 'category',
                 AssetCategory.objects.filter(name__in=[
@@ -379,8 +379,6 @@ class DependencyAssetForm(DependencyForm):
         ]
         for dep in deps:
             yield dep
-
-
 
 
 class BaseAddAssetForm(DependencyAssetForm, ModelForm):
@@ -452,7 +450,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
     )
-
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.get('mode')
