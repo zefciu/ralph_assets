@@ -360,12 +360,27 @@ class DependencyAssetForm(DependencyForm):
         :returns object: Logic to test if category is in selected categories
         :rtype object:
         """
-        yield Dependency(
-            'slots',
-            'category',
-            AssetCategory.objects.filter(is_blade=True).all(),
-            SHOW,
-        )
+        deps = [
+            yield Dependency(
+                'slots',
+                'category',
+                AssetCategory.objects.filter(is_blade=True).all(),
+                SHOW,
+            ),
+            yield Dependency(
+                'imei',
+                'category',
+                AssetCategory.objects.filter(name__in=[
+                    # TODO: an enum instead?
+                    'Mobile devices', 'Mobile phone', 'Tablet'
+                ]).all(),
+                SHOW,
+            )
+        ]
+        for dep in deps:
+            yield dep
+
+
 
 
 class BaseAddAssetForm(DependencyAssetForm, ModelForm):
