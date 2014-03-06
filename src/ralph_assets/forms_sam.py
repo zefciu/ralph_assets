@@ -37,7 +37,6 @@ class SoftwareCategoryField(AutoCompleteField):
     these values are *not* saved. The view should save it after validating
     the whole form"""
 
-
     def clean(self, value):
         value = super(SoftwareCategoryField, self).clean(value)
         try:
@@ -75,6 +74,7 @@ class LicenceForm(forms.ModelForm):
         fields = (
             'manufacturer',
             'licence_type',
+            'property_of',
             'software_category',
             'number_bought',
             'sn',

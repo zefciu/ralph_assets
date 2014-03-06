@@ -21,6 +21,7 @@ from mptt.models import MPTTModel
 
 from ralph_assets.models_assets import AssetManufacturer, AssetType
 
+
 class LicenceType(Named):
     """The type of a licence"""
 
@@ -108,6 +109,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
                 AssetType.back_office: 'back_office',
             }[self.asset_type],
         })
+
 
 class SoftwareCategoryLookup(LookupChannel):
     model = SoftwareCategory
