@@ -133,7 +133,7 @@ def get_bulk_edit_post_data_part(*args, **kwargs):
         warehouse = create_warehouse()
         warehouse_id = warehouse.id
 
-    return {
+    data = {
         'form-{0}-id'.format(id-1): id,
         'form-{0}-type'.format(id-1):
         kwargs.get('type', AssetType.data_center.id),
@@ -166,6 +166,10 @@ def get_bulk_edit_post_data_part(*args, **kwargs):
         'form-{0}-deprecation_rate'.format(id-1):
         kwargs.get('deprecation_rate', 25),
     }
+    if 'category' in kwargs:
+        data['form-{0}-category'.format(id-1)] = kwargs['category']
+
+    return data
 
 
 def get_bulk_edit_post_data(*args, **kwargs):

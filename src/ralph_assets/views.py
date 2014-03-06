@@ -589,7 +589,7 @@ def _get_return_link(mode):
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
-    imei = asset_data.pop('imei')
+    imei = asset_data.pop('imei') if 'imei' in asset_data else None
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -1091,7 +1091,7 @@ class DeleteAsset(AssetsBase):
 def _create_part(creator_profile, asset_data, part_info_data, sn):
     part_info = PartInfo(**part_info_data)
     part_info.save(user=creator_profile.user)
-    imei = asset_data.pop('imei')
+    imei = asset_data.pop('imei') if 'imei' in asset_data else None
     asset = Asset(
         part_info=part_info,
         sn=sn.strip(),

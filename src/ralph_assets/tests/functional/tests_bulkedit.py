@@ -47,6 +47,7 @@ class TestBulkEdit(TestCase):
 
         post_data = get_bulk_edit_post_data(
             {
+                'category': self.category.id,
                 'model': self.model.id,
                 'invoice_no': 'Invoice No1',
                 'order_no': 'Order No1',
@@ -59,6 +60,7 @@ class TestBulkEdit(TestCase):
                 'barcode': 'bc-3333-3333-3333-3333',
             },
             {
+                'category': self.category.id,
                 'model': self.model1.id,
                 'invoice_no': 'Invoice No2',
                 'order_no': 'Order No2',
