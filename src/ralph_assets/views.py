@@ -112,10 +112,10 @@ class AssetsBase(Base):
     def get_sidebar_items(self):
         if self.mode == 'back_office':
             sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'dc'
+            self.mainmenu_selected = 'back office'
         else:
             sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = 'back office'
+            self.mainmenu_selected = 'dc'
         items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
@@ -965,13 +965,15 @@ class EditPart(AssetsBase):
         })
 
 
-class BulkEdit(Base):
+class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
+    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'formset': self.asset_formset
+            'formset': self.asset_formset,
+            'mode': self.mode,
         })
         return ret
 
@@ -984,7 +986,7 @@ class BulkEdit(Base):
         AssetFormSet = modelformset_factory(
             Asset,
             form=BulkEditAssetForm,
-            extra=0
+            extra=0,
         )
         self.asset_formset = AssetFormSet(
             queryset=Asset.objects.filter(
@@ -997,7 +999,7 @@ class BulkEdit(Base):
         AssetFormSet = modelformset_factory(
             Asset,
             form=BulkEditAssetForm,
-            extra=0
+            extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():

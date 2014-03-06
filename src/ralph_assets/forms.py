@@ -80,12 +80,12 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'warehouse', 'device_info', 'invoice_no',
-            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
+            'type', 'category', 'model', 'warehouse', 'device_info',
+            'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date', 'production_year',
+            'support_type', 'support_void_reporting', 'provider', 'source',
+            'status', 'request_date', 'delivery_date', 'production_use_date',
+            'provider_order_date', 'production_year',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -105,6 +105,11 @@ class BulkEditAssetForm(ModelForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    category = TreeNodeChoiceField(
+        queryset=AssetCategory.tree.all(),
+        level_indicator='|---',
+        empty_label="---",
     )
 
     def clean(self):
@@ -146,13 +151,26 @@ class BulkEditAssetForm(ModelForm):
             else:
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
+        category = self.fields['category'].queryset
         group_type = AssetType.from_id(self.instance.type).group.name
         if group_type == 'DC':
+            self.fields['type'].choices = [
+                (c.id, c.desc) for c in AssetType.DC.choices]
+            self.fields['category'].queryset = category.filter(
+                type=AssetCategoryType.data_center
+            )
+
             del self.fields['type']
         elif group_type == 'BO':
             self.fields['type'].choices = [('', '---------')] + [
                 (choice.id, choice.name) for choice in AssetType.BO.choices
             ]
+
+            self.fields['type'].choices = [
+                (c.id, c.desc) for c in AssetType.BO.choices]
+            self.fields['category'].queryset = category.filter(
+                type=AssetCategoryType.back_office
+            )
 
 
 class DeviceForm(ModelForm):
@@ -456,6 +474,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         if mode:
             del kwargs['mode']
         super(BaseAddAssetForm, self).__init__(*args, **kwargs)
+
         category = self.fields['category'].queryset
         if mode == "dc":
             self.fields['type'].choices = [
