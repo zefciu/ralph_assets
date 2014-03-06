@@ -156,6 +156,10 @@ class AssetsBase(Base):
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
 
     def write_office_info2asset(self):
+        """
+        Writes *imei* field from office_info form to asset form.
+        Should be expanded with other OfficeInfo fields.
+        """
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
             self.asset_form.fields['imei'].initial = (
@@ -634,7 +638,6 @@ class AddDevice(AssetsBase):
             mode=mode,
             exclude='create_stock',
         )
-        #TODO: save imei here
         if self.asset_form.is_valid() and self.device_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
@@ -897,16 +900,10 @@ class EditPart(AssetsBase):
         )
         if self.asset.device_info:  # it isn't part asset
             raise Http404()
-        mode = self.mode
-        self.asset_form = EditPartForm(instance=self.asset, mode=mode)
-        if self.asset.office_info:
-            #TODO: check if this code (and from post) is duplicated
-            self.asset_form.fields['imei'].initial = (
-                self.asset.office_info.imei
-            )
-        self.office_info_form = OfficeForm(instance=self.asset.office_info)
+        self.asset_form = EditPartForm(instance=self.asset, mode=self.mode)
+        self.write_office_info2asset()
         self.part_info_form = BasePartForm(
-            instance=self.asset.part_info, mode=mode,
+            instance=self.asset.part_info, mode=self.mode,
         )
         return super(EditPart, self).get(*args, **kwargs)
 
