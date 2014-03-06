@@ -10,7 +10,7 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding field 'AssetModel.type'
         db.add_column('ralph_assets_assetmodel', 'type',
-                      self.gf('django.db.models.fields.PositiveIntegerField')(null=True),
+                      self.gf('django.db.models.fields.PositiveIntegerField')(null=True, default=1),
                       keep_default=False)
 
 
