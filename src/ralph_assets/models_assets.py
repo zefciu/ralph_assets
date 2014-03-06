@@ -128,6 +128,10 @@ class AssetModel(
         return "%s %s" % (self.manufacturer, self.name)
 
 
+class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
+    """The company or other entity that are owners of assets."""
+
+
 class AssetCategory(
         MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
     name = models.CharField(max_length=50, unique=True)
