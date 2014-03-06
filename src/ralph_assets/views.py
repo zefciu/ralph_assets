@@ -158,7 +158,7 @@ class AssetsBase(Base):
     def write_office_info2asset(self):
         """
         Writes *imei* field from office_info form to asset form.
-        Should be expanded with other OfficeInfo fields.
+        Should be expanded with others OfficeInfo fields.
         """
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
