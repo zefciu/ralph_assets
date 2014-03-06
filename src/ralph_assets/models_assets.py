@@ -270,8 +270,9 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     admin_objects_bo = BOAdminManager()
     objects_dc = DCManager()
     objects_bo = BOManager()
-    task_link = models.URLField(
-        max_length=2048, null=True, blank=True, unique=False
+    task_url = models.URLField(
+        max_length=2048, null=True, blank=True, unique=False,
+        help_text=('External workflow system URL'),
     )
 
     def __unicode__(self):

@@ -34,8 +34,6 @@ from ralph_assets.forms import (
     SplitDevice,
     DeviceForm,
     EditDeviceForm,
-    BackOfficeEditDeviceForm,
-    DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -270,7 +268,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'deprecation_rate',
             'unlinked',
             'ralph_device_id',
-            'task_link',
+            'task_url',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -362,11 +360,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(
                             device_info__ralph_device_id__icontains=field_value
                         )
-                elif field == 'task_link':
+                elif field == 'task_url':
                     if exact:
-                        all_q &= Q(task_link=field_value)
+                        all_q &= Q(task_url=field_value)
                     else:
-                        all_q &= Q(task_link__icontains=field_value)
+                        all_q &= Q(task_url__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -713,13 +711,6 @@ class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 
-    def _get_form_by_mode(self, mode):
-        EditDeviceForm = (
-            BackOfficeEditDeviceForm if mode == 'back_office'
-            else DataCenterEditDeviceForm
-        )
-        return EditDeviceForm
-
     def initialize_vars(self):
         self.parts = []
         self.office_info_form = None
@@ -752,7 +743,6 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
@@ -770,7 +760,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(
             post_data,
             instance=self.asset,
@@ -991,7 +980,8 @@ class BulkEdit(Base):
         if form_error:
             messages.error(
                 self.request,
-                _("Please correct duplicated serial numbers or barcodes.")
+                _(("Please correct errors and check both"
+                  "\"serial numbers\" and \"barcodes\" for duplicates"))
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
