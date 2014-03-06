@@ -278,6 +278,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=2048, null=True, blank=True, unique=False,
         help_text=('External workflow system URL'),
     )
+    property_of = models.ForeignKey(
+        AssetOwner,
+        on_delete=models.PROTECT,
+        null=True,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)

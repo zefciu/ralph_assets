@@ -23,6 +23,11 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT),
                       keep_default=False)
 
+        # Adding field 'Asset.property_of'
+        db.add_column('ralph_assets_asset', 'property_of',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT),
+                      keep_default=False)
+
 
     def backwards(self, orm):
         # Deleting model 'AssetOwner'
@@ -30,6 +35,9 @@ class Migration(SchemaMigration):
 
         # Deleting field 'Licence.property_of'
         db.delete_column('ralph_assets_licence', 'property_of_id')
+
+        # Deleting field 'Asset.property_of'
+        db.delete_column('ralph_assets_asset', 'property_of_id')
 
 
     models = {
@@ -108,6 +116,7 @@ class Migration(SchemaMigration):
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
             'production_use_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'production_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'provider_order_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
