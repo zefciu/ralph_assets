@@ -282,6 +282,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         AssetOwner,
         on_delete=models.PROTECT,
         null=True,
+        blank=True,
     )
 
     def __unicode__(self):
