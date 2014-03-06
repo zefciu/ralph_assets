@@ -1018,7 +1018,6 @@ class BulkEdit(AssetsBase, Base):
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():
-            # TODO: read it
             with transaction.commit_on_success():
                 instances = self.asset_formset.save(commit=False)
                 for instance in instances:
