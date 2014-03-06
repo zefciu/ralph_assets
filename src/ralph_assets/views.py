@@ -155,6 +155,13 @@ class AssetsBase(Base):
         self.set_mode(mode)
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
 
+    def write_office_info2asset(self):
+        if self.asset.type in AssetType.BO.choices:
+            self.office_info_form = OfficeForm(instance=self.asset.office_info)
+            self.asset_form.fields['imei'].initial = (
+                self.asset.office_info.imei
+            )
+
 
 class DataTableColumnAssets(DataTableColumn):
     """
@@ -627,6 +634,7 @@ class AddDevice(AssetsBase):
             mode=mode,
             exclude='create_stock',
         )
+        #TODO: save imei here
         if self.asset_form.is_valid() and self.device_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
@@ -762,11 +770,7 @@ class EditDevice(AssetsBase):
             raise Http404()
         EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
-        if self.asset.type in AssetType.BO.choices:
-            self.office_info_form = OfficeForm(instance=self.asset.office_info)
-            self.asset_form.fields['imei'].initial = (
-                self.asset.office_info.imei
-            )
+        self.write_office_info2asset()
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -828,6 +832,7 @@ class EditDevice(AssetsBase):
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
+
                 if self.asset.type in AssetType.BO.choices:
                     self.office_info_form.cleaned_data['imei'] = (
                         self.asset_form.cleaned_data['imei']
@@ -895,6 +900,7 @@ class EditPart(AssetsBase):
         mode = self.mode
         self.asset_form = EditPartForm(instance=self.asset, mode=mode)
         if self.asset.office_info:
+            #TODO: check if this code (and from post) is duplicated
             self.asset_form.fields['imei'].initial = (
                 self.asset.office_info.imei
             )
@@ -988,11 +994,15 @@ class BulkEdit(AssetsBase, Base):
             form=BulkEditAssetForm,
             extra=0,
         )
-        self.asset_formset = AssetFormSet(
-            queryset=Asset.objects.filter(
-                pk__in=self.request.GET.getlist('select')
-            )
+        assets = Asset.objects.filter(
+            pk__in=self.request.GET.getlist('select')
         )
+        self.asset_formset = AssetFormSet(queryset=assets)
+        for idx, asset in enumerate(assets):
+            if asset.office_info:
+                self.asset_formset.forms[idx].fields['imei'].initial = (
+                    asset.office_info.imei
+                )
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -1003,10 +1013,22 @@ class BulkEdit(AssetsBase, Base):
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():
+            # TODO: read it
             with transaction.commit_on_success():
                 instances = self.asset_formset.save(commit=False)
                 for instance in instances:
                     instance.modified_by = self.request.user.get_profile()
+                    form = [
+                        f for f in self.asset_formset.forms
+                        if f.cleaned_data['id'] == instance
+                    ][0]
+                    _update_office_info(
+                        self.request.user, instance,
+                        {
+                            'imei': form.cleaned_data['imei'],
+                            'attachment': None,
+                        }
+                    )
                     instance.save(user=self.request.user)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
