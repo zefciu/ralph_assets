@@ -589,6 +589,7 @@ def _get_return_link(mode):
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
+    imei = asset_data.pop('imei')
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -604,6 +605,13 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     if barcode:
         asset.barcode = barcode
     asset.save(user=creator_profile.user)
+    if imei:
+        _update_office_info(
+            creator_profile.user, asset, {
+                'imei': imei,
+                'attachment': None,
+            }
+        )
     return asset.id
 
 
@@ -1083,6 +1091,7 @@ class DeleteAsset(AssetsBase):
 def _create_part(creator_profile, asset_data, part_info_data, sn):
     part_info = PartInfo(**part_info_data)
     part_info.save(user=creator_profile.user)
+    imei = asset_data.pop('imei')
     asset = Asset(
         part_info=part_info,
         sn=sn.strip(),
@@ -1090,6 +1099,13 @@ def _create_part(creator_profile, asset_data, part_info_data, sn):
         **asset_data
     )
     asset.save(user=creator_profile.user)
+    if imei:
+        _update_office_info(
+            creator_profile.user, asset, {
+                'imei': imei,
+                'attachment': None,
+            }
+        )
     return asset.id
 
 
