@@ -93,7 +93,7 @@ class BulkEditAssetForm(ModelForm):
         choices=AssetSource(),
     )
     model = AutoCompleteSelectField(
-        None,
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
@@ -408,7 +408,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
-        None,
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
@@ -518,7 +518,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'barcode': Textarea(attrs={'rows': 1}),
         }
     model = AutoCompleteSelectField(
-        None,
+        LOOKUPS['asset_model'],
         required=True,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
