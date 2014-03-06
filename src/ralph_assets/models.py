@@ -16,7 +16,6 @@ from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
     AssetCategoryType,
-    AssetType,
     AssetManufacturer,
     AssetModel,
     AssetSource,
@@ -135,8 +134,10 @@ class AssetModelLookup(LookupChannel):
 class DCAssetModelLookup(AssetModelLookup):
     type = AssetType.data_center
 
+
 class BOAssetModelLookup(AssetModelLookup):
     type = AssetType.back_office
+
 
 class AssetManufacturerLookup(LookupChannel):
     model = AssetModel
