@@ -12,6 +12,8 @@ import os
 import datetime
 
 from dateutil.relativedelta import relativedelta
+
+from django.contrib.auth.models import User
 from lck.django.choices import Choices
 from lck.django.common.models import (
     EditorTrackable,
@@ -284,6 +286,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
+    )
+    guardian = models.ForeignKey(
+        User, null=True, blank=True, related_name="guardian",
+    )
+    user = models.ForeignKey(
+        User, null=True, blank=True, related_name="user",
     )
 
     def __unicode__(self):
