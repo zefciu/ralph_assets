@@ -989,15 +989,11 @@ class BulkEdit(AssetsBase, Base):
             form=BulkEditAssetForm,
             extra=0,
         )
-        assets = Asset.objects.filter(
-            pk__in=self.request.GET.getlist('select')
+        self.asset_formset = AssetFormSet(
+            queryset=Asset.objects.filter(
+                pk__in=self.request.GET.getlist('select')
+            )
         )
-        self.asset_formset = AssetFormSet(queryset=assets)
-        for idx, asset in enumerate(assets):
-            if asset.office_info:
-                self.asset_formset.forms[idx].fields['imei'].initial = (
-                    asset.office_info.imei
-                )
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -1012,17 +1008,6 @@ class BulkEdit(AssetsBase, Base):
                 instances = self.asset_formset.save(commit=False)
                 for instance in instances:
                     instance.modified_by = self.request.user.get_profile()
-                    form = [
-                        f for f in self.asset_formset.forms
-                        if f.cleaned_data['id'] == instance
-                    ][0]
-                    _update_office_info(
-                        self.request.user, instance,
-                        {
-                            'imei': form.cleaned_data['imei'],
-                            'attachment': None,
-                        }
-                    )
                     instance.save(user=self.request.user)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())

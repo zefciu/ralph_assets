@@ -82,7 +82,7 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'category', 'imei', 'model', 'warehouse', 'device_info',
+            'type', 'model', 'warehouse', 'device_info',
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider', 'source',
@@ -108,16 +108,6 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
-    category = TreeNodeChoiceField(
-        queryset=AssetCategory.tree.all(),
-        level_indicator='|---',
-        empty_label="---",
-    )
-    imei = CharField(
-        min_length=15, max_length=18, validators=[validate_imei],
-        label=_("IMEI"), required=False,
-    )
-
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -144,11 +134,11 @@ class BulkEditAssetForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
         fillable_fields = [
-            'type', 'model', 'category', 'imei', 'device_info', 'invoice_no',
-            'order_no', 'request_date', 'delivery_date', 'invoice_date',
+            'type', 'model', 'device_info', 'invoice_no', 'order_no',
+            'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'task_url', 'production_year',
+            'provider', 'source', 'status', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -158,14 +148,10 @@ class BulkEditAssetForm(ModelForm):
             else:
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
-        category = self.fields['category'].queryset
         group_type = AssetType.from_id(self.instance.type).group.name
         if group_type == 'DC':
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.data_center
-            )
 
             self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             del self.fields['type']
@@ -177,9 +163,6 @@ class BulkEditAssetForm(ModelForm):
 
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.back_office
-            )
 
 
 class DeviceForm(ModelForm):
