@@ -77,6 +77,7 @@ class AssetsBase(Base):
             'section': 'assets',
             'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
+            'mode': self.mode,
         })
 
         return ret
@@ -269,6 +270,8 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'unlinked',
             'ralph_device_id',
             'task_url',
+            'guardian',
+            'user',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -335,6 +338,10 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'user':
+                    all_q &= Q(user__id=field_value)
+                elif field == 'guardian':
+                    all_q &= Q(guardian__id=field_value)
                 elif field == 'deprecation_rate':
                     deprecation_rate_query_map = {
                         'null': Q(deprecation_rate__isnull=True),
@@ -933,8 +940,9 @@ class EditPart(AssetsBase):
         })
 
 
-class BulkEdit(Base):
+class BulkEdit(AssetsBase):
     template_name = 'assets/bulk_edit.html'
+    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
