@@ -10,7 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import Dependency, DependencyForm, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -40,7 +40,7 @@ from ralph_assets.models import (
 )
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
-
+REQUIRE = SHOW
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
@@ -569,6 +569,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
 def validate_production_year(asset):
     data = asset.cleaned_data["production_year"]
+    if data is None:
+        return data
     # Matches any 4-digit number:
     year_re = re.compile('^\d{4}$')
     if not year_re.match(str(data)):
@@ -763,7 +765,7 @@ class SearchAssetForm(Form):
         required=False,
         choices=[('', '----')] + AssetSource(),
     )
-    niw = CharField(required=False, label='Niw')
+    niw = CharField(required=False, label='Inventory number')
     sn = CharField(required=False, label='SN')
     barcode = CharField(required=False, label='Barcode')
     ralph_device_id = IntegerField(

@@ -220,7 +220,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         _('Support type', field='support_type', export=True),
         _('Support void_reporting', field='support_void_reporting',
           export=True),
-        _('Niw', field='niw', foreign_field_name='', export=True),
+        _('Inventory number', field='niw', foreign_field_name='', export=True),
         _(
             'Ralph ID',
             field='device_info',
