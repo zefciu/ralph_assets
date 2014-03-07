@@ -128,6 +128,10 @@ class AssetModel(
         return "%s %s" % (self.manufacturer, self.name)
 
 
+class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
+    """The company or other entity that are owners of assets."""
+
+
 class AssetCategory(
         MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
     name = models.CharField(max_length=50, unique=True)
@@ -273,6 +277,12 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     task_url = models.URLField(
         max_length=2048, null=True, blank=True, unique=False,
         help_text=('External workflow system URL'),
+    )
+    property_of = models.ForeignKey(
+        AssetOwner,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
     )
 
     def __unicode__(self):

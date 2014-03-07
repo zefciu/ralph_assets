@@ -71,8 +71,8 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'warehouse', 'device_info', 'invoice_no',
-            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
+            'type', 'model', 'warehouse', 'property_of', 'device_info',
+            'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider',
             'source', 'status', 'task_url', 'request_date', 'delivery_date',
@@ -373,6 +373,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',
@@ -471,6 +472,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',

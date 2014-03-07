@@ -26,7 +26,7 @@ from ralph_assets.models_assets import (
     PartInfo,
     Warehouse,
 )
-from ralph_assets.models_sam import (
+from ralph_assets.models_sam import (  # noqa
     Licence,
     LicenceType,
     SoftwareCategory,
@@ -226,7 +226,6 @@ __all__ = [
     'AssetStatus',
     'AssetType',
     'DeviceInfo',
-    'LicenseType',
     'OfficeInfo',
     'PartInfo',
     'Warehouse',

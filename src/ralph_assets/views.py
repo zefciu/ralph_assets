@@ -1428,7 +1428,6 @@ class AddLicence(LicenceFormView):
         return super(AddLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        mode = self.mode
         self._get_form(request.POST)
         return self._save(request, *args, **kwargs)
 
@@ -1445,7 +1444,6 @@ class EditLicence(LicenceFormView):
 
     def post(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
-        mode = self.mode
         self._get_form(request.POST, instance=licence)
         return self._save(request, *args, **kwargs)
 
@@ -1462,7 +1460,5 @@ class LicenceList(AssetsBase):
         )
         data['categories'] = SoftwareCategory.objects.annotate(
             used=Sum('licence__used')
-        ).filter(
-            asset_type = MODE2ASSET_TYPE[self.mode]
-        )
+        ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
         return data

@@ -10,6 +10,7 @@ from django.test import TestCase
 from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
     Warehouse,
     Asset,
     AssetStatus,
@@ -29,6 +30,8 @@ class HistoryAssetsView(TestCase):
         self.client = login_as_su()
         self.category = create_category(type='back_office')
         self.manufacturer = AssetManufacturer(name='test_manufacturer')
+        self.owner = AssetOwner(name='ACME corporation')
+        self.owner.save()
         self.manufacturer.save()
         self.model = AssetModel(
             name='test_model', manufacturer=self.manufacturer
@@ -46,6 +49,7 @@ class HistoryAssetsView(TestCase):
             'support_type': 'standard',
             'support_void_reporting': 'on',
             'provider': 'test_provider',
+            'property_of': self.owner.id,
             'status': AssetStatus.new.id,
             'remarks': 'test_remarks',
             'size': 1,
