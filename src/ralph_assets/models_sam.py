@@ -19,7 +19,8 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from ralph_assets.models_assets import AssetManufacturer, AssetType
+from ralph_assets.models_assets import AssetManufacturer, AssetType, AssetOwner
+
 
 class LicenceType(Named):
     """The type of a licence"""
@@ -49,6 +50,11 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     licence_type = models.ForeignKey(
         LicenceType,
         on_delete=models.PROTECT,
+    )
+    property_of = models.ForeignKey(
+        AssetOwner,
+        on_delete=models.PROTECT,
+        null=True,
     )
     software_category = models.ForeignKey(
         SoftwareCategory,
@@ -108,6 +114,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
                 AssetType.back_office: 'back_office',
             }[self.asset_type],
         })
+
 
 class SoftwareCategoryLookup(LookupChannel):
     model = SoftwareCategory

@@ -10,7 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import Dependency, DependencyForm, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -43,6 +43,8 @@ from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
+    'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
+    'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
@@ -146,7 +148,7 @@ class BulkEditAssetForm(ModelForm):
             'order_no', 'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year',
+            'provider', 'source', 'status', 'task_url', 'production_year',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -165,8 +167,10 @@ class BulkEditAssetForm(ModelForm):
                 type=AssetCategoryType.data_center
             )
 
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             del self.fields['type']
         elif group_type == 'BO':
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [('', '---------')] + [
                 (choice.id, choice.name) for choice in AssetType.BO.choices
             ]
@@ -417,7 +421,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'imei',
             'model',
             'status',
+            'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',
@@ -482,12 +488,18 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
         category = self.fields['category'].queryset
         if mode == "dc":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.data_center.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.data_center
             )
         elif mode == "back_office":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.back_office.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
             self.fields['category'].queryset = category.filter(
@@ -520,7 +532,9 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'imei',
             'model',
             'status',
+            'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',
@@ -543,7 +557,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'task_link',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -758,29 +771,6 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
-class BackOfficeEditDeviceForm(EditDeviceForm):
-
-    @property
-    def dependencies(self):
-        for dep in super(BackOfficeEditDeviceForm, self).dependencies:
-            yield dep
-        yield Dependency(
-            'task_link',
-            'status',
-            [
-                status.id for status in [
-                    AssetStatus.loan, AssetStatus.liquidated,
-                    AssetStatus.in_service, AssetStatus.reserved
-                ]
-            ],
-            REQUIRE,
-        )
-
-
-class DataCenterEditDeviceForm(EditDeviceForm):
-    pass
-
-
 class SearchAssetForm(Form):
     """returns search asset form for DC and BO.
 
@@ -804,6 +794,7 @@ class SearchAssetForm(Form):
         required=False, choices=[('', '----')] + AssetStatus(),
         label='Status'
     )
+    task_url = CharField(required=False, label='Task url')
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],
@@ -910,7 +901,6 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
-    task_link = CharField(required=False, label='Task link')
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
