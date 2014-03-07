@@ -505,7 +505,7 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         null=True, blank=True)
     last_logged_user = models.CharField(max_length=100, null=True, blank=True)
     imei = models.CharField(
-        max_length=18, null=True, blank=True, unique=False
+        max_length=18, null=True, blank=True, unique=True
     )
 
     def __unicode__(self):
