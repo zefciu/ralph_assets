@@ -43,6 +43,8 @@ from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
+    'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
+    'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
@@ -139,8 +141,10 @@ class BulkEditAssetForm(ModelForm):
             self.fields[field_name].widget.attrs = {'class': classes}
         group_type = AssetType.from_id(self.instance.type).group.name
         if group_type == 'DC':
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             del self.fields['type']
         elif group_type == 'BO':
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [('', '---------')] + [
                 (choice.id, choice.name) for choice in AssetType.BO.choices
             ]
@@ -433,12 +437,18 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         super(BaseAddAssetForm, self).__init__(*args, **kwargs)
         category = self.fields['category'].queryset
         if mode == "dc":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.data_center.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.data_center
             )
         elif mode == "back_office":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.back_office.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
             self.fields['category'].queryset = category.filter(

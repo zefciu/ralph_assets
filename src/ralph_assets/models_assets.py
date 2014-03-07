@@ -123,6 +123,7 @@ class AssetModel(
         blank=True,
         default=0,
     )
+    type = models.PositiveIntegerField(choices=AssetType(), null=True)
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
