@@ -67,6 +67,14 @@ MAX_PAGE_SIZE = 65535
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 
 
+def _move_data(src, dst, fields):
+    for field in fields:
+        if field in src:
+            value = src.pop(field)
+            dst[field] = value
+    return src, dst
+
+
 class AssetsBase(Base):
     template_name = "assets/base.html"
 
@@ -157,13 +165,14 @@ class AssetsBase(Base):
     def write_office_info2asset(self):
         """
         Writes *imei* field from office_info form to asset form.
-        Should be expanded with others OfficeInfo fields.
         """
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
-            self.asset_form.fields['imei'].initial = (
-                self.asset.office_info.imei
-            )
+            fields = ['imei']
+            for field in fields:
+                self.asset_form.fields[field].initial = (
+                    getattr(self.asset.office_info, field, '')
+                )
 
 
 class DataTableColumnAssets(DataTableColumn):
@@ -585,10 +594,17 @@ def _get_return_link(mode):
     return "/assets/%s/" % mode
 
 
+def _extract_office_info_data(asset_data):
+    office_info_data, office_info_fields = {}, ['imei']
+    for field in office_info_fields:
+        office_info_data[field] = asset_data.pop(field, None)
+    return asset_data, office_info_data
+
+
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None):
-    imei = asset_data.pop('imei') if 'imei' in asset_data else None
+    asset_data, office_info_data = _extract_office_info_data(asset_data)
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -603,14 +619,9 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     )
     if barcode:
         asset.barcode = barcode
+    if any(office_info_data.values()):
+        _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
-    if imei:
-        _update_office_info(
-            creator_profile.user, asset, {
-                'imei': imei,
-                'attachment': None,
-            }
-        )
     return asset.id
 
 
@@ -701,10 +712,11 @@ def _update_office_info(user, asset, office_info_data):
         office_info = OfficeInfo()
     else:
         office_info = asset.office_info
-    if office_info_data['attachment'] is None:
-        del office_info_data['attachment']
-    elif office_info_data['attachment'] is False:
-        office_info_data['attachment'] = None
+    if 'attachment' in office_info_data:
+        if office_info_data['attachment'] is None:
+            del office_info_data['attachment']
+        elif office_info_data['attachment'] is False:
+            office_info_data['attachment'] = None
     office_info.__dict__.update(**office_info_data)
     office_info.save(user=user)
     asset.office_info = office_info
@@ -835,9 +847,13 @@ class EditDevice(AssetsBase):
                 )
 
                 if self.asset.type in AssetType.BO.choices:
-                    self.office_info_form.cleaned_data['imei'] = (
-                        self.asset_form.cleaned_data['imei']
+                    new_src, new_dst = _move_data(
+                        self.asset_form.cleaned_data,
+                        self.office_info_form.cleaned_data,
+                        ['imei'],
                     )
+                    self.asset_form.cleaned_data = new_src
+                    self.asset_form.cleaned_data = new_dst
                     self.asset = _update_office_info(
                         modifier_profile.user, self.asset,
                         self.office_info_form.cleaned_data
@@ -874,6 +890,9 @@ class EditPart(AssetsBase):
     template_name = 'assets/edit_part.html'
     sidebar_selected = None
 
+    def initialize_vars(self):
+        self.office_info_form = None
+
     def get_context_data(self, **kwargs):
         ret = super(EditPart, self).get_context_data(**kwargs)
         status_history = AssetHistoryChange.objects.all().filter(
@@ -892,6 +911,7 @@ class EditPart(AssetsBase):
         return ret
 
     def get(self, *args, **kwargs):
+        self.initialize_vars()
         self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
@@ -929,9 +949,13 @@ class EditPart(AssetsBase):
                 modifier_profile, self.asset,
                 self.asset_form.cleaned_data
             )
-            self.office_info_form.cleaned_data['imei'] = (
-                self.asset_form.cleaned_data['imei']
+            new_src, new_dst = _move_data(
+                self.asset_form.cleaned_data,
+                self.office_info_form.cleaned_data,
+                ['imei'],
             )
+            self.asset_form.cleaned_data = new_src
+            self.office_info_form.cleaned_data = new_dst
             self.asset = _update_office_info(
                 modifier_profile.user, self.asset,
                 self.office_info_form.cleaned_data
@@ -1066,21 +1090,16 @@ class DeleteAsset(AssetsBase):
 def _create_part(creator_profile, asset_data, part_info_data, sn):
     part_info = PartInfo(**part_info_data)
     part_info.save(user=creator_profile.user)
-    imei = asset_data.pop('imei') if 'imei' in asset_data else None
+    asset_data, office_info_data = _extract_office_info_data(asset_data)
     asset = Asset(
         part_info=part_info,
         sn=sn.strip(),
         created_by=creator_profile,
         **asset_data
     )
+    if any(office_info_data.values()):
+        _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
-    if imei:
-        _update_office_info(
-            creator_profile.user, asset, {
-                'imei': imei,
-                'attachment': None,
-            }
-        )
     return asset.id
 
 
