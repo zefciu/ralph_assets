@@ -25,7 +25,7 @@ from ralph_assets.views import (
     LicenceList,
 )
 
-from ralph_assets.forms import XLS_UPLOAD_FORMS
+from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(

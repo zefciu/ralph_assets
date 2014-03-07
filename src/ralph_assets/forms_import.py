@@ -9,6 +9,7 @@ import xlrd
 import itertools as it
 
 from django import forms
+from django.contrib.contenttypes.models import ContentType
 
 class DataUploadField(forms.FileField):
     """A field that gets the uploaded XLS or CSV data and returns data
@@ -84,6 +85,7 @@ class DataUploadField(forms.FileField):
                     'spreadsheetml.sheet': 'xls',
                 'text/csv': 'csv',
                 'application/csv': 'csv',
+                'application/vnd.ms-excel': 'csv', # Browsers Y U NO RFC 4180?
             }[file_.content_type]
         except KeyError:
             raise forms.ValidationError(
@@ -92,3 +94,49 @@ class DataUploadField(forms.FileField):
         return (
             self._process_xls if filetype == 'xls' else self._process_csv
         )(file_)
+
+
+class ModelChoiceField(forms.ChoiceField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['choices'] = [
+            ('ralph_assets.asset', 'Asset'),
+            ('ralph_assets.licence', 'Licence'),
+        ]
+        super(ModelChoiceField, self).__init__(*args, **kwargs)
+
+
+class ColumnChoiceField(forms.ChoiceField):
+    """A field that allows to choose a field from a model."""
+
+    def __init__(self, model, *args, **kwargs):
+        self.Model = get_model_by_name(model)
+        kwargs['choices'] = [
+            (field.name, unicode(field.verbose_name))
+            for field in self.Model._meta.fields if field.name != 'id'
+        ]
+        super(ColumnChoiceField, self).__init__(*args, **kwargs)
+
+
+class XlsUploadForm(forms.Form):
+    """The first step for uploading the XLS file for asset bulk update."""
+    model = ModelChoiceField()
+    file = DataUploadField()
+
+
+class XlsColumnChoiceForm(forms.Form):
+    """The column choice. This form will be filled on the fly."""
+
+
+class XlsConfirmForm(forms.Form):
+    """The confirmation of XLS submission. A form with a button only."""
+
+
+XLS_UPLOAD_FORMS = [
+    ('upload', XlsUploadForm),
+    ('column_choice', XlsColumnChoiceForm),
+    ('confirm', XlsConfirmForm),
+]
+
+def get_model_by_name(name):
+    return ContentType.objects.get_by_natural_key(*name.split('.'))

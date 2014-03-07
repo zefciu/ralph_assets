@@ -972,32 +972,3 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
-
-
-class AssetColumnChoiceField(ChoiceField):
-    def __init__(self, *args, **kwargs):
-        kwargs['choices'] = [
-            (field.name, unicode(field.verbose_name))
-            for field in Asset._meta.fields if field.name != 'id'
-        ]
-        super(AssetColumnChoiceField, self).__init__(*args, **kwargs)
-
-
-class XlsUploadForm(Form):
-    """The first step for uploading the XLS file for asset bulk update."""
-    file = DataUploadField()
-
-
-class XlsColumnChoiceForm(Form):
-    """The column choice. This form will be filled on the fly."""
-
-
-class XlsConfirmForm(Form):
-    """The confirmation of XLS submission. A form with a button only."""
-
-
-XLS_UPLOAD_FORMS = [
-    ('upload', XlsUploadForm),
-    ('column_choice', XlsColumnChoiceForm),
-    ('confirm', XlsConfirmForm),
-]

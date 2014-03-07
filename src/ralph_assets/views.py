@@ -13,6 +13,7 @@ from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
 from django.contrib.formtools.wizard.views import SessionWizardView
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -36,8 +37,8 @@ from ralph_assets.forms import (
     MoveAssetPartForm,
     OfficeForm,
     SearchAssetForm,
-    AssetColumnChoiceField,
 )
+from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets.models import (
     Asset,
@@ -1306,8 +1307,11 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.storage.data['add_per_sheet'] = add_per_sheet
             for name_list in names_per_sheet.values():
                 for name in name_list:
-                    form.fields[name] = AssetColumnChoiceField(
-                        label=name
+                    form.fields[name] = ColumnChoiceField(
+                        model=self.get_cleaned_data_for_step(
+                            'upload',
+                        )['model'],
+                        label=name,
                     )
         elif step == 'confirm':
             mappings = {}
@@ -1366,8 +1370,11 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
-                    asset = Asset.objects.get(pk=asset_id)
-                except Asset.DoesNotExist:
+                    Model = get_model_by_name(
+                        self.get_cleaned_data_for_step('upload')['model']
+                    )
+                    asset = Model.objects.get(pk=asset_id)
+                except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
                 for key, value in asset_data.items():
