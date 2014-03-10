@@ -48,6 +48,7 @@ LOOKUPS = {
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
+    'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
 
@@ -85,9 +86,10 @@ class BulkEditAssetForm(ModelForm):
             'type', 'model', 'warehouse', 'device_info',
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'source',
-            'status', 'request_date', 'delivery_date', 'production_use_date',
-            'provider_order_date', 'production_year',
+            'support_type', 'support_void_reporting', 'provider',
+            'source', 'status', 'request_date', 'delivery_date',
+            'production_use_date', 'provider_order_date', 'production_year',
+            'guardian', 'user',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -107,6 +109,14 @@ class BulkEditAssetForm(ModelForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    guardian = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
     )
 
     def clean(self):
@@ -456,6 +466,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'guardian',
+            'user',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -491,6 +503,13 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
+    guardian = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -570,6 +589,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'guardian',
+            'user',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -607,6 +628,13 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
+    guardian = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -841,6 +869,14 @@ class SearchAssetForm(Form):
         label='Status'
     )
     task_url = CharField(required=False, label='Task url')
+    guardian = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],

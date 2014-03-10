@@ -20,6 +20,7 @@
         {% if mode == 'back_office' %}<th>Type</th>{% endif %}
         <th>Model</th>
         <th>Warehouse</th>
+        <th>Property of</th>
         <th>Invoice Number</th>
         <th>Invoice date</th>
         <th>Order Number</th>
@@ -39,6 +40,9 @@
         <th>Delivery date</th>
         <th>Production use date</th>
         <th>Provider order date</th>
+        <th>Production year</th>
+        <th>Guardian</th>
+        <th>User</th>
       </tr></thead>
       <tbody>{% for form in formset %}
         <tr>
