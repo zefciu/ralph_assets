@@ -51,8 +51,7 @@ class Migration(SchemaMigration):
         db.add_column('ralph_assets_assetmodel', 'category_new_id',
                       self.gf('django.db.models.fields.SlugField')(null=True, 
                       unique=False, max_length=100, db_index=False))
-        #import sys; sys.path.append('/data/src/pydev')
-        #import pydevd; pydevd.settrace(host='localhost', port=5678)
+
         db.start_transaction()
 
         for id in db.execute(
@@ -65,7 +64,6 @@ class Migration(SchemaMigration):
         db.delete_foreign_key("ralph_assets_asset", "category_id")
         db.delete_foreign_key("ralph_assets_assetmodel", "category_id")
         db.delete_foreign_key("ralph_assets_assetcategory", "parent_id")
-        #db.delete_index("ralph_assets_assetcategory", ['id'])
         db.delete_primary_key("ralph_assets_assetcategory")
         db.create_primary_key("ralph_assets_assetcategory", ["slug"])
         db.delete_column('ralph_assets_assetcategory', 'parent_id')
