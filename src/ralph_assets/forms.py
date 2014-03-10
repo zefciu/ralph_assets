@@ -80,7 +80,7 @@ class BulkEditAssetForm(ModelForm):
             'support_type', 'support_void_reporting', 'provider',
             'source', 'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
-            'guardian', 'user',
+            'owner', 'user',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -101,7 +101,7 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -407,7 +407,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'guardian',
+            'owner',
             'user',
         )
         widgets = {
@@ -441,7 +441,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     source = ChoiceField(
         choices=AssetSource(),
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -525,7 +525,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'guardian',
+            'owner',
             'user',
         )
         widgets = {
@@ -561,7 +561,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     source = ChoiceField(
         choices=AssetSource(),
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -771,7 +771,7 @@ class SearchAssetForm(Form):
         label='Status'
     )
     task_url = CharField(required=False, label='Task url')
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )

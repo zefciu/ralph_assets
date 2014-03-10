@@ -291,8 +291,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         null=True,
         blank=True,
     )
-    guardian = models.ForeignKey(
-        User, null=True, blank=True, related_name="guardian",
+    owner = models.ForeignKey(
+        User, null=True, blank=True, related_name="owner",
     )
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
