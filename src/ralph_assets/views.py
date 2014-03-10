@@ -339,9 +339,9 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
                 elif field == 'user':
-                        all_q &= Q(user__id=field_value)
+                    all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
-                        all_q &= Q(guardian__id=field_value)
+                    all_q &= Q(guardian__id=field_value)
                 elif field == 'deprecation_rate':
                     deprecation_rate_query_map = {
                         'null': Q(deprecation_rate__isnull=True),
