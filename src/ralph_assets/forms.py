@@ -302,6 +302,32 @@ def _validate_multivalue_data(data):
     return items
 
 
+def _check_field_uniqueness(field_path, values):
+    '''
+        Check field (pointed by *field_path*) uniqueness. If find any not
+        unique value then return false status with information
+        about not unique ids
+
+        :param string field_path: field to be unique as a string
+        :param list values: list of field ids
+        :return tuple: status and not unique ids or empty list
+        :rtype tuple:
+    '''
+    conditions = {
+        '{}__in'.format(field_path): values
+    }
+    assets = Asset.objects.filter(**conditions)
+    if not assets:
+        return True, []
+    not_unique = []
+    for asset in assets:
+        last_field = asset
+        for field_name in field_path.split('__'):
+            last_field = getattr(last_field, field_name)
+        not_unique.append((last_field, asset.id, asset.type))
+    return False, not_unique
+
+
 def _check_serial_numbers_uniqueness(serial_numbers):
     '''
         Check serial numbers uniqueness. If find any not unique
@@ -312,13 +338,8 @@ def _check_serial_numbers_uniqueness(serial_numbers):
         :return tuple: status and not unique serial numbers or empty list
         :rtype tuple:
     '''
-    assets = Asset.objects.filter(sn__in=serial_numbers)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        not_unique.append((asset.sn, asset.id, asset.type))
-    return False, not_unique
+    status, duplicated = _check_field_uniqueness('sn', serial_numbers)
+    return status, duplicated
 
 
 def _check_barcodes_uniqueness(barcodes):
@@ -331,13 +352,8 @@ def _check_barcodes_uniqueness(barcodes):
         :return tuple: status and not unique barcodes or empty list
         :rtype tuple:
     '''
-    assets = Asset.objects.filter(barcode__in=barcodes)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        not_unique.append((asset.barcode, asset.id, asset.type))
-    return False, not_unique
+    status, duplicated = _check_field_uniqueness('barcode', barcodes)
+    return status, duplicated
 
 
 def _check_imeis_uniqueness(imeis):
@@ -350,14 +366,8 @@ def _check_imeis_uniqueness(imeis):
         :return tuple: status and not unique imeis or empty list
         :rtype tuple:
     '''
-    #TODO: refactor it with *_check_barcodes_uniqueness*
-    assets = Asset.objects.filter(office_info__imei__in=imeis)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        not_unique.append((asset.office_info.imei, asset.id, asset.type))
-    return False, not_unique
+    status, duplicated = _check_field_uniqueness('office_info__imei', imeis)
+    return status, duplicated
 
 
 def _sn_additional_validation(serial_numbers):
@@ -733,9 +743,8 @@ class AddDeviceForm(BaseAddAssetForm):
         return barcodes
 
     def clean_imei(self):
-        #TODO: refactor it with clean_barcode
-        data = self.cleaned_data['imei'].strip()
         imeis = []
+        data = self.cleaned_data['imei'].strip()
         if data:
             for imei in filter(len, re.split(",|\n", data)):
                 imei = imei.strip()
@@ -746,12 +755,7 @@ class AddDeviceForm(BaseAddAssetForm):
                 elif validate_imei(imei):
                     # Exception raised by validator
                     pass
-                elif imei:
-                    imeis.append(imei)
-            if not imeis:
-                raise ValidationError(_("IMEI list could be empty or "
-                                        "must have the same number of "
-                                        "items as a SN list."))
+                imeis.append(imei)
             is_unique, not_unique_bc = _check_imeis_uniqueness(imeis)
             if not is_unique:
                 # ToDo: links to assets with duplicate imeis
@@ -766,7 +770,6 @@ class AddDeviceForm(BaseAddAssetForm):
         serial_numbers = cleaned_data.get("sn", [])
         barcodes = cleaned_data.get("barcode", [])
         imeis = cleaned_data.get("imei", [])
-        #TODO: loop it
         if barcodes and len(serial_numbers) != len(barcodes):
             self._errors["barcode"] = self.error_class([
                 _("Barcode list could be empty or must have the same number "
