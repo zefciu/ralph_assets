@@ -108,6 +108,7 @@ class Migration(SchemaMigration):
         db.start_transaction()
         for i, slug in enumerate(
             db.execute('SELECT slug FROM ralph_assets_assetcategory')):
+            slug = slug[0]
             db.execute("UPDATE ralph_assets_assetcategory SET id = %s "
                        "WHERE slug = %s",
                         [i+1, slug])
