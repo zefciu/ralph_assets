@@ -601,13 +601,6 @@ def _get_return_link(mode):
     return "/assets/%s/" % mode
 
 
-def _extract_office_info_data(asset_data):
-    office_info_data, office_info_fields = {}, ['imei']
-    for field in office_info_fields:
-        office_info_data[field] = asset_data.pop(field, None)
-    return asset_data, office_info_data
-
-
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
                    barcode=None, imei=None):
@@ -1102,15 +1095,12 @@ class DeleteAsset(AssetsBase):
 def _create_part(creator_profile, asset_data, part_info_data, sn):
     part_info = PartInfo(**part_info_data)
     part_info.save(user=creator_profile.user)
-    asset_data, office_info_data = _extract_office_info_data(asset_data)
     asset = Asset(
         part_info=part_info,
         sn=sn.strip(),
         created_by=creator_profile,
         **asset_data
     )
-    if any(office_info_data.values()):
-        _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
     return asset.id
 
@@ -1155,6 +1145,8 @@ class AddPart(AssetsBase):
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
+            if 'imei' in asset_data:
+                del asset_data['imei']
             ids = []
             for sn in serial_numbers:
                 ids.append(

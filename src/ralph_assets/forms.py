@@ -708,7 +708,6 @@ class AddPartForm(BaseAddAssetForm):
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
-    exclude = ['imei']
 
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
