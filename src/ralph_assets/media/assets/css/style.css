@@ -39,3 +39,14 @@ p.help {
 .controls span {
     display: inline-block;
 }
+
+#one-level-textareas {
+    margin-left: 35px;
+    overflow-x: auto;
+    width: 700px;
+}
+
+#one-level-textareas > div {
+    width: 220px;
+    float: left;
+}
