@@ -149,9 +149,8 @@ class AssetCategory(
         related_name='children',
     )
 
-    slug = models.SlugField(
-        max_length=100, unique=True, blank=True,
-        primary_key=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True,
+                            primary_key=True)
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -252,9 +251,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=1024,
         blank=True,
     )
-    niw = models.CharField(
-        max_length=50, null=True, blank=True,
-        verbose_name='Inventory number')
+    niw = models.CharField(max_length=50, null=True, blank=True,
+                           verbose_name='Inventory number')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
