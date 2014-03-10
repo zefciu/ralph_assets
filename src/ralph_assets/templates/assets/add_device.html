@@ -29,4 +29,13 @@
     {% endif %}
   </div>
 </div>
+<div class="span3">
+  <div class="control-group{% if asset_form.imei.errors %} error{% endif %}">
+    <label {% if asset_form.imei.required %}class="required"{% endif %}>{{ asset_form.imei.label }}</label>
+    {{ asset_form.imei }}
+    {% if asset_form.imei.errors %}
+      <div class="help-block">{% for error in asset_form.imei.errors %}{{ error }} {% endfor %}</div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

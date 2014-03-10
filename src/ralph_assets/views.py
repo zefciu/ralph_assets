@@ -603,8 +603,7 @@ def _extract_office_info_data(asset_data):
 
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
-                   barcode=None):
-    asset_data, office_info_data = _extract_office_info_data(asset_data)
+                   barcode=None, imei=None):
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -619,8 +618,8 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     )
     if barcode:
         asset.barcode = barcode
-    if any(office_info_data.values()):
-        _update_office_info(creator_profile.user, asset, office_info_data)
+    if imei:
+        _update_office_info(creator_profile.user, asset, {'imei': imei})
     asset.save(user=creator_profile.user)
     return asset.id
 
@@ -660,14 +659,19 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in ["barcode", "sn"]:
+                if f_name in ["barcode", "sn", "imei"]:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
             barcodes = self.asset_form.cleaned_data['barcode']
+            imeis = (
+                self.asset_form.cleaned_data.pop('imei')
+                if 'imei' in self.asset_form.cleaned_data else None
+            )
             ids = []
             for sn, index in zip(serial_numbers, range(len(serial_numbers))):
                 barcode = barcodes[index] if barcodes else None
+                imei = imeis[index] if imeis else None
                 ids.append(
                     _create_device(
                         creator_profile,
@@ -675,7 +679,8 @@ class AddDevice(AssetsBase):
                         self.device_info_form.cleaned_data,
                         sn,
                         mode,
-                        barcode
+                        barcode,
+                        imei,
                     )
                 )
             messages.success(self.request, _("Assets saved."))

@@ -10,9 +10,11 @@
   {% csrf_token %}
   <div class="row">
     <div class="span6 well">
-      {% for field in asset_form %}{% if field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
-        {% field_wrapper field %}
-      {% endif %}{% endfor %}
+      {% for field in asset_form %}
+        {% if field.html_name != 'imei' and field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
+          {% field_wrapper field %}
+        {% endif %}
+      {% endfor %}
       {% block additional_inputs %}{% endblock %}
     </div>
     {% block multivalue_inputs %}{% endblock %}

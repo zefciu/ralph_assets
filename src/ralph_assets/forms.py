@@ -340,6 +340,26 @@ def _check_barcodes_uniqueness(barcodes):
     return False, not_unique
 
 
+def _check_imeis_uniqueness(imeis):
+    '''
+        Check imei uniqueness. If find any not unique
+        imei then return false status with information
+        about not unique imei
+
+        :param list imeis: list of imeis
+        :return tuple: status and not unique imeis or empty list
+        :rtype tuple:
+    '''
+    #TODO: refactor it with *_check_barcodes_uniqueness*
+    assets = Asset.objects.filter(office_info__imei__in=imeis)
+    if not assets:
+        return True, []
+    not_unique = []
+    for asset in assets:
+        not_unique.append((asset.office_info.imei, asset.id, asset.type))
+    return False, not_unique
+
+
 def _sn_additional_validation(serial_numbers):
     '''
         Raise ValidationError if any of serial numbers is not unique
@@ -666,6 +686,10 @@ class AddDeviceForm(BaseAddAssetForm):
         label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
+    imei = CharField(
+        label=_("IMEI"), required=True,
+        widget=Textarea(attrs={'rows': 25}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
@@ -708,13 +732,49 @@ class AddDeviceForm(BaseAddAssetForm):
                 raise ValidationError(msg)
         return barcodes
 
+    def clean_imei(self):
+        #TODO: refactor it with clean_barcode
+        data = self.cleaned_data['imei'].strip()
+        imeis = []
+        if data:
+            for imei in filter(len, re.split(",|\n", data)):
+                imei = imei.strip()
+                if imei in imeis:
+                    raise ValidationError(
+                        _("There are duplicate IMEIs in the field.")
+                    )
+                elif validate_imei(imei):
+                    # Exception raised by validator
+                    pass
+                elif imei:
+                    imeis.append(imei)
+            if not imeis:
+                raise ValidationError(_("IMEI list could be empty or "
+                                        "must have the same number of "
+                                        "items as a SN list."))
+            is_unique, not_unique_bc = _check_imeis_uniqueness(imeis)
+            if not is_unique:
+                # ToDo: links to assets with duplicate imeis
+                msg = "Following IMEIs already exists in DB: %s" % (
+                    ", ".join(item[0] for item in not_unique_bc)
+                )
+                raise ValidationError(msg)
+        return imeis
+
     def clean(self):
         cleaned_data = super(AddDeviceForm, self).clean()
         serial_numbers = cleaned_data.get("sn", [])
         barcodes = cleaned_data.get("barcode", [])
+        imeis = cleaned_data.get("imei", [])
+        #TODO: loop it
         if barcodes and len(serial_numbers) != len(barcodes):
             self._errors["barcode"] = self.error_class([
                 _("Barcode list could be empty or must have the same number "
+                  "of items as a SN list.")
+            ])
+        if imeis and len(serial_numbers) != len(imeis):
+            self._errors["imei"] = self.error_class([
+                _("IMEI list could be empty or must have the same number "
                   "of items as a SN list.")
             ])
         return cleaned_data
