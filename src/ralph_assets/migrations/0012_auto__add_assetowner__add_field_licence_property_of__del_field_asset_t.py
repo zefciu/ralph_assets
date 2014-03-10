@@ -33,9 +33,9 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT, blank=True),
                       keep_default=False)
 
-        # Adding field 'Asset.guardian'
-        db.add_column('ralph_assets_asset', 'guardian',
-                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name=u'guardian', null=True, to=orm['auth.User']),
+        # Adding field 'Asset.owner'
+        db.add_column('ralph_assets_asset', 'owner',
+                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name=u'owner', null=True, to=orm['auth.User']),
                       keep_default=False)
 
         # Adding field 'Asset.user'
@@ -57,8 +57,8 @@ class Migration(SchemaMigration):
         # Deleting field 'Asset.property_of'
         db.delete_column('ralph_assets_asset', 'property_of_id')
 
-        # Deleting field 'Asset.guardian'
-        db.delete_column('ralph_assets_asset', 'guardian_id')
+        # Deleting field 'Asset.owner'
+        db.delete_column('ralph_assets_asset', 'owner_id')
 
         # Deleting field 'Asset.user'
         db.delete_column('ralph_assets_asset', 'user_id')
@@ -127,7 +127,7 @@ class Migration(SchemaMigration):
             'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'guardian': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'guardian'", 'null': 'True', 'to': "orm['auth.User']"}),
+            'owner': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'owner'", 'null': 'True', 'to': "orm['auth.User']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'invoice_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'invoice_no': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '128', 'null': 'True', 'blank': 'True'}),
