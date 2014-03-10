@@ -503,6 +503,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
+    )
     guardian = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
@@ -628,6 +629,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
+    )
     guardian = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
@@ -706,6 +708,7 @@ class AddPartForm(BaseAddAssetForm):
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
+    exclude = ['imei']
 
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
