@@ -9,6 +9,7 @@ from django.template.defaultfilters import slugify
 class Migration(SchemaMigration):
 
     def update_slug_and_child(self, assetcategoryid):
+        assetcategoryid = int(assetcategoryid[0])
         for id, type, parent_id, parent_new_id, name in db.execute(
             'SELECT id, type, parent_id, parent_new_id, name FROM ralph_assets_assetcategory WHERE id = %s',
             [assetcategoryid]):
