@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import difflib
 
 from ajax_select import LookupChannel
+from django.contrib.auth.models import User
 from django.utils.html import escape
 from django.db.models import Q
 
@@ -26,7 +27,7 @@ from ralph_assets.models_assets import (
     PartInfo,
     Warehouse,
 )
-from ralph_assets.models_sam import (
+from ralph_assets.models_sam import (  # noqa
     Licence,
     LicenceType,
     SoftwareCategory,
@@ -117,8 +118,8 @@ class AssetModelLookup(LookupChannel):
     model = AssetModel
 
     def get_query(self, q, request):
-        return AssetModel.objects.filter(
-            Q(name__icontains=q)
+        return self.model.objects.filter(
+            Q(name__icontains=q) & (Q(type=self.type) | Q(type=None))
         ).order_by('name')[:10]
 
     def get_result(self, obj):
@@ -129,6 +130,14 @@ class AssetModelLookup(LookupChannel):
 
     def format_item_display(self, obj):
         return '{}'.format(escape(obj.name))
+
+
+class DCAssetModelLookup(AssetModelLookup):
+    type = AssetType.data_center
+
+
+class BOAssetModelLookup(AssetModelLookup):
+    type = AssetType.back_office
 
 
 class AssetManufacturerLookup(LookupChannel):
@@ -216,6 +225,43 @@ class AssetLookupFuzzy(AssetLookup):
         return ret
 
 
+class UserLookup(LookupChannel):
+    model = User
+
+    def get_query(self, q, request):
+        try:
+            q1, q2 = q.split()
+        except ValueError:
+            result = User.objects.filter(
+                Q(username__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q)
+            ).order_by('username')[:10]
+        else:
+            result = User.objects.filter(
+                Q(first_name__icontains=q1, last_name__icontains=q2) |
+                Q(first_name__icontains=q2, last_name__icontains=q1)
+            )[:10]
+        return result
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+        <li class='asset-container'>
+            <span class=''>{first_name} {last_name}</span>
+            <span class='asset-user-department'>{department}</span>
+        </li>
+         """.format(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            department=obj.profile.department,
+        )
+
 __all__ = [
     'Asset',
     'AssetCategory',
@@ -226,13 +272,13 @@ __all__ = [
     'AssetStatus',
     'AssetType',
     'DeviceInfo',
-    'LicenseType',
     'OfficeInfo',
     'PartInfo',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',
     'BODeviceLookup',
-    'AssetModelLookup',
+    'DCAssetModelLookup',
+    'BOAssetModelLookup',
     'AssetHistoryChange',
 ]

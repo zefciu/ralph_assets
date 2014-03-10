@@ -8,15 +8,15 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'Asset.task_link'
-        db.add_column('ralph_assets_asset', 'task_link',
-                      self.gf('django.db.models.fields.URLField')(max_length=200, null=True, blank=True),
+        # Adding field 'AssetModel.type'
+        db.add_column('ralph_assets_assetmodel', 'type',
+                      self.gf('django.db.models.fields.PositiveIntegerField')(null=True, default=1),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'Asset.task_link'
-        db.delete_column('ralph_assets_asset', 'task_link')
+        # Deleting field 'AssetModel.type'
+        db.delete_column('ralph_assets_assetmodel', 'type')
 
 
     models = {
@@ -107,7 +107,6 @@ class Migration(SchemaMigration):
             'support_price': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'support_type': ('django.db.models.fields.CharField', [], {'max_length': '150'}),
             'support_void_reporting': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'task_link': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
             'warehouse': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Warehouse']", 'on_delete': 'models.PROTECT'})
         },
@@ -164,7 +163,8 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
-            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
+            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
+            'type': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True'})
         },
         'ralph_assets.deviceinfo': {
             'Meta': {'object_name': 'DeviceInfo'},

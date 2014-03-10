@@ -34,8 +34,6 @@ from ralph_assets.forms import (
     SplitDevice,
     DeviceForm,
     EditDeviceForm,
-    BackOfficeEditDeviceForm,
-    DataCenterEditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -79,6 +77,7 @@ class AssetsBase(Base):
             'section': 'assets',
             'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
+            'mode': self.mode,
         })
 
         return ret
@@ -129,7 +128,7 @@ class AssetsBase(Base):
                 label=label,
                 fugue_icon=icon,
                 href=reverse(view, kwargs={
-                    'mode': self.mode
+                    'mode': (self.mode or 'dc')
                 })
             ) for view, label, icon in items]
         )
@@ -270,7 +269,9 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'deprecation_rate',
             'unlinked',
             'ralph_device_id',
-            'task_link',
+            'task_url',
+            'guardian',
+            'user',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -337,6 +338,10 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'user':
+                    all_q &= Q(user__id=field_value)
+                elif field == 'guardian':
+                    all_q &= Q(guardian__id=field_value)
                 elif field == 'deprecation_rate':
                     deprecation_rate_query_map = {
                         'null': Q(deprecation_rate__isnull=True),
@@ -362,11 +367,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(
                             device_info__ralph_device_id__icontains=field_value
                         )
-                elif field == 'task_link':
+                elif field == 'task_url':
                     if exact:
-                        all_q &= Q(task_link=field_value)
+                        all_q &= Q(task_url=field_value)
                     else:
-                        all_q &= Q(task_link__icontains=field_value)
+                        all_q &= Q(task_url__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -713,13 +718,6 @@ class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 
-    def _get_form_by_mode(self, mode):
-        EditDeviceForm = (
-            BackOfficeEditDeviceForm if mode == 'back_office'
-            else DataCenterEditDeviceForm
-        )
-        return EditDeviceForm
-
     def initialize_vars(self):
         self.parts = []
         self.office_info_form = None
@@ -752,7 +750,6 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
@@ -770,7 +767,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        EditDeviceForm = self._get_form_by_mode(self.mode)
         self.asset_form = EditDeviceForm(
             post_data,
             instance=self.asset,
@@ -944,8 +940,9 @@ class EditPart(AssetsBase):
         })
 
 
-class BulkEdit(Base):
+class BulkEdit(AssetsBase):
     template_name = 'assets/bulk_edit.html'
+    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
@@ -991,7 +988,8 @@ class BulkEdit(Base):
         if form_error:
             messages.error(
                 self.request,
-                _("Please correct duplicated serial numbers or barcodes.")
+                _(("Please correct errors and check both"
+                  "\"serial numbers\" and \"barcodes\" for duplicates"))
             )
         else:
             messages.error(self.request, _("Please correct the errors."))
@@ -1438,7 +1436,6 @@ class AddLicence(LicenceFormView):
         return super(AddLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        mode = self.mode
         self._get_form(request.POST)
         return self._save(request, *args, **kwargs)
 
@@ -1455,7 +1452,6 @@ class EditLicence(LicenceFormView):
 
     def post(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
-        mode = self.mode
         self._get_form(request.POST, instance=licence)
         return self._save(request, *args, **kwargs)
 
@@ -1472,7 +1468,5 @@ class LicenceList(AssetsBase):
         )
         data['categories'] = SoftwareCategory.objects.annotate(
             used=Sum('licence__used')
-        ).filter(
-            asset_type = MODE2ASSET_TYPE[self.mode]
-        )
+        ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
         return data

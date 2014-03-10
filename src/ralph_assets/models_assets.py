@@ -12,6 +12,8 @@ import os
 import datetime
 
 from dateutil.relativedelta import relativedelta
+
+from django.contrib.auth.models import User
 from lck.django.choices import Choices
 from lck.django.common.models import (
     EditorTrackable,
@@ -123,9 +125,14 @@ class AssetModel(
         blank=True,
         default=0,
     )
+    type = models.PositiveIntegerField(choices=AssetType(), null=True)
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
+
+
+class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
+    """The company or other entity that are owners of assets."""
 
 
 class AssetCategory(
@@ -276,8 +283,21 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     admin_objects_bo = BOAdminManager()
     objects_dc = DCManager()
     objects_bo = BOManager()
-    task_link = models.URLField(
-        max_length=2048, null=True, blank=True, unique=False
+    task_url = models.URLField(
+        max_length=2048, null=True, blank=True, unique=False,
+        help_text=('External workflow system URL'),
+    )
+    property_of = models.ForeignKey(
+        AssetOwner,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    guardian = models.ForeignKey(
+        User, null=True, blank=True, related_name="guardian",
+    )
+    user = models.ForeignKey(
+        User, null=True, blank=True, related_name="user",
     )
 
     def __unicode__(self):
