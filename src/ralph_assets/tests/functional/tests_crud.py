@@ -59,7 +59,7 @@ class TestAdding(TestCase):
             sn='2222-2222-2222-2222',
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
-            category=self.category.id,
+            category=self.category.slug,
             ralph_device_id='',
             slots=1.0,
             deprecation_rate=0,
