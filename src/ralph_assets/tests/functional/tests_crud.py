@@ -125,7 +125,7 @@ class TestAdding(TestCase):
             date_of_last_inventory='2003-02-02',
             last_logged_user='James Bond',
             remarks='any remarks',
-            category=self.category.id,
+            category=self.category.slug,
             slots=5.0,
             ralph_device_id='',
             asset=True,  # Button name

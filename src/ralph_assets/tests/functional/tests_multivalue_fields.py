@@ -67,7 +67,7 @@ class TestMultivalueFields(TestCase):
                 price='10',
                 size=1,
                 slots=1,
-                category=self.category.id,
+                category=self.category.slug,
                 ralph_device_id='',
                 asset=True,
                 source=1,
