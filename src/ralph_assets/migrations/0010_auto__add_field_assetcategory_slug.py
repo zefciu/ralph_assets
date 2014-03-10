@@ -98,7 +98,7 @@ class Migration(SchemaMigration):
                       null=True, db_index=False))
         db.add_column('ralph_assets_assetcategory', 'id',
                       self.gf('django.db.models.fields.AutoField')(blank=True, 
-                      null=False, db_index=False, primary_key=True))
+                      null=False, db_index=False, primary_key=True, max_length=10))
         db.add_column('ralph_assets_asset', 'category_new_id',
                       self.gf('django.db.models.fields.PositiveIntegerField')(blank=True, 
                       null=True, db_index=False))
