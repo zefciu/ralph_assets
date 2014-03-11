@@ -398,12 +398,12 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def get_search_category_part(self, field_value):
         try:
-            category_id = int(field_value)
+            category_id = field_value
         except ValueError:
             pass
         else:
-            category = AssetCategory.objects.get(id=category_id)
-            children = [x.id for x in category.get_children()]
+            category = AssetCategory.objects.get(slug=category_id)
+            children = [x.slug for x in category.get_children()]
             categories = [category_id, ] + children
             return Q(category_id__in=categories)
 
