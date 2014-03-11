@@ -1411,7 +1411,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
-                    asset = Model.objects.get(pk=asset_id)
+                    asset = self.Model.objects.get(pk=asset_id)
                 except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
