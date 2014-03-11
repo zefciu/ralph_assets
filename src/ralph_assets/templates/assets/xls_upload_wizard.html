@@ -23,6 +23,7 @@ empty will cause the column value to be unused.</p>
 <p>This data got extracted from provided file. Please make sure the data
 is OK. Submitting the data is irreversible.</p>
 {% endblocktrans %}
+{% if update_table %}
 <h1>Assets to be updated</h1>
 <table>
     <thead>
@@ -41,6 +42,8 @@ is OK. Submitting the data is irreversible.</p>
     {% endfor %}
     </tbody>
 </table>
+{% endif %}
+{% if add_table %}
 <h1>Assets to be added</h1>
 <table>
     <thead>
@@ -58,6 +61,7 @@ is OK. Submitting the data is irreversible.</p>
     {% endfor %}
     </tbody>
 </table>
+{% endif %}
 {% endif %}
 
 <form id="{{ form_id }}" class="form form-horizontal" method="POST" enctype="multipart/form-data">
