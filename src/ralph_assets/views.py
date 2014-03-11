@@ -1488,8 +1488,7 @@ class SupportContractFormView(AssetsBase):
         )
 
     def get_context_data(self, **kwargs):
-        ret = super(SupportContractFormView, self).get_context_data(
-            **kwargs)
+        ret = super(SupportContractFormView, self).get_context_data(**kwargs)
         ret.update({
             'form': self.form,
             'form_id': 'add_support_form',
@@ -1535,7 +1534,8 @@ class SupportContractList(AssetsBase):
             *args, **kwargs
         )
         data['supports'] = SupportContract.objects.filter(
-            asset_type=MODE2ASSET_TYPE[self.mode])
+            asset_type=MODE2ASSET_TYPE[self.mode],
+            )
         return data
 
 
