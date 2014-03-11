@@ -555,6 +555,23 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         return validate_production_year(self)
 
 
+class BackOfficeAddAssetForm(BaseAddAssetForm):
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeAddAssetForm, self).__init__(*args, **kwargs)
+        # TODO: change purpose postion
+        #self.fields.keyOrder
+
+
+class DataCenterAddAssetForm(BaseAddAssetForm):
+    pass
+
+
 class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to edit asset

@@ -615,7 +615,7 @@ def _get_return_link(mode):
 
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
-                   barcode=None, imei=None):
+                   barcode=None, office_info_data=None):
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -630,8 +630,8 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     )
     if barcode:
         asset.barcode = barcode
-    if imei:
-        _update_office_info(creator_profile.user, asset, {'imei': imei})
+    if office_info_data:
+        _update_office_info(creator_profile, asset, office_info_data)
     asset.save(user=creator_profile.user)
     return asset.id
 
@@ -653,6 +653,17 @@ class AddDevice(AssetsBase):
     def get(self, *args, **kwargs):
         mode = self.mode
         self.asset_form = AddDeviceForm(mode=mode)
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeAddAssetForm'
+            if self.mode == 'back_office' else 'DataCenterAddAssetForm'
+        )
+        device_form_class = getattr(assets_forms, form_name)
+        self.asset_form = device_form_class(mode=self.mode)
+
+
         self.device_info_form = DeviceForm(
             mode=mode,
             exclude='create_stock',
@@ -680,10 +691,18 @@ class AddDevice(AssetsBase):
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
+
+
+
+            office_info_data = {}
+            self.asset_form.cleaned_data, office_info_data = _move_data(
+                self.asset_form.cleaned_data, office_info_data, ['purpose']
+            )
             ids = []
             for sn, index in zip(serial_numbers, range(len(serial_numbers))):
                 barcode = barcodes[index] if barcodes else None
-                imei = imeis[index] if imeis else None
+                if imeis:
+                    office_info_data['imei'] = imeis[index]
                 ids.append(
                     _create_device(
                         creator_profile,
@@ -692,7 +711,7 @@ class AddDevice(AssetsBase):
                         sn,
                         mode,
                         barcode,
-                        imei,
+                        office_info_data,
                     )
                 )
             messages.success(self.request, _("Assets saved."))
@@ -808,7 +827,9 @@ class EditDevice(AssetsBase):
             if self.mode == 'back_office' else 'DataCenterEditAssetForm'
         )
         device_form_class = getattr(assets_forms, form_name)
-        self.asset_form = device_form_class(instance=self.asset, mode=self.mode)
+        self.asset_form = device_form_class(
+            instance=self.asset, mode=self.mode
+        )
         self.write_office_info2asset()
 
 
