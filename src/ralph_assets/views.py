@@ -20,6 +20,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
@@ -1371,9 +1372,15 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
         
+        if not value:
+            return
         field, _, _, _ = self.Model._meta.get_field_by_name(
             field_name
         )
+        if isinstance(field, DecimalField):
+            if value.count(',') == 1 and '.' not in value:
+                value = value.replace(',', '.')
+
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
@@ -1383,7 +1390,11 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 value = field.rel.to.objects.get(name=value)
             except field.rel.to.DoesNotExist:
                 if issubclass(field.rel.to, CreatableFromStr):
-                    value = field.rel.to.create_from_string(value)
+                    value = field.rel.to.create_from_string(
+                        asset_type=MODE2ASSET_TYPE[self.mode],
+                        s=value
+                    )
+                    value.save()
                 else:
                     raise
         return value
@@ -1420,8 +1431,11 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     ) for key, value in asset_data.items()
                     if key in mappings
                 )
-                import ipdb; ipdb.set_trace()
                 asset = self.Model(**kwargs)
+                if isinstance(asset, Asset):
+                    asset.type = MODE2ASSET_TYPE[self.mode]
+                else:
+                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
                 asset.save()
 
 

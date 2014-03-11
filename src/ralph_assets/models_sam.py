@@ -38,8 +38,8 @@ class SoftwareCategory(Named, CreatableFromStr):
     )
 
     @classmethod
-    def create_from_string(cls, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, s):
+        return cls(asset_type=asset_type, name=s)
 
     @property
     def licences(self):
@@ -105,7 +105,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
-    used = models.IntegerField()
+    used = models.IntegerField(default=0)
 
     def __str__(self):
         return "{} x {} - {}".format(

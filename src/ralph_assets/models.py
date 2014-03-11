@@ -19,6 +19,7 @@ from ralph_assets.models_assets import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
     AssetSource,
     AssetStatus,
     AssetType,
