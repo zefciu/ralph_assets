@@ -111,10 +111,12 @@ class ColumnChoiceField(forms.ChoiceField):
 
     def __init__(self, model, *args, **kwargs):
         self.Model = get_model_by_name(model)
-        kwargs['choices'] = [
+        kwargs['choices'] = [('', '-----')]
+        kwargs['choices'] += [
             (field.name, unicode(field.verbose_name))
             for field in self.Model._meta.fields if field.name != 'id'
         ]
+        kwargs['required'] = False
         super(ColumnChoiceField, self).__init__(*args, **kwargs)
 
 
@@ -139,4 +141,6 @@ XLS_UPLOAD_FORMS = [
 ]
 
 def get_model_by_name(name):
-    return ContentType.objects.get_by_natural_key(*name.split('.'))
+    return ContentType.objects.get_by_natural_key(
+        *name.split('.')
+    ).model_class()

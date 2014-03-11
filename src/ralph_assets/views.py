@@ -20,10 +20,12 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.db.models.fields.related import RelatedField
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import ugettext_lazy as _
+from lck.django.common.models import Named
 
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -50,7 +52,11 @@ from ralph_assets.models import (
     PartInfo,
     SoftwareCategory,
 )
-from ralph_assets.models_assets import AssetType, MODE2ASSET_TYPE
+from ralph_assets.models_assets import (
+    AssetType,
+    MODE2ASSET_TYPE,
+    CreatableFromStr,
+)
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
@@ -120,6 +126,7 @@ class AssetsBase(Base):
             ('asset_search', _('Search'), 'fugue-magnifier'),
             ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+            ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
         sidebar_menu = (
             [MenuHeader(sidebar_caption)] +
@@ -132,11 +139,6 @@ class AssetsBase(Base):
             ) for view, label, icon in items]
         )
         sidebar_menu += [
-            MenuItem(
-                label='XLS import',
-                fugue_icon='fugue-document-excel',
-                href=reverse('xls_upload'),
-            ),
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
@@ -1319,10 +1321,11 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 list(name_list)
                 for name_list in self.storage.data['names_per_sheet'].values()
             ), []))
+            
             for k, v in self.get_cleaned_data_for_step(
                 'column_choice'
             ).items():
-                if k in all_names:
+                if k in all_names and v != '':
                     mappings[k] = v
             self.storage.data['mappings'] = mappings
         return form
@@ -1335,6 +1338,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             add_per_sheet = self.storage.data['add_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
+            
             for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
                     data_dicts.setdefault(asset_id, {})
@@ -1350,7 +1354,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             for sheet_name, sheet_data in add_per_sheet.items():
                 for asset_data in sheet_data:
                     asset_data = dict(
-                        (mappings[k], v) for (k, v) in asset_data.items()
+                        (mappings[k], v)
+                        for (k, v) in asset_data.items()
+                        if k in mappings
                     )
                     row = []
                     for column in all_columns:
@@ -1362,24 +1368,65 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             data['add_table'] = add_table
         return data
 
+    def _get_field_value(self, field_name, value):
+        """Transform a pure string into the value to be put into the field."""
+        
+        field, _, _, _ = self.Model._meta.get_field_by_name(
+            field_name
+        )
+        if (
+            isinstance(value, basestring) and
+            isinstance(field, RelatedField) and
+            issubclass(field.rel.to, Named)
+        ):
+            try:
+                value = field.rel.to.objects.get(name=value)
+            except field.rel.to.DoesNotExist:
+                if issubclass(field.rel.to, CreatableFromStr):
+                    value = field.rel.to.create_from_string(value)
+                else:
+                    raise
+        return value
+
     @transaction.commit_on_success
     def done(self, form_list):
         mappings = self.storage.data['mappings']
         update_per_sheet = self.storage.data['update_per_sheet']
+        add_per_sheet = self.storage.data['add_per_sheet']
         failed_assets = []
+        self.Model = get_model_by_name(
+            self.get_cleaned_data_for_step('upload')['model']
+        )
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
-                    Model = get_model_by_name(
-                        self.get_cleaned_data_for_step('upload')['model']
-                    )
                     asset = Model.objects.get(pk=asset_id)
                 except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
+                
                 for key, value in asset_data.items():
-                    setattr(asset, mappings[key], value)
+                    setattr(
+                        asset, mappings[key],
+                        self._get_field_value(mappings[key], value)
+                    )
                 asset.save()
+        for sheet_name, sheet_data in add_per_sheet.items():
+            for asset_data in sheet_data:
+                kwargs = dict(
+                    (
+                        mappings[key],
+                        self._get_field_value(mappings[key], value)
+                    ) for key, value in asset_data.items()
+                    if key in mappings
+                )
+                import ipdb; ipdb.set_trace()
+                asset = self.Model(**kwargs)
+                asset.save()
+
+
+
+        
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         return render(

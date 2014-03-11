@@ -19,18 +19,27 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from ralph_assets.models_assets import AssetManufacturer, AssetType, AssetOwner
+from ralph_assets.models_assets import (
+    AssetManufacturer,
+    AssetType,
+    AssetOwner,
+    CreatableFromStr,
+)
 
 
 class LicenceType(Named):
     """The type of a licence"""
 
 
-class SoftwareCategory(Named):
+class SoftwareCategory(Named, CreatableFromStr):
     """The category of the licensed software"""
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
+
+    @classmethod
+    def create_from_string(cls, s):
+        return cls(name=s)
 
     @property
     def licences(self):

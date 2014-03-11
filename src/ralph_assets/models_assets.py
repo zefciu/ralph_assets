@@ -43,6 +43,14 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
+class CreatableFromStr(object):
+    """Simple objects that can be created from string."""
+
+    @classmethod  # Decided not to play with abstractclassmethods
+    def create_from_string(cls, s):
+        raise NotImplementedError
+
+
 class LicenseType(Choices):
     _ = Choices.Choice
     not_applicable = _("not applicable")

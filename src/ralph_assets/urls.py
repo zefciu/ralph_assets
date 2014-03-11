@@ -70,7 +70,7 @@ urlpatterns = patterns(
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
     url(
-        r'xls/$',
+        r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),
