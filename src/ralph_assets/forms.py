@@ -10,7 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, SHOW
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -40,7 +40,6 @@ from ralph_assets.models import (
 )
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
-REQUIRE = SHOW
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),

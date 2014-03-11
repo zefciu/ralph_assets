@@ -3,6 +3,9 @@
 {% load i18n %}
 
 {% block content %}
+<div>
+  <h3>{% block form_title %}Supports list{% endblock %}</h3>
+</div>
 <table id='suports_table' class="table table-bordered table-striped">
 {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
 	<tbody>
