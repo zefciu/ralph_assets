@@ -6,12 +6,10 @@
 
 {% if wizard.steps.current == 'upload' %}
 {% blocktrans %}
-<p>Upload an XLS file. This file should:
-<ul>
-    <li>Contain asset ids as the first column</li>
-    <li>The first row should contain labels for columns</li>
-</ul>
-</p>
+<p>Upload an XLS or CSV file. The file should contain labels for fields
+as the first row.</p>
+<p>If the first column's header is 'id', the update will be performed.
+Otherwise new licences/assets will be created.</p>
 {% endblocktrans %}
 {% endif %}
 {% if wizard.steps.current == 'column_choice' %}
