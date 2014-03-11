@@ -89,7 +89,7 @@ class BulkEditAssetForm(ModelForm):
             'support_type', 'support_void_reporting', 'provider',
             'source', 'status', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
-            'guardian', 'user',
+            'owner', 'user',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -110,7 +110,7 @@ class BulkEditAssetForm(ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -466,7 +466,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'guardian',
+            'owner',
             'user',
         )
         widgets = {
@@ -504,7 +504,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -590,7 +590,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
-            'guardian',
+            'owner',
             'user',
         )
         widgets = {
@@ -630,7 +630,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
     )
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
@@ -871,7 +871,7 @@ class SearchAssetForm(Form):
         label='Status'
     )
     task_url = CharField(required=False, label='Task url')
-    guardian = AutoCompleteSelectField(
+    owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
     )
