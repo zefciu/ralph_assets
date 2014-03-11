@@ -314,12 +314,12 @@ def _validate_multivalue_data(data):
 
 def _check_field_uniqueness(field_path, values):
     '''
-        Check field (pointed by *field_path*) uniqueness. If find any not
-        unique value then return false status with information
+        Check field (pointed by *field_path*) uniqueness.
+        If duplicated value is found then return false status with information
         about not unique ids
 
-        :param string field_path: field to be unique as a string
-        :param list values: list of field ids
+        :param string field_path: model field to be unique (as a string)
+        :param list values: list of field values
         :return tuple: status and not unique ids or empty list
         :rtype tuple:
     '''
