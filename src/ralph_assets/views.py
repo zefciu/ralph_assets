@@ -1488,7 +1488,8 @@ class SupportContractFormView(AssetsBase):
         )
 
     def get_context_data(self, **kwargs):
-        ret = super(SupportContractFormView, self).get_context_data(**kwargs)
+        ret = super(SupportContractFormView, self).get_context_data(
+            **kwargs)
         ret.update({
             'form': self.form,
             'form_id': 'add_support_form',
@@ -1505,7 +1506,8 @@ class SupportContractFormView(AssetsBase):
             support.save()
             return HttpResponseRedirect(support.url)
         except ValueError:
-            return super(SupportContractFormView, self).get(request, *args, **kwargs)
+            return super(SupportContractFormView, self).get(
+                request, *args, **kwargs)
 
 
 class AddSupportContract(SupportContractFormView):
@@ -1520,8 +1522,8 @@ class AddSupportContract(SupportContractFormView):
     def post(self, request, *args, **kwargs):
         self._get_form(request.POST)
         return self._save(request, *args, **kwargs)
-    
-    
+
+
 class SupportContractList(AssetsBase):
     """The support list."""
 
@@ -1532,7 +1534,8 @@ class SupportContractList(AssetsBase):
         data = super(SupportContractList, self).get_context_data(
             *args, **kwargs
         )
-        data['supports'] = SupportContract.objects.filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        data['supports'] = SupportContract.objects.filter(
+            asset_type=MODE2ASSET_TYPE[self.mode])
         return data
 
 

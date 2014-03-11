@@ -103,7 +103,8 @@ urlpatterns = patterns(
         name='add_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/support/edit_support/(?P<support_id>[0-9]+)$',
+        r'(?P<mode>(back_office|dc))/support/edit_support/'
+        r'(?P<support_id>[0-9]+)$',
         login_required(EditSupportContract.as_view()),
         name='edit_support',
     ),

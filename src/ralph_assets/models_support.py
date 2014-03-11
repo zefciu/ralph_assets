@@ -13,6 +13,7 @@ from lck.django.common.models import (
 )
 from ralph_assets.models_assets import (AssetType, _get_file_path)
 
+
 class SupportContract(Named):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
@@ -27,7 +28,7 @@ class SupportContract(Named):
     additional_notes = models.CharField(max_length=200, blank=True)
     sla_type = models.CharField(max_length=200, blank=True)
     asset_type = models.PositiveSmallIntegerField(choices=AssetType())
-    
+
     @property
     def url(self):
         return reverse('edit_support', kwargs={
