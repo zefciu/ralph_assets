@@ -269,13 +269,13 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-back-office-network-devices",
+		"pk" : "1-1-back-office-network-device",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
 			"parent" : "1-back-office",
 			"rght" : 37,
 			"modified_by" : null,
-			"name" : "NETWORK DEVICES",
+			"name" : "NETWORK DEVICE",
 			"cache_version" : 1,
 			"created" : "2014-01-02T09:00:00.000",
 			"level" : 1,
@@ -287,10 +287,10 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-1-back-office-network-devices-access-point",
+		"pk" : "1-1-1-back-office-network-device-access-point",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
-			"parent" : "1-1-back-office-network-devices",
+			"parent" : "1-1-back-office-network-device",
 			"rght" : 32,
 			"modified_by" : null,
 			"name" : "Access Point",
@@ -305,10 +305,10 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-1-back-office-network-devices-router",
+		"pk" : "1-1-1-back-office-network-device-router",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
-			"parent" : "1-1-back-office-network-devices",
+			"parent" : "1-1-back-office-network-device",
 			"rght" : 34,
 			"modified_by" : null,
 			"name" : "Router",
@@ -323,10 +323,10 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-1-back-office-network-devices-switch",
+		"pk" : "1-1-1-back-office-network-device-switch",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
-			"parent" : "1-1-back-office-network-devices",
+			"parent" : "1-1-back-office-network-device",
 			"rght" : 36,
 			"modified_by" : null,
 			"name" : "Switch",
@@ -359,13 +359,13 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-back-office-workstations",
+		"pk" : "1-1-back-office-workstation",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
 			"parent" : "1-back-office",
 			"rght" : 45,
 			"modified_by" : null,
-			"name" : "WORKSTATIONS",
+			"name" : "WORKSTATION",
 			"cache_version" : 1,
 			"created" : "2014-01-02T09:00:00.000",
 			"level" : 1,
@@ -377,10 +377,10 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-1-back-office-workstations-notebook",
+		"pk" : "1-1-1-back-office-workstation-notebook",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
-			"parent" : "1-1-back-office-workstations",
+			"parent" : "1-1-back-office-workstation",
 			"rght" : 42,
 			"modified_by" : null,
 			"name" : "Notebook",
@@ -395,10 +395,10 @@
 			"type" : 1
 		}
 	}, {
-		"pk" : "1-1-1-back-office-workstations-pc",
+		"pk" : "1-1-1-back-office-workstation-pc",
 		"model" : "ralph_assets.assetcategory",
 		"fields" : {
-			"parent" : "1-1-back-office-workstations",
+			"parent" : "1-1-back-office-workstation",
 			"rght" : 44,
 			"modified_by" : null,
 			"name" : "PC",
