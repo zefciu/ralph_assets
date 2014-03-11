@@ -38,6 +38,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
+from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
@@ -421,10 +422,11 @@ class DependencyAssetForm(DependencyForm):
                 'imei',
                 'category',
                 AssetCategory.objects.filter(pk__in=[
-                    "1-1-back-office-mobile-devices",
-                    "1-1-1-back-office-mobile-devices-mobile-phone",
-                    "1-1-1-back-office-mobile-devices-smartphone",
-                    "1-1-1-back-office-mobile-devices-tablet",
+                    # TODO: uncomment it, when ready
+                    #"1-1-back-office-mobile-devices",
+                    #"1-1-1-back-office-mobile-devices-mobile-phone",
+                    #"1-1-1-back-office-mobile-devices-smartphone",
+                    #"1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
                 SHOW,
             )
@@ -681,6 +683,23 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         return cleaned_data
 
 
+class BackOfficeEditAssetForm(BaseEditAssetForm):
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeEditAssetForm, self).__init__(*args, **kwargs)
+        # TODO: change purpose postion
+        #self.fields.keyOrder
+
+
+class DataCenterEditAssetForm(BaseEditAssetForm):
+    pass
+
+
 def validate_production_year(asset):
     data = asset.cleaned_data["production_year"]
     # Matches any 4-digit number:
@@ -818,7 +837,7 @@ class AddDeviceForm(BaseAddAssetForm):
 class OfficeForm(ModelForm):
     class Meta:
         model = OfficeInfo
-        exclude = ('imei', 'created', 'modified')
+        exclude = ('imei', 'purpose', 'created', 'modified')
         widgets = {
             'date_of_last_inventory': DateWidget(),
         }

@@ -26,6 +26,7 @@ from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import ugettext_lazy as _
 
+from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
     AddDeviceForm,
     AddPartForm,
@@ -174,6 +175,17 @@ class AssetsBase(Base):
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
                 )
+    def device_form_by_mode(self):
+        """
+        """
+        # TODO: write docstring
+
+        form_name = (
+            'BackOfficeEditAssetForm'
+            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+        )
+        asset_form = getattr(assets_forms, form_name)
+        return asset_form
 
 
 class DataTableColumnAssets(DataTableColumn):
@@ -788,8 +800,20 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-        self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeEditAssetForm'
+            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+        )
+        device_form_class = getattr(assets_forms, form_name)
+        self.asset_form = device_form_class(instance=self.asset, mode=self.mode)
         self.write_office_info2asset()
+
+
+        if self.asset.type in AssetType.BO.choices:
+            self.office_info_form = OfficeForm(instance=self.asset.office_info)
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -804,11 +828,21 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        self.asset_form = EditDeviceForm(
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeEditAssetForm'
+            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+        )
+        device_form_class = getattr(assets_forms, form_name)
+        self.asset_form = device_form_class(
             post_data,
             instance=self.asset,
             mode=self.mode,
         )
+
+
         self.device_info_form = DeviceForm(
             post_data,
             mode=self.mode,
