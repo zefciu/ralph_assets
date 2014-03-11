@@ -46,6 +46,13 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['Licence'])
 
+        # Adding model 'LicenceType'
+        db.create_table('ralph_assets_licencetype', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+        ))
+        db.send_create_signal('ralph_assets', ['LicenceType'])
+
         # Adding model 'SoftwareCategory'
         db.create_table('ralph_assets_softwarecategory', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -53,13 +60,6 @@ class Migration(SchemaMigration):
             ('asset_type', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
         ))
         db.send_create_signal('ralph_assets', ['SoftwareCategory'])
-
-        # Adding model 'LicenceType'
-        db.create_table('ralph_assets_licencetype', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
-        ))
-        db.send_create_signal('ralph_assets', ['LicenceType'])
 
         # Adding field 'Asset.task_url'
         db.add_column('ralph_assets_asset', 'task_url',
@@ -86,6 +86,11 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.PositiveIntegerField')(null=True),
                       keep_default=False)
 
+        # Adding field 'OfficeInfo.imei'
+        db.add_column('ralph_assets_officeinfo', 'imei',
+                      self.gf('django.db.models.fields.CharField')(max_length=18, unique=True, null=True, blank=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
         # Deleting model 'AssetOwner'
@@ -94,11 +99,11 @@ class Migration(SchemaMigration):
         # Deleting model 'Licence'
         db.delete_table('ralph_assets_licence')
 
-        # Deleting model 'SoftwareCategory'
-        db.delete_table('ralph_assets_softwarecategory')
-
         # Deleting model 'LicenceType'
         db.delete_table('ralph_assets_licencetype')
+
+        # Deleting model 'SoftwareCategory'
+        db.delete_table('ralph_assets_softwarecategory')
 
         # Deleting field 'Asset.task_url'
         db.delete_column('ralph_assets_asset', 'task_url')
@@ -114,6 +119,9 @@ class Migration(SchemaMigration):
 
         # Deleting field 'AssetModel.type'
         db.delete_column('ralph_assets_assetmodel', 'type')
+
+        # Deleting field 'OfficeInfo.imei'
+        db.delete_column('ralph_assets_officeinfo', 'imei')
 
 
     models = {
@@ -326,6 +334,7 @@ class Migration(SchemaMigration):
             'date_of_last_inventory': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'imei': ('django.db.models.fields.CharField', [], {'max_length': '18', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'last_logged_user': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'license_key': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'license_type': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
