@@ -1299,7 +1299,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     sidebar_selected = None
     mainmenu_selected = 'dc'
 
-
     def get_form(self, step=None, data=None, files=None):
         form = super(XlsUploadView, self).get_form(step, data, files)
         if step == 'column_choice':
@@ -1322,7 +1321,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 list(name_list)
                 for name_list in self.storage.data['names_per_sheet'].values()
             ), []))
-            
             for k, v in self.get_cleaned_data_for_step(
                 'column_choice'
             ).items():
@@ -1339,7 +1337,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             add_per_sheet = self.storage.data['add_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
-            
             for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
                     data_dicts.setdefault(asset_id, {})
@@ -1362,8 +1359,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     row = []
                     for column in all_columns:
                         row.append(asset_data.get(column, ''))
-                    add_table.append(row) 
-            
+                    add_table.append(row)
             data['all_columns'] = all_columns
             data['update_table'] = update_table
             data['add_table'] = add_table
@@ -1371,7 +1367,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        
         if not value:
             return
         field, _, _, _ = self.Model._meta.get_field_by_name(
@@ -1415,7 +1410,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
-                
                 for key, value in asset_data.items():
                     setattr(
                         asset, mappings[key],
@@ -1437,10 +1431,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 else:
                     asset.asset_type = MODE2ASSET_TYPE[self.mode]
                 asset.save()
-
-
-
-        
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         return render(

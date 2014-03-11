@@ -269,6 +269,7 @@ __all__ = [
     'AssetCategoryType',
     'AssetManufacturer',
     'AssetModel',
+    'AssetOwner',
     'AssetSource',
     'AssetStatus',
     'AssetType',

@@ -11,6 +11,7 @@ import itertools as it
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 
+
 class DataUploadField(forms.FileField):
     """A field that gets the uploaded XLS or CSV data and returns data
     prepared for add/update."""
@@ -43,7 +44,8 @@ class DataUploadField(forms.FileField):
                     asset_id = int(row[0].value)
                     update_per_sheet[sheet_name][asset_id] = {}
                     for key, cell in it.izip(col_names, row[1:]):
-                        update_per_sheet[sheet_name][asset_id][key] = cell.value
+                        update_per_sheet[sheet_name][asset_id][key] = \
+                            cell.value
             else:
                 for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
                     asset_data = {}
@@ -72,9 +74,7 @@ class DataUploadField(forms.FileField):
                 add_per_sheet['csv'].append(asset_data)
                 for key, value in it.izip(name_row, row[:]):
                     asset_data[key] = value
-                
         names_per_sheet = {'csv': name_row}
-        
         return names_per_sheet, update_per_sheet, add_per_sheet
 
     def to_python(self, value):
@@ -82,10 +82,10 @@ class DataUploadField(forms.FileField):
         try:
             filetype = {
                 'application/vnd.openxmlformats-officedocument.'
-                    'spreadsheetml.sheet': 'xls',
+                'spreadsheetml.sheet': 'xls',
                 'text/csv': 'csv',
                 'application/csv': 'csv',
-                'application/vnd.ms-excel': 'csv', # Browsers Y U NO RFC 4180?
+                'application/vnd.ms-excel': 'csv',  # Browsers Y U NO RFC 4180?
             }[file_.content_type]
         except KeyError:
             raise forms.ValidationError(
@@ -139,6 +139,7 @@ XLS_UPLOAD_FORMS = [
     ('column_choice', XlsColumnChoiceForm),
     ('confirm', XlsConfirmForm),
 ]
+
 
 def get_model_by_name(name):
     return ContentType.objects.get_by_natural_key(

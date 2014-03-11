@@ -16,7 +16,6 @@ from django.forms import (
     CharField,
     ChoiceField,
     DateField,
-    FileField,
     Form,
     IntegerField,
     ModelForm,
@@ -38,7 +37,6 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
-from ralph_assets.forms_import import DataUploadField
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
