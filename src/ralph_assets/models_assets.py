@@ -66,6 +66,16 @@ MODE2ASSET_TYPE = {
 }
 
 
+class AssetPurpose(Choices):
+    _ = Choices.Choice
+
+    for_contractor = _("for contractor")
+    sectional = _("sectional")
+    for_dashboards = _("for dashboards")
+    for_events = _("for events")
+    for_tests = _("for tests")
+
+
 class AssetStatus(Choices):
     _ = Choices.Choice
 
@@ -524,6 +534,10 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
     date_of_last_inventory = models.DateField(
         null=True, blank=True)
     last_logged_user = models.CharField(max_length=100, null=True, blank=True)
+    purpose = models.PositiveSmallIntegerField(
+        verbose_name=_("purpose"), choices=AssetPurpose(), null=True,
+        blank=True, default=None
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(
