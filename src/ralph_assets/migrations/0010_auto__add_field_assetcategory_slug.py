@@ -94,16 +94,16 @@ class Migration(SchemaMigration):
     def backwards(self, orm):
         db.delete_primary_key("ralph_assets_assetcategory")
         db.add_column('ralph_assets_assetcategory', 'parent_new_id',
-                      self.gf('django.db.models.fields.PositiveIntegerField')(blank=True, 
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
                       null=True, db_index=False))
         db.add_column('ralph_assets_assetcategory', 'id',
                       self.gf('django.db.models.fields.AutoField')(blank=True, 
                       null=False, db_index=False, primary_key=True, max_length=10))
         db.add_column('ralph_assets_asset', 'category_new_id',
-                      self.gf('django.db.models.fields.PositiveIntegerField')(blank=True, 
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
                       null=True, db_index=False))
         db.add_column('ralph_assets_assetmodel', 'category_new_id',
-                      self.gf('django.db.models.fields.PositiveIntegerField')(blank=True, 
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
                       null=True, db_index=False))
         db.start_transaction()
         for i, slug in enumerate(
