@@ -420,9 +420,11 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'imei',
                 'category',
-                AssetCategory.objects.filter(name__in=[
-                    # TODO: an enum instead?
-                    'Mobile devices', 'Mobile phone', 'Tablet'
+                AssetCategory.objects.filter(pk__in=[
+                    "1-1-back-office-mobile-devices",
+                    "1-1-1-back-office-mobile-devices-mobile-phone",
+                    "1-1-1-back-office-mobile-devices-smartphone",
+                    "1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
                 SHOW,
             )
