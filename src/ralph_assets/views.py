@@ -25,6 +25,7 @@ from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.db.models import Q, Sum, Count
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
