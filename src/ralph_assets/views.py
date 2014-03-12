@@ -164,13 +164,13 @@ class AssetsBase(Base):
         self.set_mode(mode)
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
 
-    def write_office_info2asset(self):
+    def write_office_info2asset_form(self):
         """
-        Writes *imei* field from office_info form to asset form.
+        Writes fields from office_info form to asset form.
         """
         if self.asset.type in AssetType.BO.choices:
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
-            fields = ['imei']
+            fields = ['imei', 'purpose']
             for field in fields:
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
@@ -844,11 +844,9 @@ class EditDevice(AssetsBase):
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
         )
-        self.write_office_info2asset()
+        self.write_office_info2asset_form()
 
 
-        if self.asset.type in AssetType.BO.choices:
-            self.office_info_form = OfficeForm(instance=self.asset.office_info)
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -924,10 +922,10 @@ class EditDevice(AssetsBase):
                     new_src, new_dst = _move_data(
                         self.asset_form.cleaned_data,
                         self.office_info_form.cleaned_data,
-                        ['imei'],
+                        ['imei', 'purpose'],
                     )
                     self.asset_form.cleaned_data = new_src
-                    self.asset_form.cleaned_data = new_dst
+                    self.office_info_form.cleaned_data = new_dst
                     self.asset = _update_office_info(
                         modifier_profile.user, self.asset,
                         self.office_info_form.cleaned_data
@@ -993,7 +991,7 @@ class EditPart(AssetsBase):
         if self.asset.device_info:  # it isn't part asset
             raise Http404()
         self.asset_form = EditPartForm(instance=self.asset, mode=self.mode)
-        self.write_office_info2asset()
+        self.write_office_info2asset_form()
         self.part_info_form = BasePartForm(
             instance=self.asset.part_info, mode=self.mode,
         )
