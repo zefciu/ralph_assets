@@ -175,11 +175,11 @@ class AssetsBase(Base):
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
                 )
+
     def device_form_by_mode(self):
         """
         """
-        # TODO: write docstring
-
+        # TODO: rewrite it & write docstring
         form_name = (
             'BackOfficeEditAssetForm'
             if self.mode == 'back_office' else 'DataCenterEditAssetForm'
@@ -308,6 +308,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'imei',
             'guardian',
             'user',
+            'purpose',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -413,6 +414,8 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(office_info__imei=field_value)
                     else:
                         all_q &= Q(office_info__imei__icontains=field_value)
+                elif field == 'purpose':
+                    all_q &= Q(office_info__purpose=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

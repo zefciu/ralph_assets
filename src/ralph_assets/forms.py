@@ -1047,6 +1047,11 @@ class DataCenterSearchAssetForm(SearchAssetForm):
 
 class BackOfficeSearchAssetForm(SearchAssetForm):
     imei = CharField(required=False, label='IMEI')
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
 
 
 class DeleteAssetConfirmForm(Form):
