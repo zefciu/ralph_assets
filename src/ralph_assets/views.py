@@ -176,9 +176,10 @@ class AssetsBase(Base):
                     getattr(self.asset.office_info, field, '')
                 )
 
-    def device_form_by_mode(self):
+    def form_dispatcher(self):
         """
         """
+
         # TODO: rewrite it & write docstring
         form_name = (
             'BackOfficeEditAssetForm'
@@ -675,7 +676,17 @@ class AddDevice(AssetsBase):
 
     def post(self, *args, **kwargs):
         mode = self.mode
-        self.asset_form = AddDeviceForm(self.request.POST, mode=mode)
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeAddAssetForm'
+            if self.mode == 'back_office' else 'DataCenterAddAssetForm'
+        )
+        device_form_class = getattr(assets_forms, form_name)
+        self.asset_form = device_form_class(self.request.POST, mode=self.mode)
+
+
         self.device_info_form = DeviceForm(
             self.request.POST,
             mode=mode,
