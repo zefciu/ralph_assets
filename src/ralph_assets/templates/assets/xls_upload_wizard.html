@@ -5,6 +5,7 @@
 {% block content %}
 
 {% if wizard.steps.current == 'upload' %}
+<h1>{% trans Form Upload %}</h1>
 {% blocktrans %}
 <p>Upload an XLS or CSV file. The file should contain labels for fields
 as the first row.</p>
@@ -13,6 +14,7 @@ Otherwise new licences/assets will be created.</p>
 {% endblocktrans %}
 {% endif %}
 {% if wizard.steps.current == 'column_choice' %}
+<h1>{% trans column choice %}</h1>
 {% blocktrans %}
 <p>Match the names from XLS file with the desired fields. Leaving the value
 empty will cause the column value to be unused.</p>
