@@ -661,8 +661,8 @@ class AddDevice(AssetsBase):
 
         #TODO: get BO or DC form by self.mode
         form_name = (
-            'BackOfficeAddAssetForm'
-            if self.mode == 'back_office' else 'DataCenterAddAssetForm'
+            'BackOfficeAddDeviceForm'
+            if self.mode == 'back_office' else 'DataCenterAddDeviceForm'
         )
         device_form_class = getattr(assets_forms, form_name)
         self.asset_form = device_form_class(mode=self.mode)
@@ -680,8 +680,8 @@ class AddDevice(AssetsBase):
 
         #TODO: get BO or DC form by self.mode
         form_name = (
-            'BackOfficeAddAssetForm'
-            if self.mode == 'back_office' else 'DataCenterAddAssetForm'
+            'BackOfficeAddDeviceForm'
+            if self.mode == 'back_office' else 'DataCenterAddDeviceForm'
         )
         device_form_class = getattr(assets_forms, form_name)
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
@@ -837,8 +837,8 @@ class EditDevice(AssetsBase):
 
         #TODO: get BO or DC form by self.mode
         form_name = (
-            'BackOfficeEditAssetForm'
-            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+            'BackOfficeEditDeviceForm'
+            if self.mode == 'back_office' else 'DataCenterEditDeviceForm'
         )
         device_form_class = getattr(assets_forms, form_name)
         self.asset_form = device_form_class(
@@ -865,8 +865,8 @@ class EditDevice(AssetsBase):
 
         #TODO: get BO or DC form by self.mode
         form_name = (
-            'BackOfficeEditAssetForm'
-            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+            'BackOfficeEditDeviceForm'
+            if self.mode == 'back_office' else 'DataCenterEditDeviceForm'
         )
         device_form_class = getattr(assets_forms, form_name)
         self.asset_form = device_form_class(

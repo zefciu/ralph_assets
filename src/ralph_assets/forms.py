@@ -555,23 +555,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         return validate_production_year(self)
 
 
-class BackOfficeAddAssetForm(BaseAddAssetForm):
-    purpose = ChoiceField(
-        required=False,
-        choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose'
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(BackOfficeAddAssetForm, self).__init__(*args, **kwargs)
-        # TODO: change purpose postion
-        #self.fields.keyOrder
-
-
-class DataCenterAddAssetForm(BaseAddAssetForm):
-    pass
-
-
 class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to edit asset
@@ -698,23 +681,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             raise ValidationError(_("Cannot edit deleted asset"))
         cleaned_data = super(BaseEditAssetForm, self).clean()
         return cleaned_data
-
-
-class BackOfficeEditAssetForm(BaseEditAssetForm):
-    purpose = ChoiceField(
-        required=False,
-        choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose'
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(BackOfficeEditAssetForm, self).__init__(*args, **kwargs)
-        # TODO: change purpose postion
-        #self.fields.keyOrder
-
-
-class DataCenterEditAssetForm(BaseEditAssetForm):
-    pass
 
 
 def validate_production_year(asset):
@@ -851,6 +817,23 @@ class AddDeviceForm(BaseAddAssetForm):
         return cleaned_data
 
 
+class BackOfficeAddDeviceForm(AddDeviceForm):
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
+        # TODO: change purpose postion
+        #self.fields.keyOrder
+
+
+class DataCenterAddDeviceForm(AddDeviceForm):
+    pass
+
+
 class OfficeForm(ModelForm):
     class Meta:
         model = OfficeInfo
@@ -883,6 +866,23 @@ class EditDeviceForm(BaseEditAssetForm):
                 _("If SN is empty - Barcode is required")
             )
         return cleaned_data
+
+
+class BackOfficeEditDeviceForm(EditDeviceForm):
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+        # TODO: change purpose postion
+        #self.fields.keyOrder
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+    pass
 
 
 class SearchAssetForm(Form):
