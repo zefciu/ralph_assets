@@ -65,6 +65,9 @@ class DeviceLookup(LookupChannel):
             <span class='asset-sn'>%s</span>
         </li>
         """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+    
+    def get_base_objects(self):
+        return self.model.objects
 
 
 class RalphDeviceLookup(LookupChannel):

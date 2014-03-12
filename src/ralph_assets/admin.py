@@ -19,6 +19,7 @@ from ralph_assets.models import (
     AssetManufacturer,
     AssetModel,
     AssetOwner,
+    Licence,
     LicenceType,
     ReportOdtSource,
     SoftwareCategory,
@@ -28,6 +29,7 @@ from ralph_assets.models import (
 admin.site.register(SoftwareCategory)
 admin.site.register(LicenceType)
 admin.site.register(AssetOwner)
+admin.site.register(Licence)
 
 
 class WarehouseAdmin(ModelAdmin):

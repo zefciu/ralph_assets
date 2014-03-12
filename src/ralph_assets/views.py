@@ -23,10 +23,10 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Sum
 from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
-from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.db.models import Q, Sum, Count
+from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -1595,6 +1595,7 @@ class LicenceFormView(AssetsBase):
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
+            self.form.save_m2m()
             return HttpResponseRedirect(licence.url)
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
@@ -1641,7 +1642,7 @@ class LicenceList(AssetsBase):
             *args, **kwargs
         )
         data['categories'] = SoftwareCategory.objects.annotate(
-            used=Sum('licence__used')
+            used=Count('licence__assets')
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
         return data
 

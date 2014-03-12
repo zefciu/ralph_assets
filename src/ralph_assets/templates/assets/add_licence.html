@@ -7,6 +7,12 @@
     <h3>{% block form_title %}{% trans "Add licence" %}{% endblock %}</h3>
 </div>
 
+{% for error in form.non_field_errors %}
+<div class="alert alert-danger">
+{{ error }}
+</div>
+{% endfor %}
+
 <form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
   {% csrf_token %}
   <div class="row">

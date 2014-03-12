@@ -41,6 +41,7 @@ from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 LOOKUPS = {
+    'asset': ('ralph_assets.models', 'DeviceLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
     'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
