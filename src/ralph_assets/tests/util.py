@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.template.defaultfilters import slugify
+
 from random import randint
 
 from ralph_assets.models_assets import (
@@ -101,6 +103,8 @@ def create_asset(sn, **kwargs):
 
 
 def create_category(type='data_center', name=DEFAULT_ASSET_DATA['category']):
+    subcategory_name = 'Subcategory'
+    type_name = type
     if type == 'back_office':
         type = AssetCategoryType.back_office
     elif type == 'data_center':
@@ -108,11 +112,13 @@ def create_category(type='data_center', name=DEFAULT_ASSET_DATA['category']):
     category = AssetCategory()
     category.name = name
     category.type = type
+    category.slug = slugify(type_name + name)
     category.save()
     subcategory = AssetCategory()
-    subcategory.name = 'Subcategory'
+    subcategory.name = subcategory_name
     subcategory.type = type
     subcategory.parent = category
+    subcategory.slug = slugify(type_name + category.name + subcategory_name)
     subcategory.save()
     return subcategory
 

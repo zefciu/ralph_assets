@@ -59,7 +59,7 @@ class TestAdding(TestCase):
             sn='2222-2222-2222-2222',
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
-            category=self.category.id,
+            category=self.category.slug,
             ralph_device_id='',
             slots=1.0,
             deprecation_rate=0,
@@ -125,7 +125,7 @@ class TestAdding(TestCase):
             date_of_last_inventory='2003-02-02',
             last_logged_user='James Bond',
             remarks='any remarks',
-            category=self.category.id,
+            category=self.category.slug,
             slots=5.0,
             ralph_device_id='',
             asset=True,  # Button name

@@ -57,7 +57,7 @@ class HistoryAssetsView(TestCase):
             'warehouse': self.warehouse.id,
             'sn': '666-666-666',
             'barcode': '666666',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 1.0,
             'ralph_device_id': '',
             'asset': True,  # Button name
@@ -149,7 +149,7 @@ class ConnectAssetWithDevice(TestCase):
             'size': 1,
             'warehouse': self.warehouse.id,
             'barcode': '7777',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 0,
             'ralph_device_id': '',
             'asset': True,  # Button name
@@ -231,7 +231,7 @@ class TestsStockDevice(TestCase):
             'size': 1,
             'warehouse': self.warehouse.id,
             'barcode': '7777',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 0,
             'sn': 'fake-sn',
             'ralph_device_id': '',
