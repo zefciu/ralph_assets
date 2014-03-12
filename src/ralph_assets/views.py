@@ -219,7 +219,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         _('Support type', field='support_type', export=True),
         _('Support void_reporting', field='support_void_reporting',
           export=True),
-        _('Niw', field='niw', foreign_field_name='', export=True),
+        _('Inventory number', field='niw', foreign_field_name='', export=True),
         _(
             'Ralph ID',
             field='device_info',
@@ -394,12 +394,12 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def get_search_category_part(self, field_value):
         try:
-            category_id = int(field_value)
+            category_id = field_value
         except ValueError:
             pass
         else:
-            category = AssetCategory.objects.get(id=category_id)
-            children = [x.id for x in category.get_children()]
+            category = AssetCategory.objects.get(slug=category_id)
+            children = [x.slug for x in category.get_children()]
             categories = [category_id, ] + children
             return Q(category_id__in=categories)
 
