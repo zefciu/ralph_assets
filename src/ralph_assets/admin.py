@@ -107,7 +107,7 @@ class AssetCategoryAdmin(ModelAdmin):
     save_on_top = True
     list_display = (name, 'parent')
     search_fields = ('name',)
-
+    prepopulated_fields = {"slug": ("type", "parent", "name")}
 
 admin.site.register(AssetCategory, AssetCategoryAdmin)
 
