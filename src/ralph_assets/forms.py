@@ -844,8 +844,8 @@ class AddDeviceForm(BaseAddAssetForm):
 
 class BackOfficeAddDeviceForm(AddDeviceForm):
     purpose = ChoiceField(
-        required=False,
-        choices=[('', '----')] + models_assets.AssetPurpose(),
+        required=True,
+        choices=models_assets.AssetPurpose(),
         label='Purpose'
     )
 
@@ -895,8 +895,8 @@ class EditDeviceForm(BaseEditAssetForm):
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
     purpose = ChoiceField(
-        required=False,
-        choices=[('', '----')] + models_assets.AssetPurpose(),
+        required=True,
+        choices=models_assets.AssetPurpose(),
         label='Purpose'
     )
 
