@@ -637,7 +637,7 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     if barcode:
         asset.barcode = barcode
     if office_info_data:
-        _update_office_info(creator_profile, asset, office_info_data)
+        _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
     return asset.id
 
@@ -711,8 +711,8 @@ class AddDevice(AssetsBase):
 
 
             office_info_data = {}
-            self.asset_form.cleaned_data, office_info_data = _move_data(
-                self.asset_form.cleaned_data, office_info_data, ['purpose']
+            asset_data, office_info_data = _move_data(
+                asset_data, office_info_data, ['purpose']
             )
             ids = []
             for sn, index in zip(serial_numbers, range(len(serial_numbers))):
