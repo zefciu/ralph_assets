@@ -10,7 +10,7 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, SHOW
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
@@ -40,7 +40,6 @@ from ralph_assets.models import (
 )
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
-REQUIRE = SHOW
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
@@ -427,7 +426,17 @@ class DependencyAssetForm(DependencyForm):
                     "1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
                 SHOW,
-            )
+            ),
+            Dependency(
+                'imei',
+                'category',
+                AssetCategory.objects.filter(pk__in=[
+                    "1-1-back-office-mobile-devices",
+                    "1-1-1-back-office-mobile-devices-mobile-phone",
+                    "1-1-1-back-office-mobile-devices-smartphone",
+                ]).all(),
+                REQUIRE,
+            ),
         ]
         for dep in deps:
             yield dep
@@ -731,7 +740,7 @@ class AddDeviceForm(BaseAddAssetForm):
         widget=Textarea(attrs={'rows': 25}),
     )
     imei = CharField(
-        label=_("IMEI"), required=True,
+        label=_("IMEI"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
 
@@ -803,7 +812,7 @@ class AddDeviceForm(BaseAddAssetForm):
         cleaned_data = super(AddDeviceForm, self).clean()
         serial_numbers = cleaned_data.get("sn", [])
         barcodes = cleaned_data.get("barcode", [])
-        imeis = cleaned_data.get("imei", [])
+        imeis = cleaned_data.get("imei", None)
         if barcodes and len(serial_numbers) != len(barcodes):
             self._errors["barcode"] = self.error_class([
                 _("Barcode list could be empty or must have the same number "
