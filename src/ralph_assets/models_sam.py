@@ -24,7 +24,6 @@ from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetOwner,
     AssetType,
-    AssetManufacturer,
     CreatableFromStr,
 )
 
