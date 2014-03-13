@@ -43,6 +43,14 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
+class CreatableFromStr(object):
+    """Simple objects that can be created from string."""
+
+    @classmethod  # Decided not to play with abstractclassmethods
+    def create_from_string(cls, asset_type, s):
+        raise NotImplementedError
+
+
 class LicenseType(Choices):
     _ = Choices.Choice
     not_applicable = _("not applicable")
@@ -111,9 +119,18 @@ class AssetCategoryType(Choices):
     data_center = _("data center")
 
 
-class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
+class AssetManufacturer(
+    CreatableFromStr,
+    TimeTrackable,
+    EditorTrackable,
+    Named
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 class AssetModel(

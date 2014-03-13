@@ -10,13 +10,12 @@ import re
 import time
 
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
-from bob.forms import Dependency, DependencyForm, SHOW
+from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
     CharField,
     ChoiceField,
     DateField,
-    FileField,
     Form,
     IntegerField,
     ModelForm,
@@ -41,7 +40,6 @@ from ralph_assets.models import (
 from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
-REQUIRE = SHOW
 LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
@@ -429,7 +427,17 @@ class DependencyAssetForm(DependencyForm):
                     #"1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
                 SHOW,
-            )
+            ),
+            Dependency(
+                'imei',
+                'category',
+                AssetCategory.objects.filter(pk__in=[
+                    "1-1-back-office-mobile-devices",
+                    "1-1-1-back-office-mobile-devices-mobile-phone",
+                    "1-1-1-back-office-mobile-devices-smartphone",
+                ]).all(),
+                REQUIRE,
+            ),
         ]
         for dep in deps:
             yield dep
@@ -733,7 +741,7 @@ class AddDeviceForm(BaseAddAssetForm):
         widget=Textarea(attrs={'rows': 25}),
     )
     imei = CharField(
-        label=_("IMEI"), required=True,
+        label=_("IMEI"), required=False,
         widget=Textarea(attrs={'rows': 25}),
     )
 
@@ -805,7 +813,7 @@ class AddDeviceForm(BaseAddAssetForm):
         cleaned_data = super(AddDeviceForm, self).clean()
         serial_numbers = cleaned_data.get("sn", [])
         barcodes = cleaned_data.get("barcode", [])
-        imeis = cleaned_data.get("imei", [])
+        imeis = cleaned_data.get("imei", None)
         if barcodes and len(serial_numbers) != len(barcodes):
             self._errors["barcode"] = self.error_class([
                 _("Barcode list could be empty or must have the same number "
@@ -1126,32 +1134,3 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
-
-
-class AssetColumnChoiceField(ChoiceField):
-    def __init__(self, *args, **kwargs):
-        kwargs['choices'] = [
-            (field.name, unicode(field.verbose_name))
-            for field in Asset._meta.fields if field.name != 'id'
-        ]
-        super(AssetColumnChoiceField, self).__init__(*args, **kwargs)
-
-
-class XlsUploadForm(Form):
-    """The first step for uploading the XLS file for asset bulk update."""
-    file = FileField()
-
-
-class XlsColumnChoiceForm(Form):
-    """The column choice. This form will be filled on the fly."""
-
-
-class XlsConfirmForm(Form):
-    """The confirmation of XLS submission. A form with a button only."""
-
-
-XLS_UPLOAD_FORMS = [
-    ('upload', XlsUploadForm),
-    ('column_choice', XlsColumnChoiceForm),
-    ('confirm', XlsConfirmForm),
-]
