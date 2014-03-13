@@ -39,7 +39,8 @@ from ralph_assets.forms import (
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    SearchAssetForm,
+    BackOfficeSearchAssetForm,
+    DataCenterSearchAssetForm,
 )
 from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
 from ralph_assets.forms_sam import LicenceForm
@@ -70,6 +71,14 @@ HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
+
+
+def _move_data(src, dst, fields):
+    for field in fields:
+        if field in src:
+            value = src.pop(field)
+            dst[field] = value
+    return src, dst
 
 
 class AssetsBase(Base):
@@ -115,12 +124,12 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self):
-        if self.mode == 'dc':
+        if self.mode == 'back_office':
             sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'dc'
+            self.mainmenu_selected = 'back office'
         else:
             sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = 'back office'
+            self.mainmenu_selected = 'dc'
         items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
@@ -155,6 +164,18 @@ class AssetsBase(Base):
         self.request = request
         self.set_mode(mode)
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
+
+    def write_office_info2asset(self):
+        """
+        Writes *imei* field from office_info form to asset form.
+        """
+        if self.asset.type in AssetType.BO.choices:
+            self.office_info_form = OfficeForm(instance=self.asset.office_info)
+            fields = ['imei']
+            for field in fields:
+                self.asset_form.fields[field].initial = (
+                    getattr(self.asset.office_info, field, '')
+                )
 
 
 class DataTableColumnAssets(DataTableColumn):
@@ -243,13 +264,15 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                 'back_office': 'BO',
             }[mode]
         )
-        self.form = SearchAssetForm(self.request.GET, mode=mode)
         if mode == 'dc':
             self.objects = Asset.objects_dc
             self.admin_objects = Asset.admin_objects_dc
+            search_form = DataCenterSearchAssetForm
         elif mode == 'back_office':
             self.objects = Asset.objects_bo
             self.admin_objects = Asset.admin_objects_bo
+            search_form = BackOfficeSearchAssetForm
+        self.form = search_form(self.request.GET, mode=mode)
         super(_AssetSearch, self).set_mode(mode)
 
     def handle_search_data(self, get_csv=False):
@@ -272,6 +295,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'unlinked',
             'ralph_device_id',
             'task_url',
+            'imei',
             'guardian',
             'user',
         ]
@@ -374,6 +398,11 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(task_url=field_value)
                     else:
                         all_q &= Q(task_url__icontains=field_value)
+                elif field == 'imei':
+                    if exact:
+                        all_q &= Q(office_info__imei=field_value)
+                    else:
+                        all_q &= Q(office_info__imei__icontains=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
@@ -576,7 +605,7 @@ def _get_return_link(mode):
 
 @transaction.commit_on_success
 def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
-                   barcode=None):
+                   barcode=None, imei=None):
     device_info = DeviceInfo()
     if mode == 'dc':
         device_info.ralph_device_id = device_info_data['ralph_device_id']
@@ -591,6 +620,8 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     )
     if barcode:
         asset.barcode = barcode
+    if imei:
+        _update_office_info(creator_profile.user, asset, {'imei': imei})
     asset.save(user=creator_profile.user)
     return asset.id
 
@@ -630,14 +661,19 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in ["barcode", "sn"]:
+                if f_name in ["barcode", "sn", "imei"]:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
             barcodes = self.asset_form.cleaned_data['barcode']
+            imeis = (
+                self.asset_form.cleaned_data.pop('imei')
+                if 'imei' in self.asset_form.cleaned_data else None
+            )
             ids = []
             for sn, index in zip(serial_numbers, range(len(serial_numbers))):
                 barcode = barcodes[index] if barcodes else None
+                imei = imeis[index] if imeis else None
                 ids.append(
                     _create_device(
                         creator_profile,
@@ -645,7 +681,8 @@ class AddDevice(AssetsBase):
                         self.device_info_form.cleaned_data,
                         sn,
                         mode,
-                        barcode
+                        barcode,
+                        imei,
                     )
                 )
             messages.success(self.request, _("Assets saved."))
@@ -682,10 +719,11 @@ def _update_office_info(user, asset, office_info_data):
         office_info = OfficeInfo()
     else:
         office_info = asset.office_info
-    if office_info_data['attachment'] is None:
-        del office_info_data['attachment']
-    elif office_info_data['attachment'] is False:
-        office_info_data['attachment'] = None
+    if 'attachment' in office_info_data:
+        if office_info_data['attachment'] is None:
+            del office_info_data['attachment']
+        elif office_info_data['attachment'] is False:
+            office_info_data['attachment'] = None
     office_info.__dict__.update(**office_info_data)
     office_info.save(user=user)
     asset.office_info = office_info
@@ -753,8 +791,7 @@ class EditDevice(AssetsBase):
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
         self.asset_form = EditDeviceForm(instance=self.asset, mode=self.mode)
-        if self.asset.type in AssetType.BO.choices:
-            self.office_info_form = OfficeForm(instance=self.asset.office_info)
+        self.write_office_info2asset()
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -815,7 +852,15 @@ class EditDevice(AssetsBase):
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
+
                 if self.asset.type in AssetType.BO.choices:
+                    new_src, new_dst = _move_data(
+                        self.asset_form.cleaned_data,
+                        self.office_info_form.cleaned_data,
+                        ['imei'],
+                    )
+                    self.asset_form.cleaned_data = new_src
+                    self.asset_form.cleaned_data = new_dst
                     self.asset = _update_office_info(
                         modifier_profile.user, self.asset,
                         self.office_info_form.cleaned_data
@@ -852,6 +897,9 @@ class EditPart(AssetsBase):
     template_name = 'assets/edit_part.html'
     sidebar_selected = None
 
+    def initialize_vars(self):
+        self.office_info_form = None
+
     def get_context_data(self, **kwargs):
         ret = super(EditPart, self).get_context_data(**kwargs)
         status_history = AssetHistoryChange.objects.all().filter(
@@ -870,17 +918,17 @@ class EditPart(AssetsBase):
         return ret
 
     def get(self, *args, **kwargs):
+        self.initialize_vars()
         self.asset = get_object_or_404(
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
         if self.asset.device_info:  # it isn't part asset
             raise Http404()
-        mode = self.mode
-        self.asset_form = EditPartForm(instance=self.asset, mode=mode)
-        self.office_info_form = OfficeForm(instance=self.asset.office_info)
+        self.asset_form = EditPartForm(instance=self.asset, mode=self.mode)
+        self.write_office_info2asset()
         self.part_info_form = BasePartForm(
-            instance=self.asset.part_info, mode=mode,
+            instance=self.asset.part_info, mode=self.mode,
         )
         return super(EditPart, self).get(*args, **kwargs)
 
@@ -908,6 +956,13 @@ class EditPart(AssetsBase):
                 modifier_profile, self.asset,
                 self.asset_form.cleaned_data
             )
+            new_src, new_dst = _move_data(
+                self.asset_form.cleaned_data,
+                self.office_info_form.cleaned_data,
+                ['imei'],
+            )
+            self.asset_form.cleaned_data = new_src
+            self.office_info_form.cleaned_data = new_dst
             self.asset = _update_office_info(
                 modifier_profile.user, self.asset,
                 self.office_info_form.cleaned_data
@@ -942,14 +997,15 @@ class EditPart(AssetsBase):
         })
 
 
-class BulkEdit(AssetsBase):
+class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
     sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
         ret.update({
-            'formset': self.asset_formset
+            'formset': self.asset_formset,
+            'mode': self.mode,
         })
         return ret
 
@@ -962,7 +1018,7 @@ class BulkEdit(AssetsBase):
         AssetFormSet = modelformset_factory(
             Asset,
             form=BulkEditAssetForm,
-            extra=0
+            extra=0,
         )
         self.asset_formset = AssetFormSet(
             queryset=Asset.objects.filter(
@@ -975,7 +1031,7 @@ class BulkEdit(AssetsBase):
         AssetFormSet = modelformset_factory(
             Asset,
             form=BulkEditAssetForm,
-            extra=0
+            extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
         if self.asset_formset.is_valid():
@@ -1091,6 +1147,8 @@ class AddPart(AssetsBase):
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
+            if 'imei' in asset_data:
+                del asset_data['imei']
             ids = []
             for sn in serial_numbers:
                 ids.append(
