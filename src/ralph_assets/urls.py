@@ -25,7 +25,7 @@ from ralph_assets.views import (
     LicenceList,
 )
 
-from ralph_assets.forms import XLS_UPLOAD_FORMS
+from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(
@@ -70,7 +70,7 @@ urlpatterns = patterns(
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
     url(
-        r'xls/$',
+        r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),

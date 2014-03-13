@@ -5,25 +5,28 @@
 {% block content %}
 
 {% if wizard.steps.current == 'upload' %}
+<h1>{% trans "Form Upload" %}</h1>
 {% blocktrans %}
-<p>Upload an XLS file. This file should:
-<ul>
-    <li>Contain asset ids as the first column</li>
-    <li>The first row should contain labels for columns</li>
-</ul>
-</p>
+<p>Upload an XLS or CSV file. The file should contain labels for fields
+as the first row.</p>
+<p>If the first column's header is 'id', the update will be performed.
+Otherwise new licences/assets will be created.</p>
 {% endblocktrans %}
 {% endif %}
 {% if wizard.steps.current == 'column_choice' %}
+<h1>{% trans "Column choice" %}</h1>
 {% blocktrans %}
-<p>Match the names from XLS file with the asset fields.</p>
+<p>Match the names from XLS file with the desired fields. Leaving the value
+empty will cause the column value to be unused.</p>
 {% endblocktrans %}
 {% endif %}
 {% if wizard.steps.current == 'confirm' %}
 {% blocktrans %}
-<p>This data got extracted from provided XLS file. Please make sure the data
+<p>This data got extracted from provided file. Please make sure the data
 is OK. Submitting the data is irreversible.</p>
 {% endblocktrans %}
+{% if update_table %}
+<h1>Assets to be updated</h1>
 <table>
     <thead>
         <th>{% trans "Asset id" %}</th>
@@ -32,7 +35,7 @@ is OK. Submitting the data is irreversible.</p>
         {% endfor %}
     </thead>
     <tbody>
-    {% for row in table %}
+    {% for row in update_table %}
         <tr>
             {% for col in row %}
                 <td>{{ col }}</td>
@@ -41,6 +44,26 @@ is OK. Submitting the data is irreversible.</p>
     {% endfor %}
     </tbody>
 </table>
+{% endif %}
+{% if add_table %}
+<h1>Assets to be added</h1>
+<table>
+    <thead>
+        {% for name in all_columns %}
+        <th>{{ name }}</th>
+        {% endfor %}
+    </thead>
+    <tbody>
+    {% for row in add_table %}
+        <tr>
+            {% for col in row %}
+                <td>{{ col }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 {% endif %}
 
 <form id="{{ form_id }}" class="form form-horizontal" method="POST" enctype="multipart/form-data">
