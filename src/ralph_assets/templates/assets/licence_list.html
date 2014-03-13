@@ -11,12 +11,12 @@
     {% for category in categories %}
         <tr class="treegrid-{{ forloop.counter }}">
             <td>{{ category.name }}</td>
-            <td>{{ category.used }}</td>
+            <td>{{ category.used }} / {{ category.total }}</td>
         </tr>
         {% for licence in category.licences %}
             <tr class="treegrid-parent-{{ forloop.parentloop.counter }}">
                 <td><a href="{{ licence.url }}">{{ licence }}</a></td>
-                <td>{{ licence.used }}</td>
+                <td>{{ licence.used }} / {{ licence.number_bought }}</td>
             </tr>
         {% endfor %}
     {% endfor %}

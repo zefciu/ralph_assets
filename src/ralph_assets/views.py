@@ -1642,7 +1642,8 @@ class LicenceList(AssetsBase):
             *args, **kwargs
         )
         data['categories'] = SoftwareCategory.objects.annotate(
-            used=Count('licence__assets')
+            used=Count('licence__assets'),
+            total=Sum('licence__number_bought'),
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
         return data
 
