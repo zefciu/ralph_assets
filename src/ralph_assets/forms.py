@@ -82,11 +82,11 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'warehouse', 'device_info',
+            'type', 'model', 'warehouse', 'property_of', 'device_info',
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'request_date', 'delivery_date',
+            'source', 'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
             'owner', 'user',
         )
@@ -420,11 +420,10 @@ class DependencyAssetForm(DependencyForm):
                 'imei',
                 'category',
                 AssetCategory.objects.filter(pk__in=[
-                    # TODO: uncomment it, when ready
-                    #"1-1-back-office-mobile-devices",
-                    #"1-1-1-back-office-mobile-devices-mobile-phone",
-                    #"1-1-1-back-office-mobile-devices-smartphone",
-                    #"1-1-1-back-office-mobile-devices-tablet",
+                    "1-1-back-office-mobile-devices",
+                    "2-1-1-back-office-mobile-devices-mobile-phone",
+                    "1-1-1-back-office-mobile-devices-smartphone",
+                    "1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
                 SHOW,
             ),
