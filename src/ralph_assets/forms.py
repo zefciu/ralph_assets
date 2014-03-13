@@ -147,7 +147,7 @@ class BulkEditAssetForm(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year',
+            'provider', 'source', 'status', 'production_year', 'purpose',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -172,6 +172,22 @@ class BulkEditAssetForm(ModelForm):
 
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
+
+
+class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
+    class Meta(BulkEditAssetForm.Meta):
+        #fields = BulkEditAssetForm.Meta.fields + ('purpose',)
+        pass
+
+    purpose = ChoiceField(
+        required=True,
+        choices=models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+
+class DataCenterBulkEditAssetForm(BulkEditAssetForm):
+    pass
 
 
 class DeviceForm(ModelForm):

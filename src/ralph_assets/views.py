@@ -1082,11 +1082,37 @@ class BulkEdit(AssetsBase, Base):
         if not assets_count:
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeBulkEditAssetForm'
+            if self.mode == 'back_office' else 'DataCenterBulkEditAssetForm'
+        )
+        bulk_form_class = getattr(assets_forms, form_name)
+
+
         AssetFormSet = modelformset_factory(
             Asset,
-            form=BulkEditAssetForm,
+            form=bulk_form_class,
             extra=0,
         )
+
+
+        # TODO: get office_data
+        assets = Asset.objects.filter(
+            pk__in=self.request.GET.getlist('select')
+        )
+        self.asset_formset = AssetFormSet(queryset=assets)
+        for idx, asset in enumerate(assets):
+            if asset.office_info:
+                for field in ['purpose']:
+                    self.asset_formset.forms[idx].fields[field].initial = (
+                        getattr(asset.office_info, field)
+                    )
+
+
+
         self.asset_formset = AssetFormSet(
             queryset=Asset.objects.filter(
                 pk__in=self.request.GET.getlist('select')
@@ -1095,9 +1121,21 @@ class BulkEdit(AssetsBase, Base):
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
+
+
+
+        #TODO: get BO or DC form by self.mode
+        form_name = (
+            'BackOfficeBulkEditAssetForm'
+            if self.mode == 'back_office' else 'DataCenterBulkEditAssetForm'
+        )
+        form_name = 'BulkEditAssetForm'
+        bulk_form_class = getattr(assets_forms, form_name)
+
+
         AssetFormSet = modelformset_factory(
             Asset,
-            form=BulkEditAssetForm,
+            form=bulk_form_class,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
@@ -1107,6 +1145,25 @@ class BulkEdit(AssetsBase, Base):
                 for instance in instances:
                     instance.modified_by = self.request.user.get_profile()
                     instance.save(user=self.request.user)
+
+
+                    # TODO: save office_data
+                    form = [
+                        form for form in self.asset_formset.forms
+                        if form.cleaned_data['id'] == instance
+                    ][0]
+                    office_info_data = {}
+                    for field in ['purpose']:
+                        if field in form.cleaned_data:
+                            office_info_data[field] = (
+                                form.cleaned_data.pop(field)
+                            )
+
+
+                    _update_office_info(
+                        self.request.user, instance, office_info_data,
+                    )
+
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
         form_error = self.asset_formset.get_form_error()
