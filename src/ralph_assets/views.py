@@ -5,12 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import re
-from rq import get_current_job
-
+import datetime
 import itertools as it
-from collections import Counter
+import re
 import xlrd
+
+from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
@@ -20,11 +20,14 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Sum
-from django.http import HttpResponseRedirect, Http404
+from django.db.models import Sum, Q
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
+from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
+from inkpy.api import generate_pdf
+from rq import get_current_job
 
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -49,6 +52,7 @@ from ralph_assets.models import (
     Licence,
     OfficeInfo,
     PartInfo,
+    ReportOdtSource,
     SoftwareCategory,
 )
 from ralph_assets.models_assets import AssetType, MODE2ASSET_TYPE
@@ -252,6 +256,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
 
     def handle_search_data(self, get_csv=False):
         search_fields = [
+            'id',
             'niw',
             'category',
             'invoice_no',
@@ -372,9 +377,14 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(task_url=field_value)
                     else:
                         all_q &= Q(task_url__icontains=field_value)
+                elif field == 'id':
+                        all_q &= Q(
+                            id__in=[int(id) for id in field_value.split("|")],
+                        )
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
+
         # now fields within ranges.
         search_date_fields = [
             'invoice_date', 'request_date', 'delivery_date',
@@ -1469,4 +1479,103 @@ class LicenceList(AssetsBase):
         data['categories'] = SoftwareCategory.objects.annotate(
             used=Sum('licence__used')
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        return data
+
+
+class InvoiceReport(AssetsBase):
+    template_name = 'assets/invoice_report.html'
+    sidebar_selected = None
+
+    def show_unique_error_message(self, *args, **kwargs):
+        non_unique = {}
+        for name in ['invoice_no', 'invoice_date', 'provider']:
+            assets = self.assets.values(name).distinct()
+            if assets.count() != 1:
+                if name == 'invoice_date':
+                    data = ", ".join(
+                        asset[name].strftime("%d-%m-%Y") for asset in assets if asset[name]
+                    )
+                else:
+                    data = ", ".join(asset[name] for asset in assets if asset[name])
+                non_unique[name] = data
+        non_unique_items = "".join(
+            [
+                (lambda x, y: "{}: {} ".format(x, y)
+                )(key, value) for key, value in non_unique.iteritems() if value  # noqa
+            ]
+        )
+        messages.error(
+            self.request,
+            "{}: {}".format(
+                _("Selected asset has different: "),
+                non_unique_items,
+            )
+        )
+
+    def get(self, *args, **kwargs):
+        error = False
+        try:
+            self.template_file = ReportOdtSource.objects.get(
+                slug=settings.ASSETS_REPORTS['INVOICE_REPORT']['SLUG'],
+            )
+        except ReportOdtSource.DoesNotExist:
+            messages.error(self.request, _("Odt template DoesNotExist!"))
+            error = True
+        ids = self.request.GET.getlist('select')
+        self.assets = Asset.objects.filter(
+            pk__in=self.request.GET.getlist('select'),
+        )
+        asset_distinct = self.assets.values(
+            'invoice_no', 'invoice_date', 'provider'
+        ).distinct()
+        if asset_distinct.count() != 1:
+            self.show_unique_error_message()
+            error = True
+        if not all(asset_distinct[0].viewvalues()):
+            messages.error(self.request, _(
+                "Asset invoice number, invoice date or provider can not be empty"
+            ))
+            error = True
+        if error:
+            url = "{}search?id={}".format(
+                _get_return_link(self.mode), "|".join(id for id in ids),
+            )
+            return HttpResponseRedirect(url)
+        # generate invoice report
+        pdf_data = self.get_pdf_content()
+        response = HttpResponse(content=pdf_data, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
+            self.file_name,
+        )
+        return response
+
+    def get_pdf_content(self, *args, **kwargs):
+        data = self.get_report_data()
+        self.file_name = '{}-{}.pdf'.format(self.template_file.slug, data['id'])
+        output_path = '{}{}'.format(
+            settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
+            self.file_name,
+        )
+        generate_pdf(
+            self.template_file.template.path,
+            output_path,
+            data,
+        )
+        with open(output_path, 'rb') as f:
+            content = f.read()
+            f.close()
+        return content
+
+    def get_report_data(self, *args, **kwargs):
+        first_asset = self.assets[0]
+        data = {
+            "id": slugify(first_asset.invoice_no),
+            "base_info": {
+                "invoice_no": first_asset.invoice_no,
+                "invoice_date": first_asset.invoice_date,
+                "provider": first_asset.provider,
+                "datetime": datetime.datetime.now(),
+            },
+            "assets": self.assets,
+        }
         return data

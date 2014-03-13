@@ -25,6 +25,7 @@ from ralph_assets.models_assets import (
     DeviceInfo,
     OfficeInfo,
     PartInfo,
+    ReportOdtSource,
     Warehouse,
 )
 from ralph_assets.models_sam import (  # noqa
@@ -274,6 +275,7 @@ __all__ = [
     'DeviceInfo',
     'OfficeInfo',
     'PartInfo',
+    'ReportOdtSource',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',
