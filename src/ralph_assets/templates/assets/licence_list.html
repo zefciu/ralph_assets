@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block content %}
-<table class="table tree">
+<table class="table tree table-bordered">
     <thead>
         <th>{% trans "Name" %}</th>
         <th>{% trans "Used" %}</th>
@@ -21,6 +21,7 @@
         {% endfor %}
     {% endfor %}
  </table>
+{% pagination categories url_query=url_query show_all=0 fugue_icons=1 %}
 {% endblock %}
 
 {% block scripts %}

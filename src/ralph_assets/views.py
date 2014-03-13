@@ -75,6 +75,7 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
+LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 
@@ -1596,6 +1597,7 @@ class LicenceFormView(AssetsBase):
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
             self.form.save_m2m()
+            messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
@@ -1605,6 +1607,7 @@ class AddLicence(LicenceFormView):
     """Add a new licence"""
 
     caption = _('Add Licence')
+    message = _('Licence added')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1619,6 +1622,7 @@ class EditLicence(LicenceFormView):
     """Edit licence"""
 
     caption = _('Edit Licence')
+    message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
@@ -1641,10 +1645,14 @@ class LicenceList(AssetsBase):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
-        data['categories'] = SoftwareCategory.objects.annotate(
+        page = self.request.GET('page', 1)
+        categories = SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
             total=Sum('licence__number_bought'),
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        data['categories'] = Paginator(
+            categories, LICENCE_PAGE_SIZE
+        ).page(page)
         return data
 
 

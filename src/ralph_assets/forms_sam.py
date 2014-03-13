@@ -75,6 +75,8 @@ class LicenceForm(forms.ModelForm):
             raise forms.ValidationError(_(
                 "You don't have sufficient licences!"
             ))
+        if 'software_category' not in result:
+            return result
         if result['software_category'].asset_type is None:
             result['software_category'].asset_type = MODE2ASSET_TYPE[self.mode]
         if result['software_category'].pk is None:

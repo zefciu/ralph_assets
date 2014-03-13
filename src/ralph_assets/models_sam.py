@@ -75,8 +75,6 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     sn = models.CharField(
         verbose_name=_('SN / Key'),
         max_length=200,
-        null=True,
-        blank=True,
         unique=True,
     )
     parent = TreeForeignKey(
