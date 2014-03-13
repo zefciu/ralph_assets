@@ -13,7 +13,7 @@
             <td>{{ category.name }}</td>
             <td>{{ category.used }} / {{ category.total }}</td>
         </tr>
-        {% for licence in category.licences %}
+        {% for licence in category.licences_annotated %}
             <tr class="treegrid-parent-{{ forloop.parentloop.counter }}">
                 <td><a href="{{ licence.url }}">{{ licence }}</a></td>
                 <td>{{ licence.used }} / {{ licence.number_bought }}</td>
