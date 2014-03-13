@@ -35,7 +35,7 @@ class DataUploadField(forms.FileField):
             if update:
                 name_row = name_row[1:]
             names_per_sheet[sheet_name] = col_names = [
-                cell.value for cell in name_row[:]
+                cell.value for cell in name_row
             ]
             update_per_sheet[sheet_name] = {}
             add_per_sheet[sheet_name] = []
