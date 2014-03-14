@@ -47,3 +47,7 @@ p.help {
     width: 220px;
     float: left;
 }
+
+.bulk-table input, .bulk-table select {
+    min-width: 100px;
+}
