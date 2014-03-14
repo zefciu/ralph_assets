@@ -20,36 +20,6 @@ form.form-inline {
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript">
-      $(document).ready(function() {
-            $('#post_edit_all').click(function() {
-                var ids = [];
-                $("#assets_table input[type=checkbox]").each(
-                    function(index, val){
-                        if(val.checked) {
-                            ids.push($(val).val());
-                        };
-                    }
-                );
-                if (ids.length) {
-                    window.location.href = 'bulkedit?select=' + ids.join('&select=');
-                }
-                return false;
-            });
-            $('.del-asset-btn').click(function() {
-                if (!confirm("Are you sure to delete Asset?")) {
-                    return false;
-                }
-            });
-            require(['reports'], function(reports) {
-                reports.setup({
-                    trigger: $('.pagination').find('a').last(),
-                    progressBar: '#async-progress',
-                    etaEl: '#eta'
-                });
-            });
-        });
-    </script>
 {% endblock %}
 
 
