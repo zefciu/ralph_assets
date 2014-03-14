@@ -9,7 +9,11 @@ from __future__ import unicode_literals
 import re
 import time
 
-from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
+from ajax_select.fields import (
+    AutoCompleteSelectField,
+    AutoCompleteField,
+    AutoCompleteSelectMultipleField,
+)
 from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
 from django.forms import (
     BooleanField,
@@ -50,6 +54,7 @@ LOOKUPS = {
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
 
 }
@@ -426,6 +431,16 @@ class DependencyAssetForm(DependencyForm):
     Launches a plugin which depending on the category field gives the
     opportunity to complete fields such as slots
     """
+
+
+    def __init__(self, *args, **kwargs):
+        if 'instance' in kwargs:
+            initial = kwargs.setdefault('initial', {})
+            initial['licences'] = [
+                licence.pk for licence in kwargs['instance'].licence_set.all()
+            ]
+        super(DependencyAssetForm, self).__init__(*args, **kwargs)
+
     @property
     def dependencies(self):
         """
@@ -522,6 +537,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+    licences = AutoCompleteSelectMultipleField(LOOKUPS['free_licences'])
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
         required=True,
@@ -651,6 +667,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+    licences = AutoCompleteSelectMultipleField(LOOKUPS['free_licences'])
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
         required=True,

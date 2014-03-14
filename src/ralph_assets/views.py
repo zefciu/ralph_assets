@@ -663,7 +663,7 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     if office_info_data:
         _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
-    return asset.id
+    return asset
 
 
 class AddDevice(AssetsBase):
@@ -704,7 +704,7 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in ["barcode", "sn", "imei"]:
+                if f_name in {"barcode", "sn", "licences", "imei"}:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
@@ -733,6 +733,9 @@ class AddDevice(AssetsBase):
                         office_info_data,
                     )
                 )
+                for licence in self.asset_form.cleaned_data['licences']:
+                    device.licence_set.add(licence)
+                ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
             if len(ids) == 1:
@@ -925,6 +928,9 @@ class EditDevice(AssetsBase):
                 if self.device_info_form.cleaned_data.get('create_stock'):
                     self.asset.create_stock_device()
                 self.asset.save(user=self.request.user)
+                self.asset.licence_set.clear()
+                for licence in self.asset_form.cleaned_data['licences']:
+                    self.asset.licence_set.add(licence)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
