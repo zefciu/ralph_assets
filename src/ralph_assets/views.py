@@ -1634,12 +1634,10 @@ class InvoiceReport(AssetsBase):
                 slug=settings.ASSETS_REPORTS['INVOICE_REPORT']['SLUG'],
             )
         except ReportOdtSource.DoesNotExist:
-            messages.error(self.request, _("Odt template DoesNotExist!"))
+            messages.error(self.request, _("Odt template does not exist!"))
             error = True
         ids = self.request.GET.getlist('select')
-        self.assets = Asset.objects.filter(
-            pk__in=self.request.GET.getlist('select'),
-        )
+        self.assets = Asset.objects.filter(pk__in=ids)
         asset_distinct = self.assets.values(
             'invoice_no', 'invoice_date', 'provider'
         ).distinct()
