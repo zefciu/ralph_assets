@@ -432,7 +432,6 @@ class DependencyAssetForm(DependencyForm):
     opportunity to complete fields such as slots
     """
 
-
     def __init__(self, *args, **kwargs):
         if 'instance' in kwargs:
             initial = kwargs.setdefault('initial', {})
@@ -537,7 +536,10 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
-    licences = AutoCompleteSelectMultipleField(LOOKUPS['free_licences'])
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
+    )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
         required=True,
@@ -667,7 +669,10 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
-    licences = AutoCompleteSelectMultipleField(LOOKUPS['free_licences'])
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
+    )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
         required=True,

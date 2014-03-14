@@ -25,7 +25,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
