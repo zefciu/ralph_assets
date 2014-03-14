@@ -5,11 +5,13 @@
 {% block form_title %}Edit part{% endblock %}
 
 {% block office_info_inputs %}
-<div class="span6 well">
-  {% for field in office_info_form %}
-    {% field_wrapper field %}
-  {% endfor %}
-</div>
+{% if office_info_form %}
+  <div class="span6 well">
+    {% for field in office_info_form %}
+      {% field_wrapper field %}
+    {% endfor %}
+  </div>
+{% endif %}
 <div class="span6">
     <h6>
       <a href="{{ history_link }}">Full history</a>
