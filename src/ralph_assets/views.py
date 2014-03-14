@@ -754,8 +754,9 @@ def _update_office_info(user, asset, office_info_data):
         elif office_info_data['attachment'] is False:
             office_info_data['attachment'] = None
     office_info.__dict__.update(**office_info_data)
-    asset.office_info = office_info
     office_info.save(user=user)
+    asset.office_info = office_info
+    asset.save(user=user)
     return asset
 
 

@@ -47,7 +47,10 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
 
 
 def get_choices(instance, field, id):
-    id = int(id)
+    try:
+        id = int(id)
+    except TypeError, ValueError:
+        return id
     choices = instance._meta.get_field_by_name(field)[0].get_choices()
     for choice_id, value in choices:
         if choice_id == id:
