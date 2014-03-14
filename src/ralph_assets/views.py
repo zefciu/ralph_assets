@@ -502,6 +502,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
+            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE']
         })
         return ret
 
@@ -1624,6 +1625,9 @@ class InvoiceReport(AssetsBase):
         )
 
     def get(self, *args, **kwargs):
+        if not settings.ASSETS_REPORTS['ENABLE']:
+            messages.error(self.request, _("Assets reports is disabled"))
+            return HttpResponseRedirect(_get_return_link(self.mode))
         error = False
         try:
             self.template_file = ReportOdtSource.objects.get(
