@@ -929,7 +929,9 @@ class EditDevice(AssetsBase):
                     self.asset.create_stock_device()
                 self.asset.save(user=self.request.user)
                 self.asset.licence_set.clear()
-                for licence in self.asset_form.cleaned_data['licences']:
+                for licence in self.asset_form.cleaned_data.get(
+                    'licences', []
+                ):
                     self.asset.licence_set.add(licence)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
