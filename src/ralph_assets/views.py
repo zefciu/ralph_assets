@@ -33,10 +33,8 @@ from ralph_assets.forms import (
     AddDeviceForm,
     AddPartForm,
     BasePartForm,
-    BulkEditAssetForm,
     SplitDevice,
     DeviceForm,
-    EditDeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -178,17 +176,24 @@ class AssetsBase(Base):
                     getattr(self.asset.office_info, field, '')
                 )
 
-    def form_dispatcher(self):
+    def form_dispatcher(self, class_name):
         """
-        """
+        Returns form class depending on view mode ('backoffice' or
+        'datacenter') and passed *class_name* arg.
 
-        # TODO: rewrite it & write docstring
-        form_name = (
-            'BackOfficeEditAssetForm'
-            if self.mode == 'back_office' else 'DataCenterEditAssetForm'
+        :param class_name: base class name common for both views BO, DC
+        :returns class: form class from *ralph_assets.forms* module
+        :rtype class:
+        """
+        mode_name = (
+            'BackOffice' if self.mode == 'back_office' else 'DataCenter'
         )
-        asset_form = getattr(assets_forms, form_name)
-        return asset_form
+        form_class_name = "{}{}Form".format(mode_name, class_name)
+        try:
+            form_class = getattr(assets_forms, form_class_name)
+        except AttributeError:
+            raise Exception("No form class named: {}".format(form_class_name))
+        return form_class
 
 
 class DataTableColumnAssets(DataTableColumn):
@@ -659,17 +664,8 @@ class AddDevice(AssetsBase):
     def get(self, *args, **kwargs):
         mode = self.mode
         self.asset_form = AddDeviceForm(mode=mode)
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeAddDeviceForm'
-            if self.mode == 'back_office' else 'DataCenterAddDeviceForm'
-        )
-        device_form_class = getattr(assets_forms, form_name)
+        device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(mode=self.mode)
-
-
         self.device_info_form = DeviceForm(
             mode=mode,
             exclude='create_stock',
@@ -678,17 +674,8 @@ class AddDevice(AssetsBase):
 
     def post(self, *args, **kwargs):
         mode = self.mode
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeAddDeviceForm'
-            if self.mode == 'back_office' else 'DataCenterAddDeviceForm'
-        )
-        device_form_class = getattr(assets_forms, form_name)
+        device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
-
-
         self.device_info_form = DeviceForm(
             self.request.POST,
             mode=mode,
@@ -707,9 +694,6 @@ class AddDevice(AssetsBase):
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
-
-
-
             office_info_data = {}
             asset_data, office_info_data = _move_data(
                 asset_data, office_info_data, ['purpose']
@@ -770,8 +754,8 @@ def _update_office_info(user, asset, office_info_data):
         elif office_info_data['attachment'] is False:
             office_info_data['attachment'] = None
     office_info.__dict__.update(**office_info_data)
-    office_info.save(user=user)
     asset.office_info = office_info
+    office_info.save(user=user)
     return asset
 
 
@@ -835,20 +819,11 @@ class EditDevice(AssetsBase):
         )
         if not self.asset.device_info:  # it isn't device asset
             raise Http404()
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeEditDeviceForm'
-            if self.mode == 'back_office' else 'DataCenterEditDeviceForm'
-        )
-        device_form_class = getattr(assets_forms, form_name)
+        device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
         )
         self.write_office_info2asset_form()
-
-
         self.device_info_form = DeviceForm(
             instance=self.asset.device_info,
             mode=self.mode,
@@ -863,21 +838,12 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeEditDeviceForm'
-            if self.mode == 'back_office' else 'DataCenterEditDeviceForm'
-        )
-        device_form_class = getattr(assets_forms, form_name)
+        device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             post_data,
             instance=self.asset,
             mode=self.mode,
         )
-
-
         self.device_info_form = DeviceForm(
             post_data,
             mode=self.mode,
@@ -1082,24 +1048,12 @@ class BulkEdit(AssetsBase, Base):
         if not assets_count:
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeBulkEditAssetForm'
-            if self.mode == 'back_office' else 'DataCenterBulkEditAssetForm'
-        )
-        bulk_form_class = getattr(assets_forms, form_name)
-
-
+        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
             form=bulk_form_class,
             extra=0,
         )
-
-
-        # TODO: get office_data
         assets = Asset.objects.filter(
             pk__in=self.request.GET.getlist('select')
         )
@@ -1110,29 +1064,10 @@ class BulkEdit(AssetsBase, Base):
                     self.asset_formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field)
                     )
-
-
-
-        self.asset_formset = AssetFormSet(
-            queryset=Asset.objects.filter(
-                pk__in=self.request.GET.getlist('select')
-            )
-        )
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-
-
-
-        #TODO: get BO or DC form by self.mode
-        form_name = (
-            'BackOfficeBulkEditAssetForm'
-            if self.mode == 'back_office' else 'DataCenterBulkEditAssetForm'
-        )
-        form_name = 'BulkEditAssetForm'
-        bulk_form_class = getattr(assets_forms, form_name)
-
-
+        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
             form=bulk_form_class,
@@ -1142,28 +1077,18 @@ class BulkEdit(AssetsBase, Base):
         if self.asset_formset.is_valid():
             with transaction.commit_on_success():
                 instances = self.asset_formset.save(commit=False)
-                for instance in instances:
+                for idx, instance in enumerate(instances):
                     instance.modified_by = self.request.user.get_profile()
                     instance.save(user=self.request.user)
-
-
-                    # TODO: save office_data
-                    form = [
-                        form for form in self.asset_formset.forms
-                        if form.cleaned_data['id'] == instance
-                    ][0]
-                    office_info_data = {}
-                    for field in ['purpose']:
-                        if field in form.cleaned_data:
-                            office_info_data[field] = (
-                                form.cleaned_data.pop(field)
-                            )
-
-
-                    _update_office_info(
-                        self.request.user, instance, office_info_data,
+                    new_src, office_info_data = _move_data(
+                        self.asset_formset.forms[idx].cleaned_data,
+                        {}, ['purpose']
                     )
-
+                    self.asset_formset.forms[idx].cleaned_data = new_src
+                    instance = _update_office_info(
+                        self.request.user, instance,
+                        office_info_data,
+                    )
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(self.request.get_full_path())
         form_error = self.asset_formset.get_form_error()

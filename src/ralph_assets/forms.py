@@ -182,7 +182,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     purpose = ChoiceField(
         required=True,
         choices=models_assets.AssetPurpose(),
-        label='Purpose'
+        label='Purpose',
     )
 
 
