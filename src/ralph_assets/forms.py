@@ -53,6 +53,13 @@ LOOKUPS = {
 
 }
 
+
+def move_after(_list, static, dynamic):
+    _list.remove(dynamic)
+    next_pos = _list.index(static)
+    _list.insert(next_pos, dynamic)
+    return _list
+
 imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
 imei_since_2003 = re.compile(r'^\d{8} *\d{6} *\d$')
 
@@ -175,9 +182,6 @@ class BulkEditAssetForm(ModelForm):
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
-    class Meta(BulkEditAssetForm.Meta):
-        #fields = BulkEditAssetForm.Meta.fields + ('purpose',)
-        pass
 
     purpose = ChoiceField(
         required=True,
@@ -437,7 +441,7 @@ class DependencyAssetForm(DependencyForm):
                 'category',
                 AssetCategory.objects.filter(pk__in=[
                     "1-1-back-office-mobile-devices",
-                    "2-1-1-back-office-mobile-devices-mobile-phone",
+                    "1-1-1-back-office-mobile-devices-mobile-phone",
                     "1-1-1-back-office-mobile-devices-smartphone",
                     "1-1-1-back-office-mobile-devices-tablet",
                 ]).all(),
@@ -574,6 +578,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             )
         return data
 
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
+
     def clean_production_year(self):
         return validate_production_year(self)
 
@@ -698,6 +705,9 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_production_year(self):
         return validate_production_year(self)
+
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
 
     def clean(self):
         if self.instance.deleted:
@@ -851,8 +861,9 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
-        # TODO: change purpose postion
-        #self.fields.keyOrder
+        self.fields.keyOrder = move_after(
+            self.fields.keyOrder, 'warehouse', 'purpose'
+        )
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
@@ -902,8 +913,9 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-        # TODO: change purpose postion
-        #self.fields.keyOrder
+        self.fields.keyOrder = move_after(
+            self.fields.keyOrder, 'warehouse', 'purpose'
+        )
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
