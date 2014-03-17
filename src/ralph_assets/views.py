@@ -1726,7 +1726,7 @@ class InvoiceReport(AssetsBase):
     def get_pdf_content(self, *args, **kwargs):
         content = None
         data = self.get_report_data()
-        self.file_name = '{}-{}-.pdf'.format(
+        self.file_name = '{}-{}-{}.pdf'.format(
             self.template_file.slug,
             data['id'],
             uuid.uuid4(),
