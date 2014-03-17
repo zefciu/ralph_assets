@@ -32,12 +32,18 @@ class Migration(SchemaMigration):
             'activation_token': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '40', 'blank': 'True'}),
             'birth_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
+            'company': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
+            'cost_center': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
             'country': ('django.db.models.fields.PositiveIntegerField', [], {'default': '153'}),
+            'department': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
+            'employee_id': ('django.db.models.fields.CharField', [], {'max_length': '64', 'blank': 'True'}),
             'gender': ('django.db.models.fields.PositiveIntegerField', [], {'default': '2'}),
             'home_page': (u'dj.choices.fields.ChoiceField', [], {'unique': 'False', 'primary_key': 'False', 'db_column': 'None', 'blank': 'False', u'default': '1', 'null': 'False', '_in_south': 'True', 'db_index': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_active': ('django.db.models.fields.DateTimeField', [], {'default': 'None', 'null': 'True', 'blank': 'True'}),
+            'manager': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
             'nick': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '30', 'blank': 'True'}),
+            'profit_center': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
             'time_zone': ('django.db.models.fields.FloatField', [], {'default': '1.0'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
         },
@@ -241,6 +247,7 @@ class Migration(SchemaMigration):
             'license_key': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'license_type': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'purpose': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': 'None', 'null': 'True', 'blank': 'True'}),
             'version': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'})
         },
         'ralph_assets.partinfo': {
