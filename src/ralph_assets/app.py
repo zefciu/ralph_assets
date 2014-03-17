@@ -36,6 +36,6 @@ class Assets(RalphModule):
             'INVOICE_REPORT': {
                 'SLUG': 'invoice-report',
             },
-            'TEMP_STORAGE_PATH': '/tmp/'
+            'TEMP_STORAGE_PATH': '/tmp/',
         }
         self.settings['ASSETS_REPORTS'] = asset_reports
