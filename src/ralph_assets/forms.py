@@ -37,6 +37,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
 )
+from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 LOOKUPS = {
@@ -51,6 +52,18 @@ LOOKUPS = {
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
 
 }
+
+
+def move_after(_list, static, dynamic):
+    """
+    Move *static* elem. after *dynamic* elem. in list *_list*
+    Both *static* and *dynamic* MUST belong to *_list*.
+    :return list: return _list with moved *dynamic* elem.
+    """
+    _list.remove(dynamic)
+    next_pos = _list.index(static)
+    _list.insert(next_pos, dynamic)
+    return _list
 
 imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
 imei_since_2003 = re.compile(r'^\d{8} *\d{6} *\d$')
@@ -81,11 +94,11 @@ class BulkEditAssetForm(ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'type', 'model', 'warehouse', 'device_info',
+            'type', 'model', 'warehouse', 'property_of', 'device_info',
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'request_date', 'delivery_date',
+            'source', 'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
             'owner', 'user',
         )
@@ -146,7 +159,7 @@ class BulkEditAssetForm(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year',
+            'provider', 'source', 'status', 'production_year', 'purpose',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -171,6 +184,19 @@ class BulkEditAssetForm(ModelForm):
 
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
+
+
+class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
+
+    purpose = ChoiceField(
+        required=True,
+        choices=models_assets.AssetPurpose(),
+        label='Purpose',
+    )
+
+
+class DataCenterBulkEditAssetForm(BulkEditAssetForm):
+    pass
 
 
 class DeviceForm(ModelForm):
@@ -557,6 +583,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             )
         return data
 
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
+
     def clean_production_year(self):
         return validate_production_year(self)
 
@@ -681,6 +710,9 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_production_year(self):
         return validate_production_year(self)
+
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
 
     def clean(self):
         if self.instance.deleted:
@@ -825,10 +857,28 @@ class AddDeviceForm(BaseAddAssetForm):
         return cleaned_data
 
 
+class BackOfficeAddDeviceForm(AddDeviceForm):
+    purpose = ChoiceField(
+        required=True,
+        choices=models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
+        self.fields.keyOrder = move_after(
+            self.fields.keyOrder, 'warehouse', 'purpose'
+        )
+
+
+class DataCenterAddDeviceForm(AddDeviceForm):
+    pass
+
+
 class OfficeForm(ModelForm):
     class Meta:
         model = OfficeInfo
-        exclude = ('imei', 'created', 'modified')
+        exclude = ('imei', 'purpose', 'created', 'modified')
         widgets = {
             'date_of_last_inventory': DateWidget(),
         }
@@ -857,6 +907,24 @@ class EditDeviceForm(BaseEditAssetForm):
                 _("If SN is empty - Barcode is required")
             )
         return cleaned_data
+
+
+class BackOfficeEditDeviceForm(EditDeviceForm):
+    purpose = ChoiceField(
+        required=True,
+        choices=models_assets.AssetPurpose(),
+        label='Purpose'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+        self.fields.keyOrder = move_after(
+            self.fields.keyOrder, 'warehouse', 'purpose'
+        )
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+    pass
 
 
 class SearchAssetForm(Form):
@@ -1021,6 +1089,11 @@ class DataCenterSearchAssetForm(SearchAssetForm):
 
 class BackOfficeSearchAssetForm(SearchAssetForm):
     imei = CharField(required=False, label='IMEI')
+    purpose = ChoiceField(
+        required=False,
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose'
+    )
 
 
 class DeleteAssetConfirmForm(Form):

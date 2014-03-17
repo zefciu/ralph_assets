@@ -37,7 +37,7 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
             continue
         if field in ('office_info', 'device_info', 'part_info'):
             continue
-        if field in ('type', 'license_type', 'status', 'source'):
+        if field in ('type', 'license_type', 'status', 'source', 'purpose'):
             orig = get_choices(instance, field, orig)
             new = get_choices(instance, field, new)
         if field == 'attachment':
@@ -47,6 +47,10 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
 
 
 def get_choices(instance, field, id):
+    try:
+        id = int(id)
+    except TypeError, ValueError:
+        return id
     choices = instance._meta.get_field_by_name(field)[0].get_choices()
     for choice_id, value in choices:
         if choice_id == id:
