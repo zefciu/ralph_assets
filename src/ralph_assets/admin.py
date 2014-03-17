@@ -20,6 +20,7 @@ from ralph_assets.models import (
     AssetModel,
     AssetOwner,
     LicenceType,
+    ReportOdtSource,
     SoftwareCategory,
     Warehouse,
 )
@@ -120,3 +121,11 @@ class AssetManufacturerAdmin(ModelAdmin):
     search_fields = ('name',)
 
 admin.site.register(AssetManufacturer, AssetManufacturerAdmin)
+
+
+class ReportOdtSourceAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = ('name', 'slug',)
+    prepopulated_fields = {"slug": ("name",)}
+
+admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)

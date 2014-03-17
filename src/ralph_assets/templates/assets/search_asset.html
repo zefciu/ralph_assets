@@ -20,36 +20,6 @@ form.form-inline {
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript">
-      $(document).ready(function() {
-            $('#post_edit_all').click(function() {
-                var ids = [];
-                $("#assets_table input[type=checkbox]").each(
-                    function(index, val){
-                        if(val.checked) {
-                            ids.push($(val).val());
-                        };
-                    }
-                );
-                if (ids.length) {
-                    window.location.href = 'bulkedit?select=' + ids.join('&select=');
-                }
-                return false;
-            });
-            $('.del-asset-btn').click(function() {
-                if (!confirm("Are you sure to delete Asset?")) {
-                    return false;
-                }
-            });
-            require(['reports'], function(reports) {
-                reports.setup({
-                    trigger: $('.pagination').find('a').last(),
-                    progressBar: '#async-progress',
-                    etaEl: '#eta'
-                });
-            });
-        });
-    </script>
 {% endblock %}
 
 
@@ -103,14 +73,14 @@ form.form-inline {
                       <ul class="dropdown-menu pull-right">
 
                     {% if row.get_data_type == 'device' %}
-                        <li><a href="./edit/device/{{row.id}}">Edit</a></li>
-                        <li><a href="./history/device/{{row.id}}">History</a></li>
+                        <li><a href="./edit/device/{{row.id}}">{% trans "Edit" %}</a></li>
+                        <li><a href="./history/device/{{row.id}}">{% trans "History" %}</a></li>
                         {% if row.device_info.ralph_device_id%}
-                            <li><a href="{% url search 'info' row.device_info.ralph_device_id %}">View in Ralph</a></li>
+                            <li><a href="{% url search 'info' row.device_info.ralph_device_id %}">{% trans "View in Ralph" %}</a></li>
                         {% endif %}
                     {% else %}
-                        <li><a href="./edit/part/{{row.id}}">Edit</a></li>
-                        <li><a href="./history/part/{{row.id}}">History</a></li>
+                        <li><a href="./edit/part/{{row.id}}">{% trans "Edit" %}</a></li>
+                        <li><a href="./history/part/{{row.id}}">{% trans "History" %}</a></li>
                     {% endif %}
                         {% if not row.deleted %}
                             <li class="divider"></li>
@@ -137,13 +107,18 @@ form.form-inline {
             </div>
             <div class="btn-group">
               <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
-                Bulk actions...
+                {% trans "Bulk actions..." %}
                 <span class="caret"></span>
               </a>
             <ul class="dropdown-menu">
                 <li>
-                    <a href="#" id='post_edit_all'>Edit selected</a>
+                    <a href="#" id='post_edit_all'>{% trans "Edit selected" %}</a>
                 </li>
+            {% if asset_reports_enable %}
+                <li>
+                    <a href="#" id='post_invoice_report'>{% trans "Create invoice report" %}</a>
+                </li>
+            {% endif %}
             </ul>
             </div>
 {% endblock %}

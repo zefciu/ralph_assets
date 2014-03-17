@@ -8,8 +8,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import datetime
+import os
 
 from dateutil.relativedelta import relativedelta
 
@@ -593,3 +593,8 @@ class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(PartInfo, self).__init__(*args, **kwargs)
+
+
+class ReportOdtSource(Named, SavingUser, TimeTrackable):
+    slug = models.SlugField(max_length=100, unique=True, blank=False)
+    template = models.FileField(upload_to=_get_file_path, blank=False)
