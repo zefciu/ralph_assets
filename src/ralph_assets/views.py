@@ -7,7 +7,9 @@ from __future__ import unicode_literals
 
 import datetime
 import itertools as it
+import logging
 import re
+import uuid
 import xlrd
 
 from collections import Counter
@@ -71,12 +73,13 @@ from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
 from ralph.util.reports import Report, set_progress
 
-
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
+
+logger = logging.getLogger(__name__)
 
 
 def _move_data(src, dst, fields):
@@ -407,7 +410,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                         all_q &= Q(task_url__icontains=field_value)
                 elif field == 'id':
                         all_q &= Q(
-                            id__in=[int(id) for id in field_value.split("|")],
+                            id__in=[int(id) for id in field_value.split(",")],
                         )
                 elif field == 'imei':
                     if exact:
@@ -502,7 +505,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
-            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE']
+            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
         })
         return ret
 
@@ -1609,11 +1612,11 @@ class InvoiceReport(AssetsBase):
                         asset[name] for asset in assets if asset[name]
                     )
                 non_unique[name] = data
-        non_unique_items = "".join(
+        non_unique_items = " ".join(
             [
-                (
-                    lambda x, y: "{}: {} ".format(x, y)
-                )(key, value) for key, value in non_unique.iteritems() if value
+                "{}: {}".format(
+                    key, value,
+                ) for key, value in non_unique.iteritems() if value
             ]
         )
         messages.error(
@@ -1622,6 +1625,11 @@ class InvoiceReport(AssetsBase):
                 _("Selected asset has different: "),
                 non_unique_items,
             )
+        )
+
+    def get_return_link(self, *args, **kwargs):
+        return "{}search?id={}".format(
+            _get_return_link(self.mode), ",".join(id for id in self.ids),
         )
 
     def get(self, *args, **kwargs):
@@ -1636,8 +1644,8 @@ class InvoiceReport(AssetsBase):
         except ReportOdtSource.DoesNotExist:
             messages.error(self.request, _("Odt template does not exist!"))
             error = True
-        ids = self.request.GET.getlist('select')
-        self.assets = Asset.objects.filter(pk__in=ids)
+        self.ids = self.request.GET.getlist('select')
+        self.assets = Asset.objects.filter(pk__in=self.ids)
         asset_distinct = self.assets.values(
             'invoice_no', 'invoice_date', 'provider'
         ).distinct()
@@ -1650,12 +1658,11 @@ class InvoiceReport(AssetsBase):
             ))
             error = True
         if error:
-            url = "{}search?id={}".format(
-                _get_return_link(self.mode), "|".join(id for id in ids),
-            )
-            return HttpResponseRedirect(url)
+            return HttpResponseRedirect(self.get_return_link())
         # generate invoice report
         pdf_data = self.get_pdf_content()
+        if not pdf_data:
+            return HttpResponseRedirect(self.get_return_link())
         response = HttpResponse(content=pdf_data, content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(
             self.file_name,
@@ -1663,8 +1670,13 @@ class InvoiceReport(AssetsBase):
         return response
 
     def get_pdf_content(self, *args, **kwargs):
+        content = None
         data = self.get_report_data()
-        self.file_name = '{}-{}.pdf'.format(self.template_file.slug, data['id'])
+        self.file_name = '{}-{}-.pdf'.format(
+            self.template_file.slug,
+            data['id'],
+            uuid.uuid4(),
+        )
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
             self.file_name,
@@ -1674,9 +1686,19 @@ class InvoiceReport(AssetsBase):
             output_path,
             data,
         )
-        with open(output_path, 'rb') as f:
-            content = f.read()
-            f.close()
+        try:
+            with open(output_path, 'rb') as f:
+                content = f.read()
+                f.close()
+        except IOError, e:
+            logger.error(
+                "Can not read report for assets ids: {} ({})".format(
+                    ",".join(id for id in self.ids), e,
+                )
+            )
+            messages.error(self.request, _(
+                "The error occurred, was not possible to read generated file."
+            ))
         return content
 
     def get_report_data(self, *args, **kwargs):
