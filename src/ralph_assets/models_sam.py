@@ -75,6 +75,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         verbose_name=_('SN / Key'),
         max_length=200,
         unique=True,
+        null=True,
     )
     parent = TreeForeignKey(
         'self',
