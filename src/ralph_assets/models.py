@@ -120,7 +120,7 @@ class AssetModelLookup(LookupChannel):
 
     def get_query(self, q, request):
         return self.model.objects.filter(
-            Q(name__icontains=q) & (Q(type=self.type) | Q(type=None))
+            Q(name__icontains=q) & Q(type=getattr(self, 'type', None))
         ).order_by('name')[:10]
 
     def get_result(self, obj):
