@@ -55,6 +55,11 @@ LOOKUPS = {
 
 
 def move_after(_list, static, dynamic):
+    """
+    Move *static* elem. after *dynamic* elem. in list *_list*
+    Both *static* and *dynamic* MUST belong to *_list*.
+    :return list: return _list with moved *dynamic* elem.
+    """
     _list.remove(dynamic)
     next_pos = _list.index(static)
     _list.insert(next_pos, dynamic)

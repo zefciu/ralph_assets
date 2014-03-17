@@ -82,6 +82,7 @@ class AssetPurpose(Choices):
     for_dashboards = _("for dashboards")
     for_events = _("for events")
     for_tests = _("for tests")
+    others = _("others")
 
 
 class AssetStatus(Choices):
