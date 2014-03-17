@@ -1744,7 +1744,7 @@ class InvoiceReport(AssetsBase):
             with open(output_path, 'rb') as f:
                 content = f.read()
                 f.close()
-        except IOError, e:
+        except IOError as e:
             logger.error(
                 "Can not read report for assets ids: {} ({})".format(
                     ",".join(id for id in self.ids), e,
