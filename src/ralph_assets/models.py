@@ -134,7 +134,7 @@ class AssetModelLookup(LookupChannel):
         return '''
         <li>
             <span>{model}</span>
-            <span class='auto-complete-asset-manufacturer'>({manufacturer})</span>
+            <span class='auto-complete-blue'>({manufacturer})</span>
         </li>
         '''.format(model=escape(obj.name), manufacturer=escape(manufacturer))
 
