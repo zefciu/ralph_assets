@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
 from ralph_assets.views import (
+    AddAttachment,
     AddDevice,
     AddPart,
     AssetSearch,
@@ -73,6 +74,9 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/invoice_report/$',
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
+    url(r'(?P<mode>(back_office|dc))/add_attachment/$',
+        login_required(AddAttachment.as_view()),
+        name='add_attachment'),
     url(
         r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),

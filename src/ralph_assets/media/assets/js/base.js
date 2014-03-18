@@ -30,13 +30,25 @@
         }
     };
 
+    Bulk.prototype.add_attachment = function() {
+        var ids = this.get_ids();
+        if (ids.length){
+            window.location.href = 'add_attachment?select=' + ids.join('&select=');
+        }
+    };
+
     $(document).ready(function() {
         var bulk = new Bulk();
         $('#post_edit_all').click(function() {
             bulk.edit_selected();
         });
+
         $('#post_invoice_report').click(function() {
             bulk.invoice_report();
+        });
+
+        $('#post_add_attachment').click(function() {
+            bulk.add_attachment();
         });
 
         $('.del-asset-btn').click(function() {

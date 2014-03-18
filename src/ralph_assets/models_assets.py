@@ -229,6 +229,13 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
     pass
 
 
+class Attachment(SavingUser, TimeTrackable):
+    # XXX: verfiy corectness of above lck's magic
+    relative_file_path = models.FileField(
+        upload_to=_get_file_path, blank=False, null=True
+    )
+
+
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     '''
     Asset model contain fields with basic information about single asset
@@ -325,6 +332,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
     )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
