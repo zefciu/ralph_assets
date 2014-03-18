@@ -11,22 +11,24 @@ from django.views.generic import RedirectView
 
 from ralph_assets.views import (
     AddDevice,
+    AddLicence,
     AddPart,
+    AssetSearch,
     BulkEdit,
     CategoryDependencyView,
-    SplitDeviceView,
-    EditDevice,
-    EditPart,
-    AssetSearch,
     DeleteAsset,
-    HistoryAsset,
-    XlsUploadView,
-    AddLicence,
+    DeleteLicence,
+    EditDevice,
     EditLicence,
+    EditPart,
+    HistoryAsset,
+    InvoiceReport,
     LicenceList,
+    SplitDeviceView,
+    XlsUploadView,
 )
 
-from ralph_assets.forms import XLS_UPLOAD_FORMS
+from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(
@@ -73,8 +75,11 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
+    url(r'(?P<mode>(back_office|dc))/invoice_report/$',
+        login_required(InvoiceReport.as_view()),
+        name='invoice_report'),
     url(
-        r'xls/$',
+        r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),
@@ -92,5 +97,10 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
         login_required(EditLicence.as_view()),
         name='edit_licence',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/delete/$',
+        login_required(DeleteLicence.as_view()),
+        name='delete_licence',
     ),
 )

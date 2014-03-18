@@ -3,21 +3,144 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+from django.template.defaultfilters import slugify
 
 
 class Migration(SchemaMigration):
 
+    def update_slug_and_child(self, assetcategoryid):
+        assetcategoryid = int(assetcategoryid[0])
+        for id, type, parent_id, parent_new_id, name in db.execute(
+            'SELECT id, type, parent_id, parent_new_id, name FROM ralph_assets_assetcategory WHERE id = %s',
+            [assetcategoryid]):
+            par_new_id = str(parent_new_id)
+            if parent_new_id is None:
+                par_new_id = ''
+            s = str(type) + " " + \
+                par_new_id + " " + name
+            slug = slugify(s)
+            db.execute("UPDATE ralph_assets_asset SET category_new_id = %s "
+                       "WHERE category_id = %s",
+                        [slug, id])
+            db.execute("UPDATE ralph_assets_assetmodel SET category_new_id = %s "
+                       "WHERE category_id = %s",
+                        [slug, id])
+            db.execute("UPDATE ralph_assets_assetcategory SET parent_new_id = %s "
+                       "WHERE parent_id = %s",
+                        [slug, id])
+            db.execute("UPDATE ralph_assets_assetcategory SET slug = %s "
+                       "WHERE id = %s",
+                        [slug, id])
+            for id in db.execute(
+                'SELECT id FROM ralph_assets_assetcategory WHERE parent_id = %s',
+                [id]):
+                self.update_slug_and_child(id)
+
     def forwards(self, orm):
-        # Adding field 'Asset.task_url'
-        db.add_column('ralph_assets_asset', 'task_url',
-                      self.gf('django.db.models.fields.URLField')(max_length=2048, null=True, blank=True),
+        # Changing field 'AssetCategory.id' (serial)
+        # to 'AssetCategory.slug' (slugfield)
+        db.add_column('ralph_assets_assetcategory', 'slug',
+                      self.gf('django.db.models.fields.SlugField')(default='slug', 
+                      unique=False, max_length=100),
                       keep_default=False)
+        db.add_column('ralph_assets_asset', 'category_new_id',
+                      self.gf('django.db.models.fields.SlugField')(null=True, 
+                      unique=False, max_length=100, db_index=False))
+        db.add_column('ralph_assets_assetcategory', 'parent_new_id',
+                      self.gf('django.db.models.fields.SlugField')(null=True, 
+                      unique=False, max_length=100, db_index=False))
+        db.add_column('ralph_assets_assetmodel', 'category_new_id',
+                      self.gf('django.db.models.fields.SlugField')(null=True, 
+                      unique=False, max_length=100, db_index=False))
 
+        db.start_transaction()
 
+        for id in db.execute(
+            'SELECT id FROM ralph_assets_assetcategory WHERE parent_id IS NULL'):
+            self.update_slug_and_child(id)
+            
+        db.commit_transaction()
+        
+        db.create_unique(u'ralph_assets_assetcategory', ['slug'])
+        db.delete_foreign_key("ralph_assets_asset", "category_id")
+        db.delete_foreign_key("ralph_assets_assetmodel", "category_id")
+        db.delete_foreign_key("ralph_assets_assetcategory", "parent_id")
+        db.delete_column('ralph_assets_assetcategory', 'parent_id')
+        db.delete_column('ralph_assets_assetcategory', 'id')
+        db.create_primary_key("ralph_assets_assetcategory", ["slug"])
+        db.send_create_signal('ralph_assets', ['ralph_assets_assetcategory'])
+        db.rename_column('ralph_assets_assetcategory', 'parent_new_id', 'parent_id')
+        db.delete_column('ralph_assets_asset', 'category_id')
+        db.rename_column('ralph_assets_asset', 'category_new_id', 'category_id')
+        db.delete_column('ralph_assets_assetmodel', 'category_id')
+        db.rename_column('ralph_assets_assetmodel', 'category_new_id', 'category_id')
+        db.create_index('ralph_assets_assetcategory', ['parent_id'], unique=False)
+        db.create_index('ralph_assets_asset', ['category_id'], unique=False)
+        db.create_index('ralph_assets_assetmodel', ['category_id'], unique=False)
+        sql = db.foreign_key_sql('ralph_assets_asset',
+            'category_id', 'ralph_assets_assetcategory', 'slug')
+        db.execute(sql)
+        sql = db.foreign_key_sql('ralph_assets_assetmodel',
+            'category_id', 'ralph_assets_assetcategory', 'slug')
+        db.execute(sql)
+        sql = db.foreign_key_sql('ralph_assets_assetcategory',
+            'parent_id', 'ralph_assets_assetcategory', 'slug')
+        db.execute(sql)
+        try:
+            db.delete_unique('ralph_assets_assetcategory', ['name'])
+        except ValueError:
+            pass
+        
     def backwards(self, orm):
-        # Deleting field 'Asset.task_url'
-        db.delete_column('ralph_assets_asset', 'task_url')
-
+        db.delete_primary_key("ralph_assets_assetcategory")
+        db.add_column('ralph_assets_assetcategory', 'parent_new_id',
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
+                      null=True, db_index=False))
+        db.add_column('ralph_assets_assetcategory', 'id',
+                      self.gf('django.db.models.fields.AutoField')(blank=True, 
+                      null=False, db_index=False, primary_key=True, max_length=10))
+        db.add_column('ralph_assets_asset', 'category_new_id',
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
+                      null=True, db_index=False))
+        db.add_column('ralph_assets_assetmodel', 'category_new_id',
+                      self.gf('django.db.models.fields.IntegerField')(blank=True, 
+                      null=True, db_index=False))
+        db.start_transaction()
+        for i, slug in enumerate(
+            db.execute('SELECT slug FROM ralph_assets_assetcategory')):
+            slug = slug[0]
+            db.execute("UPDATE ralph_assets_assetcategory SET id = %s "
+                       "WHERE slug = %s",
+                        [i+1, slug])
+            db.execute("UPDATE ralph_assets_assetcategory SET parent_new_id = %s "
+                       "WHERE parent_id = %s",
+                        [i+1, slug])
+            db.execute("UPDATE ralph_assets_asset SET category_new_id = %s "
+                       "WHERE category_id = %s",
+                        [i+1, slug])
+            db.execute("UPDATE ralph_assets_assetmodel SET category_new_id = %s "
+                       "WHERE category_id = %s",
+                        [i+1, slug])
+        db.commit_transaction()
+        db.delete_column('ralph_assets_assetcategory', 'slug')
+        db.delete_column('ralph_assets_assetcategory', 'parent_id')
+        db.rename_column('ralph_assets_assetcategory', 'parent_new_id', 'parent_id')
+        db.delete_column('ralph_assets_asset', 'category_id')
+        db.rename_column('ralph_assets_asset', 'category_new_id', 'category_id')
+        db.delete_column('ralph_assets_assetmodel', 'category_id')
+        db.rename_column('ralph_assets_assetmodel', 'category_new_id', 'category_id')
+        sql = db.foreign_key_sql('ralph_assets_asset',
+            'category_id', 'ralph_assets_assetcategory', 'id')
+        db.execute(sql)
+        sql = db.foreign_key_sql('ralph_assets_assetmodel',
+            'category_id', 'ralph_assets_assetcategory', 'id')
+        db.execute(sql)
+        sql = db.foreign_key_sql('ralph_assets_assetcategory',
+            'parent_id', 'ralph_assets_assetcategory', 'id')
+        db.execute(sql)
+        db.create_index('ralph_assets_assetcategory', ['parent_id'], unique=False)
+        db.create_index('ralph_assets_asset', ['category_id'], unique=False)
+        db.create_index('ralph_assets_assetmodel', ['category_id'], unique=False)
 
     models = {
         'account.profile': {
@@ -91,10 +214,12 @@ class Migration(SchemaMigration):
             'niw': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'office_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.OfficeInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'owner': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'owner'", 'null': 'True', 'to': "orm['auth.User']"}),
             'part_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.PartInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
             'production_use_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'production_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'provider_order_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
@@ -109,6 +234,7 @@ class Migration(SchemaMigration):
             'support_void_reporting': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
             'task_url': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'user'", 'null': 'True', 'to': "orm['auth.User']"}),
             'warehouse': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Warehouse']", 'on_delete': 'models.PROTECT'})
         },
         'ralph_assets.assetcategory': {
@@ -116,17 +242,17 @@ class Migration(SchemaMigration):
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_blade': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'False', 'max_length': '50'}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.AssetCategory']"}),
             'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'type': ('django.db.models.fields.PositiveIntegerField', [], {})
+            'type': ('django.db.models.fields.PositiveIntegerField', [], {}),
+            'slug': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '100', 'blank': 'True', 'primary_key': 'True'})
         },
         'ralph_assets.assethistorychange': {
             'Meta': {'object_name': 'AssetHistoryChange'},
@@ -164,7 +290,16 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
-            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
+            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
+            'type': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True'})
+        },
+        'ralph_assets.assetowner': {
+            'Meta': {'object_name': 'AssetOwner'},
+            'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
         'ralph_assets.deviceinfo': {
             'Meta': {'object_name': 'DeviceInfo'},
@@ -196,6 +331,7 @@ class Migration(SchemaMigration):
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.Licence']"}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
+            'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'sn': ('django.db.models.fields.CharField', [], {'max_length': '200', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'software_category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.SoftwareCategory']", 'on_delete': 'models.PROTECT'}),

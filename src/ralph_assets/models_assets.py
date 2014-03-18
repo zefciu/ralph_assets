@@ -8,8 +8,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import datetime
+import os
 
 from dateutil.relativedelta import relativedelta
 
@@ -43,6 +43,14 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
+class CreatableFromStr(object):
+    """Simple objects that can be created from string."""
+
+    @classmethod  # Decided not to play with abstractclassmethods
+    def create_from_string(cls, asset_type, s):
+        raise NotImplementedError
+
+
 class LicenseType(Choices):
     _ = Choices.Choice
     not_applicable = _("not applicable")
@@ -60,10 +68,28 @@ class AssetType(Choices):
     back_office = _("back office")
     administration = _("administration")
 
+
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
     'back_office': AssetType.back_office,
 }
+
+
+ASSET_TYPE2MODE = {
+    AssetType.data_center: 'dc',
+    AssetType.back_office: 'back_office',
+}
+
+
+class AssetPurpose(Choices):
+    _ = Choices.Choice
+
+    for_contractor = _("for contractor")
+    sectional = _("sectional")
+    for_dashboards = _("for dashboards")
+    for_events = _("for events")
+    for_tests = _("for tests")
+    others = _("others")
 
 
 class AssetStatus(Choices):
@@ -101,9 +127,18 @@ class AssetCategoryType(Choices):
     data_center = _("data center")
 
 
-class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
+class AssetManufacturer(
+    CreatableFromStr,
+    TimeTrackable,
+    EditorTrackable,
+    Named
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 class AssetModel(
@@ -137,7 +172,7 @@ class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
 
 class AssetCategory(
         MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50, unique=False)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
@@ -148,6 +183,9 @@ class AssetCategory(
         blank=True,
         related_name='children',
     )
+
+    slug = models.SlugField(max_length=100, unique=True, blank=True,
+                            primary_key=True)
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -248,7 +286,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=1024,
         blank=True,
     )
-    niw = models.CharField(max_length=50, null=True, blank=True)
+    niw = models.CharField(max_length=50, null=True, blank=True,
+                           verbose_name='Inventory number')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
@@ -288,8 +327,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         null=True,
         blank=True,
     )
-    guardian = models.ForeignKey(
-        User, null=True, blank=True, related_name="guardian",
+    owner = models.ForeignKey(
+        User, null=True, blank=True, related_name="owner",
     )
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
@@ -525,6 +564,13 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
     date_of_last_inventory = models.DateField(
         null=True, blank=True)
     last_logged_user = models.CharField(max_length=100, null=True, blank=True)
+    imei = models.CharField(
+        max_length=18, null=True, blank=True, unique=True
+    )
+    purpose = models.PositiveSmallIntegerField(
+        verbose_name=_("purpose"), choices=AssetPurpose(), null=True,
+        blank=True, default=None
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(
@@ -555,3 +601,8 @@ class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(PartInfo, self).__init__(*args, **kwargs)
+
+
+class ReportOdtSource(Named, SavingUser, TimeTrackable):
+    slug = models.SlugField(max_length=100, unique=True, blank=False)
+    template = models.FileField(upload_to=_get_file_path, blank=False)

@@ -18,14 +18,72 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['AssetOwner'])
 
-        # Adding field 'Licence.property_of'
-        db.add_column('ralph_assets_licence', 'property_of',
-                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT),
+        # Adding model 'Licence'
+        db.create_table('ralph_assets_licence', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('cache_version', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
+            ('manufacturer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetManufacturer'], null=True, on_delete=models.PROTECT, blank=True)),
+            ('licence_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.LicenceType'], on_delete=models.PROTECT)),
+            ('property_of', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT)),
+            ('software_category', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.SoftwareCategory'], on_delete=models.PROTECT)),
+            ('number_bought', self.gf('django.db.models.fields.IntegerField')()),
+            ('sn', self.gf('django.db.models.fields.CharField')(max_length=200, unique=True, null=True, blank=True)),
+            ('parent', self.gf('mptt.fields.TreeForeignKey')(blank=True, related_name=u'children', null=True, to=orm['ralph_assets.Licence'])),
+            ('niw', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
+            ('bought_date', self.gf('django.db.models.fields.DateField')()),
+            ('valid_thru', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
+            ('order_no', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
+            ('price', self.gf('django.db.models.fields.DecimalField')(default=0, max_digits=10, decimal_places=2)),
+            ('accounting_id', self.gf('django.db.models.fields.CharField')(max_length=200, null=True)),
+            ('asset_type', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
+            ('used', self.gf('django.db.models.fields.IntegerField')()),
+            ('lft', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
+            ('rght', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
+            ('tree_id', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
+            ('level', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
+        ))
+        db.send_create_signal('ralph_assets', ['Licence'])
+
+        # Adding model 'SoftwareCategory'
+        db.create_table('ralph_assets_softwarecategory', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+            ('asset_type', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
+        ))
+        db.send_create_signal('ralph_assets', ['SoftwareCategory'])
+
+        # Adding model 'LicenceType'
+        db.create_table('ralph_assets_licencetype', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+        ))
+        db.send_create_signal('ralph_assets', ['LicenceType'])
+
+        # Adding field 'Asset.task_url'
+        db.add_column('ralph_assets_asset', 'task_url',
+                      self.gf('django.db.models.fields.URLField')(max_length=2048, null=True, blank=True),
                       keep_default=False)
 
         # Adding field 'Asset.property_of'
         db.add_column('ralph_assets_asset', 'property_of',
-                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT),
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT, blank=True),
+                      keep_default=False)
+
+        # Adding field 'Asset.owner'
+        db.add_column('ralph_assets_asset', 'owner',
+                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name=u'owner', null=True, to=orm['auth.User']),
+                      keep_default=False)
+
+        # Adding field 'Asset.user'
+        db.add_column('ralph_assets_asset', 'user',
+                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name=u'user', null=True, to=orm['auth.User']),
+                      keep_default=False)
+
+        # Adding field 'AssetModel.type'
+        db.add_column('ralph_assets_assetmodel', 'type',
+                      self.gf('django.db.models.fields.PositiveIntegerField')(null=True),
                       keep_default=False)
 
 
@@ -33,11 +91,29 @@ class Migration(SchemaMigration):
         # Deleting model 'AssetOwner'
         db.delete_table('ralph_assets_assetowner')
 
-        # Deleting field 'Licence.property_of'
-        db.delete_column('ralph_assets_licence', 'property_of_id')
+        # Deleting model 'Licence'
+        db.delete_table('ralph_assets_licence')
+
+        # Deleting model 'SoftwareCategory'
+        db.delete_table('ralph_assets_softwarecategory')
+
+        # Deleting model 'LicenceType'
+        db.delete_table('ralph_assets_licencetype')
+
+        # Deleting field 'Asset.task_url'
+        db.delete_column('ralph_assets_asset', 'task_url')
 
         # Deleting field 'Asset.property_of'
         db.delete_column('ralph_assets_asset', 'property_of_id')
+
+        # Deleting field 'Asset.owner'
+        db.delete_column('ralph_assets_asset', 'owner_id')
+
+        # Deleting field 'Asset.user'
+        db.delete_column('ralph_assets_asset', 'user_id')
+
+        # Deleting field 'AssetModel.type'
+        db.delete_column('ralph_assets_assetmodel', 'type')
 
 
     models = {
@@ -112,11 +188,12 @@ class Migration(SchemaMigration):
             'niw': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'office_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.OfficeInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'owner': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'owner'", 'null': 'True', 'to': "orm['auth.User']"}),
             'part_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.PartInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
             'production_use_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'production_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
+            'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'provider_order_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
@@ -129,8 +206,9 @@ class Migration(SchemaMigration):
             'support_price': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'support_type': ('django.db.models.fields.CharField', [], {'max_length': '150'}),
             'support_void_reporting': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'task_link': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
+            'task_url': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'user'", 'null': 'True', 'to': "orm['auth.User']"}),
             'warehouse': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Warehouse']", 'on_delete': 'models.PROTECT'})
         },
         'ralph_assets.assetcategory': {
@@ -186,7 +264,8 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
-            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'})
+            'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
+            'type': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True'})
         },
         'ralph_assets.assetowner': {
             'Meta': {'object_name': 'AssetOwner'},

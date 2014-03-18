@@ -11,7 +11,7 @@ import difflib
 from ajax_select import LookupChannel
 from django.contrib.auth.models import User
 from django.utils.html import escape
-from django.db.models import Q
+from django.db.models import Q, F, Count
 
 from ralph_assets.models_assets import (
     Asset,
@@ -19,12 +19,14 @@ from ralph_assets.models_assets import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
     AssetSource,
     AssetStatus,
     AssetType,
     DeviceInfo,
     OfficeInfo,
     PartInfo,
+    ReportOdtSource,
     Warehouse,
 )
 from ralph_assets.models_sam import (  # noqa
@@ -63,6 +65,41 @@ class DeviceLookup(LookupChannel):
             <span class='asset-sn'>%s</span>
         </li>
         """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+
+    def get_base_objects(self):
+        return self.model.objects
+
+
+class FreeLicenceLookup(LookupChannel):
+    """Lookup the licences that have any specimen left."""
+
+    model = Licence
+
+    def get_query(self, q, _):
+        query = Q(
+            Q(software_category__name__icontains=q) &
+            Q(used__lt=F('number_bought'))
+        )
+        return self.model.objects.annotate(
+            used=Count('assets')
+        ).filter(query).all()[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+        <li class='asset-container'>
+            <span>{}</span>
+            <span>({} free)</span>
+        </li>
+        """.format(
+            escape(str(obj)),
+            str(obj.number_bought - obj.assets.count())
+        )
 
 
 class RalphDeviceLookup(LookupChannel):
@@ -119,7 +156,7 @@ class AssetModelLookup(LookupChannel):
 
     def get_query(self, q, request):
         return self.model.objects.filter(
-            Q(name__icontains=q) & (Q(type=self.type) | Q(type=None))
+            Q(name__icontains=q) & Q(type=getattr(self, 'type', None))
         ).order_by('name')[:10]
 
     def get_result(self, obj):
@@ -129,7 +166,13 @@ class AssetModelLookup(LookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return '{}'.format(escape(obj.name))
+        manufacturer = getattr(obj, 'manufacturer', None) or '-'
+        return '''
+        <li>
+            <span>{model}</span>
+            <span class='auto-complete-blue'>({manufacturer})</span>
+        </li>
+        '''.format(model=escape(obj.name), manufacturer=escape(manufacturer))
 
 
 class DCAssetModelLookup(AssetModelLookup):
@@ -268,12 +311,14 @@ __all__ = [
     'AssetCategoryType',
     'AssetManufacturer',
     'AssetModel',
+    'AssetOwner',
     'AssetSource',
     'AssetStatus',
     'AssetType',
     'DeviceInfo',
     'OfficeInfo',
     'PartInfo',
+    'ReportOdtSource',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',

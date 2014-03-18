@@ -18,13 +18,18 @@ from ralph_assets.models import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
+    Licence,
     LicenceType,
+    ReportOdtSource,
     SoftwareCategory,
     Warehouse,
 )
 
 admin.site.register(SoftwareCategory)
 admin.site.register(LicenceType)
+admin.site.register(AssetOwner)
+admin.site.register(Licence)
 
 
 class WarehouseAdmin(ModelAdmin):
@@ -107,7 +112,7 @@ class AssetCategoryAdmin(ModelAdmin):
     save_on_top = True
     list_display = (name, 'parent')
     search_fields = ('name',)
-
+    prepopulated_fields = {"slug": ("type", "parent", "name")}
 
 admin.site.register(AssetCategory, AssetCategoryAdmin)
 
@@ -118,3 +123,11 @@ class AssetManufacturerAdmin(ModelAdmin):
     search_fields = ('name',)
 
 admin.site.register(AssetManufacturer, AssetManufacturerAdmin)
+
+
+class ReportOdtSourceAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = ('name', 'slug',)
+    prepopulated_fields = {"slug": ("name",)}
+
+admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)

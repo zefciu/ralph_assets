@@ -1,3 +1,6 @@
+.auto-complete-blue {
+    color: blue;
+}
 .asset-container {
     padding: 3px;
 }
@@ -37,3 +40,29 @@ p.help {
     display: none;
 }
 
+#one-level-textareas {
+    margin-left: 35px;
+    overflow-x: auto;
+    width: 700px;
+}
+
+#one-level-textareas > div {
+    width: 220px;
+    float: left;
+}
+
+.bulk-table input, .bulk-table select {
+    min-width: 100px;
+}
+
+.dropdown-menu-indended a {
+  padding: 3px 0 3px 30px;
+}
+
+.section-title a {
+  font-weight: bold;
+  font-size: 12px;
+
+.del-asset-btn {
+    color: #FF0000;
+}

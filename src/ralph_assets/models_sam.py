@@ -19,18 +19,28 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from ralph_assets.models_assets import AssetManufacturer, AssetType, AssetOwner
+from ralph_assets.models_assets import (
+    Asset,
+    AssetManufacturer,
+    AssetOwner,
+    AssetType,
+    CreatableFromStr,
+)
 
 
 class LicenceType(Named):
     """The type of a licence"""
 
 
-class SoftwareCategory(Named):
+class SoftwareCategory(Named, CreatableFromStr):
     """The category of the licensed software"""
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(asset_type=asset_type, name=s)
 
     @property
     def licences(self):
@@ -64,9 +74,8 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     sn = models.CharField(
         verbose_name=_('SN / Key'),
         max_length=200,
-        null=True,
-        blank=True,
         unique=True,
+        null=True,
     )
     parent = TreeForeignKey(
         'self',
@@ -96,7 +105,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
-    used = models.IntegerField()
+    assets = models.ManyToManyField(Asset)
 
     def __str__(self):
         return "{} x {} - {}".format(
