@@ -13,7 +13,9 @@ from collections import Counter
 import xlrd
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
+from bob.views import DependencyView
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.files.storage import FileSystemStorage
 from django.core.paginator import Paginator
@@ -21,7 +23,11 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q, Sum
-from django.http import HttpResponseRedirect, Http404
+from django.http import (
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    Http404,
+)
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import ugettext_lazy as _
@@ -1470,3 +1476,14 @@ class LicenceList(AssetsBase):
             used=Sum('licence__used')
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
         return data
+
+
+class CategoryDependencyView(DependencyView):
+    def get_values(self, value):
+        try:
+            location = User.objects.get(pk=value).profile.location
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return HttpResponseBadRequest("Incorrect user id")
+        return {
+            'location': location,
+        }

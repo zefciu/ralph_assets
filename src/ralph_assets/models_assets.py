@@ -250,6 +250,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     niw = models.CharField(max_length=50, null=True, blank=True)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
