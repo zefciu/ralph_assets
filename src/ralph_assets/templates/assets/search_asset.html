@@ -111,14 +111,27 @@ form.form-inline {
                 <span class="caret"></span>
               </a>
             <ul class="dropdown-menu">
+            {% if asset_reports_enable %}
+                <li class="disabled section-title">
+                    <a href="#" style="">
+                        {% trans "Create invoice report" %}
+                    </a>
+                </li>
+                <li class="dropdown-menu-indended">
+                    <a href="#" id='post_invoice_report_selected'>
+                        {% trans "from selected assets" %}
+                    </a>
+                </li>
+                <li class="dropdown-menu-indended">
+                    <a href="#" id='post_invoice_report_search_query'>
+                        {% trans "from search query" %}
+                    </a>
+                </li>
+                <li class="divider"></li>
+            {% endif %}
                 <li>
                     <a href="#" id='post_edit_all'>{% trans "Edit selected" %}</a>
                 </li>
-            {% if asset_reports_enable %}
-                <li>
-                    <a href="#" id='post_invoice_report'>{% trans "Create invoice report" %}</a>
-                </li>
-            {% endif %}
             </ul>
             </div>
 {% endblock %}

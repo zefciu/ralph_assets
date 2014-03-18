@@ -91,6 +91,7 @@ def _move_data(src, dst, fields):
 
 class AssetsBase(Base):
     template_name = "assets/base.html"
+    sidebar_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
@@ -219,72 +220,7 @@ class DataTableColumnAssets(DataTableColumn):
         self.foreign_field_name = foreign_field_name
 
 
-class _AssetSearch(AssetsBase, DataTableMixin):
-    """
-        The main-screen search form for all type of assets.
-        (version without async reports)
-    """
-    rows_per_page = 15
-    csv_file_name = 'ralph.csv'
-    sort_variable_name = 'sort'
-    export_variable_name = 'export'
-    _ = DataTableColumnAssets
-    sidebar_selected = 'search'
-    template_name = 'assets/search_asset.html'
-    columns = [
-        _('Dropdown', selectable=True, bob_tag=True),
-        _('Type', bob_tag=True),
-        _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
-        _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
-          export=True),
-        _('Invoice date', field='invoice_date', sort_expression='model',
-          bob_tag=True, export=True),
-        _('Model', field='model', sort_expression='model', bob_tag=True,
-          export=True),
-        _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
-          bob_tag=True, export=True),
-        _('Order no.', field='order_no', sort_expression='order_no',
-          bob_tag=True, export=True),
-        _('Status', field='status', sort_expression='status',
-          bob_tag=True, export=True),
-        _('Warehouse', field='warehouse', sort_expression='warehouse',
-          bob_tag=True, export=True),
-        _('Venture', field='venture', sort_expression='venture',
-          bob_tag=True, export=True),
-        _('Department', field='department', foreign_field_name='venture',
-          export=True),
-        _('Price', field='price', sort_expression='price',
-          bob_tag=True, export=True),
-        _('Discovered', bob_tag=True, field='is_discovered', export=True,
-            foreign_field_name='is_discovered'),
-        _('Actions', bob_tag=True),
-        _('Barcode salvaged', field='barcode_salvaged',
-          foreign_field_name='part_info', export=True),
-        _('Source device', field='source_device',
-          foreign_field_name='part_info', export=True),
-        _('Device', field='device',
-          foreign_field_name='part_info', export=True),
-        _('Provider', field='provider', export=True),
-        _('Remarks', field='remarks', export=True),
-        _('Source', field='source', export=True),
-        _('Support peroid', field='support_peroid', export=True),
-        _('Support type', field='support_type', export=True),
-        _('Support void_reporting', field='support_void_reporting',
-          export=True),
-        _('Inventory number', field='niw', foreign_field_name='', export=True),
-        _(
-            'Ralph ID',
-            field='device_info',
-            foreign_field_name='ralph_device_id',
-            export=True
-        ),
-        _('Type', field='type', export=True),
-        _(
-            'Deprecation rate',
-            field='deprecation_rate',
-            foreign_field_name='', export=True,
-        ),
-    ]
+class _AssetSearch(AssetsBase):
 
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
@@ -304,7 +240,24 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         self.form = search_form(self.request.GET, mode=mode)
         super(_AssetSearch, self).set_mode(mode)
 
-    def handle_search_data(self, get_csv=False):
+    def get_search_category_part(self, field_value):
+        try:
+            category_id = field_value
+        except ValueError:
+            pass
+        else:
+            category = AssetCategory.objects.get(slug=category_id)
+            children = [x.slug for x in category.get_children()]
+            categories = [category_id, ] + children
+            return Q(category_id__in=categories)
+
+    def get_all_items(self, query):
+        include_deleted = self.request.GET.get('deleted')
+        if include_deleted and include_deleted.lower() == 'on':
+            return self.admin_objects.filter(query)
+        return self.objects.filter(query)
+
+    def handle_search_data(self, *args, **kwargs):
         search_fields = [
             'id',
             'niw',
@@ -456,24 +409,85 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                 all_q &= Q(**{date + '__gte': start})
             if end:
                 all_q &= Q(**{date + '__lte': end})
+        return all_q
+
+
+class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
+    """
+        The main-screen search form for all type of assets.
+        (version without async reports)
+    """
+    rows_per_page = 15
+    csv_file_name = 'ralph.csv'
+    sort_variable_name = 'sort'
+    export_variable_name = 'export'
+    _ = DataTableColumnAssets
+    sidebar_selected = 'search'
+    template_name = 'assets/search_asset.html'
+    columns = [
+        _('Dropdown', selectable=True, bob_tag=True),
+        _('Type', bob_tag=True),
+        _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
+        _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
+          export=True),
+        _('Invoice date', field='invoice_date', sort_expression='model',
+          bob_tag=True, export=True),
+        _('Model', field='model', sort_expression='model', bob_tag=True,
+          export=True),
+        _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
+          bob_tag=True, export=True),
+        _('Order no.', field='order_no', sort_expression='order_no',
+          bob_tag=True, export=True),
+        _('Status', field='status', sort_expression='status',
+          bob_tag=True, export=True),
+        _('Warehouse', field='warehouse', sort_expression='warehouse',
+          bob_tag=True, export=True),
+        _('Venture', field='venture', sort_expression='venture',
+          bob_tag=True, export=True),
+        _('Department', field='department', foreign_field_name='venture',
+          export=True),
+        _('Price', field='price', sort_expression='price',
+          bob_tag=True, export=True),
+        _('Discovered', bob_tag=True, field='is_discovered', export=True,
+            foreign_field_name='is_discovered'),
+        _('Actions', bob_tag=True),
+        _('Barcode salvaged', field='barcode_salvaged',
+          foreign_field_name='part_info', export=True),
+        _('Source device', field='source_device',
+          foreign_field_name='part_info', export=True),
+        _('Device', field='device',
+          foreign_field_name='part_info', export=True),
+        _('Provider', field='provider', export=True),
+        _('Remarks', field='remarks', export=True),
+        _('Source', field='source', export=True),
+        _('Support peroid', field='support_peroid', export=True),
+        _('Support type', field='support_type', export=True),
+        _('Support void_reporting', field='support_void_reporting',
+          export=True),
+        _('Inventory number', field='niw', foreign_field_name='', export=True),
+        _(
+            'Ralph ID',
+            field='device_info',
+            foreign_field_name='ralph_device_id',
+            export=True
+        ),
+        _('Type', field='type', export=True),
+        _(
+            'Deprecation rate',
+            field='deprecation_rate',
+            foreign_field_name='', export=True,
+        ),
+    ]
+
+    def handle_search_data(self, get_csv=False, *args, **kwargs):
+        all_q = super(_AssetSearchDataTable, self).handle_search_data(*args, **kwargs)
         if get_csv:
             return self.get_csv_data(self.get_all_items(all_q))
         else:
             self.data_table_query(self.get_all_items(all_q))
 
-    def get_search_category_part(self, field_value):
-        try:
-            category_id = field_value
-        except ValueError:
-            pass
-        else:
-            category = AssetCategory.objects.get(slug=category_id)
-            children = [x.slug for x in category.get_children()]
-            categories = [category_id, ] + children
-            return Q(category_id__in=categories)
-
     def get_csv_header(self):
-        header = super(_AssetSearch, self).get_csv_header()
+        header = super(_AssetSearchDataTable, self).get_csv_header()
         return ['type'] + header
 
     def get_csv_rows(self, queryset, type, model):
@@ -506,16 +520,10 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         set_progress(job, 1)
         return data
 
-    def get_all_items(self, query):
-        include_deleted = self.request.GET.get('deleted')
-        if include_deleted and include_deleted.lower() == 'on':
-            return self.admin_objects.filter(query)
-        return self.objects.filter(query)
-
     def get_context_data(self, *args, **kwargs):
-        ret = super(_AssetSearch, self).get_context_data(*args, **kwargs)
+        ret = super(_AssetSearchDataTable, self).get_context_data(*args, **kwargs)
         ret.update(
-            super(_AssetSearch, self).get_context_data_paginator(
+            super(_AssetSearchDataTable, self).get_context_data_paginator(
                 *args,
                 **kwargs
             )
@@ -536,7 +544,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         self.handle_search_data()
         if self.export_requested():
             return self.response
-        return super(_AssetSearch, self).get(*args, **kwargs)
+        return super(_AssetSearchDataTable, self).get(*args, **kwargs)
 
     def is_async(self, request, *args, **kwargs):
         self.export = request.GET.get('export')
@@ -634,7 +642,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             ]
 
 
-class AssetSearch(Report, _AssetSearch):
+class AssetSearch(Report, _AssetSearchDataTable):
     """The main-screen search form for all type of assets."""
 
 
@@ -1646,7 +1654,7 @@ class LicenceList(AssetsBase):
         return data
 
 
-class InvoiceReport(AssetsBase):
+class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
     sidebar_selected = None
 
@@ -1682,9 +1690,15 @@ class InvoiceReport(AssetsBase):
         )
 
     def get_return_link(self, *args, **kwargs):
-        return "{}search?id={}".format(
-            _get_return_link(self.mode), ",".join(id for id in self.ids),
-        )
+        if self.ids:
+            url = "{}search?id={}".format(
+                _get_return_link(self.mode), ",".join(id for id in self.ids),
+            )
+        else:
+            url = "{}search?{}".format(
+                _get_return_link(self.mode), self.request.GET.urlencode(),
+            )
+        return url
 
     def get(self, *args, **kwargs):
         if not settings.ASSETS_REPORTS['ENABLE']:
@@ -1699,7 +1713,11 @@ class InvoiceReport(AssetsBase):
             messages.error(self.request, _("Odt template does not exist!"))
             error = True
         self.ids = self.request.GET.getlist('select')
-        self.assets = Asset.objects.filter(pk__in=self.ids)
+        if self.request.GET.get('from_query'):
+            all_q = super(InvoiceReport, self).handle_search_data(*args, **kwargs)
+        else:
+            all_q = Q(pk__in=self.ids)
+        self.assets = self.get_all_items(all_q)
         asset_distinct = self.assets.values(
             'invoice_no', 'invoice_date', 'provider'
         ).distinct()
@@ -1712,6 +1730,7 @@ class InvoiceReport(AssetsBase):
             ))
             error = True
         if error:
+            # TUTAJ POPRAW IDS
             return HttpResponseRedirect(self.get_return_link())
         # generate invoice report
         pdf_data = self.get_pdf_content()
