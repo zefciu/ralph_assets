@@ -1822,8 +1822,9 @@ class DeleteLicence(AssetsBase):
         except Asset.DoesNotExist:
             messages.error(self.request, _("Selected asset doesn't exists."))
             return HttpResponseRedirect(_get_return_link(self.mode))
-        self.back_to = reverse('licence_list', kwargs={
-            'mode': ASSET_TYPE2MODE[licence.asset_type],
-        })
+        self.back_to = reverse(
+            'licence_list',
+            kwargs={'mode': ASSET_TYPE2MODE[licence.asset_type]},
+        )
         licence.delete()
         return HttpResponseRedirect(self.back_to)
