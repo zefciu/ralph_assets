@@ -6,11 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import itertools as it
 import logging
 import re
 import uuid
-import xlrd
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -23,9 +21,9 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Sum
 from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
@@ -75,6 +73,7 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
+LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 
@@ -662,7 +661,7 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     if office_info_data:
         _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
-    return asset.id
+    return asset
 
 
 class AddDevice(AssetsBase):
@@ -703,7 +702,7 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in ["barcode", "sn", "imei"]:
+                if f_name in {"barcode", "imei", "licences", "sn"}:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
@@ -721,17 +720,18 @@ class AddDevice(AssetsBase):
                 barcode = barcodes[index] if barcodes else None
                 if imeis:
                     office_info_data['imei'] = imeis[index]
-                ids.append(
-                    _create_device(
-                        creator_profile,
-                        asset_data,
-                        self.device_info_form.cleaned_data,
-                        sn,
-                        mode,
-                        barcode,
-                        office_info_data,
-                    )
+                device = _create_device(
+                    creator_profile,
+                    asset_data,
+                    self.device_info_form.cleaned_data,
+                    sn,
+                    mode,
+                    barcode,
+                    office_info_data,
                 )
+                for licence in self.asset_form.cleaned_data['licences']:
+                    device.licence_set.add(licence)
+                ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
             if len(ids) == 1:
@@ -924,6 +924,11 @@ class EditDevice(AssetsBase):
                 if self.device_info_form.cleaned_data.get('create_stock'):
                     self.asset.create_stock_device()
                 self.asset.save(user=self.request.user)
+                self.asset.licence_set.clear()
+                for licence in self.asset_form.cleaned_data.get(
+                    'licences', []
+                ):
+                    self.asset.licence_set.add(licence)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
@@ -1595,6 +1600,8 @@ class LicenceFormView(AssetsBase):
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
+            self.form.save_m2m()
+            messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
@@ -1604,6 +1611,7 @@ class AddLicence(LicenceFormView):
     """Add a new licence"""
 
     caption = _('Add Licence')
+    message = _('Licence added')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1618,6 +1626,7 @@ class EditLicence(LicenceFormView):
     """Edit licence"""
 
     caption = _('Edit Licence')
+    message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
@@ -1640,9 +1649,21 @@ class LicenceList(AssetsBase):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
-        data['categories'] = SoftwareCategory.objects.annotate(
-            used=Sum('licence__used')
+        page = self.request.GET.get('page', 1)
+        categories = SoftwareCategory.objects.annotate(
+            used=Count('licence__assets'),
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        categories_page = Paginator(
+            categories, LICENCE_PAGE_SIZE
+        ).page(page)
+        for category in categories_page:
+            category.licences_annotated = \
+                category.licence_set.annotate(used=Count('assets')).all()
+            category.total = sum(
+                licence.number_bought
+                for licence in category.licences_annotated
+            )
+        data['categories'] = categories_page
         return data
 
 
@@ -1708,7 +1729,7 @@ class InvoiceReport(AssetsBase):
             error = True
         if not all(asset_distinct[0].viewvalues()):
             messages.error(self.request, _(
-                "Asset invoice number, invoice date or provider can not be empty"
+                "Asset invoice number, invoice date or provider can't be empty"
             ))
             error = True
         if error:
@@ -1717,7 +1738,9 @@ class InvoiceReport(AssetsBase):
         pdf_data = self.get_pdf_content()
         if not pdf_data:
             return HttpResponseRedirect(self.get_return_link())
-        response = HttpResponse(content=pdf_data, content_type='application/pdf')
+        response = HttpResponse(
+            content=pdf_data, content_type='application/pdf'
+        )
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(
             self.file_name,
         )

@@ -64,6 +64,7 @@ class HistoryAssetsView(TestCase):
             'source': 1,
             'deprecation_rate': 0,
             'production_year': 2011,
+            'licences': '',
         }
         self.asset_change_params = {
             'barcode': '777777',

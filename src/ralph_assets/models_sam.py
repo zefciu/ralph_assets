@@ -20,9 +20,10 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
 from ralph_assets.models_assets import (
+    Asset,
     AssetManufacturer,
-    AssetType,
     AssetOwner,
+    AssetType,
     CreatableFromStr,
 )
 
@@ -73,9 +74,8 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     sn = models.CharField(
         verbose_name=_('SN / Key'),
         max_length=200,
-        null=True,
-        blank=True,
         unique=True,
+        null=True,
     )
     parent = TreeForeignKey(
         'self',
@@ -105,7 +105,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
-    used = models.IntegerField(default=0)
+    assets = models.ManyToManyField(Asset)
 
     def __str__(self):
         return "{} x {} - {}".format(
