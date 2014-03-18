@@ -6,11 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import itertools as it
 import logging
 import re
 import uuid
-import xlrd
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -37,6 +35,7 @@ from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
+    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
     BasePartForm,
@@ -62,6 +61,7 @@ from ralph_assets.models import (
     SoftwareCategory,
 )
 from ralph_assets.models_assets import (
+    Attachment,
     AssetType,
     MODE2ASSET_TYPE,
     CreatableFromStr,
@@ -1768,3 +1768,51 @@ class InvoiceReport(AssetsBase):
             "assets": self.assets,
         }
         return data
+
+
+class AddAttachment(AssetsBase):
+    template_name = 'assets/add_attachment.html'
+    sidebar_selected = None
+
+    def get_context_data(self, **kwargs):
+        ret = super(AddAttachment, self).get_context_data(**kwargs)
+        ret.update({
+            'formset': self.attachments_formset,
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        url_assets_ids = self.request.GET.getlist('select')
+        assets = Asset.objects.filter(pk__in=url_assets_ids)
+        if not assets.exists():
+            messages.warning(self.request, _("Nothing to edit."))
+            return HttpResponseRedirect(_get_return_link(self.mode))
+
+        AttachmentFormset = modelformset_factory(
+            Attachment, form=AttachmentForm, extra=1
+        )
+        formset_args = {
+            'queryset': Attachment.objects.none(),
+        }
+        self.attachments_formset = AttachmentFormset(**formset_args)
+        return super(AddAttachment, self).get(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        url_assets_ids = self.request.GET.getlist('select')
+        assets = Asset.objects.filter(id__in=url_assets_ids)
+        AttachmentFormset = modelformset_factory(
+            Attachment, form=AttachmentForm, extra=0
+        )
+        self.attachments_formset = AttachmentFormset(
+            self.request.POST, self.request.FILES
+        )
+        if self.attachments_formset.is_valid():
+            for form in self.attachments_formset.forms:
+                instance = form.save()
+                for asset in assets:
+                    asset.attachments.add(instance)
+            messages.success(self.request, _("Changes saved."))
+            return HttpResponseRedirect(self.request.get_full_path())
+
+        messages.error(self.request, _("Please correct the errors."))
+        return super(AddAttachment, self).get(*args, **kwargs)
