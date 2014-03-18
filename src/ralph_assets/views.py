@@ -1730,7 +1730,6 @@ class InvoiceReport(_AssetSearch):
             ))
             error = True
         if error:
-            # TUTAJ POPRAW IDS
             return HttpResponseRedirect(self.get_return_link())
         # generate invoice report
         pdf_data = self.get_pdf_content()
