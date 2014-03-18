@@ -56,11 +56,20 @@ class DataUploadField(forms.FileField):
         return names_per_sheet, update_per_sheet, add_per_sheet
 
     def _process_csv(self, file_):
-        reader = csv.reader(file_)
+        def unicode_rows(reader):
+            for row in reader:
+                try:
+                    yield [cell.decode('utf-8') for cell in row]
+                except UnicodeDecodeError:
+                    raise forms.ValidationError(
+                        'Problems with character encoding. Use UTF-8'
+                    )
+        reader = unicode_rows(csv.reader(file_))
         update_per_sheet = {'csv': {}}
         add_per_sheet = {'csv': []}
         name_row = next(reader)
         update = name_row[0] == 'id'
+        
         
         if update:
             name_row = name_row[1:]
