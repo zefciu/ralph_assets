@@ -1446,12 +1446,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if step == 'column_choice':
             names_per_sheet, update_per_sheet, add_per_sheet =\
                 self.get_cleaned_data_for_step('upload')['file']
-            self.storage.data['names_per_sheet'] = names_per_sheet
-            self.storage.data['update_per_sheet'] = update_per_sheet
-            self.storage.data['add_per_sheet'] = add_per_sheet
             for name_list in names_per_sheet.values():
                 for name in name_list:
-                    form.fields[name] = ColumnChoiceField(
+                    form.fields[slugify(name)] = ColumnChoiceField(
                         model=self.get_cleaned_data_for_step(
                             'upload',
                         )['model'],
@@ -1474,9 +1471,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
+            names_per_sheet, update_per_sheet, add_per_sheet =\
+                self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
-            update_per_sheet = self.storage.data['update_per_sheet']
-            add_per_sheet = self.storage.data['add_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():

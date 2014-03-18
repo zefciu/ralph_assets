@@ -61,6 +61,7 @@ class DataUploadField(forms.FileField):
         add_per_sheet = {'csv': []}
         name_row = next(reader)
         update = name_row[0] == 'id'
+        
         if update:
             name_row = name_row[1:]
             for row in reader:
