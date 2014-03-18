@@ -6,11 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import itertools as it
 import logging
 import re
 import uuid
-import xlrd
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -26,7 +24,7 @@ from django.db import transaction
 from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -1731,7 +1729,7 @@ class InvoiceReport(AssetsBase):
             error = True
         if not all(asset_distinct[0].viewvalues()):
             messages.error(self.request, _(
-                "Asset invoice number, invoice date or provider can not be empty"
+                "Asset invoice number, invoice date or provider can't be empty"
             ))
             error = True
         if error:
@@ -1740,7 +1738,9 @@ class InvoiceReport(AssetsBase):
         pdf_data = self.get_pdf_content()
         if not pdf_data:
             return HttpResponseRedirect(self.get_return_link())
-        response = HttpResponse(content=pdf_data, content_type='application/pdf')
+        response = HttpResponse(
+            content=pdf_data, content_type='application/pdf'
+        )
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(
             self.file_name,
         )
