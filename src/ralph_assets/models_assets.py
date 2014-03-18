@@ -142,7 +142,12 @@ class AssetManufacturer(
 
 
 class AssetModel(
-        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    CreatableFromStr,
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate
+):
     '''
     Asset models describing hardware and contain standard information like
     created at
@@ -164,6 +169,12 @@ class AssetModel(
 
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(type=asset_type, name=s)
+
+
 
 
 class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
@@ -198,10 +209,19 @@ class AssetCategory(
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named,
-                WithConcurrentGetOrCreate):
+class Warehouse(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromStr,
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 def _get_file_path(instance, filename):

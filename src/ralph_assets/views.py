@@ -14,6 +14,7 @@ from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
@@ -1459,7 +1460,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             mappings = {}
             all_names = set(sum((
-                list(name_list)
+                [slugify(n) for n in name_list]
                 for name_list in names_per_sheet.values()
             ), []))
             for k, v in self.get_cleaned_data_for_step(
@@ -1516,14 +1517,22 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if isinstance(field, DecimalField):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
+        if (field.choices):
+            for k, v in field.choices:
+                if value.lower() == v.lower():
+                    value = k
+                    break
 
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
-            issubclass(field.rel.to, Named)
+            issubclass(field.rel.to, (Named, User))
         ):
             try:
-                value = field.rel.to.objects.get(name=value)
+                if issubclass(field.rel.to, User):
+                    value = field.rel.to.objects.get(username__iexact=value)
+                else:
+                    value = field.rel.to.objects.get(name__iexact=value)
             except field.rel.to.DoesNotExist:
                 if issubclass(field.rel.to, CreatableFromStr):
                     value = field.rel.to.create_from_string(
