@@ -62,6 +62,7 @@ from ralph_assets.models import (
 from ralph_assets.models_assets import (
     AssetType,
     MODE2ASSET_TYPE,
+    ASSET_TYPE2MODE,
     CreatableFromStr,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -1809,3 +1810,21 @@ class InvoiceReport(_AssetSearch):
             "assets": self.assets,
         }
         return data
+
+
+class DeleteLicence(AssetsBase):
+    """Delete a licence."""
+
+    def post(self, *args, **kwargs):
+        record_id = self.request.POST.get('record_id')
+        try:
+            licence = Licence.objects.get(pk=record_id)
+        except Asset.DoesNotExist:
+            messages.error(self.request, _("Selected asset doesn't exists."))
+            return HttpResponseRedirect(_get_return_link(self.mode))
+        self.back_to = reverse(
+            'licence_list',
+            kwargs={'mode': ASSET_TYPE2MODE[licence.asset_type]},
+        )
+        licence.delete()
+        return HttpResponseRedirect(self.back_to)
