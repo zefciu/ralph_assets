@@ -704,7 +704,7 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in {"barcode", "sn", "licences", "imei"}:
+                if f_name in {"barcode", "imei", "licences", "sn"}:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']

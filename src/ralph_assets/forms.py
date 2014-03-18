@@ -436,7 +436,8 @@ class DependencyAssetForm(DependencyForm):
         if 'instance' in kwargs:
             initial = kwargs.setdefault('initial', {})
             initial['licences'] = [
-                licence.pk for licence in kwargs['instance'].licence_set.all()
+                licence['pk']
+                for licence in kwargs['instance'].licence_set.values('pk')
             ]
         super(DependencyAssetForm, self).__init__(*args, **kwargs)
 
