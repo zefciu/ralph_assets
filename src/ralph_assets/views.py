@@ -722,16 +722,14 @@ class AddDevice(AssetsBase):
                 barcode = barcodes[index] if barcodes else None
                 if imeis:
                     office_info_data['imei'] = imeis[index]
-                ids.append(
-                    _create_device(
-                        creator_profile,
-                        asset_data,
-                        self.device_info_form.cleaned_data,
-                        sn,
-                        mode,
-                        barcode,
-                        office_info_data,
-                    )
+                device = _create_device(
+                    creator_profile,
+                    asset_data,
+                    self.device_info_form.cleaned_data,
+                    sn,
+                    mode,
+                    barcode,
+                    office_info_data,
                 )
                 for licence in self.asset_form.cleaned_data['licences']:
                     device.licence_set.add(licence)
