@@ -62,4 +62,7 @@ p.help {
 .section-title a {
   font-weight: bold;
   font-size: 12px;
+
+.del-asset-btn {
+    color: #FF0000;
 }
