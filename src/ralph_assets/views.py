@@ -1455,10 +1455,12 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         label=name,
                     )
         elif step == 'confirm':
+            names_per_sheet, _, _ =\
+                self.get_cleaned_data_for_step('upload')['file']
             mappings = {}
             all_names = set(sum((
                 list(name_list)
-                for name_list in self.storage.data['names_per_sheet'].values()
+                for name_list in names_per_sheet.values()
             ), []))
             for k, v in self.get_cleaned_data_for_step(
                 'column_choice'
@@ -1536,8 +1538,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     @transaction.commit_on_success
     def done(self, form_list):
         mappings = self.storage.data['mappings']
-        update_per_sheet = self.storage.data['update_per_sheet']
-        add_per_sheet = self.storage.data['add_per_sheet']
+        names_per_sheet, update_per_sheet, add_per_sheet =\
+            self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
         self.Model = get_model_by_name(
             self.get_cleaned_data_for_step('upload')['model']
