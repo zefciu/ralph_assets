@@ -23,10 +23,17 @@
         return false;
     };
 
-    Bulk.prototype.invoice_report = function() {
+    Bulk.prototype.invoice_report_selected = function() {
         var ids = this.get_ids();
         if (ids.length){
             window.location.href = 'invoice_report?select=' + ids.join('&select=');
+        }
+    };
+
+    Bulk.prototype.invoice_report_search_query = function () {
+        var params = window.location.search;
+        if (params.length){
+            window.location.href = 'invoice_report' + params + '&from_query=1';
         }
     };
 
@@ -35,8 +42,11 @@
         $('#post_edit_all').click(function() {
             bulk.edit_selected();
         });
-        $('#post_invoice_report').click(function() {
-            bulk.invoice_report();
+        $('#post_invoice_report_selected').click(function() {
+            bulk.invoice_report_selected();
+        });
+        $('#post_invoice_report_search_query').click(function() {
+            bulk.invoice_report_search_query();
         });
 
         $('.del-asset-btn').click(function() {
