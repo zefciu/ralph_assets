@@ -1558,6 +1558,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         names_per_sheet, update_per_sheet, add_per_sheet =\
             self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
+        errors = {}
         self.Model = get_model_by_name(
             self.get_cleaned_data_for_step('upload')['model']
         )
@@ -1568,29 +1569,36 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
-                for key, value in asset_data.items():
-                    setattr(
-                        asset, mappings[key],
-                        self._get_field_value(mappings[key], value)
-                    )
-                asset.save()
+                try:
+                    for key, value in asset_data.items():
+                        setattr(
+                            asset, mappings[key],
+                            self._get_field_value(mappings[key], value)
+                        )
+                    asset.save()
+                except BaseException as exc:
+                    errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
-                kwargs = dict(
-                    (
-                        mappings[key],
-                        self._get_field_value(mappings[key], value)
-                    ) for key, value in asset_data.items()
-                    if key in mappings
-                )
-                asset = self.Model(**kwargs)
-                if isinstance(asset, Asset):
-                    asset.type = MODE2ASSET_TYPE[self.mode]
-                else:
-                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                asset.save()
+                try:
+                    kwargs = dict(
+                        (
+                            mappings[key],
+                            self._get_field_value(mappings[key], value)
+                        ) for key, value in asset_data.items()
+                        if key in mappings
+                    )
+                    asset = self.Model(**kwargs)
+                    if isinstance(asset, Asset):
+                        asset.type = MODE2ASSET_TYPE[self.mode]
+                    else:
+                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                    asset.save()
+                except BaseException as exc:
+                    errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
+        ctx_data['errors'] = errors
         return render(
             self.request,
             'assets/xls_upload_wizard_done.html',
