@@ -21,9 +21,9 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, Sum
 from django.db.models.fields import DecimalField
 from django.db.models.fields.related import RelatedField
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
@@ -64,6 +64,7 @@ from ralph_assets.models_assets import (
     Attachment,
     AssetType,
     MODE2ASSET_TYPE,
+    ASSET_TYPE2MODE,
     CreatableFromStr,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -75,6 +76,7 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
+LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 
@@ -91,6 +93,7 @@ def _move_data(src, dst, fields):
 
 class AssetsBase(Base):
     template_name = "assets/base.html"
+    sidebar_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
@@ -219,72 +222,7 @@ class DataTableColumnAssets(DataTableColumn):
         self.foreign_field_name = foreign_field_name
 
 
-class _AssetSearch(AssetsBase, DataTableMixin):
-    """
-        The main-screen search form for all type of assets.
-        (version without async reports)
-    """
-    rows_per_page = 15
-    csv_file_name = 'ralph.csv'
-    sort_variable_name = 'sort'
-    export_variable_name = 'export'
-    _ = DataTableColumnAssets
-    sidebar_selected = 'search'
-    template_name = 'assets/search_asset.html'
-    columns = [
-        _('Dropdown', selectable=True, bob_tag=True),
-        _('Type', bob_tag=True),
-        _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
-        _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
-          export=True),
-        _('Invoice date', field='invoice_date', sort_expression='model',
-          bob_tag=True, export=True),
-        _('Model', field='model', sort_expression='model', bob_tag=True,
-          export=True),
-        _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
-          bob_tag=True, export=True),
-        _('Order no.', field='order_no', sort_expression='order_no',
-          bob_tag=True, export=True),
-        _('Status', field='status', sort_expression='status',
-          bob_tag=True, export=True),
-        _('Warehouse', field='warehouse', sort_expression='warehouse',
-          bob_tag=True, export=True),
-        _('Venture', field='venture', sort_expression='venture',
-          bob_tag=True, export=True),
-        _('Department', field='department', foreign_field_name='venture',
-          export=True),
-        _('Price', field='price', sort_expression='price',
-          bob_tag=True, export=True),
-        _('Discovered', bob_tag=True, field='is_discovered', export=True,
-            foreign_field_name='is_discovered'),
-        _('Actions', bob_tag=True),
-        _('Barcode salvaged', field='barcode_salvaged',
-          foreign_field_name='part_info', export=True),
-        _('Source device', field='source_device',
-          foreign_field_name='part_info', export=True),
-        _('Device', field='device',
-          foreign_field_name='part_info', export=True),
-        _('Provider', field='provider', export=True),
-        _('Remarks', field='remarks', export=True),
-        _('Source', field='source', export=True),
-        _('Support peroid', field='support_peroid', export=True),
-        _('Support type', field='support_type', export=True),
-        _('Support void_reporting', field='support_void_reporting',
-          export=True),
-        _('Inventory number', field='niw', foreign_field_name='', export=True),
-        _(
-            'Ralph ID',
-            field='device_info',
-            foreign_field_name='ralph_device_id',
-            export=True
-        ),
-        _('Type', field='type', export=True),
-        _(
-            'Deprecation rate',
-            field='deprecation_rate',
-            foreign_field_name='', export=True,
-        ),
-    ]
+class _AssetSearch(AssetsBase):
 
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
@@ -304,7 +242,24 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         self.form = search_form(self.request.GET, mode=mode)
         super(_AssetSearch, self).set_mode(mode)
 
-    def handle_search_data(self, get_csv=False):
+    def get_search_category_part(self, field_value):
+        try:
+            category_id = field_value
+        except ValueError:
+            pass
+        else:
+            category = AssetCategory.objects.get(slug=category_id)
+            children = [x.slug for x in category.get_children()]
+            categories = [category_id, ] + children
+            return Q(category_id__in=categories)
+
+    def get_all_items(self, query):
+        include_deleted = self.request.GET.get('deleted')
+        if include_deleted and include_deleted.lower() == 'on':
+            return self.admin_objects.filter(query)
+        return self.objects.filter(query)
+
+    def handle_search_data(self, *args, **kwargs):
         search_fields = [
             'id',
             'niw',
@@ -456,24 +411,85 @@ class _AssetSearch(AssetsBase, DataTableMixin):
                 all_q &= Q(**{date + '__gte': start})
             if end:
                 all_q &= Q(**{date + '__lte': end})
+        return all_q
+
+
+class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
+    """
+        The main-screen search form for all type of assets.
+        (version without async reports)
+    """
+    rows_per_page = 15
+    csv_file_name = 'ralph.csv'
+    sort_variable_name = 'sort'
+    export_variable_name = 'export'
+    _ = DataTableColumnAssets
+    sidebar_selected = 'search'
+    template_name = 'assets/search_asset.html'
+    columns = [
+        _('Dropdown', selectable=True, bob_tag=True),
+        _('Type', bob_tag=True),
+        _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
+        _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
+          export=True),
+        _('Invoice date', field='invoice_date', sort_expression='model',
+          bob_tag=True, export=True),
+        _('Model', field='model', sort_expression='model', bob_tag=True,
+          export=True),
+        _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
+          bob_tag=True, export=True),
+        _('Order no.', field='order_no', sort_expression='order_no',
+          bob_tag=True, export=True),
+        _('Status', field='status', sort_expression='status',
+          bob_tag=True, export=True),
+        _('Warehouse', field='warehouse', sort_expression='warehouse',
+          bob_tag=True, export=True),
+        _('Venture', field='venture', sort_expression='venture',
+          bob_tag=True, export=True),
+        _('Department', field='department', foreign_field_name='venture',
+          export=True),
+        _('Price', field='price', sort_expression='price',
+          bob_tag=True, export=True),
+        _('Discovered', bob_tag=True, field='is_discovered', export=True,
+            foreign_field_name='is_discovered'),
+        _('Actions', bob_tag=True),
+        _('Barcode salvaged', field='barcode_salvaged',
+          foreign_field_name='part_info', export=True),
+        _('Source device', field='source_device',
+          foreign_field_name='part_info', export=True),
+        _('Device', field='device',
+          foreign_field_name='part_info', export=True),
+        _('Provider', field='provider', export=True),
+        _('Remarks', field='remarks', export=True),
+        _('Source', field='source', export=True),
+        _('Support peroid', field='support_peroid', export=True),
+        _('Support type', field='support_type', export=True),
+        _('Support void_reporting', field='support_void_reporting',
+          export=True),
+        _('Inventory number', field='niw', foreign_field_name='', export=True),
+        _(
+            'Ralph ID',
+            field='device_info',
+            foreign_field_name='ralph_device_id',
+            export=True
+        ),
+        _('Type', field='type', export=True),
+        _(
+            'Deprecation rate',
+            field='deprecation_rate',
+            foreign_field_name='', export=True,
+        ),
+    ]
+
+    def handle_search_data(self, get_csv=False, *args, **kwargs):
+        all_q = super(_AssetSearchDataTable, self).handle_search_data(*args, **kwargs)
         if get_csv:
             return self.get_csv_data(self.get_all_items(all_q))
         else:
             self.data_table_query(self.get_all_items(all_q))
 
-    def get_search_category_part(self, field_value):
-        try:
-            category_id = field_value
-        except ValueError:
-            pass
-        else:
-            category = AssetCategory.objects.get(slug=category_id)
-            children = [x.slug for x in category.get_children()]
-            categories = [category_id, ] + children
-            return Q(category_id__in=categories)
-
     def get_csv_header(self):
-        header = super(_AssetSearch, self).get_csv_header()
+        header = super(_AssetSearchDataTable, self).get_csv_header()
         return ['type'] + header
 
     def get_csv_rows(self, queryset, type, model):
@@ -506,16 +522,10 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         set_progress(job, 1)
         return data
 
-    def get_all_items(self, query):
-        include_deleted = self.request.GET.get('deleted')
-        if include_deleted and include_deleted.lower() == 'on':
-            return self.admin_objects.filter(query)
-        return self.objects.filter(query)
-
     def get_context_data(self, *args, **kwargs):
-        ret = super(_AssetSearch, self).get_context_data(*args, **kwargs)
+        ret = super(_AssetSearchDataTable, self).get_context_data(*args, **kwargs)
         ret.update(
-            super(_AssetSearch, self).get_context_data_paginator(
+            super(_AssetSearchDataTable, self).get_context_data_paginator(
                 *args,
                 **kwargs
             )
@@ -536,7 +546,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
         self.handle_search_data()
         if self.export_requested():
             return self.response
-        return super(_AssetSearch, self).get(*args, **kwargs)
+        return super(_AssetSearchDataTable, self).get(*args, **kwargs)
 
     def is_async(self, request, *args, **kwargs):
         self.export = request.GET.get('export')
@@ -634,7 +644,7 @@ class _AssetSearch(AssetsBase, DataTableMixin):
             ]
 
 
-class AssetSearch(Report, _AssetSearch):
+class AssetSearch(Report, _AssetSearchDataTable):
     """The main-screen search form for all type of assets."""
 
 
@@ -662,7 +672,7 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
     if office_info_data:
         _update_office_info(creator_profile.user, asset, office_info_data)
     asset.save(user=creator_profile.user)
-    return asset.id
+    return asset
 
 
 class AddDevice(AssetsBase):
@@ -703,7 +713,7 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in ["barcode", "sn", "imei"]:
+                if f_name in {"barcode", "imei", "licences", "sn"}:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
@@ -721,17 +731,18 @@ class AddDevice(AssetsBase):
                 barcode = barcodes[index] if barcodes else None
                 if imeis:
                     office_info_data['imei'] = imeis[index]
-                ids.append(
-                    _create_device(
-                        creator_profile,
-                        asset_data,
-                        self.device_info_form.cleaned_data,
-                        sn,
-                        mode,
-                        barcode,
-                        office_info_data,
-                    )
+                device = _create_device(
+                    creator_profile,
+                    asset_data,
+                    self.device_info_form.cleaned_data,
+                    sn,
+                    mode,
+                    barcode,
+                    office_info_data,
                 )
+                for licence in self.asset_form.cleaned_data['licences']:
+                    device.licence_set.add(licence)
+                ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
             if len(ids) == 1:
@@ -924,6 +935,11 @@ class EditDevice(AssetsBase):
                 if self.device_info_form.cleaned_data.get('create_stock'):
                     self.asset.create_stock_device()
                 self.asset.save(user=self.request.user)
+                self.asset.licence_set.clear()
+                for licence in self.asset_form.cleaned_data.get(
+                    'licences', []
+                ):
+                    self.asset.licence_set.add(licence)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
@@ -1595,6 +1611,8 @@ class LicenceFormView(AssetsBase):
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
+            self.form.save_m2m()
+            messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
@@ -1604,6 +1622,7 @@ class AddLicence(LicenceFormView):
     """Add a new licence"""
 
     caption = _('Add Licence')
+    message = _('Licence added')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1618,6 +1637,7 @@ class EditLicence(LicenceFormView):
     """Edit licence"""
 
     caption = _('Edit Licence')
+    message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
         licence = Licence.objects.get(pk=licence_id)
@@ -1640,13 +1660,25 @@ class LicenceList(AssetsBase):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
-        data['categories'] = SoftwareCategory.objects.annotate(
-            used=Sum('licence__used')
+        page = self.request.GET.get('page', 1)
+        categories = SoftwareCategory.objects.annotate(
+            used=Count('licence__assets'),
         ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        categories_page = Paginator(
+            categories, LICENCE_PAGE_SIZE
+        ).page(page)
+        for category in categories_page:
+            category.licences_annotated = \
+                category.licence_set.annotate(used=Count('assets')).all()
+            category.total = sum(
+                licence.number_bought
+                for licence in category.licences_annotated
+            )
+        data['categories'] = categories_page
         return data
 
 
-class InvoiceReport(AssetsBase):
+class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
     sidebar_selected = None
 
@@ -1682,9 +1714,15 @@ class InvoiceReport(AssetsBase):
         )
 
     def get_return_link(self, *args, **kwargs):
-        return "{}search?id={}".format(
-            _get_return_link(self.mode), ",".join(id for id in self.ids),
-        )
+        if self.ids:
+            url = "{}search?id={}".format(
+                _get_return_link(self.mode), ",".join(id for id in self.ids),
+            )
+        else:
+            url = "{}search?{}".format(
+                _get_return_link(self.mode), self.request.GET.urlencode(),
+            )
+        return url
 
     def get(self, *args, **kwargs):
         if not settings.ASSETS_REPORTS['ENABLE']:
@@ -1699,7 +1737,11 @@ class InvoiceReport(AssetsBase):
             messages.error(self.request, _("Odt template does not exist!"))
             error = True
         self.ids = self.request.GET.getlist('select')
-        self.assets = Asset.objects.filter(pk__in=self.ids)
+        if self.request.GET.get('from_query'):
+            all_q = super(InvoiceReport, self).handle_search_data(*args, **kwargs)
+        else:
+            all_q = Q(pk__in=self.ids)
+        self.assets = self.get_all_items(all_q)
         asset_distinct = self.assets.values(
             'invoice_no', 'invoice_date', 'provider'
         ).distinct()
@@ -1708,7 +1750,7 @@ class InvoiceReport(AssetsBase):
             error = True
         if not all(asset_distinct[0].viewvalues()):
             messages.error(self.request, _(
-                "Asset invoice number, invoice date or provider can not be empty"
+                "Asset invoice number, invoice date or provider can't be empty"
             ))
             error = True
         if error:
@@ -1717,7 +1759,9 @@ class InvoiceReport(AssetsBase):
         pdf_data = self.get_pdf_content()
         if not pdf_data:
             return HttpResponseRedirect(self.get_return_link())
-        response = HttpResponse(content=pdf_data, content_type='application/pdf')
+        response = HttpResponse(
+            content=pdf_data, content_type='application/pdf'
+        )
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(
             self.file_name,
         )
@@ -1814,3 +1858,21 @@ class AddAttachment(AssetsBase):
             return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))
         return super(AddAttachment, self).get(*args, **kwargs)
+
+
+class DeleteLicence(AssetsBase):
+    """Delete a licence."""
+
+    def post(self, *args, **kwargs):
+        record_id = self.request.POST.get('record_id')
+        try:
+            licence = Licence.objects.get(pk=record_id)
+        except Asset.DoesNotExist:
+            messages.error(self.request, _("Selected asset doesn't exists."))
+            return HttpResponseRedirect(_get_return_link(self.mode))
+        self.back_to = reverse(
+            'licence_list',
+            kwargs={'mode': ASSET_TYPE2MODE[licence.asset_type]},
+        )
+        licence.delete()
+        return HttpResponseRedirect(self.back_to)
