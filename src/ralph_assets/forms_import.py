@@ -9,8 +9,12 @@ import xlrd
 import itertools as it
 
 from django import forms
+from django.db.models.fields import NOT_PROVIDED
 from django.contrib.contenttypes.models import ContentType
 from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext_lazy as _
+
+from ralph_assets.models_assets import AssetType
 
 
 class DataUploadField(forms.FileField):
@@ -141,8 +145,27 @@ class XlsColumnChoiceForm(forms.Form):
     """The column choice. This form will be filled on the fly."""
 
     def clean(self, *args, **kwargs):
-        result = super(LicenceForm, self).clean(*args, **kwargs)
-        import ipdb; ipdb.set_trace()
+        result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
+        if result:  # I don't know why is this called twice
+            matched = set(result.values()) - {''}
+            
+            required = {
+                field.name
+                for field in get_model_by_name(
+                    self.model_reflected
+                )._meta.fields
+                if not (
+                    field.blank or
+                    field.default != NOT_PROVIDED or
+                    field.choices == AssetType()
+                )
+            }
+            missing = required - matched
+            
+            if missing:
+                raise forms.ValidationError(
+                    _('Missing fields: %s' % ', '.join(missing))
+                )
         return result 
 
 

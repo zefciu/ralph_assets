@@ -22,7 +22,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models.fields import DecimalField
+from django.db.models.fields import DecimalField, CharField, TextField
 from django.db.models.fields.related import RelatedField
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404, HttpResponse
@@ -1444,6 +1444,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
+        if step is None:
+            step = self.steps.current
         form = super(XlsUploadView, self).get_form(step, data, files)
         if step == 'column_choice':
             names_per_sheet, update_per_sheet, add_per_sheet =\
@@ -1510,11 +1512,14 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        if not value:
-            return
         field, _, _, _ = self.Model._meta.get_field_by_name(
             field_name
         )
+        if not value:
+            if isinstance(field, (TextField, CharField)):
+                return ''
+            else:
+                return
         if isinstance(field, DecimalField):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')

@@ -310,7 +310,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         default=0,
         verbose_name="support period in months"
     )
-    support_type = models.CharField(max_length=150)
+    support_type = models.CharField(max_length=150, blank=True)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     status = models.PositiveSmallIntegerField(
