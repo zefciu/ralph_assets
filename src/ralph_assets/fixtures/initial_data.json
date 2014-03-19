@@ -1222,5 +1222,23 @@
 			"tree_id" : 2,
 			"type" : 2
 		}
-	}
+	}, {
+      "pk": 1,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "change_status"
+      }
+   }, {
+      "pk": 2,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "release_report"
+      }
+   }, {
+      "pk": 3,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "return_report"
+      }
+   }
 ]

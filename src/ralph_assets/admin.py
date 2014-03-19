@@ -13,6 +13,7 @@ from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
 from ralph_assets.models import (
+    Action,
     Asset,
     AssetCategory,
     AssetCategoryType,
@@ -23,6 +24,8 @@ from ralph_assets.models import (
     LicenceType,
     ReportOdtSource,
     SoftwareCategory,
+    Transition,
+    TransitionsHistory,
     Warehouse,
 )
 
@@ -131,3 +134,19 @@ class ReportOdtSourceAdmin(ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)
+
+
+class TransitionAdmin(ModelAdmin):
+    prepopulated_fields = {"slug": ("name",)}
+
+admin.site.register(Transition, TransitionAdmin)
+
+
+class TransitionsHistoryAdmin(ModelAdmin):
+    list_display = ('transition', 'logged_user', 'affected_user')
+    readonly_fields = ('transition', 'assets', 'logged_user', 'affected_user')
+
+    def has_add_permission(self, request):
+        return False
+
+admin.site.register(TransitionsHistory, TransitionsHistoryAdmin)
