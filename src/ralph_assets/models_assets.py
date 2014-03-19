@@ -43,12 +43,26 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
-class CreatableFromStr(object):
+class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
     @classmethod  # Decided not to play with abstractclassmethods
     def create_from_string(cls, asset_type, s):
         raise NotImplementedError
+
+
+class Sluggy(models.Model):
+    """An object with a unique slug."""
+
+    class Meta:
+        abstract = True
+
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        primary_key=True
+    )
 
 
 class LicenseType(Choices):
@@ -128,7 +142,7 @@ class AssetCategoryType(Choices):
 
 
 class AssetManufacturer(
-    CreatableFromStr,
+    CreatableFromString,
     TimeTrackable,
     EditorTrackable,
     Named
@@ -142,7 +156,12 @@ class AssetManufacturer(
 
 
 class AssetModel(
-        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    CreatableFromString,
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate
+):
     '''
     Asset models describing hardware and contain standard information like
     created at
@@ -165,13 +184,22 @@ class AssetModel(
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
 
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(type=asset_type, name=s)
+
 
 class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
     """The company or other entity that are owners of assets."""
 
 
 class AssetCategory(
-        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
+    MPTTModel,
+    TimeTrackable,
+    EditorTrackable,
+    WithConcurrentGetOrCreate,
+    Sluggy,
+):
     name = models.CharField(max_length=50, unique=False)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -184,9 +212,6 @@ class AssetCategory(
         related_name='children',
     )
 
-    slug = models.SlugField(max_length=100, unique=True, blank=True,
-                            primary_key=True)
-
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -198,10 +223,19 @@ class AssetCategory(
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named,
-                WithConcurrentGetOrCreate):
+class Warehouse(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 def _get_file_path(instance, filename):
@@ -273,7 +307,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         default=0,
         verbose_name="support period in months"
     )
-    support_type = models.CharField(max_length=150)
+    support_type = models.CharField(max_length=150, blank=True)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     status = models.PositiveSmallIntegerField(

@@ -24,7 +24,7 @@ from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetOwner,
     AssetType,
-    CreatableFromStr,
+    CreatableFromString,
 )
 
 
@@ -32,7 +32,7 @@ class LicenceType(Named):
     """The type of a licence"""
 
 
-class SoftwareCategory(Named, CreatableFromStr):
+class SoftwareCategory(Named, CreatableFromString):
     """The category of the licensed software"""
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()

@@ -9,11 +9,24 @@
 {% if failed_assets %}
 <p>
 {% trans "The following assets couldn't be found:" %}
+</p>
 <ul>
     {% for asset_id in failed_assets %}
         <li>{{ asset_id }}</li>
     {% endfor %}
 </ul>
+{% endif %}
+{% if errors %}
+<p>
+{% trans "Following errors were encountered:" %}
+</p>
+<table>
+    {% for k, v in errors.items %}
+    <tr>
+        <td>{{ k }}</td><td>{{ v }}</td>
+    </tr>
+    {% endfor %}
+</table>
 {% endif %}
 </p>
 
