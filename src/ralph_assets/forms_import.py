@@ -144,24 +144,23 @@ class XlsColumnChoiceForm(forms.Form):
 
     def clean(self, *args, **kwargs):
         result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
-        if result:  # I don't know why is this called twice
-            matched = set(result.values()) - {''}
-            required = {
-                field.name
-                for field in get_model_by_name(
-                    self.model_reflected
-                )._meta.fields
-                if not (
-                    field.blank or
-                    field.default != NOT_PROVIDED or
-                    field.choices == AssetType()
-                )
-            }
-            missing = required - matched
-            if missing:
-                raise forms.ValidationError(
-                    _('Missing fields: %s' % ', '.join(missing))
-                )
+        matched = set(result.values()) - {''}
+        required = {
+            field.name
+            for field in get_model_by_name(
+                self.model_reflected
+            )._meta.fields
+            if not (
+                field.blank or
+                field.default != NOT_PROVIDED or
+                field.choices == AssetType()
+            )
+        }
+        missing = required - matched
+        if missing:
+            raise forms.ValidationError(
+                _('Missing fields: %s' % ', '.join(missing))
+            )
         return result
 
 

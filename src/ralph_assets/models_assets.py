@@ -43,7 +43,7 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
-class CreatableFromStr(object):
+class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
     @classmethod  # Decided not to play with abstractclassmethods
@@ -142,7 +142,7 @@ class AssetCategoryType(Choices):
 
 
 class AssetManufacturer(
-    CreatableFromStr,
+    CreatableFromString,
     TimeTrackable,
     EditorTrackable,
     Named
@@ -156,7 +156,7 @@ class AssetManufacturer(
 
 
 class AssetModel(
-    CreatableFromStr,
+    CreatableFromString,
     TimeTrackable,
     EditorTrackable,
     Named,
@@ -228,7 +228,7 @@ class Warehouse(
     EditorTrackable,
     Named,
     WithConcurrentGetOrCreate,
-    CreatableFromStr,
+    CreatableFromString,
 ):
     def __unicode__(self):
         return self.name

@@ -64,7 +64,7 @@ from ralph_assets.models_assets import (
     AssetType,
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
-    CreatableFromStr,
+    CreatableFromString,
     Sluggy,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -1523,9 +1523,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if isinstance(field, DecimalField):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
-        if (field.choices):
+        if field.choices:
+            value_lower = value.lower
             for k, v in field.choices:
-                if value.lower() == v.lower():
+                if value_lower == v.lower():
                     value = k
                     break
 
@@ -1542,7 +1543,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 else:
                     value = field.rel.to.objects.get(name__iexact=value)
             except field.rel.to.DoesNotExist:
-                if issubclass(field.rel.to, CreatableFromStr):
+                if issubclass(field.rel.to, CreatableFromString):
                     value = field.rel.to.create_from_string(
                         asset_type=MODE2ASSET_TYPE[self.mode],
                         s=value
