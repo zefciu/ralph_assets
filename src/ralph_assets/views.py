@@ -1788,31 +1788,29 @@ class AddAttachment(AssetsBase):
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
 
-        AttachmentFormset = modelformset_factory(
-            Attachment, form=AttachmentForm, extra=1
+        AttachmentFormset = formset_factory(
+            form=AttachmentForm, extra=1
         )
-        formset_args = {
-            'queryset': Attachment.objects.none(),
-        }
-        self.attachments_formset = AttachmentFormset(**formset_args)
+        self.attachments_formset = AttachmentFormset()
         return super(AddAttachment, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         url_assets_ids = self.request.GET.getlist('select')
         assets = Asset.objects.filter(id__in=url_assets_ids)
-        AttachmentFormset = modelformset_factory(
-            Attachment, form=AttachmentForm, extra=0
+        AttachmentFormset = formset_factory(
+            form=AttachmentForm, extra=0
         )
         self.attachments_formset = AttachmentFormset(
             self.request.POST, self.request.FILES
         )
         if self.attachments_formset.is_valid():
             for form in self.attachments_formset.forms:
-                instance = form.save()
+                instance = form.save(commit=False)
+                instance.original_filename = instance.file.name
+                instance.save()
                 for asset in assets:
                     asset.attachments.add(instance)
             messages.success(self.request, _("Changes saved."))
-            return HttpResponseRedirect(self.request.get_full_path())
-
+            return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))
         return super(AddAttachment, self).get(*args, **kwargs)

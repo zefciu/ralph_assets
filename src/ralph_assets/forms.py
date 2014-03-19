@@ -1171,4 +1171,4 @@ class SplitDevice(ModelForm):
 class AttachmentForm(ModelForm):
     class Meta:
         model = models_assets.Attachment
-        fields = ['relative_file_path']
+        fields = ['file']

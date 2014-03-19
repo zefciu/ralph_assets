@@ -230,10 +230,9 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 
 
 class Attachment(SavingUser, TimeTrackable):
-    # XXX: verfiy corectness of above lck's magic
-    relative_file_path = models.FileField(
-        upload_to=_get_file_path, blank=False, null=True
-    )
+    # XXX: check base classes corectness
+    original_filename = models.CharField(max_length=255, unique=False)
+    file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
