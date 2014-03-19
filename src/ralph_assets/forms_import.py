@@ -140,6 +140,12 @@ class XlsUploadForm(forms.Form):
 class XlsColumnChoiceForm(forms.Form):
     """The column choice. This form will be filled on the fly."""
 
+    def clean(self, *args, **kwargs):
+        result = super(LicenceForm, self).clean(*args, **kwargs)
+        import ipdb; ipdb.set_trace()
+        return result 
+
+
 
 class XlsConfirmForm(forms.Form):
     """The confirmation of XLS submission. A form with a button only."""

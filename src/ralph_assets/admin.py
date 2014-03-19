@@ -110,7 +110,7 @@ class AssetCategoryAdmin(ModelAdmin):
         return name
     form = AssetCategoryAdminForm
     save_on_top = True
-    list_display = (name, 'parent')
+    list_display = (name, 'parent', 'slug')
     search_fields = ('name',)
     prepopulated_fields = {"slug": ("type", "parent", "name")}
 

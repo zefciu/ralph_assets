@@ -65,6 +65,7 @@ from ralph_assets.models_assets import (
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
     CreatableFromStr,
+    Sluggy,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
@@ -1447,12 +1448,12 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if step == 'column_choice':
             names_per_sheet, update_per_sheet, add_per_sheet =\
                 self.get_cleaned_data_for_step('upload')['file']
+            model = self.get_cleaned_data_for_step('upload')['model']
+            form.model_reflected = model
             for name_list in names_per_sheet.values():
                 for name in name_list:
                     form.fields[slugify(name)] = ColumnChoiceField(
-                        model=self.get_cleaned_data_for_step(
-                            'upload',
-                        )['model'],
+                        model=model,
                         label=name,
                     )
         elif step == 'confirm':
@@ -1526,11 +1527,13 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
-            issubclass(field.rel.to, (Named, User))
+            issubclass(field.rel.to, (Named, User, Sluggy))
         ):
             try:
                 if issubclass(field.rel.to, User):
                     value = field.rel.to.objects.get(username__iexact=value)
+                elif issubclass(field.rel.to, Sluggy):
+                    value = field.rel.to.objects.get(slug=value)
                 else:
                     value = field.rel.to.objects.get(name__iexact=value)
             except field.rel.to.DoesNotExist:

@@ -51,6 +51,20 @@ class CreatableFromStr(object):
         raise NotImplementedError
 
 
+class Sluggy(models.Model):
+    """An object with a unique slug."""
+
+    class Meta:
+        abstract=True
+
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        primary_key=True
+    )
+
+
 class LicenseType(Choices):
     _ = Choices.Choice
     not_applicable = _("not applicable")
@@ -182,7 +196,12 @@ class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
 
 
 class AssetCategory(
-        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
+    MPTTModel,
+    TimeTrackable,
+    EditorTrackable,
+    WithConcurrentGetOrCreate,
+    Sluggy,
+):
     name = models.CharField(max_length=50, unique=False)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -195,8 +214,6 @@ class AssetCategory(
         related_name='children',
     )
 
-    slug = models.SlugField(max_length=100, unique=True, blank=True,
-                            primary_key=True)
 
     class MPTTMeta:
         order_insertion_by = ['name']
