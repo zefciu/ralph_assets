@@ -55,7 +55,7 @@ class Sluggy(models.Model):
     """An object with a unique slug."""
 
     class Meta:
-        abstract=True
+        abstract = True
 
     slug = models.SlugField(
         max_length=100,
@@ -189,8 +189,6 @@ class AssetModel(
         return cls(type=asset_type, name=s)
 
 
-
-
 class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
     """The company or other entity that are owners of assets."""
 
@@ -213,7 +211,6 @@ class AssetCategory(
         blank=True,
         related_name='children',
     )
-
 
     class MPTTMeta:
         order_insertion_by = ['name']

@@ -74,8 +74,6 @@ class DataUploadField(forms.FileField):
         add_per_sheet = {'csv': []}
         name_row = next(reader)
         update = name_row[0] == 'id'
-        
-        
         if update:
             name_row = name_row[1:]
             for row in reader:
@@ -148,7 +146,6 @@ class XlsColumnChoiceForm(forms.Form):
         result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
         if result:  # I don't know why is this called twice
             matched = set(result.values()) - {''}
-            
             required = {
                 field.name
                 for field in get_model_by_name(
@@ -161,13 +158,11 @@ class XlsColumnChoiceForm(forms.Form):
                 )
             }
             missing = required - matched
-            
             if missing:
                 raise forms.ValidationError(
                     _('Missing fields: %s' % ', '.join(missing))
                 )
-        return result 
-
+        return result
 
 
 class XlsConfirmForm(forms.Form):
