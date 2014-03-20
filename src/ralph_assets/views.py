@@ -482,7 +482,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
     ]
 
     def handle_search_data(self, get_csv=False, *args, **kwargs):
-        all_q = super(_AssetSearchDataTable, self).handle_search_data(*args, **kwargs)
+        all_q = super(
+            _AssetSearchDataTable, self,
+        ).handle_search_data(*args, **kwargs)
         if get_csv:
             return self.get_csv_data(self.get_all_items(all_q))
         else:
@@ -523,7 +525,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         return data
 
     def get_context_data(self, *args, **kwargs):
-        ret = super(_AssetSearchDataTable, self).get_context_data(*args, **kwargs)
+        ret = super(
+            _AssetSearchDataTable, self,
+        ).get_context_data(*args, **kwargs)
         ret.update(
             super(_AssetSearchDataTable, self).get_context_data_paginator(
                 *args,
@@ -1761,7 +1765,9 @@ class InvoiceReport(_AssetSearch):
             error = True
         self.ids = self.request.GET.getlist('select')
         if self.request.GET.get('from_query'):
-            all_q = super(InvoiceReport, self).handle_search_data(*args, **kwargs)
+            all_q = super(
+                InvoiceReport, self,
+            ).handle_search_data(*args, **kwargs)
         else:
             all_q = Q(pk__in=self.ids)
         self.assets = self.get_all_items(all_q)
