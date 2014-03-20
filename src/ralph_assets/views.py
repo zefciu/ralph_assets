@@ -543,6 +543,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
+            'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
         })
         return ret
 
