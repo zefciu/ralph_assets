@@ -30,20 +30,22 @@
               Action
               <span class="caret"></span>
             </a>
-            <ul class="dropdown-menu pull-right">
+            <ul class="dropdown-menu">
               <li>
-                <!--
-                TODO: padding class
-                TODO: menu in correct place
-                TODO: add 'from_all'
-                <li class="divider"></li>
-                -->
                 <span class='btn btn-link delete-attachment'
                   style="color: #ff0011;"
                   data-form-id='delete-attachment-{{attachment.id}}'
                   data-delete-type='from_one'
                 >
                   {% trans "Delete in THIS asset" %}
+                </span>
+                <li class="divider"></li>
+                <span class='btn btn-link delete-attachment'
+                  style="color: #ff0011;"
+                  data-form-id='delete-attachment-{{attachment.id}}'
+                  data-delete-type='from_all'
+                >
+                  {% trans "Delete in ALL assets" %}
                 </span>
               </li>
             </ul>
@@ -74,7 +76,6 @@
       {% csrf_token %}
       <input type='hidden' name='asset_id' value='{{ asset.id }}'>
       <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
-      <!-- TODO: value change -->
       <input type='hidden' name='delete_type' value=''>
     </form>
   {% endfor %}
