@@ -13,6 +13,7 @@ import uuid
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
+from bob.views import DependencyView
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
@@ -22,11 +23,16 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models.fields import DecimalField, CharField, TextField
+from django.db.models import Count, Q
+from django.db.models.fields import CharField, DecimalField, TextField
 from django.db.models.fields.related import RelatedField
-from django.db.models import Q, Count
-from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    Http404,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -1859,3 +1865,14 @@ class DeleteLicence(AssetsBase):
         )
         licence.delete()
         return HttpResponseRedirect(self.back_to)
+
+
+class CategoryDependencyView(DependencyView):
+    def get_values(self, value):
+        try:
+            location = User.objects.get(pk=value).profile.location
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return HttpResponseBadRequest("Incorrect user id")
+        return {
+            'location': location,
+        }

@@ -64,6 +64,7 @@ class TestValidations(TestCase):
 
     def test_try_send_empty_edit_form(self):
         send_post = self.client.post(
+            # TODO: there is high probability thst device is not exists
             '/assets/dc/edit/device/1/',
             {'ralph_device_id': ''},  # Test hock
         )
