@@ -23,6 +23,7 @@ class Assets(RalphModule):
             distribution='ralph_assets',
             **kwargs
         )
+        
         self.append_app()
         self.insert_templates(__file__)
         self.register_logger('ralph_assets', {
@@ -31,11 +32,11 @@ class Assets(RalphModule):
             'level': 'DEBUG',
         })
         self.settings['DEFAULT_DEPRECATION_RATE'] = 25
-        asset_reports = {
+        assets_reports = {
             'ENABLE': False,
             'INVOICE_REPORT': {
                 'SLUG': 'invoice-report',
             },
             'TEMP_STORAGE_PATH': '/tmp/',
         }
-        self.settings['ASSETS_REPORTS'] = asset_reports
+        self.settings.setdefault('ASSETS_REPORTS', assets_reports)
