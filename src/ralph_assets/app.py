@@ -23,7 +23,6 @@ class Assets(RalphModule):
             distribution='ralph_assets',
             **kwargs
         )
-        
         self.append_app()
         self.insert_templates(__file__)
         self.register_logger('ralph_assets', {
