@@ -24,15 +24,15 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q
+from django.db.models.fields import CharField, DecimalField, TextField
+from django.db.models.fields.related import RelatedField
+from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     Http404,
 )
-from django.db.models.fields import CharField, DecimalField, TextField
-from django.db.models.fields.related import RelatedField
-from django.forms.models import modelformset_factory, formset_factory
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
