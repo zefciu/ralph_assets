@@ -10,9 +10,16 @@
 </div>
 <div class="row">
   <hgroup>
-    <h3>Add attachment</h3>
+    <h3>Add attachment:</h3>
   </hgroup>
 </div>
+
+<ul class='markerless-list'>
+{% for asset in selected_assets %}
+  <li>{{asset}}</li>
+{% endfor %}
+</ul>
+
 <form method="POST" class="form form-inline form-split" enctype="multipart/form-data">
   {% csrf_token %}
   {{ formset.management_form }}

@@ -71,3 +71,8 @@ p.help {
 .del-asset-btn {
     color: #FF0000;
 }
+
+.markerless-list {
+    list-style-type: none;
+}
+

@@ -1821,6 +1821,7 @@ class AddAttachment(AssetsBase):
     def get_context_data(self, **kwargs):
         ret = super(AddAttachment, self).get_context_data(**kwargs)
         ret.update({
+            'selected_assets': self.selected_assets,
             'formset': self.attachments_formset,
             'mode': self.mode,
         })
@@ -1828,8 +1829,8 @@ class AddAttachment(AssetsBase):
 
     def get(self, *args, **kwargs):
         url_assets_ids = self.request.GET.getlist('select')
-        assets = Asset.objects.filter(pk__in=url_assets_ids)
-        if not assets.exists():
+        self.selected_assets = Asset.objects.filter(pk__in=url_assets_ids)
+        if not self.selected_assets.exists():
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
 
@@ -1841,7 +1842,7 @@ class AddAttachment(AssetsBase):
 
     def post(self, *args, **kwargs):
         url_assets_ids = self.request.GET.getlist('select')
-        assets = Asset.objects.filter(id__in=url_assets_ids)
+        self.selected_assets = Asset.objects.filter(id__in=url_assets_ids)
         AttachmentFormset = formset_factory(
             form=AttachmentForm, extra=0
         )
@@ -1853,7 +1854,7 @@ class AddAttachment(AssetsBase):
                 instance = form.save(commit=False)
                 instance.original_filename = instance.file.name
                 instance.save()
-                for asset in assets:
+                for asset in self.selected_assets:
                     asset.attachments.add(instance)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(_get_return_link(self.mode))
