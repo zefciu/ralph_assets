@@ -59,6 +59,17 @@
             bulk.add_attachment();
         });
 
+        $('.delete-attachment').click(function() {
+            if (!confirm("Are you sure to delete Attachment(s)?")) {
+                return false;
+            }
+            var delete_type = $(this).attr('data-delete-type');
+            var form_id = '#' + $(this).attr('data-form-id');
+            $(form_id).find("input[name='delete_type']").val(delete_type);
+            console.log($(form_id));
+            $(form_id).submit();
+        });
+
         $('.del-asset-btn').click(function() {
             if (!confirm("Are you sure to delete Asset?")) {
                 return false;

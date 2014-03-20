@@ -1822,6 +1822,7 @@ class AddAttachment(AssetsBase):
         ret = super(AddAttachment, self).get_context_data(**kwargs)
         ret.update({
             'formset': self.attachments_formset,
+            'mode': self.mode,
         })
         return ret
 
@@ -1858,6 +1859,41 @@ class AddAttachment(AssetsBase):
             return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))
         return super(AddAttachment, self).get(*args, **kwargs)
+
+
+class DeleteAttachment(AssetsBase):
+
+    def post(self, *args, **kwargs):
+        back_url = self.request.META.get(
+            #XXX: how to do it better?
+            "HTTP_REFERER", _get_return_link(self.mode)
+        )
+        asset_id = self.request.POST.get('asset_id')
+        attachment_id = self.request.POST.get('attachment_id')
+        try:
+            attachment = Attachment.objects.get(pk=attachment_id)
+        except Attachment.DoesNotExist:
+            messages.error(
+                self.request, _("Selected attachment doesn't exists.")
+            )
+            return HttpResponseRedirect(back_url)
+        try:
+            self.asset = Asset.objects.get(pk=asset_id)
+        except Asset.DoesNotExist:
+            messages.error(self.request, _("Selected asset doesn't exists."))
+            return HttpResponseRedirect(back_url)
+        delete_type = self.request.POST.get('delete_type', None)
+        if delete_type == 'from_one':
+            self.asset.attachments.remove(attachment)
+            self.asset.save()
+            messages.success(self.request, _("Attachment was deleted"))
+        elif delete_type == 'from_all':
+            Attachment.objects.filter(id=attachment.id).delete()
+            messages.success(self.request, _("Attachments was deleted"))
+        else:
+            msg = "Unknown delte type: {}".format(delete_type)
+            messages.error(self.request, _(msg))
+        return HttpResponseRedirect(back_url)
 
 
 class DeleteLicence(AssetsBase):

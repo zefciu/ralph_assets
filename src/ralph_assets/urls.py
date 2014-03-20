@@ -9,6 +9,7 @@ from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
+from ralph_assets import views as assets_views
 from ralph_assets.views import (
     AddAttachment,
     AddDevice,
@@ -102,5 +103,10 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/sam/delete/$',
         login_required(DeleteLicence.as_view()),
         name='delete_licence',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/delete/attachment/$',
+        login_required(assets_views.DeleteAttachment.as_view()),
+        name='delete_attachment',
     ),
 )

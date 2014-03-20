@@ -1,5 +1,6 @@
 {% extends 'assets/base.html' %}
 {% load bob %}
+{% load i18n %}
 
 {% block content %}
 <div class="row">
@@ -17,6 +18,41 @@
       {% endfor %}
       {% block additional_inputs %}{% endblock %}
     </div>
+
+    {% if asset.attachments.all %}
+    <div id='attachments-box' class='span6 well'>
+      <h5>Attachments:</h5>
+      <ul id='attchments-list'>
+      {% for attachment in asset.attachments.all %}
+        <li> <span>{{attachment.original_filename}}</span> </li>
+          <div class="btn-group">
+            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+              Action
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu pull-right">
+              <li>
+                <!--
+                TODO: padding class
+                TODO: menu in correct place
+                TODO: add 'from_all'
+                <li class="divider"></li>
+                -->
+                <span class='btn btn-link delete-attachment'
+                  style="color: #ff0011;"
+                  data-form-id='delete-attachment-{{attachment.id}}'
+                  data-delete-type='from_one'
+                >
+                  {% trans "Delete in THIS asset" %}
+                </span>
+              </li>
+            </ul>
+          </div>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
     {% block multivalue_inputs %}{% endblock %}
     {% block office_info_inputs %}{% endblock %}
   </div>
@@ -28,4 +64,23 @@
     </div>
   </div>
 </form>
+
+<div id='attachments-forms'>
+{% if asset.attachments.all %}
+  {% for attachment in asset.attachments.all %}
+    <form id='delete-attachment-{{attachment.id}}' class='form-inline'
+      method="POST" action="{% url delete_attachment mode=mode %}"
+    >
+      {% csrf_token %}
+      <input type='hidden' name='asset_id' value='{{ asset.id }}'>
+      <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
+      <!-- TODO: value change -->
+      <input type='hidden' name='delete_type' value=''>
+    </form>
+  {% endfor %}
+{% endif %}
+</div>
+
+
 {% endblock %}
+
