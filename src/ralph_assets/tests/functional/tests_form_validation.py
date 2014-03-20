@@ -44,7 +44,6 @@ class TestValidations(TestCase):
         self.required_fields = [
             ('asset_form', 'model'),
             ('asset_form', 'support_period'),
-            ('asset_form', 'support_type'),
             ('asset_form', 'warehouse'),
             ('asset_form', 'category'),
         ]
