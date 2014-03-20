@@ -38,6 +38,8 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
     from_status = models.PositiveSmallIntegerField(
         verbose_name=_("from"),
         choices=AssetStatus(),
+        null=True,
+        blank=True,
     )
     to_status = models.PositiveSmallIntegerField(
         verbose_name=_("to"),

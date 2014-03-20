@@ -43,7 +43,7 @@ class Migration(SchemaMigration):
             ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
             ('cache_version', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
             ('slug', self.gf('django.db.models.fields.SlugField')(unique=True, max_length=100)),
-            ('from_status', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
+            ('from_status', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
             ('to_status', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
         ))
         db.send_create_signal('ralph_assets', ['Transition'])
@@ -335,7 +335,7 @@ class Migration(SchemaMigration):
             'actions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Action']", 'symmetrical': 'False'}),
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'from_status': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'from_status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
