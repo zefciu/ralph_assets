@@ -1524,7 +1524,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower
+            value_lower = value.lower()
             for k, v in field.choices:
                 if value_lower == v.lower():
                     value = k
@@ -1577,7 +1577,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                             self._get_field_value(mappings[key], value)
                         )
                     asset.save()
-                except BaseException as exc:
+                except Exception as exc:
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
@@ -1595,7 +1595,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     else:
                         asset.asset_type = MODE2ASSET_TYPE[self.mode]
                     asset.save()
-                except BaseException as exc:
+                except Exception as exc:
                     errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
