@@ -14,7 +14,8 @@ from ajax_select.fields import (
     AutoCompleteField,
     AutoCompleteSelectMultipleField,
 )
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
+from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
     CharField,
@@ -478,6 +479,13 @@ class DependencyAssetForm(DependencyForm):
                 ]).all(),
                 REQUIRE,
             ),
+            Dependency(
+                'location',
+                'user',
+                None,
+                AJAX_UPDATE,
+                url=reverse('category_dependency_view'),
+            ),
         ]
         for dep in deps:
             yield dep
@@ -498,6 +506,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -548,6 +557,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
+    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
@@ -626,6 +636,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -681,6 +692,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
+    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',

@@ -44,7 +44,6 @@ class TestValidations(TestCase):
         self.required_fields = [
             ('asset_form', 'model'),
             ('asset_form', 'support_period'),
-            ('asset_form', 'support_type'),
             ('asset_form', 'warehouse'),
             ('asset_form', 'category'),
         ]
@@ -65,6 +64,7 @@ class TestValidations(TestCase):
 
     def test_try_send_empty_edit_form(self):
         send_post = self.client.post(
+            # TODO: there is high probability thst device is not exists
             '/assets/dc/edit/device/1/',
             {'ralph_device_id': ''},  # Test hock
         )

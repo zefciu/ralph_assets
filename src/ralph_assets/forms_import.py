@@ -9,7 +9,12 @@ import xlrd
 import itertools as it
 
 from django import forms
+from django.db.models.fields import NOT_PROVIDED
 from django.contrib.contenttypes.models import ContentType
+from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext_lazy as _
+
+from ralph_assets.models_assets import AssetType
 
 
 class DataUploadField(forms.FileField):
@@ -44,19 +49,27 @@ class DataUploadField(forms.FileField):
                     asset_id = int(row[0].value)
                     update_per_sheet[sheet_name][asset_id] = {}
                     for key, cell in it.izip(col_names, row[1:]):
-                        update_per_sheet[sheet_name][asset_id][key] = \
+                        update_per_sheet[sheet_name][asset_id][slugify(key)] =\
                             cell.value
             else:
                 for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
                     asset_data = {}
                     add_per_sheet[sheet_name].append(asset_data)
                     for key, cell in it.izip(col_names, row):
-                        asset_data[key] = cell.value
+                        asset_data[slugify(key)] = cell.value
 
         return names_per_sheet, update_per_sheet, add_per_sheet
 
     def _process_csv(self, file_):
-        reader = csv.reader(file_)
+        def unicode_rows(reader):
+            for row in reader:
+                try:
+                    yield [cell.decode('utf-8') for cell in row]
+                except UnicodeDecodeError:
+                    raise forms.ValidationError(
+                        'Problems with character encoding. Use UTF-8'
+                    )
+        reader = unicode_rows(csv.reader(file_))
         update_per_sheet = {'csv': {}}
         add_per_sheet = {'csv': []}
         name_row = next(reader)
@@ -128,6 +141,27 @@ class XlsUploadForm(forms.Form):
 
 class XlsColumnChoiceForm(forms.Form):
     """The column choice. This form will be filled on the fly."""
+
+    def clean(self, *args, **kwargs):
+        result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
+        matched = set(result.values()) - {''}
+        required = {
+            field.name
+            for field in get_model_by_name(
+                self.model_reflected
+            )._meta.fields
+            if not (
+                field.blank or
+                field.default != NOT_PROVIDED or
+                field.choices == AssetType()
+            )
+        }
+        missing = required - matched
+        if missing:
+            raise forms.ValidationError(
+                _('Missing fields: %s' % ', '.join(missing))
+            )
+        return result
 
 
 class XlsConfirmForm(forms.Form):

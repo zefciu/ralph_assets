@@ -13,7 +13,9 @@ import uuid
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
+from bob.views import DependencyView
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
@@ -21,11 +23,16 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models.fields import DecimalField
+from django.db.models import Count, Q
+from django.db.models.fields import CharField, DecimalField, TextField
 from django.db.models.fields.related import RelatedField
-from django.db.models import Q, Count
-from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    Http404,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -65,7 +72,8 @@ from ralph_assets.models_assets import (
     AssetType,
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
-    CreatableFromStr,
+    CreatableFromString,
+    Sluggy,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
@@ -482,7 +490,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
     ]
 
     def handle_search_data(self, get_csv=False, *args, **kwargs):
-        all_q = super(_AssetSearchDataTable, self).handle_search_data(*args, **kwargs)
+        all_q = super(
+            _AssetSearchDataTable, self,
+        ).handle_search_data(*args, **kwargs)
         if get_csv:
             return self.get_csv_data(self.get_all_items(all_q))
         else:
@@ -523,7 +533,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         return data
 
     def get_context_data(self, *args, **kwargs):
-        ret = super(_AssetSearchDataTable, self).get_context_data(*args, **kwargs)
+        ret = super(
+            _AssetSearchDataTable, self,
+        ).get_context_data(*args, **kwargs)
         ret.update(
             super(_AssetSearchDataTable, self).get_context_data_paginator(
                 *args,
@@ -1444,26 +1456,27 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
+        if step is None:
+            step = self.steps.current
         form = super(XlsUploadView, self).get_form(step, data, files)
         if step == 'column_choice':
             names_per_sheet, update_per_sheet, add_per_sheet =\
                 self.get_cleaned_data_for_step('upload')['file']
-            self.storage.data['names_per_sheet'] = names_per_sheet
-            self.storage.data['update_per_sheet'] = update_per_sheet
-            self.storage.data['add_per_sheet'] = add_per_sheet
+            model = self.get_cleaned_data_for_step('upload')['model']
+            form.model_reflected = model
             for name_list in names_per_sheet.values():
                 for name in name_list:
-                    form.fields[name] = ColumnChoiceField(
-                        model=self.get_cleaned_data_for_step(
-                            'upload',
-                        )['model'],
+                    form.fields[slugify(name)] = ColumnChoiceField(
+                        model=model,
                         label=name,
                     )
         elif step == 'confirm':
+            names_per_sheet, _, _ =\
+                self.get_cleaned_data_for_step('upload')['file']
             mappings = {}
             all_names = set(sum((
-                list(name_list)
-                for name_list in self.storage.data['names_per_sheet'].values()
+                [slugify(n) for n in name_list]
+                for name_list in names_per_sheet.values()
             ), []))
             for k, v in self.get_cleaned_data_for_step(
                 'column_choice'
@@ -1476,9 +1489,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
+            names_per_sheet, update_per_sheet, add_per_sheet =\
+                self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
-            update_per_sheet = self.storage.data['update_per_sheet']
-            add_per_sheet = self.storage.data['add_per_sheet']
             all_columns = list(mappings.values())
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
@@ -1511,24 +1524,38 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        if not value:
-            return
         field, _, _, _ = self.Model._meta.get_field_by_name(
             field_name
         )
+        if not value:
+            if isinstance(field, (TextField, CharField)):
+                return ''
+            else:
+                return
         if isinstance(field, DecimalField):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
+        if field.choices:
+            value_lower = value.lower()
+            for k, v in field.choices:
+                if value_lower == v.lower():
+                    value = k
+                    break
 
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
-            issubclass(field.rel.to, Named)
+            issubclass(field.rel.to, (Named, User, Sluggy))
         ):
             try:
-                value = field.rel.to.objects.get(name=value)
+                if issubclass(field.rel.to, User):
+                    value = field.rel.to.objects.get(username__iexact=value)
+                elif issubclass(field.rel.to, Sluggy):
+                    value = field.rel.to.objects.get(slug=value)
+                else:
+                    value = field.rel.to.objects.get(name__iexact=value)
             except field.rel.to.DoesNotExist:
-                if issubclass(field.rel.to, CreatableFromStr):
+                if issubclass(field.rel.to, CreatableFromString):
                     value = field.rel.to.create_from_string(
                         asset_type=MODE2ASSET_TYPE[self.mode],
                         s=value
@@ -1541,9 +1568,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     @transaction.commit_on_success
     def done(self, form_list):
         mappings = self.storage.data['mappings']
-        update_per_sheet = self.storage.data['update_per_sheet']
-        add_per_sheet = self.storage.data['add_per_sheet']
+        names_per_sheet, update_per_sheet, add_per_sheet =\
+            self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
+        errors = {}
         self.Model = get_model_by_name(
             self.get_cleaned_data_for_step('upload')['model']
         )
@@ -1554,29 +1582,36 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 except ObjectDoesNotExist:
                     failed_assets.append(asset_id)
                     continue
-                for key, value in asset_data.items():
-                    setattr(
-                        asset, mappings[key],
-                        self._get_field_value(mappings[key], value)
-                    )
-                asset.save()
+                try:
+                    for key, value in asset_data.items():
+                        setattr(
+                            asset, mappings[key],
+                            self._get_field_value(mappings[key], value)
+                        )
+                    asset.save()
+                except Exception as exc:
+                    errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
-                kwargs = dict(
-                    (
-                        mappings[key],
-                        self._get_field_value(mappings[key], value)
-                    ) for key, value in asset_data.items()
-                    if key in mappings
-                )
-                asset = self.Model(**kwargs)
-                if isinstance(asset, Asset):
-                    asset.type = MODE2ASSET_TYPE[self.mode]
-                else:
-                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                asset.save()
+                try:
+                    kwargs = dict(
+                        (
+                            mappings[key],
+                            self._get_field_value(mappings[key], value)
+                        ) for key, value in asset_data.items()
+                        if key in mappings
+                    )
+                    asset = self.Model(**kwargs)
+                    if isinstance(asset, Asset):
+                        asset.type = MODE2ASSET_TYPE[self.mode]
+                    else:
+                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                    asset.save()
+                except Exception as exc:
+                    errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
+        ctx_data['errors'] = errors
         return render(
             self.request,
             'assets/xls_upload_wizard_done.html',
@@ -1738,7 +1773,9 @@ class InvoiceReport(_AssetSearch):
             error = True
         self.ids = self.request.GET.getlist('select')
         if self.request.GET.get('from_query'):
-            all_q = super(InvoiceReport, self).handle_search_data(*args, **kwargs)
+            all_q = super(
+                InvoiceReport, self,
+            ).handle_search_data(*args, **kwargs)
         else:
             all_q = Q(pk__in=self.ids)
         self.assets = self.get_all_items(all_q)
@@ -1913,3 +1950,14 @@ class DeleteLicence(AssetsBase):
         )
         licence.delete()
         return HttpResponseRedirect(self.back_to)
+
+
+class CategoryDependencyView(DependencyView):
+    def get_values(self, value):
+        try:
+            location = User.objects.get(pk=value).profile.location
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return HttpResponseBadRequest("Incorrect user id")
+        return {
+            'location': location,
+        }
