@@ -19,9 +19,13 @@
       {% block additional_inputs %}{% endblock %}
     </div>
 
-    {% if asset.attachments.all %}
     <div id='attachments-box' class='span6 well'>
       <h5>Attachments:</h5>
+      <a class='btn btn-primary' target='_blank'
+        href="{% url add_attachment mode=mode %}?select={{asset.id}}"
+      >add new one</a>
+    {% if asset.attachments.all %}
+      <h6>Attached:</h6>
       <ul id='attchments-list'>
       {% for attachment in asset.attachments.all %}
         <li> <span>{{attachment.original_filename}}</span> </li>
@@ -52,8 +56,8 @@
           </div>
       {% endfor %}
       </ul>
-    </div>
     {% endif %}
+    </div>
 
     {% block multivalue_inputs %}{% endblock %}
     {% block office_info_inputs %}{% endblock %}
@@ -72,6 +76,7 @@
   {% for attachment in asset.attachments.all %}
     <form id='delete-attachment-{{attachment.id}}' class='form-inline'
       method="POST" action="{% url delete_attachment mode=mode %}"
+      target="_blank"
     >
       {% csrf_token %}
       <input type='hidden' name='asset_id' value='{{ asset.id }}'>

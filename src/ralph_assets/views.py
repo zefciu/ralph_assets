@@ -1922,9 +1922,14 @@ class DeleteAttachment(AssetsBase):
             return HttpResponseRedirect(back_url)
         delete_type = self.request.POST.get('delete_type', None)
         if delete_type == 'from_one':
-            self.asset.attachments.remove(attachment)
-            self.asset.save()
-            messages.success(self.request, _("Attachment was deleted"))
+            if attachment in self.asset.attachments.all():
+                self.asset.attachments.remove(attachment)
+                self.asset.save()
+                msg = "Attachment was deleted"
+            else:
+                msg = "Asset does not include the attachment any more"
+            messages.success(self.request, _(msg))
+
         elif delete_type == 'from_all':
             Attachment.objects.filter(id=attachment.id).delete()
             messages.success(self.request, _("Attachments was deleted"))
