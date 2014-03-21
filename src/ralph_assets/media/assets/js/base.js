@@ -66,7 +66,6 @@
             var delete_type = $(this).attr('data-delete-type');
             var form_id = '#' + $(this).attr('data-form-id');
             $(form_id).find("input[name='delete_type']").val(delete_type);
-            console.log($(form_id));
             $(form_id).submit();
         });
 

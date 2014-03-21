@@ -11,7 +11,6 @@ from django.views.generic import RedirectView
 
 from ralph_assets import views as assets_views
 from ralph_assets.views import (
-    AddAttachment,
     AddDevice,
     AddLicence,
     AddPart,
@@ -82,8 +81,9 @@ urlpatterns = patterns(
         name='invoice_report'),
     url(
         r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',
-        login_required(AddAttachment.as_view()),
+        login_required(assets_views.AddAttachment.as_view()),
         name='add_attachment'
+    ),
     url(
         r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
