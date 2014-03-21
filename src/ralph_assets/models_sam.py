@@ -19,6 +19,7 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
+from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
     AssetManufacturer,
@@ -106,6 +107,9 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetType()
     )
     assets = models.ManyToManyField(Asset)
+    attachments = models.ManyToManyField(
+        models_assets.Attachment, null=True, blank=True
+    )
 
     def __str__(self):
         return "{} x {} - {}".format(

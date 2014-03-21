@@ -33,7 +33,7 @@
     Bulk.prototype.add_attachment = function() {
         var ids = this.get_ids();
         if (ids.length){
-            window.location.href = 'add_attachment?select=' + ids.join('&select=');
+            window.location.href = 'add_attachment/asset/?select=' + ids.join('&select=');
         }
     };
     Bulk.prototype.invoice_report_search_query = function () {

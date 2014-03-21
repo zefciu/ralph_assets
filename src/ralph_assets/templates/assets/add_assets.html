@@ -22,7 +22,7 @@
     <div id='attachments-box' class='span6 well'>
       <h5>Attachments:</h5>
       <a class='btn btn-primary' target='_blank'
-        href="{% url add_attachment mode=mode %}?select={{asset.id}}"
+        href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}"
       >add new one</a>
     {% if asset.attachments.all %}
       <h6>Attached:</h6>
@@ -75,11 +75,11 @@
 {% if asset.attachments.all %}
   {% for attachment in asset.attachments.all %}
     <form id='delete-attachment-{{attachment.id}}' class='form-inline'
-      method="POST" action="{% url delete_attachment mode=mode %}"
+      method="POST" action="{% url delete_attachment mode=mode parent='asset' %}"
       target="_blank"
     >
       {% csrf_token %}
-      <input type='hidden' name='asset_id' value='{{ asset.id }}'>
+      <input type='hidden' name='parent_id' value='{{ asset.id }}'>
       <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
       <input type='hidden' name='delete_type' value=''>
     </form>

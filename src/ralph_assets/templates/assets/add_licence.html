@@ -21,7 +21,51 @@
         {% field_wrapper field %}
       {% endfor %}
     </div>
+
+    {% if licence %}
+      <div id='attachments-box' class='span6 well'>
+        <h5>Attachments:</h5>
+        <a class='btn btn-primary' target='_blank'
+          href="{% url add_attachment mode=mode parent='license' %}?select={{licence.id}}"
+        >add new one</a>
+      {% if licence.attachments.all %}
+        <h6>Attached:</h6>
+        <ul id='attchments-list'>
+        {% for attachment in licence.attachments.all %}
+          <li> <span>{{attachment.original_filename}}</span> </li>
+            <div class="btn-group">
+              <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                Action
+                <span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <span class='btn btn-link delete-attachment'
+                    style="color: #ff0011;"
+                    data-form-id='delete-attachment-{{attachment.id}}'
+                    data-delete-type='from_one'
+                  >
+                    {% trans "Delete from THIS licence" %}
+                  </span>
+                  <li class="divider"></li>
+                  <span class='btn btn-link delete-attachment'
+                    style="color: #ff0011;"
+                    data-form-id='delete-attachment-{{attachment.id}}'
+                    data-delete-type='from_all'
+                  >
+                    {% trans "Delete from ALL licenses" %}
+                  </span>
+                </li>
+              </ul>
+            </div>
+        {% endfor %}
+        </ul>
+      {% endif %}
+      </div>
+    {% endif %}
+
   </div>
+
   <div class="row">
     <div class="span12">
       <div class="form-actions">
@@ -31,4 +75,24 @@
   </div>
 </form>
 {% endblock %}
+
+{% if licence %}
+  <div id='attachments-forms'>
+  {% if licence.attachments.all %}
+    {% for attachment in licence.attachments.all %}
+      <form id='delete-attachment-{{attachment.id}}' class='form-inline'
+        method="POST"
+        action="{% url delete_attachment_from_license mode=mode parent='license' %}"
+        target="_blank"
+      >
+        {% csrf_token %}
+        <input type='hidden' name='parent_id' value='{{ licence.id }}'>
+        <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
+        <input type='hidden' name='delete_type' value=''>
+      </form>
+    {% endfor %}
+  {% endif %}
+  </div>
+{% endif %}
+
 

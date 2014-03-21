@@ -80,9 +80,11 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/invoice_report/$',
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
-    url(r'(?P<mode>(back_office|dc))/add_attachment/$',
+    url(
+        # TODO: change order to: asset/add_attachment
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',
         login_required(AddAttachment.as_view()),
-        name='add_attachment'),
+        name='add_attachment'
     url(
         r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
@@ -109,7 +111,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/delete/attachment/$',
+        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',
         login_required(assets_views.DeleteAttachment.as_view()),
         name='delete_attachment',
     ),

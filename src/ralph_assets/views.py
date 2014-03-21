@@ -56,6 +56,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
 from ralph_assets.forms_sam import LicenceForm
+from ralph_assets import models as assets_models
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -1637,6 +1638,8 @@ class LicenceFormView(AssetsBase):
             'form_id': 'add_licence_form',
             'edit_mode': False,
             'caption': self.caption,
+            'licence': getattr(self, 'licence', None),
+            'mode': self.mode,
         })
         return ret
 
@@ -1675,13 +1678,13 @@ class EditLicence(LicenceFormView):
     message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
-        licence = Licence.objects.get(pk=licence_id)
-        self._get_form(instance=licence)
+        self.licence = Licence.objects.get(pk=licence_id)
+        self._get_form(instance=self.licence)
         return super(EditLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, licence_id, *args, **kwargs):
-        licence = Licence.objects.get(pk=licence_id)
-        self._get_form(request.POST, instance=licence)
+        self.licence = Licence.objects.get(pk=licence_id)
+        self._get_form(request.POST, instance=self.licence)
         return self._save(request, *args, **kwargs)
 
 
@@ -1852,22 +1855,36 @@ class InvoiceReport(_AssetSearch):
 
 
 class AddAttachment(AssetsBase):
+    """
+    what is parent
+    """
+    #TODO: doc
+    #TODO: file name more general
     template_name = 'assets/add_attachment.html'
     sidebar_selected = None
+
+    def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
+        if parent == 'license':
+            parent = 'licence'
+        parent = parent.title()
+        self.Parent = getattr(assets_models, parent)
+        return super(AddAttachment, self).dispatch(request, mode, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ret = super(AddAttachment, self).get_context_data(**kwargs)
         ret.update({
-            'selected_assets': self.selected_assets,
+            'selected_parents': self.selected_parents,
             'formset': self.attachments_formset,
             'mode': self.mode,
         })
         return ret
 
     def get(self, *args, **kwargs):
-        url_assets_ids = self.request.GET.getlist('select')
-        self.selected_assets = Asset.objects.filter(pk__in=url_assets_ids)
-        if not self.selected_assets.exists():
+        url_parents_ids = self.request.GET.getlist('select')
+        self.selected_parents = self.Parent.objects.filter(
+            pk__in=url_parents_ids
+        )
+        if not self.selected_parents.exists():
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
 
@@ -1878,8 +1895,10 @@ class AddAttachment(AssetsBase):
         return super(AddAttachment, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        url_assets_ids = self.request.GET.getlist('select')
-        self.selected_assets = Asset.objects.filter(id__in=url_assets_ids)
+        url_parents_ids = self.request.GET.getlist('select')
+        self.selected_parents = self.Parent.objects.filter(
+            id__in=url_parents_ids
+        )
         AttachmentFormset = formset_factory(
             form=AttachmentForm, extra=0
         )
@@ -1891,8 +1910,8 @@ class AddAttachment(AssetsBase):
                 instance = form.save(commit=False)
                 instance.original_filename = instance.file.name
                 instance.save()
-                for asset in self.selected_assets:
-                    asset.attachments.add(instance)
+                for parent in self.selected_parents:
+                    parent.attachments.add(instance)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))
@@ -1901,12 +1920,20 @@ class AddAttachment(AssetsBase):
 
 class DeleteAttachment(AssetsBase):
 
+    def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
+        if parent == 'license':
+            parent = 'licence'
+        self.Parent = getattr(assets_models, parent.title())
+        self.parent_name = parent
+        return super(DeleteAttachment, self).dispatch(request, mode, *args,
+                                                      **kwargs)
+
     def post(self, *args, **kwargs):
         back_url = self.request.META.get(
             #XXX: how to do it better?
             "HTTP_REFERER", _get_return_link(self.mode)
         )
-        asset_id = self.request.POST.get('asset_id')
+        parent_id = self.request.POST.get('parent_id')
         attachment_id = self.request.POST.get('attachment_id')
         try:
             attachment = Attachment.objects.get(pk=attachment_id)
@@ -1916,25 +1943,30 @@ class DeleteAttachment(AssetsBase):
             )
             return HttpResponseRedirect(back_url)
         try:
-            self.asset = Asset.objects.get(pk=asset_id)
-        except Asset.DoesNotExist:
-            messages.error(self.request, _("Selected asset doesn't exists."))
+            self.parent = self.Parent.objects.get(pk=parent_id)
+        except self.Parent.DoesNotExist:
+            messages.error(
+                self.request,
+                _("Selected {} doesn't exists.").format(self.parent_name),
+            )
             return HttpResponseRedirect(back_url)
         delete_type = self.request.POST.get('delete_type', None)
         if delete_type == 'from_one':
-            if attachment in self.asset.attachments.all():
-                self.asset.attachments.remove(attachment)
-                self.asset.save()
+            if attachment in self.parent.attachments.all():
+                self.parent.attachments.remove(attachment)
+                self.parent.save()
                 msg = "Attachment was deleted"
             else:
-                msg = "Asset does not include the attachment any more"
+                msg = "{} does not include the attachment any more".format(
+                    self.parent_name.title()
+                )
             messages.success(self.request, _(msg))
 
         elif delete_type == 'from_all':
             Attachment.objects.filter(id=attachment.id).delete()
             messages.success(self.request, _("Attachments was deleted"))
         else:
-            msg = "Unknown delte type: {}".format(delete_type)
+            msg = "Unknown delete type: {}".format(delete_type)
             messages.error(self.request, _(msg))
         return HttpResponseRedirect(back_url)
 
