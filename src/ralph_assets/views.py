@@ -1856,10 +1856,9 @@ class InvoiceReport(_AssetSearch):
 
 class AddAttachment(AssetsBase):
     """
-    what is parent
+    Adding attachments to Parent.
+    Parent can be one of these models: License, Asset.
     """
-    #TODO: doc
-    #TODO: file name more general
     template_name = 'assets/add_attachment.html'
     sidebar_selected = None
 

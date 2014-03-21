@@ -81,7 +81,6 @@ urlpatterns = patterns(
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
     url(
-        # TODO: change order to: asset/add_attachment
         r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',
         login_required(AddAttachment.as_view()),
         name='add_attachment'
