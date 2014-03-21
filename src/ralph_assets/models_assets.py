@@ -410,13 +410,10 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         return asset
 
     def get_data_type(self):
-        if self.device_info:
-            return 'device'
-        elif self.part_info:
+        if self.part_info:
             return 'part'
         else:
-            # should not return this value ;-)
-            return 'Unknown'
+            return 'device'
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
