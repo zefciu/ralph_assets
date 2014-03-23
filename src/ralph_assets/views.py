@@ -728,7 +728,11 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in {"barcode", "imei", "licences", "sn"}:
+                if f_name in {
+                    "barcode", "company", "cost_center", "department",
+                    "employee_id", "imei", "licences", "manager", "sn",
+                    "profit_center"
+                }:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
@@ -1879,9 +1883,18 @@ class DeleteLicence(AssetsBase):
 class CategoryDependencyView(DependencyView):
     def get_values(self, value):
         try:
-            location = User.objects.get(pk=value).profile.location
+            profile = User.objects.get(pk=value).profile
         except (User.DoesNotExist, User.MultipleObjectsReturned):
             return HttpResponseBadRequest("Incorrect user id")
-        return {
-            'location': location,
-        }
+        values = dict(
+            [(name, getattr(profile, name)) for name in (
+                'location',
+                'company',
+                'employee_id',
+                'cost_center',
+                'profit_center',
+                'department',
+                'manager',
+            )]
+        )
+        return values
