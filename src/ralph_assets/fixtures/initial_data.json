@@ -1240,5 +1240,11 @@
       "fields": {
          "name": "return_report"
       }
+   }, {
+      "pk": 4,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "assign_user"
+      }
    }
 ]

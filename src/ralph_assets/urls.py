@@ -26,6 +26,7 @@ from ralph_assets.views import (
     SplitDeviceView,
     XlsUploadView,
 )
+from ralph_assets.views_transition import TransitionView
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
@@ -75,6 +76,11 @@ urlpatterns = patterns(
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
     url(
+        r'(?P<mode>(back_office|dc))/transition/$',
+        login_required(TransitionView.as_view()),
+        name='transition',
+    ),
+    url(
         r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
@@ -99,4 +105,5 @@ urlpatterns = patterns(
         login_required(DeleteLicence.as_view()),
         name='delete_licence',
     ),
+
 )

@@ -1,0 +1,16 @@
+{% extends 'assets/base.html' %}
+{% load bob %}
+{% load i18n %}
+
+{% block content %}
+    <h1>{{ transition_type }}</h1>
+
+    <ul>
+    {% for asset in assets %}
+        <li>{{ asset }}</li>
+    {% endfor %}
+    </ul>
+
+    {% form_horizontal form=transition_form method="post" action=action_url %}
+{% endblock %}
+

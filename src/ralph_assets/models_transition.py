@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from lck.django.choices import Choices
 from lck.django.common.models import (
     Named,
     TimeTrackable,
@@ -20,17 +19,9 @@ from ralph_assets.models_assets import Asset, AssetStatus
 
 
 class Action(Named):
-    pass
-    # _ = Choices.Choice
-
-    # CHANGE_OWNERSHIPS = Choices.Group(0)
-    # release_asset = _("release asset")
-    # return_asset = _("return asset")
-    # loan_asset = _("loan asset")
-
-    # GENERATE_REPORTS = Choices.Group(100)
-    # release_report = _("release report")
-    # return_report = _("return report")
+    """
+    Actions performed in the transaction
+    """
 
 
 class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
@@ -46,6 +37,10 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetStatus(),
     )
     actions = models.ManyToManyField(Action)
+    report_filename = models.CharField(max_length=256, null=True, blank=True)
+
+    def actions_names(self, *args, **kwargs):
+        return [action.name for action in self.actions.all()]
 
 
 class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
@@ -56,3 +51,8 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
 
     def __unicode__(self, *args, **kwargs):
         return "{} - {}".format(self.transition, self.affected_user)
+
+    @classmethod
+    def create(cls, base_args):
+        transition_history = TransitionsHistory(**base_args)
+        transition_history.save()

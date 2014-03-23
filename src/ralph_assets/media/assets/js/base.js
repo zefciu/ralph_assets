@@ -41,20 +41,19 @@
         var ids = this.get_ids();
         if (
             ids.length &&
-            $.inArray(type, ['release','return', 'loan']) != -1
+            $.inArray(type, ['release-asset','return-asset', 'loan-asset']) != -1
         ){
             window.location.href = 'transitions?select=' + ids.join('&select=');
         }
     };
 
     Bulk.prototype.transition_search_query = function(type) {
-        console.log( $.inArray(type, ['release','return', 'loan']) != -1);
         var params = window.location.search;
         if (
             params.length &&
-            $.inArray(type, ['release','return', 'loan']) != -1
+            $.inArray(type, ['release-asset','return-asset', 'loan-asset']) != -1
         ) {
-            window.location.href = 'transition' + params + '&from_query=1&type=' + type;
+            window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
         }
     };
 

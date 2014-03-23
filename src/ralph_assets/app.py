@@ -34,16 +34,16 @@ class Assets(RalphModule):
         self.settings['ASSETS_REPORTS'] = {
             'ENABLE': False,
             'INVOICE_REPORT': {'SLUG': 'invoice-report'},
-            'RELEASE_ASSET': {'SLUG': 'release-asset'},
-            'LOAN_ASSET': {'SLUG': 'loan-asset'},
-            'RETURN_ASSET': {'SLUG': 'return-asset'},
+            'RELEASE-ASSET': {'SLUG': 'release-asset'},
+            'LOAN-ASSET': {'SLUG': 'loan-asset'},
+            'RETURN-ASSET': {'SLUG': 'return-asset'},
             'TEMP_STORAGE_PATH': '/tmp/',
         }
         self.settings['ASSETS_TRANSITIONS'] = {
             'ENABLE': False,
             'SLUGS': {
-                'RELEASE_ASSET': 'release-asset',
-                'LOAN_ASSET': 'loan-asset',
-                'RETURN_ASSET': 'return-asset',
+                'RELEASE-ASSET': 'release-asset',
+                'LOAN-ASSET': 'loan-asset',
+                'RETURN-ASSET': 'return-asset',
             }
         }
