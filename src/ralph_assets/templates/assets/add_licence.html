@@ -32,7 +32,7 @@
         <h6>Attached:</h6>
         <ul id='attchments-list'>
         {% for attachment in licence.attachments.all %}
-          <li> <span>{{attachment.original_filename}}</span> </li>
+          <li> <a href="{{MEDIA_URL}}{{attachment.file.name}}">{{attachment.original_filename}}</a> </li>
             <div class="btn-group">
               <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
                 Action
