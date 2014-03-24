@@ -1539,9 +1539,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower()
+            value_lower = value.lower().strip()
             for k, v in field.choices:
-                if value_lower == v.lower():
+                if value_lower == v.lower().strip():
                     value = k
                     break
 
