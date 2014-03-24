@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.db.models import Q
+
 from ralph_assets.models_assets import Asset, Warehouse
 
 
@@ -20,8 +22,8 @@ def get_warehouses():
 def get_assets(date):
     """Yields dicts describing all assets"""
     for asset in Asset.objects_dc.filter(
-        part_info_id=None,
-        invoice_date__lte=date,
+        Q(invoice_date=None) | Q(invoice_date__lte=date),
+        part_info=None
     ):
         device_info = asset.device_info
 
