@@ -71,7 +71,9 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         SoftwareCategory,
         on_delete=models.PROTECT,
     )
-    number_bought = models.IntegerField()
+    number_bought = models.IntegerField(
+        verbose_name=_('Number of purchased items'),
+    )
     sn = models.CharField(
         verbose_name=_('SN / Key'),
         max_length=200,
@@ -83,13 +85,17 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         null=True,
         blank=True,
         related_name='children',
+        verbose_name=_('Parent licence'),
     )
     niw = models.CharField(
         max_length=50,
         null=True,
         blank=True,
+        verbose_name=_('Inventory number'),
     )
-    bought_date = models.DateField()
+    bought_date = models.DateField(
+        verbose_name=_('Purchase date'),
+    )
     valid_thru = models.DateField(
         null=True,
         blank=True,
@@ -102,6 +108,11 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     accounting_id = models.CharField(
         max_length=200,
         null=True,
+        blank=True,
+        help_text=_(
+            'Any value to help your accounting department '
+            'identify this licence'
+        ),
     )
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()

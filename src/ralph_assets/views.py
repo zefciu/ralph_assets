@@ -131,6 +131,12 @@ class AssetsBase(Base):
                 name='back_office',
                 href='/assets/back_office',
             ),
+            MenuItem(
+                label='Licence List',
+                fugue_icon='fugue-cheque-sign',
+                name=_('licence_list'),
+                href='/assets/sam/',
+            ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
             mainmenu.append(
@@ -154,7 +160,6 @@ class AssetsBase(Base):
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
-            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
@@ -1701,7 +1706,11 @@ class LicenceList(AssetsBase):
         page = self.request.GET.get('page', 1)
         categories = SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
-        ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        )
+        if self.mode:
+            categories = categories.filter(
+                asset_type=MODE2ASSET_TYPE[self.mode]
+            )
         categories_page = Paginator(
             categories, LICENCE_PAGE_SIZE
         ).page(page)

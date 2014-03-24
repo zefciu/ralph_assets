@@ -95,6 +95,11 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
+        r'sam/$',
+        login_required(LicenceList.as_view()),
+        name='licence_list',
+    ),
+    url(
         r'(?P<mode>(back_office|dc))/sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',
