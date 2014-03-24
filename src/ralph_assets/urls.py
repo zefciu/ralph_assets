@@ -80,7 +80,7 @@ urlpatterns = patterns(
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
     url(
-        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
         login_required(assets_views.AddAttachment.as_view()),
         name='add_attachment'
     ),
@@ -115,7 +115,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',
+        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
         login_required(assets_views.DeleteAttachment.as_view()),
         name='delete_attachment',
     ),
