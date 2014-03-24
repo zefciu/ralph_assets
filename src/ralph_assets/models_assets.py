@@ -270,6 +270,15 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
     pass
 
 
+class Attachment(SavingUser, TimeTrackable):
+    original_filename = models.CharField(max_length=255, unique=False)
+    file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+
+    def save(self, *args, **kwargs):
+        self.original_filename = self.file.name
+        super(Attachment, self).save(*args, **kwargs)
+
+
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     '''
     Asset model contain fields with basic information about single asset
@@ -367,6 +376,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
     )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)

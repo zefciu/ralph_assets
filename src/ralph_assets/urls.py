@@ -9,6 +9,7 @@ from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
+from ralph_assets import views as assets_views
 from ralph_assets.views import (
     AddDevice,
     AddLicence,
@@ -79,6 +80,11 @@ urlpatterns = patterns(
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
     url(
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        login_required(assets_views.AddAttachment.as_view()),
+        name='add_attachment'
+    ),
+    url(
         r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
@@ -107,5 +113,10 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/sam/delete/$',
         login_required(DeleteLicence.as_view()),
         name='delete_licence',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
+        login_required(assets_views.DeleteAttachment.as_view()),
+        name='delete_attachment',
     ),
 )

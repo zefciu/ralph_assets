@@ -51,6 +51,10 @@ p.help {
     float: left;
 }
 
+#attchments-list {
+    list-style-type: none;
+}
+
 .bulk-table input, .bulk-table select {
     min-width: 100px;
 }
@@ -62,7 +66,16 @@ p.help {
 .section-title a {
   font-weight: bold;
   font-size: 12px;
+}
 
 .del-asset-btn {
     color: #FF0000;
+}
+
+.markerless-list {
+    list-style-type: none;
+}
+
+.delete-attachment {
+    color: #ff0011;
 }

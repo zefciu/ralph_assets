@@ -1289,3 +1289,9 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
+
+
+class AttachmentForm(ModelForm):
+    class Meta:
+        model = models_assets.Attachment
+        fields = ['file']
