@@ -23,7 +23,7 @@ def get_assets(date):
     """Yields dicts describing all assets"""
     for asset in Asset.objects_dc.filter(
         Q(invoice_date=None) | Q(invoice_date__lte=date),
-        part_info=None
+        part_info=None,
     ):
         device_info = asset.device_info
 
