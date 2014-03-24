@@ -23,15 +23,15 @@
       <h5>{% trans "Attachments:" %}</h6>
       <a class='btn btn-primary' target='_blank'
         href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}"
-      >add new one</a>
+      >{% trans "add new one" %}</a>
     {% if asset.attachments.all %}
-      <h6>Attached:</h6>
+      <h6>{% trans "Attached:" %}</h6>
       <ul id='attchments-list'>
       {% for attachment in asset.attachments.all %}
         <li> <a href="{{MEDIA_URL}}{{attachment.file.name}}"><span>{{attachment.original_filename}}</span></a></li>
           <div class="btn-group">
             <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-              Action
+              {% trans "Action" %}
               <span class="caret"></span>
             </a>
             <ul class="dropdown-menu">

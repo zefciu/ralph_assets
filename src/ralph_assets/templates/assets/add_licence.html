@@ -24,18 +24,18 @@
 
     {% if licence %}
       <div id='attachments-box' class='span6 well'>
-        <h5>Attachments:</h5>
+        <h5>{% trans "Attachments:" %}</h5>
         <a class='btn btn-primary' target='_blank'
           href="{% url add_attachment mode=mode parent='license' %}?select={{licence.id}}"
-        >add new one</a>
+        >{% trans "add new one" %}</a>
       {% if licence.attachments.all %}
-        <h6>Attached:</h6>
+        <h6>{% trans "Attached:" %}</h6>
         <ul id='attchments-list'>
         {% for attachment in licence.attachments.all %}
           <li> <a href="{{MEDIA_URL}}{{attachment.file.name}}">{{attachment.original_filename}}</a> </li>
             <div class="btn-group">
               <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                Action
+                {% trans "Action" %}
                 <span class="caret"></span>
               </a>
               <ul class="dropdown-menu">
