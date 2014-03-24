@@ -271,9 +271,12 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 
 
 class Attachment(SavingUser, TimeTrackable):
-    # XXX: check base classes corectness
     original_filename = models.CharField(max_length=255, unique=False)
     file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+
+    def save(self, *args, **kwargs):
+        self.original_filename = self.file.name
+        super(Attachment, self).save(*args, **kwargs)
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):

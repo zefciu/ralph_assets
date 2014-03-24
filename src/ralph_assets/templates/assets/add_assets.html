@@ -20,7 +20,7 @@
     </div>
 
     <div id='attachments-box' class='span6 well'>
-      <h5>Attachments:</h5>
+      <h5>{% trans "Attachments:" %}</h6>
       <a class='btn btn-primary' target='_blank'
         href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}"
       >add new one</a>
@@ -37,7 +37,6 @@
             <ul class="dropdown-menu">
               <li>
                 <span class='btn btn-link delete-attachment'
-                  style="color: #ff0011;"
                   data-form-id='delete-attachment-{{attachment.id}}'
                   data-delete-type='from_one'
                 >
@@ -45,7 +44,6 @@
                 </span>
                 <li class="divider"></li>
                 <span class='btn btn-link delete-attachment'
-                  style="color: #ff0011;"
                   data-form-id='delete-attachment-{{attachment.id}}'
                   data-delete-type='from_all'
                 >

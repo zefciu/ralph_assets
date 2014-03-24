@@ -30,10 +30,10 @@
         }
     };
 
-    Bulk.prototype.add_attachment = function() {
+    Bulk.prototype.addAttachment = function(type) {
         var ids = this.get_ids();
         if (ids.length){
-            window.location.href = 'add_attachment/asset/?select=' + ids.join('&select=');
+            window.location.href = 'add_attachment/' + type + '/?select=' + ids.join('&select=');
         }
     };
     Bulk.prototype.invoice_report_search_query = function () {
@@ -56,7 +56,7 @@
         });
 
         $('#post_add_attachment').click(function() {
-            bulk.add_attachment();
+            bulk.addAttachment('asset');
         });
 
         $('.delete-attachment').click(function() {

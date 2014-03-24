@@ -76,3 +76,6 @@ p.help {
     list-style-type: none;
 }
 
+.delete-attachment {
+    color: #ff0011;
+}

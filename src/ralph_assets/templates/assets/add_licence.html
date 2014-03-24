@@ -41,15 +41,13 @@
               <ul class="dropdown-menu">
                 <li>
                   <span class='btn btn-link delete-attachment'
-                    style="color: #ff0011;"
                     data-form-id='delete-attachment-{{attachment.id}}'
                     data-delete-type='from_one'
                   >
-                    {% trans "Delete from THIS licence" %}
+                    {% trans "Delete from THIS license" %}
                   </span>
                   <li class="divider"></li>
                   <span class='btn btn-link delete-attachment'
-                    style="color: #ff0011;"
                     data-form-id='delete-attachment-{{attachment.id}}'
                     data-delete-type='from_all'
                   >
@@ -74,7 +72,6 @@
     </div>
   </div>
 </form>
-{% endblock %}
 
 {% if licence %}
   <div id='attachments-forms'>
@@ -82,7 +79,7 @@
     {% for attachment in licence.attachments.all %}
       <form id='delete-attachment-{{attachment.id}}' class='form-inline'
         method="POST"
-        action="{% url delete_attachment_from_license mode=mode parent='license' %}"
+        action="{% url delete_attachment mode=mode parent='license' %}"
         target="_blank"
       >
         {% csrf_token %}
@@ -96,3 +93,4 @@
 {% endif %}
 
 
+{% endblock %}
