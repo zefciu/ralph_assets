@@ -577,7 +577,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
-            'loan_end_date': DateWidget(),
+            'loan_end_date': DateWidget(attrs={'id': 'id_loan_end_date'}),
             'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
@@ -1216,18 +1216,18 @@ class SearchAssetForm(Form):
     deleted = BooleanField(required=False, label="Include deleted")
     loan_end_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Loan end date",
+        label=_("Loan end date"),
     )
     loan_end_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label=''
+        label='',
     )
 
     def __init__(self, *args, **kwargs):
