@@ -10,7 +10,18 @@
         <li>{{ asset }}</li>
     {% endfor %}
     </ul>
+    {% if not report_link %}
+        {% form_horizontal form=transition_form method="post" action=action_url %}
+    {% else %}
+        <h4>
+            {% trans "click " %}
+            <a href="{{ report_link }}" TARGET = "_blank">{% trans "here" %}</a>
+            {% trans "to download report" %}
+        </h4>
 
-    {% form_horizontal form=transition_form method="post" action=action_url %}
+        <p><a href="{% url asset_search 'back_office' %}"> {% trans "back to home" %}</a></p>
+    {% endif %}
+
+
 {% endblock %}
 

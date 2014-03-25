@@ -43,7 +43,7 @@
             ids.length &&
             $.inArray(type, ['release-asset','return-asset', 'loan-asset']) != -1
         ){
-            window.location.href = 'transitions?select=' + ids.join('&select=');
+            window.location.href = 'transition?select=' + ids.join('&select=') + '&transition_type=' + type;
         }
     };
 

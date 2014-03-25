@@ -16,3 +16,7 @@ class TransitionForm(Form):
         LOOKUPS['asset_user'],
         required=True,
     )
+    warehouse = AutoCompleteSelectField(
+        LOOKUPS['asset_warehouse'],
+        required=True,
+    )

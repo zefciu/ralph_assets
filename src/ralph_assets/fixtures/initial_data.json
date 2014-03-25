@@ -1246,5 +1246,17 @@
       "fields": {
          "name": "assign_user"
       }
+   }, {
+      "pk": 5,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "unassign_user"
+      }
+   }, {
+      "pk": 6,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "assign_warehouse"
+      }
    }
 ]

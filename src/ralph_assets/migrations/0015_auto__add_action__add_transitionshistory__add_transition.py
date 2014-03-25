@@ -24,6 +24,9 @@ class Migration(SchemaMigration):
             ('transition', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.Transition'])),
             ('logged_user', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'logged user', to=orm['auth.User'])),
             ('affected_user', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'affected user', to=orm['auth.User'])),
+            ('report_filename', self.gf('django.db.models.fields.CharField')(max_length=256, null=True, blank=True)),
+            ('uid', self.gf('django.db.models.fields.CharField')(max_length=36)),
+            ('report_file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
         ))
         db.send_create_signal('ralph_assets', ['TransitionsHistory'])
 
@@ -173,7 +176,7 @@ class Migration(SchemaMigration):
             'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '1'}),
             'support_period': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0'}),
             'support_price': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
-            'support_type': ('django.db.models.fields.CharField', [], {'max_length': '150'}),
+            'support_type': ('django.db.models.fields.CharField', [], {'max_length': '150', 'blank': 'True'}),
             'support_void_reporting': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
             'task_url': ('django.db.models.fields.URLField', [], {'max_length': '2048', 'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
@@ -351,7 +354,10 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'logged_user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'logged user'", 'to': "orm['auth.User']"}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'transition': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Transition']"})
+            'report_file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
+            'report_filename': ('django.db.models.fields.CharField', [], {'max_length': '256', 'null': 'True', 'blank': 'True'}),
+            'transition': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Transition']"}),
+            'uid': ('django.db.models.fields.CharField', [], {'max_length': '36'})
         },
         'ralph_assets.warehouse': {
             'Meta': {'object_name': 'Warehouse'},

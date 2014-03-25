@@ -6,7 +6,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
@@ -16,6 +19,10 @@ from lck.django.common.models import (
 )
 
 from ralph_assets.models_assets import Asset, AssetStatus
+
+
+def _get_file_path(instance, filename):
+    return os.path.join('assets', filename)
 
 
 class Action(Named):
@@ -37,7 +44,6 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetStatus(),
     )
     actions = models.ManyToManyField(Action)
-    report_filename = models.CharField(max_length=256, null=True, blank=True)
 
     def actions_names(self, *args, **kwargs):
         return [action.name for action in self.actions.all()]
@@ -48,11 +54,37 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
     assets = models.ManyToManyField(Asset)
     logged_user = models.ForeignKey(User, related_name='logged user')
     affected_user = models.ForeignKey(User, related_name='affected user')
+    report_filename = models.CharField(max_length=256, null=True, blank=True)
+    uid = models.CharField(max_length=36)
+    report_file = models.FileField(upload_to=_get_file_path)
 
     def __unicode__(self, *args, **kwargs):
         return "{} - {}".format(self.transition, self.affected_user)
 
     @classmethod
-    def create(cls, base_args):
-        transition_history = TransitionsHistory(**base_args)
+    def create(
+        cls,
+        transition,
+        assets,
+        logged_user,
+        affected_user,
+        report_filename,
+        uid,
+        report_file_path,
+    ):
+        transition_history = TransitionsHistory()
+        transition_history.transition = transition
+        transition_history.logged_user = logged_user
+        transition_history.affected_user = affected_user
+        transition_history.report_filename = report_filename
+        transition_history.uid = uid
+        with open(report_file_path, 'rb') as f:
+            content = f.read()
+            f.close()
+            content = ContentFile(content)
+            transition_history.report_file.save(
+                report_filename, content, save=True,
+            )
         transition_history.save()
+        transition_history.assets.add(*assets)
+        return transition_history

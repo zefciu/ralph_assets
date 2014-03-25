@@ -138,13 +138,16 @@ admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)
 
 class TransitionAdmin(ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
+    filter_horizontal = ('actions',)
 
 admin.site.register(Transition, TransitionAdmin)
 
 
 class TransitionsHistoryAdmin(ModelAdmin):
-    list_display = ('transition', 'logged_user', 'affected_user')
-    readonly_fields = ('transition', 'assets', 'logged_user', 'affected_user')
+    list_display = ('transition', 'logged_user', 'affected_user', 'created')
+    readonly_fields = (
+        'transition', 'assets', 'logged_user', 'affected_user', 'report_file',
+    )
 
     def has_add_permission(self, request):
         return False
