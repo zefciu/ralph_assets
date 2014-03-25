@@ -9,8 +9,9 @@ from __future__ import unicode_literals
 import difflib
 
 from ajax_select import LookupChannel
+from django.contrib.auth.models import User
 from django.utils.html import escape
-from django.db.models import Q
+from django.db.models import Q, F, Count
 
 from ralph_assets.models_assets import (
     Asset,
@@ -18,14 +19,20 @@ from ralph_assets.models_assets import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
     AssetSource,
     AssetStatus,
     AssetType,
     DeviceInfo,
-    LicenseType,
     OfficeInfo,
     PartInfo,
+    ReportOdtSource,
     Warehouse,
+)
+from ralph_assets.models_sam import (  # noqa
+    Licence,
+    LicenceType,
+    SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.discovery.models import Device, DeviceType
@@ -58,6 +65,41 @@ class DeviceLookup(LookupChannel):
             <span class='asset-sn'>%s</span>
         </li>
         """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+
+    def get_base_objects(self):
+        return self.model.objects
+
+
+class FreeLicenceLookup(LookupChannel):
+    """Lookup the licences that have any specimen left."""
+
+    model = Licence
+
+    def get_query(self, q, _):
+        query = Q(
+            Q(software_category__name__icontains=q) &
+            Q(used__lt=F('number_bought'))
+        )
+        return self.model.objects.annotate(
+            used=Count('assets')
+        ).filter(query).all()[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+        <li class='asset-container'>
+            <span>{}</span>
+            <span>({} free)</span>
+        </li>
+        """.format(
+            escape(str(obj)),
+            str(obj.number_bought - obj.assets.count())
+        )
 
 
 class RalphDeviceLookup(LookupChannel):
@@ -113,8 +155,8 @@ class AssetModelLookup(LookupChannel):
     model = AssetModel
 
     def get_query(self, q, request):
-        return AssetModel.objects.filter(
-            Q(name__icontains=q)
+        return self.model.objects.filter(
+            Q(name__icontains=q) & Q(type=getattr(self, 'type', None))
         ).order_by('name')[:10]
 
     def get_result(self, obj):
@@ -124,7 +166,21 @@ class AssetModelLookup(LookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return '{}'.format(escape(obj.name))
+        manufacturer = getattr(obj, 'manufacturer', None) or '-'
+        return '''
+        <li>
+            <span>{model}</span>
+            <span class='auto-complete-blue'>({manufacturer})</span>
+        </li>
+        '''.format(model=escape(obj.name), manufacturer=escape(manufacturer))
+
+
+class DCAssetModelLookup(AssetModelLookup):
+    type = AssetType.data_center
+
+
+class BOAssetModelLookup(AssetModelLookup):
+    type = AssetType.back_office
 
 
 class AssetManufacturerLookup(LookupChannel):
@@ -212,23 +268,62 @@ class AssetLookupFuzzy(AssetLookup):
         return ret
 
 
+class UserLookup(LookupChannel):
+    model = User
+
+    def get_query(self, q, request):
+        try:
+            q1, q2 = q.split()
+        except ValueError:
+            result = User.objects.filter(
+                Q(username__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q)
+            ).order_by('username')[:10]
+        else:
+            result = User.objects.filter(
+                Q(first_name__icontains=q1, last_name__icontains=q2) |
+                Q(first_name__icontains=q2, last_name__icontains=q1)
+            )[:10]
+        return result
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+        <li class='asset-container'>
+            <span class=''>{first_name} {last_name}</span>
+            <span class='asset-user-department'>{department}</span>
+        </li>
+         """.format(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            department=obj.profile.department,
+        )
+
 __all__ = [
     'Asset',
     'AssetCategory',
     'AssetCategoryType',
     'AssetManufacturer',
     'AssetModel',
+    'AssetOwner',
     'AssetSource',
     'AssetStatus',
     'AssetType',
     'DeviceInfo',
-    'LicenseType',
     'OfficeInfo',
     'PartInfo',
+    'ReportOdtSource',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',
     'BODeviceLookup',
-    'AssetModelLookup',
+    'DCAssetModelLookup',
+    'BOAssetModelLookup',
     'AssetHistoryChange',
 ]

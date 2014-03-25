@@ -10,6 +10,7 @@ from django.test import TestCase
 from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
     Warehouse,
     Asset,
     AssetStatus,
@@ -29,6 +30,8 @@ class HistoryAssetsView(TestCase):
         self.client = login_as_su()
         self.category = create_category(type='back_office')
         self.manufacturer = AssetManufacturer(name='test_manufacturer')
+        self.owner = AssetOwner(name='ACME corporation')
+        self.owner.save()
         self.manufacturer.save()
         self.model = AssetModel(
             name='test_model', manufacturer=self.manufacturer
@@ -46,6 +49,7 @@ class HistoryAssetsView(TestCase):
             'support_type': 'standard',
             'support_void_reporting': 'on',
             'provider': 'test_provider',
+            'property_of': self.owner.id,
             'status': AssetStatus.new.id,
             'remarks': 'test_remarks',
             'size': 1,
@@ -53,13 +57,14 @@ class HistoryAssetsView(TestCase):
             'warehouse': self.warehouse.id,
             'sn': '666-666-666',
             'barcode': '666666',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 1.0,
             'ralph_device_id': '',
             'asset': True,  # Button name
             'source': 1,
             'deprecation_rate': 0,
             'production_year': 2011,
+            'licences': '',
         }
         self.asset_change_params = {
             'barcode': '777777',
@@ -71,6 +76,10 @@ class HistoryAssetsView(TestCase):
             'date_of_last_inventory': '2012-11-08',
             'last_logged_user': 'ralph',
         }
+        self.bo_asset_params = self.asset_params.copy()
+        self.bo_asset_params.update({
+            'purpose': 1,
+        })
         self.asset = None
         self.add_bo_device_asset()
         self.edit_bo_device_asset()
@@ -78,7 +87,7 @@ class HistoryAssetsView(TestCase):
     def add_bo_device_asset(self):
         """Test check adding Asset into backoffice through the form UI"""
         url = '/assets/back_office/add/device/'
-        attrs = self.asset_params
+        attrs = self.bo_asset_params
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
 
@@ -87,8 +96,9 @@ class HistoryAssetsView(TestCase):
         self.asset = Asset.objects.get(barcode='666666')
         url = '/assets/back_office/edit/device/{}/'.format(self.asset.id)
         attrs = dict(
-            self.asset_params.items() + self.asset_change_params.items()
+            self.bo_asset_params.items() + self.asset_change_params.items()
         )
+        attrs.update({'purpose': 2})
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
 
@@ -145,7 +155,7 @@ class ConnectAssetWithDevice(TestCase):
             'size': 1,
             'warehouse': self.warehouse.id,
             'barcode': '7777',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 0,
             'ralph_device_id': '',
             'asset': True,  # Button name
@@ -227,7 +237,7 @@ class TestsStockDevice(TestCase):
             'size': 1,
             'warehouse': self.warehouse.id,
             'barcode': '7777',
-            'category': self.category.id,
+            'category': self.category.slug,
             'slots': 0,
             'sn': 'fake-sn',
             'ralph_device_id': '',

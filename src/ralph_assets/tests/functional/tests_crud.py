@@ -38,7 +38,7 @@ class TestAdding(TestCase):
             category=self.category
         )
 
-    def test_send_data_via_add_form(self):
+    def send_data_via_add_form(self):
         url = '/assets/dc/add/device/'
         data_in_add_form = dict(
             type=AssetType.data_center.id,  # 1
@@ -59,7 +59,7 @@ class TestAdding(TestCase):
             sn='2222-2222-2222-2222',
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
-            category=self.category.id,
+            category=self.category.slug,
             ralph_device_id='',
             slots=1.0,
             deprecation_rate=0,
@@ -69,11 +69,12 @@ class TestAdding(TestCase):
         # If everything is ok, redirect us to /assets/dc/search
         self.assertRedirects(
             send_post,
+            # TODO: can't assert that id will be '2'
+            # maybe propose to django new assertRedirects with url as regex
             '/assets/dc/edit/device/2/',
             status_code=302,
             target_status_code=200,
         )
-
         view = self.client.get('/assets/dc/search')
         row_from_table = view.context_data['bob_page'].object_list[1]
 
@@ -93,7 +94,7 @@ class TestAdding(TestCase):
             msg = 'Field: %s Input: %s Output: %s' % (field, input, output)
             self.assertEqual(unicode(input), unicode(output), msg)
 
-    def test_send_data_via_edit_form(self):
+    def send_data_via_edit_form(self):
         # Fetch data
         url = '/assets/dc/edit/device/1/'
         view = self.client.get(url)
@@ -125,7 +126,7 @@ class TestAdding(TestCase):
             date_of_last_inventory='2003-02-02',
             last_logged_user='James Bond',
             remarks='any remarks',
-            category=self.category.id,
+            category=self.category.slug,
             slots=5.0,
             ralph_device_id='',
             asset=True,  # Button name
@@ -186,6 +187,10 @@ class TestAdding(TestCase):
                     self.assertEqual(
                         unicode(new_office_info[key]), unicode(office[key])
                     )
+
+    def test_send_data_via_add_and_edit_form(self):
+        self.send_data_via_add_form()
+        self.send_data_via_edit_form()
 
     def test_delete_asset(self):
         """todo"""

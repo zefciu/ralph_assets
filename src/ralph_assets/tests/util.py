@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.template.defaultfilters import slugify
+
 from random import randint
 
 from ralph_assets.models_assets import (
@@ -20,6 +22,8 @@ from ralph_assets.models_assets import (
     Warehouse
 )
 
+import cgi
+
 DEFAULT_ASSET_DATA = dict(
     manufacturer='Manufacturer1',
     model='Model1',
@@ -33,7 +37,10 @@ DEFAULT_ASSET_DATA = dict(
 )
 
 SCREEN_ERROR_MESSAGES = dict(
-    duplicated_sn_or_bc='Please correct duplicated serial numbers or barcodes.',  # noqa
+    duplicated_sn_or_bc=cgi.escape((
+        "Please correct errors and check both"
+        "\"serial numbers\" and \"barcodes\" for duplicates"
+    ), quote=True),
     duplicated_sn_in_field='There are duplicate serial numbers in field.',
     contain_white_character="Serial number can't contain white characters.",
     django_required='This field is required.',
@@ -96,6 +103,8 @@ def create_asset(sn, **kwargs):
 
 
 def create_category(type='data_center', name=DEFAULT_ASSET_DATA['category']):
+    subcategory_name = 'Subcategory'
+    type_name = type
     if type == 'back_office':
         type = AssetCategoryType.back_office
     elif type == 'data_center':
@@ -103,13 +112,16 @@ def create_category(type='data_center', name=DEFAULT_ASSET_DATA['category']):
     category = AssetCategory()
     category.name = name
     category.type = type
+    category.slug = slugify(type_name + name)
     category.save()
     subcategory = AssetCategory()
-    subcategory.name = 'Subcategory'
+    subcategory.name = subcategory_name
     subcategory.type = type
     subcategory.parent = category
+    subcategory.slug = slugify(type_name + category.name + subcategory_name)
     subcategory.save()
     return subcategory
+
 
 def get_bulk_edit_post_data_part(*args, **kwargs):
     id = kwargs.get('id')
@@ -130,38 +142,42 @@ def get_bulk_edit_post_data_part(*args, **kwargs):
     warehouse = kwargs.get('warehouse')
     if warehouse is None:
         warehouse = create_warehouse()
+        warehouse_id = warehouse.id
 
     return {
         'form-{0}-id'.format(id-1): id,
-        'form-{0}-type'.format(id-1):\
-            kwargs.get('type', AssetType.data_center.id),
+        'form-{0}-type'.format(id-1):
+        kwargs.get('type', AssetType.data_center.id),
         'form-{0}-model'.format(id-1): model_id,
-        'form-{0}-invoice_no'.format(id-1):\
-            kwargs.get('invoice_no', 'Invoice No0'),
-        'form-{0}-invoice_date'.format(id-1):\
-            kwargs.get('invoice_date', '2014-01-01'),
-        'form-{0}-order_no'.format(id-1):\
-            kwargs.get('order_no', 'Order No0'),
+        'form-{0}-invoice_no'.format(id-1):
+        kwargs.get('invoice_no', 'Invoice No0'),
+        'form-{0}-invoice_date'.format(id-1):
+        kwargs.get('invoice_date', '2014-01-01'),
+        'form-{0}-order_no'.format(id-1):
+        kwargs.get('order_no', 'Order No0'),
         'form-{0}-sn'.format(id-1): sn,
         'form-{0}-barcode'.format(id-1): barcode,
-        'form-{0}-support_period'.format(id-1):\
-            kwargs.get('support_period', 24),
-        'form-{0}-support_type'.format(id-1):\
-            kwargs.get('support_type', 'standard0'),
-        'form-{0}-support_void_reporting'.format(id-1):\
-            kwargs.get('support_void_reporting', 'on'),
-        'form-{0}-provider'.format(id-1):\
-            kwargs.get('provider', 'Provider 0'),
-        'form-{0}-status'.format(id-1):\
-            kwargs.get('status', AssetStatus.in_progress.id),
-        'form-{0}-source'.format(id-1):\
-            kwargs.get('source', AssetSource.shipment.id),
-        'form-{0}-ralph_device_id'.format(id-1):\
-            kwargs.get('ralph_device_id', ''),
-        'form-{0}-price'.format(id-1):\
-            kwargs.get('price', 10),
-        'form-{0}-warehouse'.format(id-1): warehouse.id,
+        'form-{0}-support_period'.format(id-1):
+        kwargs.get('support_period', 24),
+        'form-{0}-support_type'.format(id-1):
+        kwargs.get('support_type', 'standard0'),
+        'form-{0}-support_void_reporting'.format(id-1):
+        kwargs.get('support_void_reporting', 'on'),
+        'form-{0}-provider'.format(id-1):
+        kwargs.get('provider', 'Provider 0'),
+        'form-{0}-status'.format(id-1):
+        kwargs.get('status', AssetStatus.in_progress.id),
+        'form-{0}-source'.format(id-1):
+        kwargs.get('source', AssetSource.shipment.id),
+        'form-{0}-ralph_device_id'.format(id-1):
+        kwargs.get('ralph_device_id', ''),
+        'form-{0}-price'.format(id-1):
+        kwargs.get('price', 10),
+        'form-{0}-warehouse'.format(id-1): warehouse_id,
+        'form-{0}-deprecation_rate'.format(id-1):
+        kwargs.get('deprecation_rate', 25),
     }
+
 
 def get_bulk_edit_post_data(*args, **kwargs):
     post_data = {
