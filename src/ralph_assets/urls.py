@@ -9,26 +9,30 @@ from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView
 
+from ralph_assets import views as assets_views
 from ralph_assets.views import (
     AddDevice,
-    AddPart,
-    BulkEdit,
-    SplitDeviceView,
-    EditDevice,
-    EditPart,
-    AssetSearch,
-    DeleteAsset,
-    HistoryAsset,
-    XlsUploadView,
     AddLicence,
+    AddPart,
+    AssetSearch,
+    BulkEdit,
+    CategoryDependencyView,
+    DeleteAsset,
+    DeleteLicence,
+    EditDevice,
     EditLicence,
+    EditPart,
+    HistoryAsset,
+    InvoiceReport,
     LicenceList,
     SupportContractList,
     AddSupportContractForm,
-    EditSupportContractForm
+    EditSupportContractForm,
+    SplitDeviceView,
+    XlsUploadView,
 )
 
-from ralph_assets.forms import XLS_UPLOAD_FORMS
+from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
 
 urlpatterns = patterns(
@@ -57,6 +61,9 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(EditPart.as_view()),
         name='dc'),
+    url(r'/ajax/dependencies/category/$',
+        CategoryDependencyView.as_view(),
+        name='category_dependency_view'),
     url(r'(?P<mode>(back_office|dc))/history/device/(?P<asset_id>[0-9]+)/$',
         login_required(HistoryAsset.as_view()),
         name='device_history'),
@@ -72,13 +79,26 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
+    url(r'(?P<mode>(back_office|dc))/invoice_report/$',
+        login_required(InvoiceReport.as_view()),
+        name='invoice_report'),
     url(
-        r'xls/$',
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        login_required(assets_views.AddAttachment.as_view()),
+        name='add_attachment'
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/$',
+        login_required(LicenceList.as_view()),
+        name='licence_list',
+    ),
+    url(
+        r'sam/$',
         login_required(LicenceList.as_view()),
         name='licence_list',
     ),
@@ -107,5 +127,15 @@ urlpatterns = patterns(
         r'(?P<support_id>[0-9]+)$',
         login_required(EditSupportContractForm.as_view()),
         name='edit_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sam/delete/$',
+        login_required(DeleteLicence.as_view()),
+        name='delete_licence',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
+        login_required(assets_views.DeleteAttachment.as_view()),
+        name='delete_attachment',
     ),
 )

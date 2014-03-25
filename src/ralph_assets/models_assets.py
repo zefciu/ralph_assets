@@ -8,8 +8,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import datetime
+import os
 
 from dateutil.relativedelta import relativedelta
 
@@ -43,6 +43,28 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
+class CreatableFromString(object):
+    """Simple objects that can be created from string."""
+
+    @classmethod  # Decided not to play with abstractclassmethods
+    def create_from_string(cls, asset_type, s):
+        raise NotImplementedError
+
+
+class Sluggy(models.Model):
+    """An object with a unique slug."""
+
+    class Meta:
+        abstract = True
+
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        primary_key=True
+    )
+
+
 class LicenseType(Choices):
     _ = Choices.Choice
     not_applicable = _("not applicable")
@@ -60,10 +82,28 @@ class AssetType(Choices):
     back_office = _("back office")
     administration = _("administration")
 
+
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
     'back_office': AssetType.back_office,
 }
+
+
+ASSET_TYPE2MODE = {
+    AssetType.data_center: 'dc',
+    AssetType.back_office: 'back_office',
+}
+
+
+class AssetPurpose(Choices):
+    _ = Choices.Choice
+
+    for_contractor = _("for contractor")
+    sectional = _("sectional")
+    for_dashboards = _("for dashboards")
+    for_events = _("for events")
+    for_tests = _("for tests")
+    others = _("others")
 
 
 class AssetStatus(Choices):
@@ -101,13 +141,27 @@ class AssetCategoryType(Choices):
     data_center = _("data center")
 
 
-class AssetManufacturer(TimeTrackable, EditorTrackable, Named):
+class AssetManufacturer(
+    CreatableFromString,
+    TimeTrackable,
+    EditorTrackable,
+    Named
+):
     def __unicode__(self):
         return self.name
 
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
+
 
 class AssetModel(
-        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    CreatableFromString,
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate
+):
     '''
     Asset models describing hardware and contain standard information like
     created at
@@ -130,13 +184,22 @@ class AssetModel(
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
 
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(type=asset_type, name=s)
+
 
 class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
     """The company or other entity that are owners of assets."""
 
 
 class AssetCategory(
-        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
+    MPTTModel,
+    TimeTrackable,
+    EditorTrackable,
+    WithConcurrentGetOrCreate,
+    Sluggy,
+):
     name = models.CharField(max_length=50, unique=False)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -149,9 +212,6 @@ class AssetCategory(
         related_name='children',
     )
 
-    slug = models.SlugField(max_length=100, unique=True, blank=True,
-                            primary_key=True)
-
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -163,10 +223,19 @@ class AssetCategory(
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named,
-                WithConcurrentGetOrCreate):
+class Warehouse(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 def _get_file_path(instance, filename):
@@ -199,6 +268,15 @@ class BOManager(BOAdminManager, ViewableSoftDeletableManager):
 
 class DCManager(DCAdminManager, ViewableSoftDeletableManager):
     pass
+
+
+class Attachment(SavingUser, TimeTrackable):
+    original_filename = models.CharField(max_length=255, unique=False)
+    file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+
+    def save(self, *args, **kwargs):
+        self.original_filename = self.file.name
+        super(Attachment, self).save(*args, **kwargs)
 
 
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
@@ -238,7 +316,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         default=0,
         verbose_name="support period in months"
     )
-    support_type = models.CharField(max_length=150)
+    support_type = models.CharField(max_length=150, blank=True)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     status = models.PositiveSmallIntegerField(
@@ -254,6 +332,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     niw = models.CharField(max_length=50, null=True, blank=True,
                            verbose_name='Inventory number')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
@@ -297,6 +376,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
     )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -340,13 +420,10 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         return asset
 
     def get_data_type(self):
-        if self.device_info:
-            return 'device'
-        elif self.part_info:
+        if self.part_info:
             return 'part'
         else:
-            # should not return this value ;-)
-            return 'Unknown'
+            return 'device'
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
@@ -399,10 +476,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def is_deprecated(self, date=None):
         date = date or datetime.date.today()
-        if self.force_deprecation:
+        if self.force_deprecation or not self.invoice_date:
             return True
-        if not self.invoice_date:
-            return False
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )
@@ -528,6 +603,13 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
     date_of_last_inventory = models.DateField(
         null=True, blank=True)
     last_logged_user = models.CharField(max_length=100, null=True, blank=True)
+    imei = models.CharField(
+        max_length=18, null=True, blank=True, unique=True
+    )
+    purpose = models.PositiveSmallIntegerField(
+        verbose_name=_("purpose"), choices=AssetPurpose(), null=True,
+        blank=True, default=None
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(
@@ -558,3 +640,8 @@ class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
         self.save_comment = None
         self.saving_user = None
         super(PartInfo, self).__init__(*args, **kwargs)
+
+
+class ReportOdtSource(Named, SavingUser, TimeTrackable):
+    slug = models.SlugField(max_length=100, unique=True, blank=False)
+    template = models.FileField(upload_to=_get_file_path, blank=False)

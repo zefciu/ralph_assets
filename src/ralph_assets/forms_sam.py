@@ -6,11 +6,17 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ajax_select.fields import AutoCompleteField, AutoCompleteWidget
+from ajax_select.fields import (
+    AutoCompleteField,
+    AutoCompleteWidget,
+    AutoCompleteSelectMultipleField,
+)
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
+from ralph_assets.forms import LOOKUPS
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 
 
@@ -61,8 +67,16 @@ class LicenceForm(forms.ModelForm):
         widget=SoftwareCategoryWidget,
     )
 
+    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'])
+
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
+        if len(result['assets']) > result['number_bought']:
+            raise forms.ValidationError(_(
+                "You don't have sufficient licences!"
+            ))
+        if 'software_category' not in result:
+            return result
         if result['software_category'].asset_type is None:
             result['software_category'].asset_type = MODE2ASSET_TYPE[self.mode]
         if result['software_category'].pk is None:
@@ -85,7 +99,7 @@ class LicenceForm(forms.ModelForm):
             'order_no',
             'price',
             'accounting_id',
-            'used',
+            'assets',
         )
         widgets = {
             'bought_date': DateWidget,
