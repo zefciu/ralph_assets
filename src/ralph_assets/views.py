@@ -1502,6 +1502,8 @@ class SupportContractFormView(AssetsBase):
             support = self.form.save(commit=False)
             if support.asset_type is None:
                 support.asset_type = MODE2ASSET_TYPE[self.mode]
+            if request.FILES:
+                support.attachment = request.FILES['attachment']
             support.save()
             return HttpResponseRedirect(support.url)
         except ValueError:

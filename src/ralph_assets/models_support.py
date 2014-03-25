@@ -11,13 +11,14 @@ from django.db import models
 from lck.django.common.models import (
     Named,
 )
-from ralph_assets.models_assets import (AssetType, _get_file_path)
+from ralph_assets.models_assets import AssetType
 
 
 class SupportContract(Named):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
-    attachment = models.FileField(upload_to=_get_file_path, blank=True)
+    attachment = models.FileField(
+        upload_to='SupportContract/%Y', blank=True)
     cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0)
     date_from = models.DateField(null=False, blank=False)
