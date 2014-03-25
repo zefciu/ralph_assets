@@ -485,6 +485,7 @@ class DependencyAssetForm(DependencyForm):
                 None,
                 AJAX_UPDATE,
                 url=reverse('category_dependency_view'),
+                page_load_update=False,
             ),
             Dependency(
                 'loan_end_date',
@@ -505,6 +506,24 @@ class DependencyAssetForm(DependencyForm):
                 SHOW,
             ),
         ]
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'user',
+                    None,
+                    AJAX_UPDATE,
+                    url=reverse('category_dependency_view'),
+                ) for slave in (
+                    'company',
+                    'employee_id',
+                    'cost_center',
+                    'profit_center',
+                    'department',
+                    'manager',
+                )
+            ]
+        )
         for dep in deps:
             yield dep
 
@@ -600,6 +619,30 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.get('mode')
@@ -626,6 +669,16 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_category(self):
         data = self.cleaned_data["category"]
@@ -739,6 +792,30 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         mode = kwargs.get('mode')
@@ -758,6 +835,16 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_sn(self):
         return self.instance.sn
@@ -1243,3 +1330,9 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
+
+
+class AttachmentForm(ModelForm):
+    class Meta:
+        model = models_assets.Attachment
+        fields = ['file']

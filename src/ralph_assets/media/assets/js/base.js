@@ -30,6 +30,12 @@
         }
     };
 
+    Bulk.prototype.addAttachment = function(type) {
+        var ids = this.get_ids();
+        if (ids.length){
+            window.location.href = 'add_attachment/' + type + '/?select=' + ids.join('&select=');
+        }
+    };
     Bulk.prototype.invoice_report_search_query = function () {
         var params = window.location.search;
         if (params.length){
@@ -47,6 +53,20 @@
         });
         $('#post_invoice_report_search_query').click(function() {
             bulk.invoice_report_search_query();
+        });
+
+        $('#post_add_attachment').click(function() {
+            bulk.addAttachment('asset');
+        });
+
+        $('.delete-attachment').click(function() {
+            if (!confirm("Are you sure to delete Attachment(s)?")) {
+                return false;
+            }
+            var delete_type = $(this).attr('data-delete-type');
+            var form_id = '#' + $(this).attr('data-form-id');
+            $(form_id).find("input[name='delete_type']").val(delete_type);
+            $(form_id).submit();
         });
 
         $('.del-asset-btn').click(function() {
