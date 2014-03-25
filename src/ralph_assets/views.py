@@ -1509,14 +1509,14 @@ class SupportContractFormView(AssetsBase):
                 request, *args, **kwargs)
 
 
-class AddSupportContract(SupportContractFormView):
+class AddSupportContractForm(SupportContractFormView):
     """Add a new support"""
 
     caption = _('Add Support')
 
     def get(self, request, *args, **kwargs):
         self._get_form()
-        return super(AddSupportContract, self).get(request, *args, **kwargs)
+        return super(AddSupportContractForm, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self._get_form(request.POST)
@@ -1539,7 +1539,7 @@ class SupportContractList(AssetsBase):
         return data
 
 
-class EditSupportContract(SupportContractFormView):
+class EditSupportContractForm(SupportContractFormView):
     """Edit support"""
 
     caption = _('Edit Support')
@@ -1547,7 +1547,7 @@ class EditSupportContract(SupportContractFormView):
     def get(self, request, support_id, *args, **kwargs):
         support = SupportContract.objects.get(pk=support_id)
         self._get_form(instance=support)
-        return super(EditSupportContract, self).get(request, *args, **kwargs)
+        return super(EditSupportContractForm, self).get(request, *args, **kwargs)
 
     def post(self, request, support_id, *args, **kwargs):
         support = SupportContract.objects.get(pk=support_id)

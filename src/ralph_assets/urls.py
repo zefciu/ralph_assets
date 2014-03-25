@@ -24,8 +24,8 @@ from ralph_assets.views import (
     EditLicence,
     LicenceList,
     SupportContractList,
-    AddSupportContract,
-    EditSupportContract
+    AddSupportContractForm,
+    EditSupportContractForm
 )
 
 from ralph_assets.forms import XLS_UPLOAD_FORMS
@@ -99,13 +99,13 @@ urlpatterns = patterns(
     ),
     url(
         r'(?P<mode>(back_office|dc))/support/add_support/$',
-        login_required(AddSupportContract.as_view()),
+        login_required(AddSupportContractForm.as_view()),
         name='add_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/support/edit_support/'
         r'(?P<support_id>[0-9]+)$',
-        login_required(EditSupportContract.as_view()),
+        login_required(EditSupportContractForm.as_view()),
         name='edit_support',
     ),
 )
