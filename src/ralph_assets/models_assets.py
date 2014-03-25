@@ -367,6 +367,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
     )
+    loan_end_date = models.DateField(
+        null=True, blank=True, default=None, verbose_name=_('Loan end date'),
+    )
+    note = models.CharField(
+        verbose_name=_('Note'),
+        max_length=1024,
+        blank=True,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)

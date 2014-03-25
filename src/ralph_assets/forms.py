@@ -486,6 +486,24 @@ class DependencyAssetForm(DependencyForm):
                 AJAX_UPDATE,
                 url=reverse('category_dependency_view'),
             ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                [AssetStatus.loan.id],
+                SHOW,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                [AssetStatus.loan.id],
+                REQUIRE,
+            ),
+            Dependency(
+                'note',
+                'status',
+                [AssetStatus.loan.id],
+                SHOW,
+            ),
         ]
         for dep in deps:
             yield dep
@@ -529,6 +547,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'production_year',
             'owner',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -538,6 +558,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -662,6 +684,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'production_year',
             'owner',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -673,6 +697,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
             'barcode': Textarea(attrs={'rows': 1}),
+            'loan_end_date': DateWidget(attrs={'id': 'id_loan_end_date'}),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -1101,6 +1127,21 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    loan_end_date_from = DateField(
+        required=False, widget=DateWidget(attrs={
+            'placeholder': 'Start YYYY-MM-DD',
+            'data-collapsed': True,
+        }),
+        label="Loan end date",
+    )
+    loan_end_date_to = DateField(
+        required=False, widget=DateWidget(attrs={
+            'class': 'end-date-field ',
+            'placeholder': 'End YYYY-MM-DD',
+            'data-collapsed': True,
+        }),
+        label=''
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
