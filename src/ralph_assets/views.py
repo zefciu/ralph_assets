@@ -1518,7 +1518,8 @@ class AddSupportContractForm(SupportContractFormView):
 
     def get(self, request, *args, **kwargs):
         self._get_form()
-        return super(AddSupportContractForm, self).get(request, *args, **kwargs)
+        return super(AddSupportContractForm, self).get(
+            request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self._get_form(request.POST)
@@ -1549,7 +1550,8 @@ class EditSupportContractForm(SupportContractFormView):
     def get(self, request, support_id, *args, **kwargs):
         support = SupportContract.objects.get(pk=support_id)
         self._get_form(instance=support)
-        return super(EditSupportContractForm, self).get(request, *args, **kwargs)
+        return super(EditSupportContractForm, self).get(
+            request, *args, **kwargs)
 
     def post(self, request, support_id, *args, **kwargs):
         support = SupportContract.objects.get(pk=support_id)
