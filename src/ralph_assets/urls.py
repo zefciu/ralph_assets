@@ -26,7 +26,6 @@ from ralph_assets.views import (
     EditUser,
     HistoryAsset,
     InvoiceReport,
-    LicenceList,
     SupportContractList,
     AddSupportContractForm,
     EditSupportContractForm,
