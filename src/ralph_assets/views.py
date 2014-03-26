@@ -54,7 +54,11 @@ from ralph_assets.forms import (
     BackOfficeSearchAssetForm,
     DataCenterSearchAssetForm,
 )
-from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
+from ralph_assets.forms_import import (
+    ColumnChoiceField,
+    get_model_by_name,
+    get_amendment_model,
+)
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
 from ralph_assets.models import (
@@ -1474,12 +1478,14 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
+
 class XlsUploadView(SessionWizardView, AssetsBase):
     """The wizard view for xls/csv upload."""
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
     sidebar_selected = None
     mainmenu_selected = 'dc'
+
 
     def get_form(self, step=None, data=None, files=None):
         if step is None:
@@ -1494,6 +1500,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 for name in name_list:
                     form.fields[slugify(name)] = ColumnChoiceField(
                         model=model,
+                        mode=self.mode,
                         label=name,
                     )
         elif step == 'confirm':
@@ -1512,13 +1519,22 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.storage.data['mappings'] = mappings
         return form
 
+    # def _get_field_name(self, field_name):
+    #     model_name, field_name = qualified.rsplit('.', 1)
+    #     field, _, _, _ = get_model_by_name(
+    #         model_name,
+    #     )._meta.get_field_by_name(field_name)
+    #     return unicode(field.verbose_name)
+
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
+            
             names_per_sheet, update_per_sheet, add_per_sheet =\
                 self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
-            all_columns = list(mappings.values())
+            all_columns = list(mappings.values()) 
+            all_column_names = all_columns
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
@@ -1532,25 +1548,32 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     row.append(asset_data.get(column, ''))
                 update_table.append(row)
             add_table = []
+            
             for sheet_name, sheet_data in add_per_sheet.items():
                 for asset_data in sheet_data:
                     asset_data = dict(
-                        (mappings[k], v)
+                        (mappings[slugify(k)], v)
                         for (k, v) in asset_data.items()
-                        if k in mappings
+                        if slugify(k) in mappings
                     )
                     row = []
                     for column in all_columns:
                         row.append(asset_data.get(column, ''))
                     add_table.append(row)
             data['all_columns'] = all_columns
+            data['all_column_names'] = all_column_names
             data['update_table'] = update_table
             data['add_table'] = add_table
         return data
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        field, _, _, _ = self.Model._meta.get_field_by_name(
+        if '.' in field_name:
+            Model = self.AmdModel
+            _, field_name = field_name.split('.', 1)
+        else:
+            Model = self.Model
+        field, _, _, _ = Model._meta.get_field_by_name(
             field_name
         )
         if not value:
@@ -1593,14 +1616,19 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     @transaction.commit_on_success
     def done(self, form_list):
+        
         mappings = self.storage.data['mappings']
         names_per_sheet, update_per_sheet, add_per_sheet =\
             self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
         errors = {}
-        self.Model = get_model_by_name(
-            self.get_cleaned_data_for_step('upload')['model']
-        )
+        model = self.get_cleaned_data_for_step('upload')['model']
+        self.Model = get_model_by_name(model)
+        if model == 'ralph_assets.asset':
+            amd_field, amd_model = get_amendment_model(self.mode)
+            self.AmdModel = get_model_by_name(amd_model)
+        else:
+            amd_field = amd_model = self.AmdModel = None
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
@@ -1619,22 +1647,31 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
-                try:
-                    kwargs = dict(
-                        (
-                            mappings[key],
-                            self._get_field_value(mappings[key], value)
-                        ) for key, value in asset_data.items()
-                        if key in mappings
-                    )
-                    asset = self.Model(**kwargs)
-                    if isinstance(asset, Asset):
-                        asset.type = MODE2ASSET_TYPE[self.mode]
+                # try:
+                kwargs = {}
+                amd_kwargs = {}
+                for key, value in asset_data.items():
+                    field_name = mappings.get(slugify(key))
+                    if field_name is None:
+                        continue
+                    value = self._get_field_value(field_name, value)
+                    if field_name.startswith(amd_field + '.'):
+                        _, field_name = field_name.split('.', 1)
+                        amd_kwargs[field_name] = value
                     else:
-                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                    asset.save()
-                except Exception as exc:
-                    errors[tuple(asset_data.values())] = repr(exc)
+                        kwargs[field_name] = value
+                asset = self.Model(**kwargs)
+                if self.AmdModel is not None:
+                    amd_model_object = self.AmdModel(**amd_kwargs)
+                    amd_model_object.save()
+                    setattr(asset, amd_field, amd_model_object)
+                if isinstance(asset, Asset):
+                    asset.type = MODE2ASSET_TYPE[self.mode]
+                else:
+                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                asset.save()
+                # except Exception as exc:
+                #     errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors

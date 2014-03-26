@@ -17,6 +17,13 @@ from django.utils.translation import ugettext_lazy as _
 from ralph_assets.models_assets import AssetType
 
 
+def get_amendment_model(mode):
+    return {
+        'dc': ('deviceinfo', 'ralph_assets.deviceinfo'),
+        'back_office': ('officeinfo', 'ralph_assets.officeinfo'),
+    }[mode]
+
+
 class DataUploadField(forms.FileField):
     """A field that gets the uploaded XLS or CSV data and returns data
     prepared for add/update."""
@@ -92,6 +99,10 @@ class DataUploadField(forms.FileField):
 
     def to_python(self, value):
         file_ = super(DataUploadField, self).to_python(value)
+        if file_ is None:
+            raise forms.ValidationError(
+                'Please provide a file for import.'
+            )
         try:
             filetype = {
                 'application/vnd.openxmlformats-officedocument.'
@@ -122,13 +133,23 @@ class ModelChoiceField(forms.ChoiceField):
 class ColumnChoiceField(forms.ChoiceField):
     """A field that allows to choose a field from a model."""
 
-    def __init__(self, model, *args, **kwargs):
-        self.Model = get_model_by_name(model)
+    def __init__(self, model, mode, *args, **kwargs):
         kwargs['choices'] = [('', '-----')]
+        Model = get_model_by_name(model)
         kwargs['choices'] += [
             (field.name, unicode(field.verbose_name))
-            for field in self.Model._meta.fields if field.name != 'id'
+            for field in Model._meta.fields if field.name != 'id'
         ]
+        if model == 'ralph_assets.asset':
+            amd_field, amd_model = get_amendment_model(mode)
+            AmdModel = get_model_by_name(amd_model)
+            kwargs['choices'] += [
+                (
+                    '.'.join([amd_field, field.name]),
+                    unicode(field.verbose_name)
+                )
+                for field in AmdModel._meta.fields if field.name != 'id'
+            ]
         kwargs['required'] = False
         super(ColumnChoiceField, self).__init__(*args, **kwargs)
 
@@ -145,11 +166,10 @@ class XlsColumnChoiceForm(forms.Form):
     def clean(self, *args, **kwargs):
         result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
         matched = set(result.values()) - {''}
+        Model = get_model_by_name(self.model_reflected)
         required = {
             field.name
-            for field in get_model_by_name(
-                self.model_reflected
-            )._meta.fields
+            for field in Model._meta.fields
             if not (
                 field.blank or
                 field.default != NOT_PROVIDED or
