@@ -39,7 +39,7 @@ class TransitionDispatcher(object):
         logged_user,
         affected_user,
         template_file=None,
-        warehouse=None
+        warehouse=None,
     ):
         self.instance = instance
         self.transition = transition
@@ -98,13 +98,11 @@ class TransitionDispatcher(object):
         )
         self.report_file_patch = output_path
 
-    def _action_release_report(self,):
+    def _action_release_report(self):
         self._generate_report()
-        return self.report_file_patch
 
     def _action_return_report(self):
         self._generate_report()
-        return self.report_file_patch,
 
     def _save_history(self):
         self.transition_history = TransitionsHistory.create(
