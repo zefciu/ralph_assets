@@ -81,15 +81,14 @@ urlpatterns = patterns(
         login_required(InvoiceReport.as_view()),
         name='invoice_report'),
     url(
-<<<<<<< HEAD
         r'(?P<mode>(back_office|dc))/transition/$',
         login_required(TransitionView.as_view()),
         name='transition',
-=======
+    ),
+    url(
         r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
         login_required(assets_views.AddAttachment.as_view()),
         name='add_attachment'
->>>>>>> 17ec5d50fac493e7ce05fbcef1a6c6e6457e556d
     ),
     url(
         r'(?P<mode>(back_office|dc))/xls/$',
