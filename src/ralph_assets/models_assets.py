@@ -384,6 +384,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         User, null=True, blank=True, related_name="user",
     )
     attachments = models.ManyToManyField(Attachment, null=True, blank=True)
+    loan_end_date = models.DateField(
+        null=True, blank=True, default=None, verbose_name=_('Loan end date'),
+    )
+    note = models.CharField(
+        verbose_name=_('Note'),
+        max_length=1024,
+        blank=True,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -490,10 +498,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def is_deprecated(self, date=None):
         date = date or datetime.date.today()
-        if self.force_deprecation:
+        if self.force_deprecation or not self.invoice_date:
             return True
-        if not self.invoice_date:
-            return False
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )

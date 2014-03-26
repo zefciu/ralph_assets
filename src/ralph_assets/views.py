@@ -416,7 +416,7 @@ class _AssetSearch(AssetsBase):
         # now fields within ranges.
         search_date_fields = [
             'invoice_date', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date',
+            'production_use_date', 'provider_order_date', 'loan_end_date',
         ]
         for date in search_date_fields:
             start = self.request.GET.get(date + '_from')
@@ -869,8 +869,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if not self.asset.device_info:  # it isn't device asset
-            raise Http404()
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
@@ -1546,9 +1544,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower()
+            value_lower = value.lower().trim()
             for k, v in field.choices:
-                if value_lower == v.lower():
+                if value_lower == v.lower().trim():
                     value = k
                     break
 
