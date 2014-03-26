@@ -13,7 +13,6 @@ from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
 from ralph_assets.models import (
-    Action,
     Asset,
     AssetCategory,
     AssetCategoryType,

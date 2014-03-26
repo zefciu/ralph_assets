@@ -1305,9 +1305,6 @@ class SplitDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        #self.fields['delete'].widget = ButtonWidget(
-        #    attrs={'class': 'btn-danger delete_row', 'value': '-'}
-        #)
 
     def clean(self):
         cleaned_data = super(SplitDevice, self).clean()

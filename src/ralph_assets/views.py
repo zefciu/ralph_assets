@@ -214,7 +214,7 @@ class AssetsBase(Base):
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
             fields = ['imei', 'purpose']
             for field in fields:
-                if not field in self.asset_form.fields:
+                if field not in self.asset_form.fields:
                     continue
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
@@ -1136,7 +1136,7 @@ class BulkEdit(AssetsBase, Base):
         for idx, asset in enumerate(assets):
             if asset.office_info:
                 for field in ['purpose']:
-                    if not field in self.asset_formset.forms[idx].fields:
+                    if field not in self.asset_formset.forms[idx].fields:
                         continue
                     self.asset_formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
