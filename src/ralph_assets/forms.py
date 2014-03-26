@@ -14,7 +14,8 @@ from ajax_select.fields import (
     AutoCompleteField,
     AutoCompleteSelectMultipleField,
 )
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
+from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
     CharField,
@@ -478,7 +479,51 @@ class DependencyAssetForm(DependencyForm):
                 ]).all(),
                 REQUIRE,
             ),
+            Dependency(
+                'location',
+                'user',
+                None,
+                AJAX_UPDATE,
+                url=reverse('category_dependency_view'),
+                page_load_update=False,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                [AssetStatus.loan.id],
+                SHOW,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                [AssetStatus.loan.id],
+                REQUIRE,
+            ),
+            Dependency(
+                'note',
+                'status',
+                [AssetStatus.loan.id],
+                SHOW,
+            ),
         ]
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'user',
+                    None,
+                    AJAX_UPDATE,
+                    url=reverse('category_dependency_view'),
+                ) for slave in (
+                    'company',
+                    'employee_id',
+                    'cost_center',
+                    'profit_center',
+                    'department',
+                    'manager',
+                )
+            ]
+        )
         for dep in deps:
             yield dep
 
@@ -498,6 +543,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -520,6 +566,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'production_year',
             'owner',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -529,6 +577,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -548,6 +598,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
+    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
@@ -566,6 +617,30 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
+        required=False,
+    )
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
         required=False,
     )
 
@@ -594,6 +669,16 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_category(self):
         data = self.cleaned_data["category"]
@@ -626,6 +711,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
+            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -651,6 +737,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'production_year',
             'owner',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -662,6 +750,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
             'barcode': Textarea(attrs={'rows': 1}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -681,6 +771,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
+    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
@@ -699,6 +790,30 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
+        required=False,
+    )
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
         required=False,
     )
 
@@ -720,6 +835,16 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_sn(self):
         return self.instance.sn
@@ -1089,6 +1214,21 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    loan_end_date_from = DateField(
+        required=False, widget=DateWidget(attrs={
+            'placeholder': _('Start YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label=_("Loan end date"),
+    )
+    loan_end_date_to = DateField(
+        required=False, widget=DateWidget(attrs={
+            'class': 'end-date-field ',
+            'placeholder': _('End YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label='',
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -1190,3 +1330,9 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
+
+
+class AttachmentForm(ModelForm):
+    class Meta:
+        model = models_assets.Attachment
+        fields = ['file']

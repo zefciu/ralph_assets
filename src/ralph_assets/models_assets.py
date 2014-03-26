@@ -270,6 +270,15 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
     pass
 
 
+class Attachment(SavingUser, TimeTrackable):
+    original_filename = models.CharField(max_length=255, unique=False)
+    file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+
+    def save(self, *args, **kwargs):
+        self.original_filename = self.file.name
+        super(Attachment, self).save(*args, **kwargs)
+
+
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     '''
     Asset model contain fields with basic information about single asset
@@ -323,6 +332,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     niw = models.CharField(max_length=50, null=True, blank=True,
                            verbose_name='Inventory number')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
@@ -365,6 +375,15 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
+    )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
+    loan_end_date = models.DateField(
+        null=True, blank=True, default=None, verbose_name=_('Loan end date'),
+    )
+    note = models.CharField(
+        verbose_name=_('Note'),
+        max_length=1024,
+        blank=True,
     )
 
     def __unicode__(self):
@@ -409,13 +428,10 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         return asset
 
     def get_data_type(self):
-        if self.device_info:
-            return 'device'
-        elif self.part_info:
+        if self.part_info:
             return 'part'
         else:
-            # should not return this value ;-)
-            return 'Unknown'
+            return 'device'
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
@@ -468,10 +484,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def is_deprecated(self, date=None):
         date = date or datetime.date.today()
-        if self.force_deprecation:
+        if self.force_deprecation or not self.invoice_date:
             return True
-        if not self.invoice_date:
-            return False
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )

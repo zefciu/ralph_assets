@@ -13,6 +13,7 @@ import uuid
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
 from bob.menu import MenuItem, MenuHeader
+from bob.views import DependencyView
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
@@ -22,11 +23,16 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models.fields import DecimalField, CharField, TextField
+from django.db.models import Count, Q
+from django.db.models.fields import CharField, DecimalField, TextField
 from django.db.models.fields.related import RelatedField
-from django.db.models import Q, Count
-from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.forms.models import modelformset_factory, formset_factory
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    Http404,
+)
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -36,6 +42,7 @@ from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
+    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
     BasePartForm,
@@ -49,6 +56,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
 from ralph_assets.forms_sam import LicenceForm
+from ralph_assets import models as assets_models
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -61,6 +69,7 @@ from ralph_assets.models import (
     SoftwareCategory,
 )
 from ralph_assets.models_assets import (
+    Attachment,
     AssetType,
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
@@ -121,6 +130,12 @@ class AssetsBase(Base):
                 fugue_icon='fugue-printer',
                 name='back_office',
                 href='/assets/back_office',
+            ),
+            MenuItem(
+                label='Licence List',
+                fugue_icon='fugue-cheque-sign',
+                name=_('licence_list'),
+                href='/assets/sam/',
             ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
@@ -417,7 +432,7 @@ class _AssetSearch(AssetsBase):
         # now fields within ranges.
         search_date_fields = [
             'invoice_date', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date',
+            'production_use_date', 'provider_order_date', 'loan_end_date',
         ]
         for date in search_date_fields:
             start = self.request.GET.get(date + '_from')
@@ -733,7 +748,11 @@ class AddDevice(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in {"barcode", "imei", "licences", "sn"}:
+                if f_name in {
+                    "barcode", "company", "cost_center", "department",
+                    "employee_id", "imei", "licences", "manager", "sn",
+                    "profit_center"
+                }:
                     continue
                 asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
@@ -1545,7 +1564,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower
+            value_lower = value.lower()
             for k, v in field.choices:
                 if value_lower == v.lower():
                     value = k
@@ -1598,7 +1617,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                             self._get_field_value(mappings[key], value)
                         )
                     asset.save()
-                except BaseException as exc:
+                except Exception as exc:
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
@@ -1616,7 +1635,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     else:
                         asset.asset_type = MODE2ASSET_TYPE[self.mode]
                     asset.save()
-                except BaseException as exc:
+                except Exception as exc:
                     errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
@@ -1646,6 +1665,8 @@ class LicenceFormView(AssetsBase):
             'form_id': 'add_licence_form',
             'edit_mode': False,
             'caption': self.caption,
+            'licence': getattr(self, 'licence', None),
+            'mode': self.mode,
         })
         return ret
 
@@ -1684,13 +1705,13 @@ class EditLicence(LicenceFormView):
     message = _('Licence changed')
 
     def get(self, request, licence_id, *args, **kwargs):
-        licence = Licence.objects.get(pk=licence_id)
-        self._get_form(instance=licence)
+        self.licence = Licence.objects.get(pk=licence_id)
+        self._get_form(instance=self.licence)
         return super(EditLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, licence_id, *args, **kwargs):
-        licence = Licence.objects.get(pk=licence_id)
-        self._get_form(request.POST, instance=licence)
+        self.licence = Licence.objects.get(pk=licence_id)
+        self._get_form(request.POST, instance=self.licence)
         return self._save(request, *args, **kwargs)
 
 
@@ -1707,7 +1728,11 @@ class LicenceList(AssetsBase):
         page = self.request.GET.get('page', 1)
         categories = SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
-        ).filter(asset_type=MODE2ASSET_TYPE[self.mode])
+        )
+        if self.mode:
+            categories = categories.filter(
+                asset_type=MODE2ASSET_TYPE[self.mode]
+            )
         categories_page = Paginator(
             categories, LICENCE_PAGE_SIZE
         ).page(page)
@@ -1860,6 +1885,129 @@ class InvoiceReport(_AssetSearch):
         return data
 
 
+class AddAttachment(AssetsBase):
+    """
+    Adding attachments to Parent.
+    Parent can be one of these models: License, Asset.
+    """
+    template_name = 'assets/add_attachment.html'
+    sidebar_selected = None
+
+    def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
+        if parent == 'license':
+            parent = 'licence'
+        parent = parent.title()
+        self.Parent = getattr(assets_models, parent)
+        return super(AddAttachment, self).dispatch(
+            request, mode, *args, **kwargs
+        )
+
+    def get_context_data(self, **kwargs):
+        ret = super(AddAttachment, self).get_context_data(**kwargs)
+        ret.update({
+            'selected_parents': self.selected_parents,
+            'formset': self.attachments_formset,
+            'mode': self.mode,
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        url_parents_ids = self.request.GET.getlist('select')
+        self.selected_parents = self.Parent.objects.filter(
+            pk__in=url_parents_ids,
+        )
+        if not self.selected_parents.exists():
+            messages.warning(self.request, _("Nothing to edit."))
+            return HttpResponseRedirect(_get_return_link(self.mode))
+
+        AttachmentFormset = formset_factory(
+            form=AttachmentForm, extra=1,
+        )
+        self.attachments_formset = AttachmentFormset()
+        return super(AddAttachment, self).get(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        url_parents_ids = self.request.GET.getlist('select')
+        self.selected_parents = self.Parent.objects.filter(
+            id__in=url_parents_ids,
+        )
+        AttachmentFormset = formset_factory(
+            form=AttachmentForm, extra=0,
+        )
+        self.attachments_formset = AttachmentFormset(
+            self.request.POST, self.request.FILES,
+        )
+        if self.attachments_formset.is_valid():
+            for form in self.attachments_formset.forms:
+                instance = form.save()
+                for parent in self.selected_parents:
+                    parent.attachments.add(instance)
+            messages.success(self.request, _("Changes saved."))
+            return HttpResponseRedirect(_get_return_link(self.mode))
+        messages.error(self.request, _("Please correct the errors."))
+        return super(AddAttachment, self).get(*args, **kwargs)
+
+
+class DeleteAttachment(AssetsBase):
+
+    parent2url_name = {
+        'licence': 'edit_licence',
+        'asset': 'device_edit',
+    }
+
+    def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
+        if parent == 'license':
+            parent = 'licence'
+        self.Parent = getattr(assets_models, parent.title())
+        self.parent_name = parent
+        return super(DeleteAttachment, self).dispatch(
+            request, mode, *args, **kwargs
+        )
+
+    def post(self, *args, **kwargs):
+        parent_id = self.request.POST.get('parent_id')
+        self.back_url = reverse(
+            self.parent2url_name[self.parent_name], args=(self.mode, parent_id)
+        )
+        attachment_id = self.request.POST.get('attachment_id')
+        try:
+            attachment = Attachment.objects.get(pk=attachment_id)
+        except Attachment.DoesNotExist:
+            messages.error(
+                self.request, _("Selected attachment doesn't exists.")
+            )
+            return HttpResponseRedirect(self.back_url)
+        try:
+            self.parent = self.Parent.objects.get(pk=parent_id)
+        except self.Parent.DoesNotExist:
+            messages.error(
+                self.request,
+                _("Selected {} doesn't exists.").format(self.parent_name),
+            )
+            return HttpResponseRedirect(self.back_url)
+        delete_type = self.request.POST.get('delete_type')
+        if delete_type == 'from_one':
+            if attachment in self.parent.attachments.all():
+                self.parent.attachments.remove(attachment)
+                self.parent.save()
+                msg = _("Attachment was deleted")
+            else:
+                msg = _(
+                    "{} does not include the attachment any more".format(
+                        self.parent_name.title()
+                    )
+                )
+            messages.success(self.request, _(msg))
+
+        elif delete_type == 'from_all':
+            Attachment.objects.filter(id=attachment.id).delete()
+            messages.success(self.request, _("Attachments was deleted"))
+        else:
+            msg = "Unknown delete type: {}".format(delete_type)
+            messages.error(self.request, _(msg))
+        return HttpResponseRedirect(self.back_url)
+
+
 class DeleteLicence(AssetsBase):
     """Delete a licence."""
 
@@ -1876,3 +2024,23 @@ class DeleteLicence(AssetsBase):
         )
         licence.delete()
         return HttpResponseRedirect(self.back_to)
+
+
+class CategoryDependencyView(DependencyView):
+    def get_values(self, value):
+        try:
+            profile = User.objects.get(pk=value).profile
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return HttpResponseBadRequest("Incorrect user id")
+        values = dict(
+            [(name, getattr(profile, name)) for name in (
+                'location',
+                'company',
+                'employee_id',
+                'cost_center',
+                'profit_center',
+                'department',
+                'manager',
+            )]
+        )
+        return values
