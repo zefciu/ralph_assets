@@ -1519,13 +1519,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.storage.data['mappings'] = mappings
         return form
 
-    # def _get_field_name(self, field_name):
-    #     model_name, field_name = qualified.rsplit('.', 1)
-    #     field, _, _, _ = get_model_by_name(
-    #         model_name,
-    #     )._meta.get_field_by_name(field_name)
-    #     return unicode(field.verbose_name)
-
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
