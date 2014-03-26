@@ -1645,8 +1645,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         if field_name is None:
                             continue
                         value = self._get_field_value(field_name, value)
-                        if field_name.startswith(
-                            amd_field + '.'):
+                        if field_name.startswith(amd_field + '.'):
                             _, field_name = field_name.split('.', 1)
                             amd_kwargs[field_name] = value
                         else:
