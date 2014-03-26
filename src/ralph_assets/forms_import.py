@@ -165,6 +165,8 @@ class XlsColumnChoiceForm(forms.Form):
 
     def clean(self, *args, **kwargs):
         result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
+        if self.update:
+            return result
         matched = set(result.values()) - {''}
         Model = get_model_by_name(self.model_reflected)
         required = {

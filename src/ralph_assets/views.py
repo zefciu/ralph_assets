@@ -1496,6 +1496,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             model = self.get_cleaned_data_for_step('upload')['model']
             form.model_reflected = model
+            form.update = any(update_per_sheet.values())
             for name_list in names_per_sheet.values():
                 for name in name_list:
                     form.fields[slugify(name)] = ColumnChoiceField(
