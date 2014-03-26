@@ -577,7 +577,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
-            'loan_end_date': DateWidget(attrs={'id': 'id_loan_end_date'}),
+            'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
@@ -750,7 +750,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
             'barcode': Textarea(attrs={'rows': 1}),
-            'loan_end_date': DateWidget(attrs={'id': 'id_loan_end_date'}),
+            'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
