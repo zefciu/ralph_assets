@@ -23,7 +23,7 @@ class SupportContract(Named):
         max_digits=10, decimal_places=2, default=0)
     date_from = models.DateField(null=False, blank=False)
     date_to = models.DateField(null=False, blank=False)
-    #notification_period ?
+    # notification_period ?
     escalation_path = models.CharField(max_length=200, blank=True)
     contract_terms = models.CharField(max_length=200, blank=True)
     additional_notes = models.CharField(max_length=200, blank=True)
