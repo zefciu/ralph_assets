@@ -136,34 +136,49 @@ class AssetsBase(Base):
 
     def get_sidebar_items(self):
         if self.mode == 'back_office':
-            sidebar_caption = _('Back office actions')
+            base_sidebar_caption = _('Back office actions')
             self.mainmenu_selected = 'back office'
         else:
-            sidebar_caption = _('Data center actions')
+            base_sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'dc'
-        items = (
+        base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
+        )
+        license_items = (
             ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+        )
+        other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
-        sidebar_menu = (
-            [MenuHeader(sidebar_caption)] +
-            [MenuItem(
-                label=label,
-                fugue_icon=icon,
-                href=reverse(view, kwargs={
-                    'mode': (self.mode or 'dc')
-                })
-            ) for view, label, icon in items]
-        )
+        items = [
+            {'caption': base_sidebar_caption, 'items': base_items},
+            {'caption': ('License'), 'items': license_items},
+            {'caption': ('Others'), 'items': other_items},
+        ]
+        sidebar_menu = tuple()
+        for item in items:
+            menu_item = (
+                [MenuHeader(item['caption'])] +
+                [MenuItem(
+                    label=label,
+                    fugue_icon=icon,
+                    href=reverse(view, kwargs={
+                        'mode': (self.mode or 'dc')
+                    })
+                ) for view, label, icon in item['items']]
+            )
+            if sidebar_menu:
+                sidebar_menu += menu_item
+            else:
+                sidebar_menu = menu_item
         sidebar_menu += [
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='/admin/ralph_assets',
+                href=reverse('admin:app_list', args=('ralph_assets',))
             )
         ]
         return sidebar_menu
@@ -987,6 +1002,7 @@ class EditPart(AssetsBase):
             'status_history': status_history,
             'history_link': self.get_history_link(),
             'parent_link': self.get_parent_link(),
+            'asset': self.asset,
         })
         return ret
 
