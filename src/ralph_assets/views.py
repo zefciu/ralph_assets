@@ -142,6 +142,12 @@ class AssetsBase(Base):
                 name=_('licence_list'),
                 href='/assets/sam/',
             ),
+            MenuItem(
+                label='Support List',
+                fugue_icon='',
+                name=_('support_list'),
+                href='/assets/supports/',
+            ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
             mainmenu.append(
@@ -165,12 +171,14 @@ class AssetsBase(Base):
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
-            ('support_list', _('Support list'), 'fugue-cheque-sign'),
-            ('add_support', _('Add Support'), 'fugue-cheque--plus'),
         )
         license_items = (
             ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+        )
+        support_items = (
+            ('support_list', _('Support list'), ''),
+            ('add_support', _('Add Support'), ''),
         )
         other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
@@ -178,6 +186,7 @@ class AssetsBase(Base):
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
             {'caption': _('License'), 'items': license_items},
+            {'caption': _('Support'), 'items': support_items},
             {'caption': _('Others'), 'items': other_items},
         ]
         sidebar_menu = tuple()
@@ -1968,9 +1977,12 @@ class SupportContractList(AssetsBase):
         data = super(SupportContractList, self).get_context_data(
             *args, **kwargs
         )
-        data['supports'] = SupportContract.objects.filter(
-            asset_type=MODE2ASSET_TYPE[self.mode],
+        if self.mode:
+            data['supports'] = SupportContract.objects.filter(
+                asset_type=MODE2ASSET_TYPE[self.mode],
             )
+        else:
+            data['supports'] = SupportContract.objects.all()
         return data
 
 

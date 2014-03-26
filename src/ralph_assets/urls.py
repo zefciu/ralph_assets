@@ -120,17 +120,22 @@ urlpatterns = patterns(
         name='edit_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/support/$',
+        r'(?P<mode>(back_office|dc))/supports/$',
         login_required(SupportContractList.as_view()),
         name='support_list',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/support/add_support/$',
+        r'supports/$',
+        login_required(SupportContractList.as_view()),
+        name='support_list',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/supports/add_support/$',
         login_required(AddSupportContractForm.as_view()),
         name='add_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/support/edit_support/'
+        r'(?P<mode>(back_office|dc))/supports/edit_support/'
         r'(?P<support_id>[0-9]+)$',
         login_required(EditSupportContractForm.as_view()),
         name='edit_support',
