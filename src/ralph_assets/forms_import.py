@@ -19,8 +19,8 @@ from ralph_assets.models_assets import AssetType
 
 def get_amendment_model(mode):
     return {
-        'dc': ('deviceinfo', 'ralph_assets.deviceinfo'),
-        'back_office': ('officeinfo', 'ralph_assets.officeinfo'),
+        'dc': ('device_info', 'ralph_assets.deviceinfo'),
+        'back_office': ('office_info', 'ralph_assets.officeinfo'),
     }[mode]
 
 
