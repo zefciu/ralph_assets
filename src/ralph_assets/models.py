@@ -36,6 +36,11 @@ from ralph_assets.models_sam import (  # noqa
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_support import SupportContract
+from ralph_assets.models_transition import (
+    Action,
+    Transition,
+    TransitionsHistory,
+)
 from ralph.discovery.models import Device, DeviceType
 
 
@@ -307,6 +312,7 @@ class UserLookup(LookupChannel):
         )
 
 __all__ = [
+    'Action',
     'Asset',
     'AssetCategory',
     'AssetCategoryType',
@@ -320,6 +326,8 @@ __all__ = [
     'OfficeInfo',
     'PartInfo',
     'ReportOdtSource',
+    'Transition',
+    'TransitionsHistory',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',

@@ -54,7 +54,11 @@ from ralph_assets.forms import (
     BackOfficeSearchAssetForm,
     DataCenterSearchAssetForm,
 )
-from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
+from ralph_assets.forms_import import (
+    ColumnChoiceField,
+    get_model_by_name,
+    get_amendment_model,
+)
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
 from ralph_assets.models import (
@@ -116,7 +120,6 @@ class AssetsBase(Base):
             'section': self.mainmenu_selected,
             'mode': self.mode,
         })
-
         return ret
 
     def get_mainmenu_items(self):
@@ -153,35 +156,51 @@ class AssetsBase(Base):
 
     def get_sidebar_items(self):
         if self.mode == 'back_office':
-            sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'back office'
+            base_sidebar_caption = _('Back office actions')
+            self.mainmenu_selected = 'back_office'
         else:
-            sidebar_caption = _('Data center actions')
+            base_sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'dc'
-        items = (
+        base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
-            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
             ('support_list', _('Support list'), 'fugue-cheque-sign'),
             ('add_support', _('Add Support'), 'fugue-cheque--plus'),
+        )
+        license_items = (
+            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
+            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+        )
+        other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
-        sidebar_menu = (
-            [MenuHeader(sidebar_caption)] +
-            [MenuItem(
-                label=label,
-                fugue_icon=icon,
-                href=reverse(view, kwargs={
-                    'mode': (self.mode or 'dc')
-                })
-            ) for view, label, icon in items]
-        )
+        items = [
+            {'caption': base_sidebar_caption, 'items': base_items},
+            {'caption': _('License'), 'items': license_items},
+            {'caption': _('Others'), 'items': other_items},
+        ]
+        sidebar_menu = tuple()
+        for item in items:
+            menu_item = (
+                [MenuHeader(item['caption'])] +
+                [MenuItem(
+                    label=label,
+                    fugue_icon=icon,
+                    href=reverse(view, kwargs={
+                        'mode': (self.mode or 'dc')
+                    })
+                ) for view, label, icon in item['items']]
+            )
+            if sidebar_menu:
+                sidebar_menu += menu_item
+            else:
+                sidebar_menu = menu_item
         sidebar_menu += [
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='/admin/ralph_assets',
+                href=reverse('admin:app_list', args=('ralph_assets',))
             )
         ]
         return sidebar_menu
@@ -202,7 +221,7 @@ class AssetsBase(Base):
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
             fields = ['imei', 'purpose']
             for field in fields:
-                if not field in self.asset_form.fields:
+                if field not in self.asset_form.fields:
                     continue
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
@@ -420,7 +439,7 @@ class _AssetSearch(AssetsBase):
         # now fields within ranges.
         search_date_fields = [
             'invoice_date', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date',
+            'production_use_date', 'provider_order_date', 'loan_end_date',
         ]
         for date in search_date_fields:
             start = self.request.GET.get(date + '_from')
@@ -561,6 +580,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
+            'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
         })
         return ret
 
@@ -873,8 +893,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if not self.asset.device_info:  # it isn't device asset
-            raise Http404()
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
@@ -989,7 +1007,6 @@ class EditDevice(AssetsBase):
 
 class EditPart(AssetsBase):
     template_name = 'assets/edit_part.html'
-    sidebar_selected = None
 
     def initialize_vars(self):
         self.office_info_form = None
@@ -1008,6 +1025,7 @@ class EditPart(AssetsBase):
             'status_history': status_history,
             'history_link': self.get_history_link(),
             'parent_link': self.get_parent_link(),
+            'asset': self.asset,
         })
         return ret
 
@@ -1093,7 +1111,6 @@ class EditPart(AssetsBase):
 
 class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
-    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
@@ -1122,7 +1139,7 @@ class BulkEdit(AssetsBase, Base):
         for idx, asset in enumerate(assets):
             if asset.office_info:
                 for field in ['purpose']:
-                    if not field in self.asset_formset.forms[idx].fields:
+                    if field not in self.asset_formset.forms[idx].fields:
                         continue
                     self.asset_formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
@@ -1288,7 +1305,6 @@ class AddPart(AssetsBase):
 
 class HistoryAsset(AssetsBase):
     template_name = 'assets/history_asset.html'
-    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1464,9 +1480,10 @@ class SplitDeviceView(AssetsBase):
 
 class XlsUploadView(SessionWizardView, AssetsBase):
     """The wizard view for xls/csv upload."""
+
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
-    sidebar_selected = None
+    sidebar_selected = 'xls upload'
     mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
@@ -1478,10 +1495,12 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             model = self.get_cleaned_data_for_step('upload')['model']
             form.model_reflected = model
+            form.update = any(update_per_sheet.values())
             for name_list in names_per_sheet.values():
                 for name in name_list:
                     form.fields[slugify(name)] = ColumnChoiceField(
                         model=model,
+                        mode=self.mode,
                         label=name,
                     )
         elif step == 'confirm':
@@ -1507,6 +1526,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
             all_columns = list(mappings.values())
+            all_column_names = all_columns
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
@@ -1523,22 +1543,28 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             for sheet_name, sheet_data in add_per_sheet.items():
                 for asset_data in sheet_data:
                     asset_data = dict(
-                        (mappings[k], v)
+                        (mappings[slugify(k)], v)
                         for (k, v) in asset_data.items()
-                        if k in mappings
+                        if slugify(k) in mappings
                     )
                     row = []
                     for column in all_columns:
                         row.append(asset_data.get(column, ''))
                     add_table.append(row)
             data['all_columns'] = all_columns
+            data['all_column_names'] = all_column_names
             data['update_table'] = update_table
             data['add_table'] = add_table
         return data
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        field, _, _, _ = self.Model._meta.get_field_by_name(
+        if '.' in field_name:
+            Model = self.AmdModel
+            _, field_name = field_name.split('.', 1)
+        else:
+            Model = self.Model
+        field, _, _, _ = Model._meta.get_field_by_name(
             field_name
         )
         if not value:
@@ -1550,9 +1576,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower()
+            value_lower = value.lower().strip()
             for k, v in field.choices:
-                if value_lower == v.lower():
+                if value_lower == v.lower().strip():
                     value = k
                     break
 
@@ -1586,9 +1612,13 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
         errors = {}
-        self.Model = get_model_by_name(
-            self.get_cleaned_data_for_step('upload')['model']
-        )
+        model = self.get_cleaned_data_for_step('upload')['model']
+        self.Model = get_model_by_name(model)
+        if model == 'ralph_assets.asset':
+            amd_field, amd_model = get_amendment_model(self.mode)
+            self.AmdModel = get_model_by_name(amd_model)
+        else:
+            amd_field = amd_model = self.AmdModel = None
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
@@ -1608,14 +1638,23 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
                 try:
-                    kwargs = dict(
-                        (
-                            mappings[key],
-                            self._get_field_value(mappings[key], value)
-                        ) for key, value in asset_data.items()
-                        if key in mappings
-                    )
+                    kwargs = {}
+                    amd_kwargs = {}
+                    for key, value in asset_data.items():
+                        field_name = mappings.get(slugify(key))
+                        if field_name is None:
+                            continue
+                        value = self._get_field_value(field_name, value)
+                        if field_name.startswith(amd_field + '.'):
+                            _, field_name = field_name.split('.', 1)
+                            amd_kwargs[field_name] = value
+                        else:
+                            kwargs[field_name] = value
                     asset = self.Model(**kwargs)
+                    if self.AmdModel is not None:
+                        amd_model_object = self.AmdModel(**amd_kwargs)
+                        amd_model_object.save()
+                        setattr(asset, amd_field, amd_model_object)
                     if isinstance(asset, Asset):
                         asset.type = MODE2ASSET_TYPE[self.mode]
                     else:
@@ -1637,7 +1676,7 @@ class LicenceFormView(AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = None
+    sidebar_selected = 'add licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1705,7 +1744,6 @@ class LicenceList(AssetsBase):
     """The licence list."""
 
     template_name = "assets/licence_list.html"
-    sidebar_selected = None
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
@@ -1735,7 +1773,6 @@ class LicenceList(AssetsBase):
 
 class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
-    sidebar_selected = None
 
     def show_unique_error_message(self, *args, **kwargs):
         non_unique = {}
@@ -1960,7 +1997,6 @@ class AddAttachment(AssetsBase):
     Parent can be one of these models: License, Asset.
     """
     template_name = 'assets/add_attachment.html'
-    sidebar_selected = None
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':

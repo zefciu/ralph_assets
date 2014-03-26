@@ -31,11 +31,19 @@ class Assets(RalphModule):
             'level': 'DEBUG',
         })
         self.settings['DEFAULT_DEPRECATION_RATE'] = 25
-        asset_reports = {
+        self.settings['ASSETS_REPORTS'] = {
             'ENABLE': False,
-            'INVOICE_REPORT': {
-                'SLUG': 'invoice-report',
-            },
+            'INVOICE_REPORT': {'SLUG': 'invoice-report'},
+            'RELEASE-ASSET': {'SLUG': 'release-asset'},
+            'LOAN-ASSET': {'SLUG': 'loan-asset'},
+            'RETURN-ASSET': {'SLUG': 'return-asset'},
             'TEMP_STORAGE_PATH': '/tmp/',
         }
-        self.settings['ASSETS_REPORTS'] = asset_reports
+        self.settings['ASSETS_TRANSITIONS'] = {
+            'ENABLE': False,
+            'SLUGS': {
+                'RELEASE-ASSET': 'release-asset',
+                'LOAN-ASSET': 'loan-asset',
+                'RETURN-ASSET': 'return-asset',
+            }
+        }

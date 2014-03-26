@@ -23,6 +23,8 @@ from ralph_assets.models import (
     LicenceType,
     ReportOdtSource,
     SoftwareCategory,
+    Transition,
+    TransitionsHistory,
     Warehouse,
 )
 
@@ -36,6 +38,7 @@ class WarehouseAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)
     search_fields = ('name',)
+
 
 admin.site.register(Warehouse, WarehouseAdmin)
 
@@ -77,6 +80,7 @@ class AssetAdmin(ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+
 admin.site.register(Asset, AssetAdmin)
 
 
@@ -84,6 +88,7 @@ class AssetModelAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)
     search_fields = ('name',)
+
 
 admin.site.register(AssetModel, AssetModelAdmin)
 
@@ -114,6 +119,7 @@ class AssetCategoryAdmin(ModelAdmin):
     search_fields = ('name',)
     prepopulated_fields = {"slug": ("type", "parent", "name")}
 
+
 admin.site.register(AssetCategory, AssetCategoryAdmin)
 
 
@@ -121,6 +127,7 @@ class AssetManufacturerAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)
     search_fields = ('name',)
+
 
 admin.site.register(AssetManufacturer, AssetManufacturerAdmin)
 
@@ -130,4 +137,26 @@ class ReportOdtSourceAdmin(ModelAdmin):
     list_display = ('name', 'slug',)
     prepopulated_fields = {"slug": ("name",)}
 
+
 admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)
+
+
+class TransitionAdmin(ModelAdmin):
+    prepopulated_fields = {"slug": ("name",)}
+    filter_horizontal = ('actions',)
+
+
+admin.site.register(Transition, TransitionAdmin)
+
+
+class TransitionsHistoryAdmin(ModelAdmin):
+    list_display = ('transition', 'logged_user', 'affected_user', 'created')
+    readonly_fields = (
+        'transition', 'assets', 'logged_user', 'affected_user', 'report_file',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+
+admin.site.register(TransitionsHistory, TransitionsHistoryAdmin)
