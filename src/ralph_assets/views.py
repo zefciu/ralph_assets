@@ -1478,14 +1478,13 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-
 class XlsUploadView(SessionWizardView, AssetsBase):
     """The wizard view for xls/csv upload."""
+
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
     sidebar_selected = None
     mainmenu_selected = 'dc'
-
 
     def get_form(self, step=None, data=None, files=None):
         if step is None:
@@ -1530,11 +1529,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     def get_context_data(self, form, **kwargs):
         data = super(XlsUploadView, self).get_context_data(form, **kwargs)
         if self.steps.current == 'confirm':
-            
             names_per_sheet, update_per_sheet, add_per_sheet =\
                 self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
-            all_columns = list(mappings.values()) 
+            all_columns = list(mappings.values())
             all_column_names = all_columns
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
@@ -1549,7 +1547,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     row.append(asset_data.get(column, ''))
                 update_table.append(row)
             add_table = []
-            
             for sheet_name, sheet_data in add_per_sheet.items():
                 for asset_data in sheet_data:
                     asset_data = dict(
@@ -1617,7 +1614,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     @transaction.commit_on_success
     def done(self, form_list):
-        
         mappings = self.storage.data['mappings']
         names_per_sheet, update_per_sheet, add_per_sheet =\
             self.get_cleaned_data_for_step('upload')['file']
