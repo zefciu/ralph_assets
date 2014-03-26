@@ -869,8 +869,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if not self.asset.device_info:  # it isn't device asset
-            raise Http404()
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
