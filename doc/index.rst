@@ -20,5 +20,6 @@ See: quickstart.rst and installation.rst
 
    quickstart
    installation
+   transitions
 
 
