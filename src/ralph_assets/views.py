@@ -16,16 +16,11 @@ from bob.menu import MenuItem, MenuHeader
 from bob.views import DependencyView
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.formtools.wizard.views import SessionWizardView
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.storage import FileSystemStorage
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q
-from django.db.models.fields import CharField, DecimalField, TextField
-from django.db.models.fields.related import RelatedField
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponse,
@@ -33,34 +28,31 @@ from django.http import (
     HttpResponseRedirect,
     Http404,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from inkpy.api import generate_pdf
 from rq import get_current_job
-from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
-    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
+    AttachmentForm,
+    BackOfficeSearchAssetForm,
     BasePartForm,
-    SplitDevice,
+    DataCenterSearchAssetForm,
     DeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    BackOfficeSearchAssetForm,
-    DataCenterSearchAssetForm,
-)
-from ralph_assets.forms_import import (
-    ColumnChoiceField,
-    get_model_by_name,
-    get_amendment_model,
+    SearchUserForm,
+    SplitDevice,
+    UserRelationForm
 )
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
+from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -70,7 +62,7 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
     ReportOdtSource,
-    SoftwareCategory,
+    TransitionsHistory,
 )
 from ralph_assets.forms_support import SupportContractForm
 from ralph_assets.models_support import SupportContract
@@ -79,8 +71,6 @@ from ralph_assets.models_assets import (
     AssetType,
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
-    CreatableFromString,
-    Sluggy,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
@@ -94,6 +84,7 @@ MAX_PAGE_SIZE = 65535
 LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
+SEARCH_DELIMITERS = re.compile(r";|\|")
 
 logger = logging.getLogger(__name__)
 
@@ -109,38 +100,53 @@ def _move_data(src, dst, fields):
 class AssetsBase(Base):
     template_name = "assets/base.html"
     sidebar_selected = None
+    mainmenu_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
+        if self.mode == 'back_office':
+            base_sidebar_caption = _('Back office actions')
+            self.mainmenu_selected = self.mode
+        elif self.mode == 'dc':
+            base_sidebar_caption = _('Data center actions')
+            self.mainmenu_selected = self.mode
+        else:
+            base_sidebar_caption = ''
         ret.update({
-            'sidebar_items': self.get_sidebar_items(),
             'mainmenu_items': self.get_mainmenu_items(),
-            'section': 'assets',
-            'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
+            'sidebar_items': self.get_sidebar_items(base_sidebar_caption),
+            'sidebar_selected': self.sidebar_selected,
             'mode': self.mode,
+            'multivalues_fields': ['sn', 'barcode', 'imei'],
         })
         return ret
 
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                label='Data center',
+                label=_('Data center'),
                 name='dc',
                 fugue_icon='fugue-building',
                 href='/assets/dc',
             ),
             MenuItem(
-                label='BackOffice',
+                label=_('BackOffice'),
                 fugue_icon='fugue-printer',
                 name='back_office',
                 href='/assets/back_office',
             ),
             MenuItem(
-                label='Licence List',
+                label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name=_('licence_list'),
-                href='/assets/sam/',
+                name='software_categories',
+                href=reverse('software_categories'),
+            ),
+            MenuItem(
+                label=_('User list'),
+                fugue_icon='fugue-user-green-female',
+                name='user_list',
+                href=reverse('user_list'),
             ),
             MenuItem(
                 label='Support List',
@@ -152,21 +158,15 @@ class AssetsBase(Base):
         if 'ralph_pricing' in settings.INSTALLED_APPS:
             mainmenu.append(
                 MenuItem(
-                    label='Ralph Pricing',
+                    label='Scrooge',
                     fugue_icon='fugue-money-coin',
-                    name='back_office',
-                    href='/pricing/all-ventures/',
+                    name='scrooge',
+                    href='/scrooge/all-ventures/',
                 ),
             )
         return mainmenu
 
-    def get_sidebar_items(self):
-        if self.mode == 'back_office':
-            base_sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'back_office'
-        else:
-            base_sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = 'dc'
+    def get_sidebar_items(self, base_sidebar_caption):
         base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
@@ -268,6 +268,42 @@ class DataTableColumnAssets(DataTableColumn):
         self.foreign_field_name = foreign_field_name
 
 
+class GenericSearch(Report, AssetsBase, DataTableMixin):
+    """A generic view that contains a bob grid and a search form"""
+
+    sort_variable_name = 'sort'
+    export_variable_name = 'export'
+    template_name = 'assets/search.html'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(GenericSearch, self).get_context_data_paginator(
+                *args, **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+            'form': self.form,
+        })
+        return ret
+
+    def get(self, request, *args, **kwargs):
+        self.form = self.Form(self.request.GET)
+        qs = self.handle_search_data(request)
+        self.data_table_query(qs)
+        if self.export_requested():
+            return self.response
+        return super(GenericSearch, self).get(request, *args, **kwargs)
+
+    def handle_search_data(self, request):
+        q = self.form.get_query()
+        return self.Model.objects.filter(q).all()
+
+
 class _AssetSearch(AssetsBase):
 
     def set_mode(self, mode):
@@ -305,6 +341,16 @@ class _AssetSearch(AssetsBase):
             return self.admin_objects.filter(query)
         return self.objects.filter(query)
 
+    def _search_fields_or(self, fields, values):
+        q = Q()
+        for value in values:
+            value = value.strip()
+            if not value:
+                continue
+            for field in fields:
+                q |= Q(**{field: value})
+        return q
+
     def handle_search_data(self, *args, **kwargs):
         search_fields = [
             'id',
@@ -328,8 +374,16 @@ class _AssetSearch(AssetsBase):
             'task_url',
             'imei',
             'guardian',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
             'user',
             'purpose',
+            'service_name',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -337,11 +391,14 @@ class _AssetSearch(AssetsBase):
             field_value = self.request.GET.get(field)
             if field_value:
                 exact = False
+                multi = False
                 # if search term is enclosed in "", we want exact matches
                 if isinstance(field_value, basestring) and \
                         QUOTATION_MARKS.search(field_value):
                     exact = True
                     field_value = field_value[1:-1]
+                elif re.search(SEARCH_DELIMITERS, field_value):
+                    multi = True
                 if field == 'part_info':
                     if field_value == 'device':
                         all_q &= Q(part_info__isnull=True)
@@ -369,16 +426,31 @@ class _AssetSearch(AssetsBase):
                 elif field == 'barcode':
                     if exact:
                         all_q &= Q(barcode=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['barcode'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(barcode__contains=field_value)
                 elif field == 'sn':
                     if exact:
                         all_q &= Q(sn=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['sn'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(sn__icontains=field_value)
                 elif field == 'niw':
                     if exact:
                         all_q &= Q(niw=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['niw'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(niw__icontains=field_value)
                 elif field == 'provider':
@@ -396,6 +468,22 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'owner':
+                    all_q &= Q(owner__id=field_value)
+                elif field == 'location':
+                    all_q &= Q(location__icontains=field_value)
+                elif field == 'employee_id':
+                    all_q &= Q(owner__profile__employee_id=field_value)
+                elif field == 'company':
+                    all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'profit_center':
+                    all_q &= Q(owner__profile__profit_center=field_value)
+                elif field == 'cost_center':
+                    all_q &= Q(owner__profile__cost_center=field_value)
+                elif field == 'department':
+                    all_q &= Q(
+                        owner__profile__department__icontains=field_value
+                    )
                 elif field == 'user':
                     all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
@@ -439,6 +527,8 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(office_info__imei=field_value)
                     else:
                         all_q &= Q(office_info__imei__icontains=field_value)
+                elif field == 'service_name':
+                    all_q &= Q(service_name=field_value)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 else:
@@ -472,69 +562,103 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
     _ = DataTableColumnAssets
     sidebar_selected = 'search'
     template_name = 'assets/search_asset.html'
-    columns = [
-        _('Dropdown', selectable=True, bob_tag=True),
-        _('Type', bob_tag=True),
-        _('SN', field='sn', sort_expression='sn', bob_tag=True, export=True),
-        _('Barcode', field='barcode', sort_expression='barcode', bob_tag=True,
-          export=True),
-        _('Invoice date', field='invoice_date', sort_expression='model',
-          bob_tag=True, export=True),
-        _('Model', field='model', sort_expression='model', bob_tag=True,
-          export=True),
-        _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
-          bob_tag=True, export=True),
-        _('Order no.', field='order_no', sort_expression='order_no',
-          bob_tag=True, export=True),
-        _('Status', field='status', sort_expression='status',
-          bob_tag=True, export=True),
-        _('Warehouse', field='warehouse', sort_expression='warehouse',
-          bob_tag=True, export=True),
-        _('Venture', field='venture', sort_expression='venture',
-          bob_tag=True, export=True),
-        _('Department', field='department', foreign_field_name='venture',
-          export=True),
-        _('Price', field='price', sort_expression='price',
-          bob_tag=True, export=True),
-        _('Discovered', bob_tag=True, field='is_discovered', export=True,
-            foreign_field_name='is_discovered'),
-        _('Actions', bob_tag=True),
-        _('Barcode salvaged', field='barcode_salvaged',
-          foreign_field_name='part_info', export=True),
-        _('Source device', field='source_device',
-          foreign_field_name='part_info', export=True),
-        _('Device', field='device',
-          foreign_field_name='part_info', export=True),
-        _('Provider', field='provider', export=True),
-        _('Remarks', field='remarks', export=True),
-        _('Source', field='source', export=True),
-        _('Support peroid', field='support_peroid', export=True),
-        _('Support type', field='support_type', export=True),
-        _('Support void_reporting', field='support_void_reporting',
-          export=True),
-        _('Inventory number', field='niw', foreign_field_name='', export=True),
-        _(
-            'Ralph ID',
-            field='device_info',
-            foreign_field_name='ralph_device_id',
-            export=True
-        ),
-        _('Type', field='type', export=True),
-        _(
-            'Deprecation rate',
-            field='deprecation_rate',
-            foreign_field_name='', export=True,
-        ),
-    ]
+
+    def __init__(self, *args, **kwargs):
+        super(_AssetSearchDataTable, self).__init__(*args, **kwargs)
+        _ = self._
+        show_back_office = (self.column_visible, 'back_office')
+        show_dc = (self.column_visible, 'dc')
+        self.columns = [
+            _('Dropdown', selectable=True, bob_tag=True),
+
+            _('Type', bob_tag=True),
+            _('Status', field='status', sort_expression='status',
+              bob_tag=True, export=True),
+            _('Barcode', field='barcode', sort_expression='barcode',
+              bob_tag=True, export=True),
+            _('Category', field='model__category',
+              sort_expression='model__category', bob_tag=True,
+              show_conditions=show_back_office),
+            _('Manufacturer', field='model__manufacturer__name',
+              sort_expression='model__manufacturer__name',
+              bob_tag=True, export=True, show_conditions=show_back_office),
+            _('Model', field='model__name', sort_expression='model__name',
+              bob_tag=True, export=True),
+            _('User', field='user__username', sort_expression='user__username',
+              bob_tag=True, export=True, show_conditions=show_back_office),
+            _('Warehouse', field='warehouse__name',
+              sort_expression='warehouse__name', bob_tag=True, export=True),
+            _('SN', field='sn', sort_expression='sn', bob_tag=True,
+              export=True),
+            _('IMEI', field='office_info__imei',
+              sort_expression='office_info__imei', bob_tag=True, export=True,
+              show_conditions=show_back_office),
+            _('Property of', field='property_of__name',
+              sort_expression='property_of__name', bob_tag=True, export=True,
+              show_conditions=show_back_office),
+            _('Purpose', field='office_info__purpose',
+              sort_expression='office_info__purpose', bob_tag=True,
+              export=True, show_conditions=show_back_office),
+            _('Service name', field='service_name__name',
+              sort_expression='service_name__name', bob_tag=True, export=True,
+              show_conditions=show_back_office),
+            _('Invoice date', field='invoice_date',
+              sort_expression='invoice_date', bob_tag=True, export=True),
+            _('Invoice no.', field='invoice_no', sort_expression='invoice_no',
+              bob_tag=True, export=True, show_conditions=show_dc),
+            _('Order no.', field='order_no', sort_expression='order_no',
+              bob_tag=True, export=True, show_conditions=show_dc),
+            _('Price', field='price', sort_expression='price',
+              bob_tag=True, export=True, show_conditions=show_dc),
+            _('Venture', field='venture', sort_expression='venture',
+              bob_tag=True, export=True, show_conditions=show_dc),
+            _('Discovered', bob_tag=True, field='is_discovered', export=True,
+              foreign_field_name='is_discovered', show_conditions=show_dc),
+            _('Actions', bob_tag=True),
+
+            _('Department', field='department', foreign_field_name='venture',
+              export=True),
+            _('Barcode salvaged', field='barcode_salvaged',
+              foreign_field_name='part_info', export=True),
+            _('Source device', field='source_device',
+              foreign_field_name='part_info', export=True),
+            _('Device', field='device',
+              foreign_field_name='part_info', export=True),
+            _('Provider', field='provider', export=True),
+            _('Remarks', field='remarks', export=True),
+            _('Source', field='source', export=True),
+            _('Support peroid', field='support_peroid', export=True),
+            _('Support type', field='support_type', export=True),
+            _('Support void_reporting', field='support_void_reporting',
+              export=True),
+            _('Inventory number', field='niw', foreign_field_name='',
+              export=True),
+            _('Ralph ID', field='device_info',
+              foreign_field_name='ralph_device_id', export=True),
+            _('Type', field='type', export=True),
+            _('Deprecation rate', field='deprecation_rate',
+              foreign_field_name='', export=True),
+        ]
+
+    def column_visible(self, mode):
+        return self.mode == mode
 
     def handle_search_data(self, get_csv=False, *args, **kwargs):
-        all_q = super(
-            _AssetSearchDataTable, self,
-        ).handle_search_data(*args, **kwargs)
-        if get_csv:
-            return self.get_csv_data(self.get_all_items(all_q))
+        if self.form.is_valid():
+            all_q = super(
+                _AssetSearchDataTable, self,
+            ).handle_search_data(*args, **kwargs)
+            queryset = self.get_all_items(all_q)
+            self.assets_count = queryset.count() if all_q.children else None
+            if get_csv:
+                return self.get_csv_data(queryset)
+            else:
+                self.data_table_query(queryset)
         else:
-            self.data_table_query(self.get_all_items(all_q))
+            queryset = self.objects.none()
+            self.assets_count = None
+            self.data_table_query(queryset)
+            messages.error(self.request, _("Please correct the errors."))
 
     def get_csv_header(self):
         header = super(_AssetSearchDataTable, self).get_csv_header()
@@ -590,6 +714,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
             'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
+            'assets_count': self.assets_count,
         })
         return ret
 
@@ -962,7 +1087,7 @@ class EditDevice(AssetsBase):
                 self.asset_form.is_valid(),
                 self.device_info_form.is_valid(),
                 self.asset.type not in AssetType.BO.choices or
-                self.office_info_form.is_valid()
+                self.office_info_form.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
@@ -1121,6 +1246,11 @@ class EditPart(AssetsBase):
 class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
 
+    def dispatch(self, request, mode=None, *args, **kwargs):
+        self.mode = mode
+        self.form = self.form_dispatcher('BulkEditAsset')
+        return super(AssetsBase, self).dispatch(request, mode, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
         ret.update({
@@ -1135,10 +1265,9 @@ class BulkEdit(AssetsBase, Base):
         if not assets_count:
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         assets = Asset.objects.filter(
@@ -1156,10 +1285,9 @@ class BulkEdit(AssetsBase, Base):
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
@@ -1282,6 +1410,12 @@ class AddPart(AssetsBase):
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
+            for f_name in {
+                "barcode", "company", "cost_center", "department",
+                "employee_id", "imei", "licences", "manager", "profit_center"
+            }:
+                if f_name in asset_data:
+                    del asset_data[f_name]
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
@@ -1487,205 +1621,11 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class XlsUploadView(SessionWizardView, AssetsBase):
-    """The wizard view for xls/csv upload."""
-
-    template_name = 'assets/xls_upload_wizard.html'
-    file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
-    sidebar_selected = 'xls upload'
-    mainmenu_selected = 'dc'
-
-    def get_form(self, step=None, data=None, files=None):
-        if step is None:
-            step = self.steps.current
-        form = super(XlsUploadView, self).get_form(step, data, files)
-        if step == 'column_choice':
-            names_per_sheet, update_per_sheet, add_per_sheet =\
-                self.get_cleaned_data_for_step('upload')['file']
-            model = self.get_cleaned_data_for_step('upload')['model']
-            form.model_reflected = model
-            form.update = any(update_per_sheet.values())
-            for name_list in names_per_sheet.values():
-                for name in name_list:
-                    form.fields[slugify(name)] = ColumnChoiceField(
-                        model=model,
-                        mode=self.mode,
-                        label=name,
-                    )
-        elif step == 'confirm':
-            names_per_sheet, _, _ =\
-                self.get_cleaned_data_for_step('upload')['file']
-            mappings = {}
-            all_names = set(sum((
-                [slugify(n) for n in name_list]
-                for name_list in names_per_sheet.values()
-            ), []))
-            for k, v in self.get_cleaned_data_for_step(
-                'column_choice'
-            ).items():
-                if k in all_names and v != '':
-                    mappings[k] = v
-            self.storage.data['mappings'] = mappings
-        return form
-
-    def get_context_data(self, form, **kwargs):
-        data = super(XlsUploadView, self).get_context_data(form, **kwargs)
-        if self.steps.current == 'confirm':
-            names_per_sheet, update_per_sheet, add_per_sheet =\
-                self.get_cleaned_data_for_step('upload')['file']
-            mappings = self.storage.data['mappings']
-            all_columns = list(mappings.values())
-            all_column_names = all_columns
-            data_dicts = {}
-            for sheet_name, sheet_data in update_per_sheet.items():
-                for asset_id, asset_data in sheet_data.items():
-                    data_dicts.setdefault(asset_id, {})
-                    for key, value in asset_data.items():
-                        data_dicts[asset_id][mappings[key]] = value
-            update_table = []
-            for asset_id, asset_data in data_dicts.items():
-                row = [asset_id]
-                for column in all_columns:
-                    row.append(asset_data.get(column, ''))
-                update_table.append(row)
-            add_table = []
-            for sheet_name, sheet_data in add_per_sheet.items():
-                for asset_data in sheet_data:
-                    asset_data = dict(
-                        (mappings[slugify(k)], v)
-                        for (k, v) in asset_data.items()
-                        if slugify(k) in mappings
-                    )
-                    row = []
-                    for column in all_columns:
-                        row.append(asset_data.get(column, ''))
-                    add_table.append(row)
-            data['all_columns'] = all_columns
-            data['all_column_names'] = all_column_names
-            data['update_table'] = update_table
-            data['add_table'] = add_table
-        return data
-
-    def _get_field_value(self, field_name, value):
-        """Transform a pure string into the value to be put into the field."""
-        if '.' in field_name:
-            Model = self.AmdModel
-            _, field_name = field_name.split('.', 1)
-        else:
-            Model = self.Model
-        field, _, _, _ = Model._meta.get_field_by_name(
-            field_name
-        )
-        if not value:
-            if isinstance(field, (TextField, CharField)):
-                return ''
-            else:
-                return
-        if isinstance(field, DecimalField):
-            if value.count(',') == 1 and '.' not in value:
-                value = value.replace(',', '.')
-        if field.choices:
-            value_lower = value.lower().strip()
-            for k, v in field.choices:
-                if value_lower == v.lower().strip():
-                    value = k
-                    break
-
-        if (
-            isinstance(value, basestring) and
-            isinstance(field, RelatedField) and
-            issubclass(field.rel.to, (Named, User, Sluggy))
-        ):
-            try:
-                if issubclass(field.rel.to, User):
-                    value = field.rel.to.objects.get(username__iexact=value)
-                elif issubclass(field.rel.to, Sluggy):
-                    value = field.rel.to.objects.get(slug=value)
-                else:
-                    value = field.rel.to.objects.get(name__iexact=value)
-            except field.rel.to.DoesNotExist:
-                if issubclass(field.rel.to, CreatableFromString):
-                    value = field.rel.to.create_from_string(
-                        asset_type=MODE2ASSET_TYPE[self.mode],
-                        s=value
-                    )
-                    value.save()
-                else:
-                    raise
-        return value
-
-    @transaction.commit_on_success
-    def done(self, form_list):
-        mappings = self.storage.data['mappings']
-        names_per_sheet, update_per_sheet, add_per_sheet =\
-            self.get_cleaned_data_for_step('upload')['file']
-        failed_assets = []
-        errors = {}
-        model = self.get_cleaned_data_for_step('upload')['model']
-        self.Model = get_model_by_name(model)
-        if model == 'ralph_assets.asset':
-            amd_field, amd_model = get_amendment_model(self.mode)
-            self.AmdModel = get_model_by_name(amd_model)
-        else:
-            amd_field = amd_model = self.AmdModel = None
-        for sheet_name, sheet_data in update_per_sheet.items():
-            for asset_id, asset_data in sheet_data.items():
-                try:
-                    asset = self.Model.objects.get(pk=asset_id)
-                except ObjectDoesNotExist:
-                    failed_assets.append(asset_id)
-                    continue
-                try:
-                    for key, value in asset_data.items():
-                        setattr(
-                            asset, mappings[key],
-                            self._get_field_value(mappings[key], value)
-                        )
-                    asset.save()
-                except Exception as exc:
-                    errors[asset_id] = repr(exc)
-        for sheet_name, sheet_data in add_per_sheet.items():
-            for asset_data in sheet_data:
-                try:
-                    kwargs = {}
-                    amd_kwargs = {}
-                    for key, value in asset_data.items():
-                        field_name = mappings.get(slugify(key))
-                        if field_name is None:
-                            continue
-                        value = self._get_field_value(field_name, value)
-                        if field_name.startswith(amd_field + '.'):
-                            _, field_name = field_name.split('.', 1)
-                            amd_kwargs[field_name] = value
-                        else:
-                            kwargs[field_name] = value
-                    asset = self.Model(**kwargs)
-                    if self.AmdModel is not None:
-                        amd_model_object = self.AmdModel(**amd_kwargs)
-                        amd_model_object.save()
-                        setattr(asset, amd_field, amd_model_object)
-                    if isinstance(asset, Asset):
-                        asset.type = MODE2ASSET_TYPE[self.mode]
-                    else:
-                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                    asset.save()
-                except Exception as exc:
-                    errors[tuple(asset_data.values())] = repr(exc)
-        ctx_data = self.get_context_data(None)
-        ctx_data['failed_assets'] = failed_assets
-        ctx_data['errors'] = errors
-        return render(
-            self.request,
-            'assets/xls_upload_wizard_done.html',
-            ctx_data
-        )
-
-
 class LicenceFormView(AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = 'add licence'
+    sidebar_selected = 'list licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1701,6 +1641,7 @@ class LicenceFormView(AssetsBase):
             'caption': self.caption,
             'licence': getattr(self, 'licence', None),
             'mode': self.mode,
+            'section': 'licence_list',
         })
         return ret
 
@@ -1722,6 +1663,7 @@ class AddLicence(LicenceFormView):
 
     caption = _('Add Licence')
     message = _('Licence added')
+    sidebar_selected = 'add licence'
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1737,6 +1679,7 @@ class EditLicence(LicenceFormView):
 
     caption = _('Edit Licence')
     message = _('Licence changed')
+    sidebar_selected = 'licence edit'
 
     def get(self, request, licence_id, *args, **kwargs):
         self.licence = Licence.objects.get(pk=licence_id)
@@ -1753,13 +1696,14 @@ class LicenceList(AssetsBase):
     """The licence list."""
 
     template_name = "assets/licence_list.html"
+    sidebar_selected = 'licence list'
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
         page = self.request.GET.get('page', 1)
-        categories = SoftwareCategory.objects.annotate(
+        categories = models_sam.SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
         )
         if self.mode:
@@ -1777,6 +1721,7 @@ class LicenceList(AssetsBase):
                 for licence in category.licences_annotated
             )
         data['categories'] = categories_page
+        data['section'] = 'licence_list'
         return data
 
 
@@ -2056,9 +2001,11 @@ class AddAttachment(AssetsBase):
         )
         if self.attachments_formset.is_valid():
             for form in self.attachments_formset.forms:
-                instance = form.save()
+                attachment = form.save(commit=False)
+                attachment.uploaded_by = self.request.user
+                form.save()
                 for parent in self.selected_parents:
-                    parent.attachments.add(instance)
+                    parent.attachments.add(attachment)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))
@@ -2161,3 +2108,132 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class UserDetails(AssetsBase):
+    """Detail user profile, relations with assets and licences"""
+    template_name = 'assets/user_details.html'
+    sidebar_selected = None
+
+    def get(self, request, username, *args, **kwargs):
+        try:
+            self.user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            messages.error(request, _('User {} not found'.format(username)))
+            return HttpResponseRedirect(reverse('user_list'))
+        self.assigned_assets = Asset.objects.filter(user=self.user)
+        self.assigned_licences = self.user.licence_set.all()
+        self.transitions_history = TransitionsHistory.objects.filter(
+            affected_user=self.user,
+        )
+        return super(UserDetails, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(UserDetails, self).get_context_data(**kwargs)
+        ret.update({
+            'section': 'user_list',
+            'user_object': self.user,
+            'assigned_assets': self.assigned_assets,
+            'assigned_licences': self.assigned_licences,
+            'transitions_history': self.transitions_history,
+        })
+        return ret
+
+
+class UserList(Report, AssetsBase, DataTableMixin):
+    """List of users in system."""
+
+    template_name = 'assets/user_list.html'
+    csv_file_name = 'users'
+    sort_variable_name = 'sort'
+    _ = DataTableColumnAssets
+    columns = [
+        _(
+            'Username',
+            bob_tag=True,
+            field='username',
+            sort_expression='username',
+        ),
+        _(
+            'Edit relations',
+            bob_tag=True
+        ),
+    ]
+    sort_expression = 'user__username'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(UserList, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(UserList, self).get_context_data_paginator(
+                *args,
+                **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+            'form': SearchUserForm(self.request.GET),
+            'section': 'user_list',
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        users = self.handle_search_data(*args, **kwargs)
+        self.data_table_query(users)
+        if self.export_requested():
+            return self.response
+        return super(UserList, self).get(*args, **kwargs)
+
+    def handle_search_data(self, *args, **kwargs):
+        q = Q()
+        if self.request.GET.get('user'):
+            q &= Q(id=self.request.GET['user'])
+        if self.request.GET.get('user_text'):
+            q &= Q(username__contains=self.request.GET['user_text'])
+        return User.objects.filter(q).all()
+
+
+class EditUser(AssetsBase):
+    """An assets-specific user view."""
+
+    template_name = 'assets/user_edit.html'
+    caption = _('Edit user relations')
+    message = _('Licence changed')
+
+    def prepare(self, username):
+        self.user = User.objects.get(username=username)
+
+    def get(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(user=self.user)
+        return super(EditUser, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(EditUser, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'user_relation_form',
+            'caption': self.caption,
+            'edited_user': self.user,
+            'section': 'user_list',
+        })
+        return ret
+
+    def post(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(data=request.POST, user=self.user)
+        if self.form.is_valid():
+            self.user.licence_set.clear()
+            for licence in self.form.cleaned_data.get('licences'):
+                self.user.licence_set.add(licence)
+            messages.success(request, _('User relations updated'))
+            return HttpResponseRedirect(
+                reverse(
+                    'edit_user_relations',
+                    kwargs={'username': self.user.username}
+                )
+            )
+        else:
+            return super(EditUser, self).get(request, *args, **kwargs)

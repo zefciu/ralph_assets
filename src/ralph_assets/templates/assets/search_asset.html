@@ -32,7 +32,16 @@ form.form-inline {
 {% endblock %}
 
 {% block content %}
+
+    {% if assets_count %}
+        <div class="alert alert-info">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "items searched" %}
+        </div>
+    {% endif %}
     <h3>{{header}}</h3>
+        <div class="alert alert-success selected-assets-info-box" data-selected="false">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "assets selected" %}
+        </div>
         <table id='assets_table' class="table table-bordered table-striped">
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
                 <tbody>
@@ -46,23 +55,38 @@ form.form-inline {
                             {% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}
                         </a>
                     </td>
-                    <td>{{row.sn|default:'-' }}</td>
-                    <td>{{row.barcode|default:'-' }}</td>
-                    <td>{{row.invoice_date|default:'-' }}</td>
-                    <td>{{row.model.name|default:'-' }}</td>
-                    <td>{{row.invoice_no|default:'-' }}</td>
-                    <td>{{row.order_no|default:'-' }}</td>
                     <td>{{row.get_status_display}}</td>
+                    <td>{{row.barcode|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.model.category|default:'-' }}</td>
+                        <td>{{row.model.manufacturer.name|default:'-' }}</td>
+                    {% endif %}
+                    <td>{{row.model.name|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.user|default:'-' }}</td>
+                    {% endif %}
                     <td>{{row.warehouse}}</td>
-                    <td>{{row.venture}}</td>
-                    <td>{{row.price}}</td>
-                    <td>
-                        {% if row.is_discovered %}
-                            <i class="fugue-icon fugue-tick-circle"></i>
-                        {% else %}
-                            <i class="fugue-icon fugue-cross-octagon"></i>
-                        {% endif %}
-                    </td>
+                    <td>{{row.sn|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.office_info.imei|default:'-' }}</td>
+                        <td>{{row.property_of|default:'-' }}</td>
+                        <td>{{row.office_info.get_purpose|default:'-' }}</td>
+                        <td>{{row.service_name|default:'-' }}</td>
+                    {% endif %}
+                    <td>{{row.invoice_date|default:'-' }}</td>
+                    {% if mode == 'dc' %}
+                        <td>{{row.invoice_no|default:'-' }}</td>
+                        <td>{{row.order_no|default:'-' }}</td>
+                        <td>{{row.price}}</td>
+                        <td>{{row.venture}}</td>
+                        <td>
+                            {% if row.is_discovered %}
+                                <i class="fugue-icon fugue-tick-circle"></i>
+                            {% else %}
+                                <i class="fugue-icon fugue-cross-octagon"></i>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     <td>
 
                     <div class="btn-group">
@@ -144,50 +168,33 @@ form.form-inline {
                     <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu">
-                    <li class="disabled section-title">
-                        <a href="#">{% trans "Release" %}</a>
-                    </li>
-                    <li class="dropdown-menu-indended">
+                    <li>
                         <a href="#" id='post_release_transition_selected' data-transition-type="release-asset">
-                            {% trans "from selected assets" %}
-                        </a>
-                    </li>
-                    <li class="dropdown-menu-indended">
-                        <a href="#" id='post_release_transition_search_query' data-transition-type="release-asset">
-                            {% trans "from search query" %}
+                            {% trans "Release assets" %}
                         </a>
                     </li>
                     <li class="divider"></li>
-                    <li class="disabled section-title">
-                        <a href="#">{% trans "Return" %}</a>
-                    </li>
-                    <li class="dropdown-menu-indended">
+                    <li >
                         <a href="#" id='post_return_transition_selected' data-transition-type="return-asset">
-                            {% trans "from selected assets" %}
-                        </a>
-                    </li>
-                    <li class="dropdown-menu-indended">
-                        <a href="#" id='post_return_transition_search_query' data-transition-type="return-asset">
-                            {% trans "from search query" %}
+                            {% trans "Return assets" %}
                         </a>
                     </li>
                     <li class="divider"></li>
-                    <li class="disabled section-title">
-                        <a href="#">{% trans "Loan" %}</a>
-                    </li>
-                    <li class="dropdown-menu-indended">
+                    <li>
                         <a href="#" id='post_loan_transition_selected' data-transition-type="loan-asset">
-                            {% trans "from selected assets" %}
-                        </a>
-                    </li>
-                    <li class="dropdown-menu-indended">
-                        <a href="#" id='post_loan_transition_search_query' data-transition-type="loan-asset">
-                            {% trans "from search query" %}
+                            {% trans "Loan assets" %}
                         </a>
                     </li>
                 </ul>
             </div>
             {% endif %}
+            <li class="select-all-pages">
+                <a href="#" class="bob-select-all-pages">
+                    {% icon 'fugue-documents-stack' %}
+                    <span>{% trans "Select on all pages" %}</span>
+                    <span class="bolded" style="display:none;">{% trans "Deselect on all pages" %}</span>
+                </a>
+            </li>
 {% endblock %}
 
 

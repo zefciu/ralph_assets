@@ -23,6 +23,7 @@ from ralph_assets.views import (
     EditDevice,
     EditLicence,
     EditPart,
+    EditUser,
     HistoryAsset,
     InvoiceReport,
     LicenceList,
@@ -30,9 +31,12 @@ from ralph_assets.views import (
     AddSupportContractForm,
     EditSupportContractForm,
     SplitDeviceView,
-    XlsUploadView,
+    UserDetails,
+    UserList,
 )
 from ralph_assets.views_transition import TransitionView
+from ralph_assets.views_import import XlsUploadView
+from ralph_assets.views_sam import SoftwareCategoryList, LicenceList
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
@@ -100,12 +104,12 @@ urlpatterns = patterns(
         name='xls_upload',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/$',
-        login_required(LicenceList.as_view()),
-        name='licence_list',
+        r'sam/categories/$',
+        login_required(SoftwareCategoryList.as_view()),
+        name='software_categories',
     ),
     url(
-        r'sam/$',
+        r'sam/licences/$',
         login_required(LicenceList.as_view()),
         name='licence_list',
     ),
@@ -149,5 +153,20 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
+    ),
+    url(
+        r'users/$',
+        login_required(UserList.as_view()),
+        name='user_list',
+    ),
+    url(
+        r'user/relations/(?P<username>[^\/]+)/$',
+        login_required(EditUser.as_view()),
+        name='edit_user_relations',
+    ),
+    url(
+        r'user/details/(?P<username>[^\/]+)/$',
+        login_required(UserDetails.as_view()),
+        name='user_view',
     ),
 )

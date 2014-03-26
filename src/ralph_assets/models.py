@@ -10,8 +10,9 @@ import difflib
 
 from ajax_select import LookupChannel
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.utils.html import escape
-from django.db.models import Q, F, Count
+from django.db.models import Q
 
 from ralph_assets.models_assets import (
     Asset,
@@ -23,15 +24,16 @@ from ralph_assets.models_assets import (
     AssetSource,
     AssetStatus,
     AssetType,
+    CoaOemOs,
     DeviceInfo,
     OfficeInfo,
     PartInfo,
     ReportOdtSource,
+    Service,
     Warehouse,
 )
-from ralph_assets.models_sam import (  # noqa
+from ralph_assets.models_sam import (
     Licence,
-    LicenceType,
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -40,7 +42,11 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
+from ralph_assets.models_util import WithForm
 from ralph.discovery.models import Device, DeviceType
+
+
+RALPH_DATE_FORMAT = '%Y-%m-%d'
 
 
 class DeviceLookup(LookupChannel):
@@ -81,13 +87,35 @@ class FreeLicenceLookup(LookupChannel):
     model = Licence
 
     def get_query(self, q, _):
-        query = Q(
-            Q(software_category__name__icontains=q) &
-            Q(used__lt=F('number_bought'))
+        return self.model.objects.raw(
+            """SELECT
+                ralph_assets_licence.*,
+                ralph_assets_softwarecategory.name,
+                (
+                    COUNT(ralph_assets_licence_assets.asset_id)  +
+                    COUNT(ralph_assets_licence_users.user_id)
+                ) AS used
+            FROM
+                ralph_assets_licence
+            INNER JOIN ralph_assets_softwarecategory ON (
+                ralph_assets_licence.software_category_id =
+                ralph_assets_softwarecategory.id
+            )
+            LEFT JOIN ralph_assets_licence_assets ON (
+                ralph_assets_licence.id =
+                ralph_assets_licence_assets.licence_id
+            )
+            LEFT JOIN ralph_assets_licence_users ON (
+                ralph_assets_licence.id =
+                ralph_assets_licence_users.licence_id
+            )
+            WHERE ralph_assets_softwarecategory.name LIKE %s
+            GROUP BY ralph_assets_licence.id
+            HAVING used < ralph_assets_licence.number_bought
+            LIMIT 10;
+            """,
+            ('%{}%'.format(q),)
         )
-        return self.model.objects.annotate(
-            used=Count('assets')
-        ).filter(query).all()[:10]
 
     def get_result(self, obj):
         return obj.id
@@ -103,8 +131,49 @@ class FreeLicenceLookup(LookupChannel):
         </li>
         """.format(
             escape(str(obj)),
-            str(obj.number_bought - obj.assets.count())
+            str(obj.number_bought - obj.assets.count() - obj.users.count())
         )
+
+
+class LicenceLookup(LookupChannel):
+    model = Licence
+
+    def get_query(self, q, request):
+        query = Q(software_category__name__icontains=q)
+        try:
+            number = int(q)
+        except ValueError:
+            pass
+        else:
+            query |= Q(number_bought=number)
+        return (self.get_base_objects().filter(query)
+                .order_by('software_category__name')[:10])
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        element = """
+            <span class='licence-bought'>%s</span>
+            x
+            <span class='licence-name'>%s</span>
+            <span class='licence-niw'>(%s)</span>
+        """ % (
+            escape(obj.number_bought),
+            escape(obj.software_category.name or ''),
+            escape(obj.niw),
+        )
+        return """
+            <li class='asset-container'>
+                %s
+            </li>
+            """ % (element,)
+
+    def get_base_objects(self):
+        return self.model.objects
 
 
 class RalphDeviceLookup(LookupChannel):
@@ -204,6 +273,18 @@ class AssetManufacturerLookup(LookupChannel):
 
     def format_item_display(self, obj):
         return '{}'.format(escape(obj.manufacturer.name))
+
+
+class SoftwareCategoryLookup(LookupChannel):
+    model = SoftwareCategory
+
+    def get_query(self, q, request):
+        return self.model.objects.filter(Q(name__icontains=q)).order_by(
+            'name'
+        )[:10]
+
+    def get_result(self, obj):
+        return obj.name
 
 
 class WarehouseLookup(LookupChannel):
@@ -310,6 +391,16 @@ class UserLookup(LookupChannel):
             department=obj.profile.department,
         )
 
+
+def get_edit_url(object_):
+    if isinstance(object_, User):
+        return reverse(
+            'edit_user_relations', kwargs={'username': object_.username},
+        )
+    elif isinstance(object_, WithForm):
+        return object_.url
+
+
 __all__ = [
     'Action',
     'Asset',
@@ -321,10 +412,12 @@ __all__ = [
     'AssetSource',
     'AssetStatus',
     'AssetType',
+    'CoaOemOs',
     'DeviceInfo',
     'OfficeInfo',
     'PartInfo',
     'ReportOdtSource',
+    'Service',
     'Transition',
     'TransitionsHistory',
     'Warehouse',

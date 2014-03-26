@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from ajax_select import LookupChannel
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.html import escape
@@ -25,8 +26,10 @@ from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetOwner,
     AssetType,
+    ASSET_TYPE2MODE,
     CreatableFromString,
 )
+from ralph_assets.models_util import WithForm
 
 
 class LicenceType(Named):
@@ -50,7 +53,13 @@ class SoftwareCategory(Named, CreatableFromString):
             yield licence
 
 
-class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
+class Licence(
+    models_assets.LicenseAndAsset,
+    MPTTModel,
+    TimeTrackable,
+    WithConcurrentGetOrCreate,
+    WithForm,
+):
     """A set of licences for a single software with a single expiration date"""
     manufacturer = models.ForeignKey(
         AssetManufacturer,
@@ -74,10 +83,8 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     number_bought = models.IntegerField(
         verbose_name=_('Number of purchased items'),
     )
-    sn = models.CharField(
+    sn = models.TextField(
         verbose_name=_('SN / Key'),
-        max_length=200,
-        unique=True,
         null=True,
     )
     parent = TreeForeignKey(
@@ -93,8 +100,10 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         blank=True,
         verbose_name=_('Inventory number'),
     )
-    bought_date = models.DateField(
-        verbose_name=_('Purchase date'),
+    invoice_date = models.DateField(
+        verbose_name=_('Invoice date'),
+        null=True,
+        blank=True,
     )
     valid_thru = models.DateField(
         null=True,
@@ -103,7 +112,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
+        max_digits=10, decimal_places=2, default=0, null=True, blank=True,
     )
     accounting_id = models.CharField(
         max_length=200,
@@ -118,25 +127,27 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetType()
     )
     assets = models.ManyToManyField(Asset)
+    users = models.ManyToManyField(User)
     attachments = models.ManyToManyField(
         models_assets.Attachment, null=True, blank=True
     )
+    provider = models.CharField(max_length=100, null=True, blank=True)
+    invoice_no = models.CharField(
+        max_length=128, db_index=True, null=True, blank=True
+    )
 
-    def __str__(self):
+    def __unicode__(self):
         return "{} x {} - {}".format(
             self.number_bought,
             self.software_category.name,
-            self.bought_date,
+            self.invoice_date,
         )
 
     @property
     def url(self):
         return reverse('edit_licence', kwargs={
             'licence_id': self.id,
-            'mode': {
-                AssetType.data_center: 'dc',
-                AssetType.back_office: 'back_office',
-            }[self.asset_type],
+            'mode': ASSET_TYPE2MODE[self.asset_type],
         })
 
 

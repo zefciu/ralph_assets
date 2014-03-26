@@ -40,9 +40,11 @@ p.help {
     display: none;
 }
 
-#one-level-textareas {
-    margin-left: 35px;
+#one-level-textareas-wrapper {
     overflow-x: auto;
+}
+
+#one-level-textareas {
     width: 700px;
 }
 
@@ -53,6 +55,10 @@ p.help {
 
 #attchments-list {
     list-style-type: none;
+}
+
+.bulk-table td {
+    vertical-align:middle;
 }
 
 .bulk-table input, .bulk-table select {
@@ -78,4 +84,32 @@ p.help {
 
 .delete-attachment {
     color: #ff0011;
+}
+
+.fieldset { }
+
+.well {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+.select-all-pages,
+.selected-assets-info-box {
+  display: none;
+}
+
+.bolded {
+  font-weight: bold;
+}
+
+.datepicker + span.help-block {
+    margin-bottom: 20px;
+}
+
+.hide {
+    display: none;
+}
+
+.xls-upload-info {
+    margin-top: 25px;
 }
