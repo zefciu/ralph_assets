@@ -42,17 +42,18 @@ from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
-    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
+    AttachmentForm,
+    BackOfficeSearchAssetForm,
     BasePartForm,
-    SplitDevice,
+    DataCenterSearchAssetForm,
     DeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    BackOfficeSearchAssetForm,
-    DataCenterSearchAssetForm,
+    SplitDevice,
+    UserRelationForm
 )
 from ralph_assets.forms_import import (
     ColumnChoiceField,
@@ -2147,3 +2148,38 @@ class UserList(Report, AssetsBase, DataTableMixin):
 class EditUser(AssetsBase):
     """An assets-specific user view."""
 
+    template_name = 'assets/user_edit.html'
+    caption = _('Edit user relations')
+    message = _('Licence changed')
+
+    def prepare(self, username):
+        self.user = User.objects.get(username=username)
+
+    def get(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(user=self.user)
+        return super(EditUser, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(EditUser, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'user_relation_form',
+            'caption': self.caption,
+            'user': self.user,
+        })
+        return ret
+
+    def post(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(data=request.POST, user=self.user)
+        if self.form.is_valid():
+            self.user.licence_set.clear()
+            for licence in self.form.cleaned_data['licences']:
+                self.user.licence_set.add(licence)
+            messages.success(request, _('User relations updated'))
+            return HttpResponseRedirect(
+                reverse('edit_user', kwargs={'username': self.user.username})
+            )
+        else:
+            return super(EditUser, self).get(request, *args, **kwargs)
