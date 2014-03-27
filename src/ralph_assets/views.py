@@ -886,8 +886,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if not self.asset.device_info:  # it isn't device asset
-            raise Http404()
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
@@ -1564,9 +1562,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower()
+            value_lower = value.lower().trim()
             for k, v in field.choices:
-                if value_lower == v.lower():
+                if value_lower == v.lower().trim():
                     value = k
                     break
 
