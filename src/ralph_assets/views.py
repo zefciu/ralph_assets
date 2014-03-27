@@ -2097,3 +2097,53 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class UserList(Report, AssetsBase, DataTableMixin):
+    """List of users in system."""
+
+    template_name = 'assets/user_list.html'
+    csv_file_name = 'users'
+    sort_variable_name = 'sort'
+    _ = DataTableColumnAssets
+    columns = [
+        _('Username', bob_tag=True),
+        _('Edit relations', bob_tag=True),
+    ]
+    sort_expression = 'user__username'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(UserList, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(UserList, self).get_context_data_paginator(
+                *args,
+                **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+        })
+        
+        return ret
+
+    def get(self, *args, **kwargs):
+        users = User.objects.all()
+        self.data_table_query(users)
+        # self.get_query()
+        if self.export_requested():
+            return self.response
+        return super(UserList, self).get(*args, **kwargs)
+
+    def get_all_items(self, query):
+        return User.objects.filter(query)
+
+
+    def handle_search_data(self, *args, **kwargs):
+        self.data_table_query(self.get_all_items())
+
+class EditUser(AssetsBase):
+    """An assets-specific user view."""
+

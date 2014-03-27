@@ -126,4 +126,14 @@ urlpatterns = patterns(
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),
+    url(
+        r'users/$',
+        login_required(assets_views.UserList.as_view()),
+        name='user_list',
+    ),
+    url(
+        r'user/(?P<username>[^\/]+)/$',
+        login_required(assets_views.EditUser.as_view()),
+        name='edit_user',
+    ),
 )

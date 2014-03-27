@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from ajax_select import LookupChannel
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.html import escape
@@ -117,6 +118,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetType()
     )
     assets = models.ManyToManyField(Asset)
+    users = models.ManyToManyField(User)
     attachments = models.ManyToManyField(
         models_assets.Attachment, null=True, blank=True
     )
