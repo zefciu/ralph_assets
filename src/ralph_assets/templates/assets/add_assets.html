@@ -2,20 +2,37 @@
 {% load bob %}
 {% load i18n %}
 
+{% load ralph_assets_extras %}
+
+
 {% block content %}
 <div class="row">
   <h3>{% block form_title %}{% endblock %}</h3>
+  
 </div>
 
 <form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
   {% csrf_token %}
+
   <div class="row">
-    <div class="span6 well">
-      {% for field in asset_form %}
-        {% if field.html_name != 'imei' and field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
-          {% field_wrapper field %}
-        {% endif %}
+      <span>TODO: remove this text and fix css, use right side of page</span>
+      {% for fieldset_label, fields in asset_form.fieldsets.items %}
+        <div class="span6 well fieldset">
+          <h6>{{fieldset_label}}</h6>
+
+        {% for field in fields %}
+          {% with field=asset_form|get_item:field %}
+            {% if field.html_name != 'imei' and field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
+              {% field_wrapper field %}
+            {% endif %}
+          {% endwith %}
+        {% endfor %}
+
+        </div>
       {% endfor %}
+
+
+    <div class="span6 well">
       {% block additional_inputs %}{% endblock %}
     </div>
 
@@ -60,6 +77,7 @@
     {% block multivalue_inputs %}{% endblock %}
     {% block office_info_inputs %}{% endblock %}
   </div>
+
   <div class="row">
     <div class="span12">
       <div class="form-actions">

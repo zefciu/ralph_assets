@@ -45,6 +45,25 @@ from ralph_assets.models import (
 from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
+from collections import OrderedDict
+
+
+asset_fieldset = OrderedDict([
+    ('Basic Info', [
+        'model', 'niw', 'barcode', 'sn', 'type', 'category', 'status',
+        'location', 'task_url', 'remarks',
+    ]),
+    ('Financial Info', [
+        'source', 'order_no', 'invoice_no', 'price', 'deprecation_rate',
+        'provider', 'request_date', 'provider_order_date', 'delivery_date',
+        'invoice_date', 'production_use_date',
+    ]),
+    ('User Info', [
+        'user', 'employee_id', 'company', 'department', 'manager',
+        'profit_center', 'cost_center',
+    ]),
+])
+
 LOOKUPS = {
     'asset': ('ralph_assets.models', 'DeviceLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
@@ -532,6 +551,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to add new asset
     '''
+
     class Meta:
         model = Asset
         fields = (
@@ -645,6 +665,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset
+
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -699,6 +721,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to edit asset
     '''
+
     class Meta:
         model = Asset
         fields = (
@@ -818,6 +841,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset
+
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -1067,9 +1092,9 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = move_after(
-            self.fields.keyOrder, 'warehouse', 'purpose'
-        )
+        for field in ['imei', 'purpose']:
+            if field not in self.fieldsets['Financial Info']:
+                self.fieldsets['Financial Info'].append(field)
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
