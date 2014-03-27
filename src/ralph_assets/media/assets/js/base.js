@@ -47,8 +47,8 @@
         var ids = this.get_ids();
         if (
             ids.length &&
-            $.inArray(type, ['release-asset','return-asset', 'loan-asset']) != -1
-        ){
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+        ) {
             window.location.href = 'transition?select=' + ids.join('&select=') + '&transition_type=' + type;
         }
     };
@@ -57,7 +57,7 @@
         var params = window.location.search;
         if (
             params.length &&
-            $.inArray(type, ['release-asset','return-asset', 'loan-asset']) != -1
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
         ) {
             window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
         }
@@ -75,8 +75,7 @@
             bulk.invoice_report_search_query();
         });
 
-        $(" \
-            #post_release_transition_selected, \
+        $(" #post_release_transition_selected, \
             #post_return_transition_selected, \
             #post_loan_transition_selected \
         ").click(function() {
@@ -84,8 +83,7 @@
             bulk.transition_selected(type);
         });
 
-        $(" \
-            #post_release_transition_search_query, \
+        $(" #post_release_transition_search_query, \
             #post_return_transition_search_query, \
             #post_loan_transition_search_query \
         ").click(function() {

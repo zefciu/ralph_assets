@@ -3,16 +3,16 @@ Transitions
 
 Give the opportunity to take advantage of the transition, which facilitating multi-changes in assets including generation report file.
 
-Configurations
-~~~~~~~~~~~~~~
+Configuration
+~~~~~~~~~~~~~
 
-Default transition is disabled. To enable, set variables in settings::
+Transition is disabled by default. To enable it, set settings as follow::
 
     ASSETS_TRANSITIONS['ENABLE'] = True
 
-You must add transition object in database. Actually we supported following transitions: ``RELEASE-ASSET``, ``LOAN-ASSET``, ``RETURN-ASSET``.
+Defining your own transition requires adding transition object to the database. Actually we support following transitions: ``RELEASE-ASSET``, ``LOAN-ASSET``, ``RETURN-ASSET``.
 
-Each transition have default slug defined in settings. You may nothing changed in settings and use predefined slugs in transition definition objects.
+Each transition has default slug defined in settings. You don't have to change anything in settings and use predefined slugs in transition definition objects.
 
 To change slugs update settings variable eg.::
 
@@ -36,7 +36,7 @@ Actions available in transitions:
 Reports
 -------
 
-To be generate reports file, should be uploaded report template file into 'Report odt source' model. Created model should be specified slug.
+To generate reports files, report template should be uploaded into 'Report odt source' model. Created model's slug should be specified. lub Created model should have specified slug.
 And configure `INKPY <https://pypi.python.org/pypi/inkpy>`_  module.
 
 Slug definition per report may be overridden in settings file eg.::

@@ -22,8 +22,8 @@ from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
 
 class TransitionDispatcher(object):
-    """
-    Handling actions defined in the transition.
+    """Handling actions defined in the transition.
+
     Available actions:
     - assign_user - assign user to assets.
     - change_status - change assets status to definied in Transition.
@@ -151,7 +151,7 @@ class TransitionView(_AssetSearch):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(id for id in self.ids),
+                _get_return_link(self.mode), ",".join(self.ids),
             )
         else:
             url = "{}search?{}".format(
@@ -241,26 +241,26 @@ class TransitionView(_AssetSearch):
                 'assign_warehouse' in self.transition_object.actions_names()
             )
         if self.transition_type == 'return-asset':
-                assets = self.assets.values('user__username').distinct()
-                assets_count = assets.annotate(cnt=Count('user')).count()
-                if assets_count != 1 and assets_count != 0:
-                    messages.error(
-                        self.request,
-                        _(
-                            'Asset has different user: {}'.format(
-                                ", ".join(
-                                    asset['user__username'] or 'unassigned'
-                                    for asset in assets,
-                                )
+            assets = self.assets.values('user__username').distinct()
+            assets_count = assets.annotate(cnt=Count('user')).count()
+            if assets_count not in (0, 1):
+                messages.error(
+                    self.request,
+                    _(
+                        'Asset has different user: {}'.format(
+                            ", ".join(
+                                asset['user__username'] or 'unassigned'
+                                for asset in assets,
                             )
-                        ),
-                    )
-                    error = True
-                elif not assets[0]['user__username']:
-                    messages.error(
-                        self.request, _('Asset has no assigned user'),
-                    )
-                    error = True
+                        )
+                    ),
+                )
+                error = True
+            elif not assets[0]['user__username']:
+                messages.error(
+                    self.request, _('Asset has no assigned user'),
+                )
+                error = True
         return error
 
     def post_error_handler(self, *args, **kwargs):

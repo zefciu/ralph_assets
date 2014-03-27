@@ -10,7 +10,7 @@ from django import template
 register = template.Library()
 
 
-@register.inclusion_tag('assets/templatetags/transition_history.html',)
+@register.inclusion_tag('assets/templatetags/transition_history.html')
 def transition_history(asset):
     transitions_history = None
     if hasattr(asset, 'transitionshistory_set'):

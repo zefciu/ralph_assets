@@ -170,8 +170,8 @@ class AssetsBase(Base):
         )
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
-            {'caption': ('License'), 'items': license_items},
-            {'caption': ('Others'), 'items': other_items},
+            {'caption': _('License'), 'items': license_items},
+            {'caption': _('Others'), 'items': other_items},
         ]
         sidebar_menu = tuple()
         for item in items:

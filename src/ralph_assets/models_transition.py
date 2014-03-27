@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import logging
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
@@ -19,6 +20,9 @@ from lck.django.common.models import (
 )
 
 from ralph_assets.models_assets import Asset, AssetStatus
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_file_path(instance, filename):
@@ -78,12 +82,19 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
         transition_history.affected_user = affected_user
         transition_history.report_filename = report_filename
         transition_history.uid = uid
-        with open(report_file_path, 'rb') as f:
-            content = f.read()
-            f.close()
-            content = ContentFile(content)
-            transition_history.report_file.save(
-                report_filename, content, save=True,
+        try:
+            with open(report_file_path, 'rb') as f:
+                content = f.read()
+                f.close()
+                content = ContentFile(content)
+                transition_history.report_file.save(
+                    report_filename, content, save=True,
+                )
+        except IOError as e:
+            logger.error(
+                "Can not read report file: {} ({})".format(
+                    report_file_path, e,
+                ),
             )
         transition_history.save()
         transition_history.assets.add(*assets)
