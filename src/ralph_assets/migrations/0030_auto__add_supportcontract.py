@@ -338,22 +338,6 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
-        'ralph_assets.supportcontract': {
-            'Meta': {'object_name': 'SupportContract'},
-            'additional_notes': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'attachment': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'blank': 'True'}),
-            'contract_id': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
-            'contract_terms': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'cost': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
-            'date_from': ('django.db.models.fields.DateField', [], {}),
-            'date_to': ('django.db.models.fields.DateField', [], {}),
-            'description': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
-            'escalation_path': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
-            'sla_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
-        },
         'ralph_assets.transition': {
             'Meta': {'object_name': 'Transition'},
             'actions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Action']", 'symmetrical': 'False'}),
