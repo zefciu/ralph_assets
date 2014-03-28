@@ -14,7 +14,6 @@
   {% csrf_token %}
 
   <div class="row">
-<div class="row-fluid">
     <div class="row-fluid">
       
       <div class="span6">
@@ -34,12 +33,24 @@
       {% endfor %}
       </div>
 
-      <div id='attachments-box' class="span6">
+      <div class="span6">
         <div class="row-fluid well">
           <h6>Additional Info</h6>
           {% block additional_inputs %}{% endblock %}
         </div>
+      </div>
 
+
+      <div class="span6">
+        <div id="one-level-textareas-wrapper" class="row">
+          <div id="one-level-textareas">
+            {% block multivalue_inputs %} {# sn, barcode, imei #} {% endblock %}
+          </div>
+        </div>
+      </div>
+
+      {% if asset %}
+      <div id='attachments-box' class="span6">
         <div class="row-fluid well">
           <h5>{% trans "Attachments:" %}</h6>
           <a class='btn btn-primary' target='_blank'
@@ -77,17 +88,12 @@
           </ul>
         {% endif %}
         </div>
-
-        <div id="one-level-textareas-wrapper" class="row">
-          <div id="one-level-textareas">
-            {% block multivalue_inputs %} {# sn, barcode, imei #} {% endblock %}
-          </div>
-        </div>
       </div>
+      {% endif %}
 
-        {% block office_info_inputs %}{% endblock %}
+      {% block office_info_inputs %}{% endblock %}
+
     </div>
-</div>
 
 
 
@@ -104,21 +110,23 @@
   </div>
 </form>
 
-<div id='attachments-forms'>
-{% if asset.attachments.all %}
-  {% for attachment in asset.attachments.all %}
-    <form id='delete-attachment-{{attachment.id}}' class='form-inline'
-      method="POST" action="{% url delete_attachment mode=mode parent='asset' %}"
-      target="_blank"
-    >
-      {% csrf_token %}
-      <input type='hidden' name='parent_id' value='{{ asset.id }}'>
-      <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
-      <input type='hidden' name='delete_type' value=''>
-    </form>
-  {% endfor %}
+{% if asset %}
+  <div id='attachments-forms'>
+  {% if asset.attachments.all %}
+    {% for attachment in asset.attachments.all %}
+      <form id='delete-attachment-{{attachment.id}}' class='form-inline'
+        method="POST" action="{% url delete_attachment mode=mode parent='asset' %}"
+        target="_blank"
+      >
+        {% csrf_token %}
+        <input type='hidden' name='parent_id' value='{{ asset.id }}'>
+        <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
+        <input type='hidden' name='delete_type' value=''>
+      </form>
+    {% endfor %}
+  {% endif %}
+  </div>
 {% endif %}
-</div>
 
 
 {% endblock %}

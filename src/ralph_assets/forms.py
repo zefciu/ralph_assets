@@ -48,7 +48,7 @@ from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 from collections import OrderedDict
 
 
-asset_fieldset = OrderedDict([
+asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'model', 'niw', 'barcode', 'sn', 'type', 'category', 'status',
         'location', 'task_url', 'remarks',
@@ -665,7 +665,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.fieldsets = asset_fieldset
+        self.fieldsets = asset_fieldset()
 
         mode = kwargs.get('mode')
         if mode:
@@ -841,7 +841,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.fieldsets = asset_fieldset
+        self.fieldsets = asset_fieldset()
 
         mode = kwargs.get('mode')
         if mode:
@@ -1112,6 +1112,8 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+        #TODO: change postion for these (.ods)
+        self.fieldsets = asset_fieldset()
         for field in ['imei', 'purpose']:
             if field not in self.fieldsets['Financial Info']:
                 self.fieldsets['Financial Info'].append(field)
