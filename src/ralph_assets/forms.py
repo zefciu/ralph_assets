@@ -15,7 +15,7 @@ from ajax_select.fields import (
     AutoCompleteSelectMultipleField,
 )
 from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
-from bob.forms import dependency_conditions as conditions
+from bob.forms import dependency_conditions
 from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
@@ -456,7 +456,7 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'slots',
                 'category',
-                conditions.MemberOf(
+                dependency_conditions.MemberOf(
                     AssetCategory.objects.filter(is_blade=True).all()
                 ),
                 SHOW,
@@ -464,7 +464,7 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'imei',
                 'category',
-                conditions.MemberOf(
+                dependency_conditions.MemberOf(
                     AssetCategory.objects.filter(pk__in=[
                         "1-1-back-office-mobile-devices",
                         "1-1-1-back-office-mobile-devices-mobile-phone",
@@ -477,7 +477,7 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'imei',
                 'category',
-                conditions.MemberOf(
+                dependency_conditions.MemberOf(
                     AssetCategory.objects.filter(pk__in=[
                         "1-1-back-office-mobile-devices",
                         "1-1-1-back-office-mobile-devices-mobile-phone",
@@ -489,7 +489,7 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'location',
                 'owner',
-                conditions.NotEmpty(),
+                dependency_conditions.NotEmpty(),
                 AJAX_UPDATE,
                 url=reverse('category_dependency_view'),
                 page_load_update=False,
@@ -526,7 +526,7 @@ class DependencyAssetForm(DependencyForm):
                 Dependency(
                     slave,
                     'owner',
-                    conditions.NotEmpty(),
+                    dependency_conditions.NotEmpty(),
                     AJAX_UPDATE,
                     url=reverse('category_dependency_view'),
                 ) for slave in ad_fields
@@ -537,7 +537,7 @@ class DependencyAssetForm(DependencyForm):
                 Dependency(
                     slave,
                     'owner',
-                    conditions.NotEmpty(),
+                    dependency_conditions.NotEmpty(),
                     SHOW,
                 ) for slave in ad_fields
             ]
@@ -1335,9 +1335,6 @@ class SplitDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        #self.fields['delete'].widget = ButtonWidget(
-        #    attrs={'class': 'btn-danger delete_row', 'value': '-'}
-        #)
 
     def clean(self):
         cleaned_data = super(SplitDevice, self).clean()
