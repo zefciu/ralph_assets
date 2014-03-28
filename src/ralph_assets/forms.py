@@ -50,17 +50,17 @@ from collections import OrderedDict
 
 asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
-        'model', 'niw', 'barcode', 'sn', 'type', 'category', 'status',
-        'location', 'task_url', 'remarks',
+        'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
+        'location', 'task_url', 'loan_end_date', 'remarks',
     ]),
     ('Financial Info', [
-        'source', 'order_no', 'invoice_no', 'price', 'deprecation_rate',
-        'provider', 'request_date', 'provider_order_date', 'delivery_date',
-        'invoice_date', 'production_use_date',
+        'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+        'deprecation_rate', 'source', 'request_date', 'provider_order_date',
+        'delivery_date',
     ]),
     ('User Info', [
-        'user', 'employee_id', 'company', 'department', 'manager',
-        'profit_center', 'cost_center',
+        'employee_id', 'company', 'department', 'manager',
+        'profit_center', 'cost_center', 'user'
     ]),
 ])
 
