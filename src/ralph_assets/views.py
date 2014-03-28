@@ -114,7 +114,6 @@ class AssetsBase(Base):
             'section': self.mainmenu_selected,
             'mode': self.mode,
         })
-
         return ret
 
     def get_mainmenu_items(self):
@@ -152,7 +151,7 @@ class AssetsBase(Base):
     def get_sidebar_items(self):
         if self.mode == 'back_office':
             base_sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'back office'
+            self.mainmenu_selected = 'back_office'
         else:
             base_sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'dc'
@@ -1000,7 +999,6 @@ class EditDevice(AssetsBase):
 
 class EditPart(AssetsBase):
     template_name = 'assets/edit_part.html'
-    sidebar_selected = None
 
     def initialize_vars(self):
         self.office_info_form = None
@@ -1105,7 +1103,6 @@ class EditPart(AssetsBase):
 
 class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
-    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
@@ -1300,7 +1297,6 @@ class AddPart(AssetsBase):
 
 class HistoryAsset(AssetsBase):
     template_name = 'assets/history_asset.html'
-    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1478,7 +1474,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     """The wizard view for xls/csv upload."""
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
-    sidebar_selected = None
+    sidebar_selected = 'xls upload'
     mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
@@ -1649,7 +1645,7 @@ class LicenceFormView(AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = None
+    sidebar_selected = 'add licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1717,7 +1713,6 @@ class LicenceList(AssetsBase):
     """The licence list."""
 
     template_name = "assets/licence_list.html"
-    sidebar_selected = None
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
@@ -1747,7 +1742,6 @@ class LicenceList(AssetsBase):
 
 class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
-    sidebar_selected = None
 
     def show_unique_error_message(self, *args, **kwargs):
         non_unique = {}
@@ -1889,7 +1883,6 @@ class AddAttachment(AssetsBase):
     Parent can be one of these models: License, Asset.
     """
     template_name = 'assets/add_attachment.html'
-    sidebar_selected = None
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
