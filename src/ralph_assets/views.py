@@ -2119,9 +2119,12 @@ class UserList(Report, AssetsBase, DataTableMixin):
             'Username',
             bob_tag=True,
             field='username',
-            sort_expression='username'
+            sort_expression='username',
         ),
-        _('Edit relations', bob_tag=True),
+        _(
+            'Edit relations',
+            bob_tag=True
+        ),
     ]
     sort_expression = 'user__username'
 
