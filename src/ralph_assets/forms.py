@@ -930,7 +930,7 @@ class AddPartForm(BaseAddAssetForm):
     def __init__(self, *args, **kwargs):
         super(AddPartForm, self).__init__(*args, **kwargs)
         # TODO: make it DRY, how?
-        self.fieldsets = asset_fieldset = OrderedDict([
+        self.fieldsets = OrderedDict([
             ('Basic Info', [
                 'model', 'niw', 'sn', 'type', 'category', 'status', 'location',
                 'task_url', 'remarks',
