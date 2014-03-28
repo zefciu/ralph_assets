@@ -101,7 +101,7 @@ class DataUploadField(forms.FileField):
         file_ = super(DataUploadField, self).to_python(value)
         if file_ is None:
             raise forms.ValidationError(
-                'Please provide a file for import.'
+                _('Please provide a file for import.')
             )
         try:
             filetype = {

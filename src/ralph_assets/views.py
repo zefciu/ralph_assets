@@ -1637,31 +1637,31 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
-                # try:
-                kwargs = {}
-                amd_kwargs = {}
-                for key, value in asset_data.items():
-                    field_name = mappings.get(slugify(key))
-                    if field_name is None:
-                        continue
-                    value = self._get_field_value(field_name, value)
-                    if field_name.startswith(amd_field + '.'):
-                        _, field_name = field_name.split('.', 1)
-                        amd_kwargs[field_name] = value
+                try:
+                    kwargs = {}
+                    amd_kwargs = {}
+                    for key, value in asset_data.items():
+                        field_name = mappings.get(slugify(key))
+                        if field_name is None:
+                            continue
+                        value = self._get_field_value(field_name, value)
+                        if field_name.startswith(amd_field + '.'):
+                            _, field_name = field_name.split('.', 1)
+                            amd_kwargs[field_name] = value
+                        else:
+                            kwargs[field_name] = value
+                    asset = self.Model(**kwargs)
+                    if self.AmdModel is not None:
+                        amd_model_object = self.AmdModel(**amd_kwargs)
+                        amd_model_object.save()
+                        setattr(asset, amd_field, amd_model_object)
+                    if isinstance(asset, Asset):
+                        asset.type = MODE2ASSET_TYPE[self.mode]
                     else:
-                        kwargs[field_name] = value
-                asset = self.Model(**kwargs)
-                if self.AmdModel is not None:
-                    amd_model_object = self.AmdModel(**amd_kwargs)
-                    amd_model_object.save()
-                    setattr(asset, amd_field, amd_model_object)
-                if isinstance(asset, Asset):
-                    asset.type = MODE2ASSET_TYPE[self.mode]
-                else:
-                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                asset.save()
-                # except Exception as exc:
-                #     errors[tuple(asset_data.values())] = repr(exc)
+                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                    asset.save()
+                except Exception as exc:
+                    errors[tuple(asset_data.values())] = repr(exc)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors
