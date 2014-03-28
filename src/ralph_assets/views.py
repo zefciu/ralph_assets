@@ -139,7 +139,7 @@ class AssetsBase(Base):
             ),
             MenuItem(
                 label='Supports',
-                fugue_icon='',
+                fugue_icon='fugue-cheque',
                 name=_('support_list'),
                 href=reverse('support_list'),
             ),
@@ -168,7 +168,7 @@ class AssetsBase(Base):
             )
         elif self.mainmenu_selected.startswith('supports'):
             base_items = (
-                ('add_support', _('Add Support'), '', False),
+                ('add_support', _('Add Support'), 'fugue-cheque--plus', False),
             )
         else:
             base_items = ()
