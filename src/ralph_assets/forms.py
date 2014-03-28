@@ -927,6 +927,26 @@ class AddPartForm(BaseAddAssetForm):
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super(AddPartForm, self).__init__(*args, **kwargs)
+        # TODO: make it DRY, how?
+        self.fieldsets = asset_fieldset = OrderedDict([
+            ('Basic Info', [
+                'model', 'niw', 'sn', 'type', 'category', 'status', 'location',
+                'task_url', 'remarks',
+            ]),
+            ('Financial Info', [
+                'source', 'order_no', 'invoice_no', 'price', 'deprecation_rate',
+                'provider', 'request_date', 'provider_order_date', 'delivery_date',
+                'invoice_date', 'production_use_date',
+            ]),
+            ('User Info', [
+                'user', 'employee_id', 'company', 'department', 'manager',
+                'profit_center', 'cost_center',
+            ]),
+        ])
+
+
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
         _sn_additional_validation(data)

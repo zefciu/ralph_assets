@@ -79,3 +79,13 @@ p.help {
 .delete-attachment {
     color: #ff0011;
 }
+
+
+.fieldset { }
+
+.well {
+    /*
+    http://stackoverflow.com/questions/12978032/bootstrap-well-inside-a-span-row-goes-beyond-its-container-how-to-make-i
+    */
+    box-sizing: border-box;
+}
