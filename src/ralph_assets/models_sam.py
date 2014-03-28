@@ -74,10 +74,8 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     number_bought = models.IntegerField(
         verbose_name=_('Number of purchased items'),
     )
-    sn = models.CharField(
+    sn = models.TextField(
         verbose_name=_('SN / Key'),
-        max_length=200,
-        unique=True,
         null=True,
     )
     parent = TreeForeignKey(
@@ -95,6 +93,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     )
     bought_date = models.DateField(
         verbose_name=_('Purchase date'),
+        null=True,
     )
     valid_thru = models.DateField(
         null=True,
@@ -122,7 +121,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         models_assets.Attachment, null=True, blank=True
     )
 
-    def __str__(self):
+    def __unicode__(self):
         return "{} x {} - {}".format(
             self.number_bought,
             self.software_category.name,
