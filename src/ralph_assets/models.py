@@ -37,7 +37,7 @@ from ralph_assets.models_sam import (
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
-from ralph_assets.models_support import SupportContract # noqa
+from ralph_assets.models_support import SupportContract  # noqa
 from ralph_assets.models_transition import (
     Action,
     Transition,
