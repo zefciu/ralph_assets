@@ -1143,6 +1143,12 @@ class SearchAssetForm(Form):
         LOOKUPS['asset_user'],
         required=False,
     )
+    location = CharField(required=False, label='Location')
+    company = CharField(required=False, label='Company')
+    employee_id = CharField(required=False, label='Employee id')
+    cost_center = CharField(required=False, label='Cost center')
+    profit_center = CharField(required=False, label='Profit center')
+    department = CharField(required=False, label='Department')
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],
