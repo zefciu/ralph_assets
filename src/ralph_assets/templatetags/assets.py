@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse
 
 register = template.Library()
 
+
 @register.simple_tag
 def get_edit_url(o):
     """Returns the url of edit page for a given object (currently implemented

@@ -11,7 +11,7 @@ import difflib
 from ajax_select import LookupChannel
 from django.contrib.auth.models import User
 from django.utils.html import escape
-from django.db.models import Q, F, Count
+from django.db.models import Q
 
 from ralph_assets.models_assets import (
     Asset,
@@ -81,8 +81,8 @@ class FreeLicenceLookup(LookupChannel):
     model = Licence
 
     def get_query(self, q, _):
-        return self.model.objects.raw("""
-            SELECT 
+        return self.model.objects.raw(
+            """SELECT
                 ralph_assets_licence.*,
                 ralph_assets_softwarecategory.name,
                 (
