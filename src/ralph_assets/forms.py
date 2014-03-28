@@ -543,6 +543,7 @@ class DependencyAssetForm(DependencyForm):
                 'barcode',
                 dependency_conditions.NotEmpty(),
                 CLONE,
+                page_load_update=False,
             ),
         ]
         ad_fields = (
