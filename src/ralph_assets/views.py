@@ -52,6 +52,7 @@ from ralph_assets.forms import (
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
+    SearchUserForm,
     SplitDevice,
     UserRelationForm
 )
@@ -125,22 +126,28 @@ class AssetsBase(Base):
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                label='Data center',
+                label=_('Data center'),
                 name='dc',
                 fugue_icon='fugue-building',
                 href='/assets/dc',
             ),
             MenuItem(
-                label='BackOffice',
+                label=_('BackOffice'),
                 fugue_icon='fugue-printer',
                 name='back_office',
                 href='/assets/back_office',
             ),
             MenuItem(
-                label='Licence List',
+                label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name=_('licence_list'),
-                href='/assets/sam/',
+                name='licence_list',
+                href=reverse('licence_list'),
+            ),
+            MenuItem(
+                label=_('User list'),
+                fugue_icon='fugue-user-green-female',
+                name='user_list',
+                href=reverse('user_list'),
             ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
@@ -2108,7 +2115,12 @@ class UserList(Report, AssetsBase, DataTableMixin):
     sort_variable_name = 'sort'
     _ = DataTableColumnAssets
     columns = [
-        _('Username', bob_tag=True),
+        _(
+            'Username',
+            bob_tag=True,
+            field='username',
+            sort_expression='username'
+        ),
         _('Edit relations', bob_tag=True),
     ]
     sort_expression = 'user__username'
@@ -2126,24 +2138,24 @@ class UserList(Report, AssetsBase, DataTableMixin):
             'url_query': self.request.GET,
             'sort': self.sort,
             'columns': self.columns,
+            'form': SearchUserForm(self.request.GET),
         })
         
         return ret
 
     def get(self, *args, **kwargs):
-        users = User.objects.all()
+        users = self.handle_search_data(*args, **kwargs)
         self.data_table_query(users)
-        # self.get_query()
         if self.export_requested():
             return self.response
         return super(UserList, self).get(*args, **kwargs)
 
-    def get_all_items(self, query):
-        return User.objects.filter(query)
-
-
     def handle_search_data(self, *args, **kwargs):
-        self.data_table_query(self.get_all_items())
+        q = Q()
+        if 'username' in self.request.GET:
+            q &= Q(username__contains = self.request.GET['username'])
+        return User.objects.filter(q).all()
+
 
 class EditUser(AssetsBase):
     """An assets-specific user view."""

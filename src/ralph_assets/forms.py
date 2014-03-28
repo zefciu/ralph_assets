@@ -1446,3 +1446,10 @@ class UserRelationForm(Form):
         LOOKUPS['free_licences'],
         required=False,
     )
+
+
+class SearchUserForm(Form):
+    """Form for left bar at the user_list view."""
+
+    username = CharField(required=False)
+
