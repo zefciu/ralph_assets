@@ -40,9 +40,12 @@ p.help {
     display: none;
 }
 
+#one-level-textareas-wrapper {
+    overflow-x: auto;
+}
+
 #one-level-textareas {
     margin-left: 35px;
-    overflow-x: auto;
     width: 700px;
 }
 
@@ -78,4 +81,11 @@ p.help {
 
 .delete-attachment {
     color: #ff0011;
+}
+
+.fieldset { }
+
+.well {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
 }

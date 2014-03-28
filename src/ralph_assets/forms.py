@@ -16,6 +16,7 @@ from ajax_select.fields import (
 )
 from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
 from bob.forms import dependency_conditions
+from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
@@ -45,6 +46,23 @@ from ralph_assets.models import (
 )
 from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
+
+
+asset_fieldset = lambda: OrderedDict([
+    ('Basic Info', [
+        'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
+        'location', 'status', 'task_url', 'loan_end_date', 'remarks',
+    ]),
+    ('Financial Info', [
+        'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+        'deprecation_rate', 'source', 'request_date', 'provider_order_date',
+        'delivery_date',
+    ]),
+    ('User Info', [
+        'owner', 'employee_id', 'company', 'department', 'manager',
+        'profit_center', 'cost_center', 'user'
+    ]),
+])
 
 LOOKUPS = {
     'asset': ('ralph_assets.models', 'DeviceLookup'),
@@ -551,6 +569,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to add new asset
     '''
+
     class Meta:
         model = Asset
         fields = (
@@ -671,6 +690,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset()
+
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -725,6 +746,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to edit asset
     '''
+
     class Meta:
         model = Asset
         fields = (
@@ -851,6 +873,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset()
+
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -934,6 +958,11 @@ class AddPartForm(BaseAddAssetForm):
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
     )
+
+    def __init__(self, *args, **kwargs):
+        super(AddPartForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Basic Info'].remove('barcode')
 
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
@@ -1102,13 +1131,25 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = move_after(
-            self.fields.keyOrder, 'warehouse', 'purpose'
-        )
+        self.fieldsets = asset_fieldset()
+        for after, field in (
+            ('sn', 'imei'),
+            ('loan_end_date', 'purpose'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        for after, field in (
+            ('status', 'slots'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class SearchAssetForm(Form):
