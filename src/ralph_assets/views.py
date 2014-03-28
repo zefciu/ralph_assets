@@ -2151,8 +2151,10 @@ class UserList(Report, AssetsBase, DataTableMixin):
 
     def handle_search_data(self, *args, **kwargs):
         q = Q()
-        if 'username' in self.request.GET:
-            q &= Q(username__contains=self.request.GET['username'])
+        if self.request.GET.get('user'):
+            q &= Q(id=self.request.GET['user'])
+        if self.request.GET.get('user_text'):
+            q &= Q(username__contains=self.request.GET['user_text'])
         return User.objects.filter(q).all()
 
 
