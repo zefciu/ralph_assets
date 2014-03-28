@@ -147,7 +147,7 @@ class AssetsBase(Base):
                     label='Ralph Pricing',
                     fugue_icon='fugue-money-coin',
                     name='back_office',
-                    href='/pricing/all-ventures/',
+                    href='/scrooge/all-ventures/',
                 ),
             )
         return mainmenu
