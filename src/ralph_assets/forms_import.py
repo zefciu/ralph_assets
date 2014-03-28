@@ -40,7 +40,7 @@ class DataUploadField(forms.FileField):
             (sheet_name, book.sheet_by_name(sheet_name)) for
             sheet_name in book.sheet_names()
         ):
-            if not sheet:
+            if not sheet.nrows:
                 continue
             name_row = sheet.row(0)
             update = name_row[0].value == 'id'
@@ -175,7 +175,8 @@ class XlsColumnChoiceForm(forms.Form):
             if not (
                 field.blank or
                 field.default != NOT_PROVIDED or
-                field.choices == AssetType()
+                field.choices == AssetType() or
+                field.name in {'rght', 'tree_id', 'lft', 'level'}
             )
         }
         missing = required - matched
