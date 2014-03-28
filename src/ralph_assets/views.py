@@ -113,6 +113,7 @@ class AssetsBase(Base):
             'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
             'mode': self.mode,
+            'multivalues_fields': ['sn', 'barcode', 'imei'],
         })
         return ret
 

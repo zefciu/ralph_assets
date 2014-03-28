@@ -16,6 +16,7 @@ from ajax_select.fields import (
 )
 from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
 from bob.forms import dependency_conditions
+from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
@@ -46,13 +47,11 @@ from ralph_assets.models import (
 from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
-from collections import OrderedDict
-
 
 asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
-        'location', 'task_url', 'loan_end_date', 'remarks',
+        'location', 'status', 'task_url', 'loan_end_date', 'remarks',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -969,8 +968,9 @@ class AddPartForm(BaseAddAssetForm):
                 'task_url', 'remarks',
             ]),
             ('Financial Info', [
-                'source', 'order_no', 'invoice_no', 'price', 'deprecation_rate',
-                'provider', 'request_date', 'provider_order_date', 'delivery_date',
+                'source', 'order_no', 'invoice_no', 'price',
+                'deprecation_rate', 'provider', 'request_date',
+                'provider_order_date', 'delivery_date',
                 'invoice_date', 'production_use_date',
             ]),
             ('User Info', [
@@ -978,7 +978,6 @@ class AddPartForm(BaseAddAssetForm):
                 'profit_center', 'cost_center',
             ]),
         ])
-
 
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
@@ -1147,11 +1146,13 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-        #TODO: change postion for these (.ods)
         self.fieldsets = asset_fieldset()
-        for field in ['imei', 'purpose']:
-            if field not in self.fieldsets['Financial Info']:
-                self.fieldsets['Financial Info'].append(field)
+        for after, field in (
+            ('sn', 'imei'),
+            ('loan_end_date', 'purpose'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):

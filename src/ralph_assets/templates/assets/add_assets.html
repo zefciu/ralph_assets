@@ -2,7 +2,7 @@
 {% load bob %}
 {% load i18n %}
 
-{% load ralph_assets_extras %}
+{% load assets_tags %}
 
 
 {% block content %}
@@ -23,7 +23,7 @@
 
         {% for field in fields %}
           {% with field=asset_form|get_item:field %}
-            {% if field.html_name != 'imei' and field.html_name != 'barcode' and field.html_name != 'sn' or edit_mode %}
+            {% if field.html_name not in multivalues_fields or edit_mode %}
               {% field_wrapper field %}
             {% endif %}
           {% endwith %}
@@ -39,7 +39,6 @@
           {% block additional_inputs %}{% endblock %}
         </div>
       </div>
-
 
       <div class="span6">
         <div id="one-level-textareas-wrapper" class="row">
@@ -95,10 +94,6 @@
 
     </div>
 
-
-
-
-
   </div>
 
   <div class="row">
@@ -128,6 +123,4 @@
   </div>
 {% endif %}
 
-
 {% endblock %}
-
