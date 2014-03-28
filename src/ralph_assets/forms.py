@@ -498,19 +498,19 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'loan_end_date',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
             ),
             Dependency(
                 'loan_end_date',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 REQUIRE,
             ),
             Dependency(
                 'note',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
             ),
         ]
