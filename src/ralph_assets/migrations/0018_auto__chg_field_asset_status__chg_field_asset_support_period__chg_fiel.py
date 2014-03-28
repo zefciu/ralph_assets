@@ -33,7 +33,7 @@ class Migration(SchemaMigration):
         db.alter_column('ralph_assets_asset', 'support_period', self.gf('django.db.models.fields.PositiveSmallIntegerField')())
 
         # Changing field 'Asset.source'
-        db.alter_column('ralph_assets_asset', 'source', self.gf('django.db.models.fields.PositiveIntegerField')(default=None))
+        db.alter_column('ralph_assets_asset', 'source', self.gf('django.db.models.fields.PositiveIntegerField')(default=1))
 
         # Changing field 'Asset.price'
         db.alter_column('ralph_assets_asset', 'price', self.gf('django.db.models.fields.DecimalField')(max_digits=10, decimal_places=2))
