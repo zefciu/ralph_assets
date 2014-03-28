@@ -15,6 +15,7 @@ from ajax_select.fields import (
     AutoCompleteSelectMultipleField,
 )
 from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import dependency_conditions
 from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
@@ -456,34 +457,40 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'slots',
                 'category',
-                AssetCategory.objects.filter(is_blade=True).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(is_blade=True).all()
+                ),
                 SHOW,
             ),
             Dependency(
                 'imei',
                 'category',
-                AssetCategory.objects.filter(pk__in=[
-                    "1-1-back-office-mobile-devices",
-                    "1-1-1-back-office-mobile-devices-mobile-phone",
-                    "1-1-1-back-office-mobile-devices-smartphone",
-                    "1-1-1-back-office-mobile-devices-tablet",
-                ]).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                        "1-1-1-back-office-mobile-devices-tablet",
+                    ]).all()
+                ),
                 SHOW,
             ),
             Dependency(
                 'imei',
                 'category',
-                AssetCategory.objects.filter(pk__in=[
-                    "1-1-back-office-mobile-devices",
-                    "1-1-1-back-office-mobile-devices-mobile-phone",
-                    "1-1-1-back-office-mobile-devices-smartphone",
-                ]).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                    ]).all()
+                ),
                 REQUIRE,
             ),
             Dependency(
                 'location',
-                'user',
-                None,
+                'owner',
+                dependency_conditions.NotEmpty(),
                 AJAX_UPDATE,
                 url=reverse('category_dependency_view'),
                 page_load_update=False,
@@ -491,38 +498,49 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'loan_end_date',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
             ),
             Dependency(
                 'loan_end_date',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 REQUIRE,
             ),
             Dependency(
                 'note',
                 'status',
-                [AssetStatus.loan.id],
+                dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
             ),
         ]
+        ad_fields = (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        )
         deps.extend(
             [
                 Dependency(
                     slave,
-                    'user',
-                    None,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
                     AJAX_UPDATE,
                     url=reverse('category_dependency_view'),
-                ) for slave in (
-                    'company',
-                    'employee_id',
-                    'cost_center',
-                    'profit_center',
-                    'department',
-                    'manager',
-                )
+                ) for slave in ad_fields
+            ]
+        )
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
+                    SHOW,
+                ) for slave in ad_fields
             ]
         )
         for dep in deps:
@@ -544,7 +562,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
-            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -566,6 +583,13 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'slots',
             'production_year',
             'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
             'user',
             'loan_end_date',
             'note',
@@ -599,7 +623,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
-    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
@@ -617,10 +640,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
-    user = AutoCompleteSelectField(
-        LOOKUPS['asset_user'],
-        required=False,
-    )
+    location = CharField(required=False)
     company = CharField(
         max_length=64,
         required=False,
@@ -643,6 +663,10 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
     manager = CharField(
         max_length=1024,
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
         required=False,
     )
 
@@ -713,7 +737,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'status',
             'task_url',
             'warehouse',
-            'location',
             'property_of',
             'source',
             'invoice_no',
@@ -738,6 +761,13 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'slots',
             'production_year',
             'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
             'user',
             'loan_end_date',
             'note',
@@ -773,7 +803,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
-    location = CharField(required=False)
     category = TreeNodeChoiceField(
         queryset=AssetCategory.tree.all(),
         level_indicator='|---',
@@ -791,10 +820,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
-    user = AutoCompleteSelectField(
-        LOOKUPS['asset_user'],
-        required=False,
-    )
+    location = CharField(required=False)
     company = CharField(
         max_length=64,
         required=False,
@@ -817,6 +843,10 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     manager = CharField(
         max_length=1024,
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
         required=False,
     )
 
