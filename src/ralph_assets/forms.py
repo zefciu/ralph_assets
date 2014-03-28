@@ -59,7 +59,7 @@ asset_fieldset = lambda: OrderedDict([
         'delivery_date',
     ]),
     ('User Info', [
-        'employee_id', 'company', 'department', 'manager',
+        'owner', 'employee_id', 'company', 'department', 'manager',
         'profit_center', 'cost_center', 'user'
     ]),
 ])
@@ -961,23 +961,8 @@ class AddPartForm(BaseAddAssetForm):
 
     def __init__(self, *args, **kwargs):
         super(AddPartForm, self).__init__(*args, **kwargs)
-        # TODO: make it DRY, how?
-        self.fieldsets = OrderedDict([
-            ('Basic Info', [
-                'model', 'niw', 'sn', 'type', 'category', 'status', 'location',
-                'task_url', 'remarks',
-            ]),
-            ('Financial Info', [
-                'source', 'order_no', 'invoice_no', 'price',
-                'deprecation_rate', 'provider', 'request_date',
-                'provider_order_date', 'delivery_date',
-                'invoice_date', 'production_use_date',
-            ]),
-            ('User Info', [
-                'user', 'employee_id', 'company', 'department', 'manager',
-                'profit_center', 'cost_center',
-            ]),
-        ])
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Basic Info'].remove('barcode')
 
     def clean_sn(self):
         data = _validate_multivalue_data(self.cleaned_data["sn"])
@@ -1156,7 +1141,15 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        for after, field in (
+            ('status', 'slots'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class SearchAssetForm(Form):
