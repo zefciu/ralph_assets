@@ -18,6 +18,7 @@ from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
     DateRangeSearchField,
     ExactSearchField,
+    MultiSearchField,
     RelatedSearchField,
     TextSearchField,
 )
@@ -25,7 +26,7 @@ from django_search_forms.fields_ajax import RelatedAjaxSearchField
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
-from ralph_assets.forms import LOOKUPS
+from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
 
@@ -57,8 +58,7 @@ class SoftwareCategoryField(AutoCompleteField):
         value = super(SoftwareCategoryField, self).clean(value)
         try:
             return models_sam.SoftwareCategory.objects.get(
-                name=value
-            )
+                name=value)
         except models_sam.SoftwareCategory.DoesNotExist:
             return models_sam.SoftwareCategory(
                 name=value
@@ -66,7 +66,7 @@ class SoftwareCategoryField(AutoCompleteField):
 
 
 class LicenceForm(forms.ModelForm):
-    """Licence add/edit form for licences."""
+    """Base form for licences."""
 
     parent = AutoCompleteSelectField(
         ('ralph_assets.models', 'LicenceLookup'),
@@ -99,17 +99,73 @@ class LicenceForm(forms.ModelForm):
             result['software_category'].save()
         return result
 
-    class Meta:
+
+class AddLicenceForm(LicenceForm, MultivalFieldForm):
+    """Class for adding a licence or multiple licences."""
+
+    def __init__(self, *args, **kwargs):
+        super(AddLicenceForm, self).__init__(*args, **kwargs)
+        self.multival_fields = ['sn', 'niw']
+
+    class Meta(object):
         model = models_sam.Licence
+        widgets = {
+            'invoice_date': DateWidget,
+            'valid_thru': DateWidget,
+        }
         fields = (
+            'asset_type',
             'manufacturer',
             'licence_type',
             'property_of',
             'software_category',
             'number_bought',
-            'sn',
             'parent',
-            'niw',
+            'invoice_date',
+            'valid_thru',
+            'order_no',
+            'price',
+            'accounting_id',
+            'provider',
+            'invoice_no',
+        )
+
+    sn = MultilineField(
+        db_field_path='sn',
+        label=_("SN/SNs"),
+        required=True,
+        widget=forms.Textarea(attrs={'rows': 25}),
+    )
+    niw = MultilineField(
+        db_field_path='niw',
+        label=_('Inventory number'),
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 25}),
+    )
+
+    def clean(self):
+        data = super(AddLicenceForm, self).clean()
+        self.different_multival_counters(data)
+        return data
+
+
+class EditLicenceForm(LicenceForm):
+    """Form for licence edit."""
+
+    class Meta(object):
+        model = models_sam.Licence
+        widgets = {
+            'invoice_date': DateWidget,
+            'valid_thru': DateWidget,
+        }
+        fields = (
+            'asset_type',
+            'manufacturer',
+            'licence_type',
+            'property_of',
+            'software_category',
+            'number_bought',
+            'parent',
             'invoice_date',
             'valid_thru',
             'order_no',
@@ -118,11 +174,12 @@ class LicenceForm(forms.ModelForm):
             'assets',
             'provider',
             'invoice_no',
+            'sn',
+            'niw',
         )
-        widgets = {
-            'invoice_date': DateWidget,
-            'valid_thru': DateWidget,
-        }
+
+    sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
+    niw = forms.CharField(label=_('Inventory number'))
 
 
 class SoftwareCategorySearchForm(SearchForm):
@@ -135,7 +192,7 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
-    niw = ExactSearchField()
+    niw = MultiSearchField()
     sn = TextSearchField()
     software_category = RelatedAjaxSearchField(
         LOOKUPS['softwarecategory'],
@@ -150,3 +207,4 @@ class LicenceSearchForm(SearchForm):
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
+    id = MultiSearchField(widget=forms.HiddenInput())

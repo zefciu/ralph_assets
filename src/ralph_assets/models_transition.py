@@ -49,11 +49,14 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
     )
     actions = models.ManyToManyField(Action)
 
+    @property
     def actions_names(self, *args, **kwargs):
         return [action.name for action in self.actions.all()]
 
 
 class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
+    class Meta:
+        ordering = ['-created']
     transition = models.ForeignKey(Transition)
     assets = models.ManyToManyField(Asset)
     logged_user = models.ForeignKey(User, related_name='logged user')

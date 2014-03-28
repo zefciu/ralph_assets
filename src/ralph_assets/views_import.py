@@ -28,8 +28,10 @@ from ralph_assets.forms_import import (
 )
 from ralph_assets.models_assets import (
     MODE2ASSET_TYPE,
+    ASSET_TYPE2MODE,
     CreatableFromString,
     Sluggy,
+    AssetType,
 )
 from ralph_assets.models_util import add_problem, ProblemSeverity
 from ralph_assets.views import AssetsBase
@@ -42,6 +44,23 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
     sidebar_selected = 'xls upload'
+    mainmenu_selected = 'xls upload'
+
+    @property
+    def mode(self):
+        """The mode of xls upload is chosen in the first step, not taken
+        from url."""
+        data = self.get_cleaned_data_for_step('upload')
+        if data is not None:
+            return ASSET_TYPE2MODE[
+                AssetType.from_id(int(
+                    self.get_cleaned_data_for_step('upload')['asset_type']
+                ))
+            ]
+
+    @mode.setter
+    def mode(self, value):
+        "no-op"
 
     def get_form(self, step=None, data=None, files=None):
         if step is None:

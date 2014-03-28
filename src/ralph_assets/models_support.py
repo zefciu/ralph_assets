@@ -28,7 +28,9 @@ class SupportContract(Named):
     contract_terms = models.CharField(max_length=200, blank=True)
     additional_notes = models.CharField(max_length=200, blank=True)
     sla_type = models.CharField(max_length=200, blank=True)
-    asset_type = models.PositiveSmallIntegerField(choices=AssetType())
+    asset_type = models.PositiveSmallIntegerField(
+        choices=AssetType()
+    )
 
     @property
     def url(self):

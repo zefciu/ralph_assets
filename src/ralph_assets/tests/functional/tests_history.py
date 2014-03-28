@@ -58,12 +58,9 @@ class HistoryAssetsView(TestCase):
             'sn': '666-666-666',
             'barcode': '666666',
             'category': self.category.slug,
-            'slots': 1.0,
-            'ralph_device_id': '',
             'asset': True,  # Button name
             'source': 1,
             'deprecation_rate': 0,
-            'production_year': 2011,
             'licences': '',
         }
         self.asset_change_params = {
@@ -76,9 +73,17 @@ class HistoryAssetsView(TestCase):
             'date_of_last_inventory': '2012-11-08',
             'last_logged_user': 'ralph',
         }
+        self.dc_asset_params = self.asset_params.copy()
+        self.dc_asset_params.update({
+            'slots': 1.0,
+            'ralph_device_id': '',
+            'production_year': 2011,
+        })
         self.bo_asset_params = self.asset_params.copy()
         self.bo_asset_params.update({
             'purpose': 1,
+            'coa_number': 2,
+            'license_key': 3,
         })
         self.asset = None
         self.add_bo_device_asset()
@@ -119,10 +124,6 @@ class HistoryAssetsView(TestCase):
         )
         self.assertListEqual(
             [asset_history[0].old_value, asset_history[0].new_value],
-            ['None', self.asset_params['barcode']]
-        )
-        self.assertListEqual(
-            [asset_history[1].old_value, asset_history[1].new_value],
             [self.asset_params['barcode'], self.asset_change_params['barcode']]
         )
 
@@ -145,24 +146,23 @@ class ConnectAssetWithDevice(TestCase):
             'invoice_no': 666,
             'order_no': 2,
             'invoice_date': '2012-11-29',
-            'support_period': 36,
-            'support_type': 'door-to-door',
-            'support_void_reporting': 'on',
             'provider': 'test_provider',
             'status': AssetStatus.new.id,
             'remarks': 'test_remarks',
             'price': 10,
-            'size': 1,
             'warehouse': self.warehouse.id,
             'barcode': '7777',
             'category': self.category.slug,
-            'slots': 0,
-            'ralph_device_id': '',
-            'asset': True,  # Button name
             'source': 1,
             'deprecation_rate': 0,
             'production_year': 2011,
+            'asset': True,  # Button name
         }
+        self.dc_asset_params = self.asset_params.copy()
+        self.dc_asset_params.update({
+            'ralph_device_id': '',
+            'slots': 0,
+        })
         self.asset = None
 
     def test_add_dc_device_asset_with_create_device(self):
@@ -170,7 +170,7 @@ class ConnectAssetWithDevice(TestCase):
         the device is created with Asset serial_number
         """
         url = '/assets/dc/add/device/'
-        attrs = self.asset_params
+        attrs = self.dc_asset_params
         attrs['sn'] = '777-777',
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
@@ -188,7 +188,7 @@ class ConnectAssetWithDevice(TestCase):
         an link between the asset and the device
         """
         url = '/assets/dc/add/device/'
-        attrs = self.asset_params
+        attrs = self.dc_asset_params
         attrs['sn'] = '999-999',
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
@@ -203,7 +203,7 @@ class ConnectAssetWithDevice(TestCase):
         CONNECT_ASSET_WITH_DEVICE options set at False.
         """
         url = '/assets/dc/add/device/'
-        attrs = self.asset_params
+        attrs = self.dc_asset_params
         attrs['sn'] = '888-888',
         request = self.client.post(url, attrs)
         self.assertEqual(request.status_code, 302)
@@ -223,29 +223,28 @@ class TestsStockDevice(TestCase):
         self.warehouse.save()
         self.asset_params = {
             'type': AssetType.data_center.id,
+            'category': self.category.slug,
             'model': self.model.id,
-            'invoice_no': 00001,
-            'order_no': 2,
-            'invoice_date': '2012-11-29',
-            'support_period': 36,
-            'support_type': 'door-to-door',
-            'support_void_reporting': 'on',
-            'provider': 'test_provider',
+            'warehouse': self.warehouse.id,
             'status': AssetStatus.new.id,
             'remarks': 'test_remarks',
+            'order_no': 2,
+            'invoice_date': '2012-11-29',
+            'invoice_no': 00001,
             'price': 10,
-            'size': 1,
-            'warehouse': self.warehouse.id,
-            'barcode': '7777',
-            'category': self.category.slug,
-            'slots': 0,
-            'sn': 'fake-sn',
-            'ralph_device_id': '',
-            'asset': True,  # Button name
-            'source': 1,
+            'provider': 'test_provider',
             'deprecation_rate': 0,
-            'production_year': 2011,
+            'source': 1,
+            'sn': 'fake-sn',
+            'barcode': '7777',
+            'asset': True,  # Button name
         }
+        self.dc_asset_params = self.asset_params.copy()
+        self.dc_asset_params.update({
+            'ralph_device_id': '',
+            'production_year': 2011,
+            'slots': 0,
+        })
 
     def create_device(self):
         venture = Venture(name='TestVenture', symbol='testventure')
@@ -272,7 +271,7 @@ class TestsStockDevice(TestCase):
 
     def test_form_with_sn(self):
         asset_device = self.create_device()
-        asset_params = self.asset_params
+        asset_params = self.dc_asset_params
         asset_params['sn'] = '000000001'
         request = self.client.post('/assets/dc/add/device/', asset_params)
         self.assertEqual(request.status_code, 302)
@@ -281,7 +280,7 @@ class TestsStockDevice(TestCase):
         self.assertEqual(asset.device_info.ralph_device_id, asset_device.id)
 
     def test_create_stock_device(self):
-        asset_params = self.asset_params
+        asset_params = self.dc_asset_params
         request = self.client.post('/assets/dc/add/device/', asset_params)
         self.assertEqual(request.status_code, 302)
         asset = Asset.objects.get(sn='fake-sn')

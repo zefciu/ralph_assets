@@ -30,6 +30,7 @@ from ralph_assets.models_assets import (
     CreatableFromString,
 )
 from ralph_assets.models_util import WithForm
+from ralph.discovery.models_util import SavingUser
 
 
 class LicenceType(Named):
@@ -59,6 +60,7 @@ class Licence(
     TimeTrackable,
     WithConcurrentGetOrCreate,
     WithForm,
+    SavingUser,
 ):
     """A set of licences for a single software with a single expiration date"""
     manufacturer = models.ForeignKey(
@@ -149,6 +151,10 @@ class Licence(
             'licence_id': self.id,
             'mode': ASSET_TYPE2MODE[self.asset_type],
         })
+
+    @property
+    def used(self):
+        return self.assets.count() + self.users.count()
 
 
 class SoftwareCategoryLookup(LookupChannel):

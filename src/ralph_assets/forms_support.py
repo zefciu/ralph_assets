@@ -27,6 +27,7 @@ class SupportContractForm(forms.ModelForm):
     class Meta:
         model = models_support.SupportContract
         fields = (
+            'asset_type',
             'contract_id',
             'name',
             'description',

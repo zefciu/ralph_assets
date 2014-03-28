@@ -127,10 +127,12 @@ class FreeLicenceLookup(LookupChannel):
         return """
         <li class='asset-container'>
             <span>{}</span>
+            <span class="licence-niw">{}</span>
             <span>({} free)</span>
         </li>
         """.format(
             escape(str(obj)),
+            obj.niw,
             str(obj.number_bought - obj.assets.count() - obj.users.count())
         )
 
@@ -158,7 +160,6 @@ class LicenceLookup(LookupChannel):
     def format_item_display(self, obj):
         element = """
             <span class='licence-bought'>%s</span>
-            x
             <span class='licence-name'>%s</span>
             <span class='licence-niw'>(%s)</span>
         """ % (

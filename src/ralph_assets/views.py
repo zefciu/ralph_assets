@@ -5,10 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import datetime
 import logging
 import re
-import uuid
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -20,18 +18,15 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     Http404,
 )
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
 from rq import get_current_job
 
 from ralph_assets import forms as assets_forms
@@ -50,9 +45,7 @@ from ralph_assets.forms import (
     SplitDevice,
     UserRelationForm
 )
-from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
-from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -61,7 +54,6 @@ from ralph_assets.models import (
     Licence,
     OfficeInfo,
     PartInfo,
-    ReportOdtSource,
     TransitionsHistory,
 )
 from ralph_assets.forms_support import SupportContractForm
@@ -69,7 +61,6 @@ from ralph_assets.models_support import SupportContract
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
-    MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -81,7 +72,6 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 SEARCH_DELIMITERS = re.compile(r";|\|")
@@ -104,14 +94,12 @@ class AssetsBase(Base):
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
+        base_sidebar_caption = ''
+        self.mainmenu_selected = self.mainmenu_selected or self.mode
         if self.mode == 'back_office':
-            base_sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = self.mode
+            base_sidebar_caption = _('lBack office actions')
         elif self.mode == 'dc':
             base_sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = self.mode
-        else:
-            base_sidebar_caption = ''
         ret.update({
             'mainmenu_items': self.get_mainmenu_items(),
             'section': self.mainmenu_selected,
@@ -119,6 +107,7 @@ class AssetsBase(Base):
             'sidebar_selected': self.sidebar_selected,
             'mode': self.mode,
             'multivalues_fields': ['sn', 'barcode', 'imei'],
+            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
         })
         return ret
 
@@ -137,22 +126,22 @@ class AssetsBase(Base):
                 href='/assets/back_office',
             ),
             MenuItem(
-                label=_('Licence List'),
-                fugue_icon='fugue-cheque-sign',
-                name='software_categories',
-                href=reverse('software_categories'),
+                label=_('Licences'),
+                fugue_icon='fugue-cheque',
+                name='licence_list',
+                href=reverse('licence_list'),
             ),
             MenuItem(
                 label=_('User list'),
                 fugue_icon='fugue-user-green-female',
-                name='user_list',
+                name='user list',
                 href=reverse('user_list'),
             ),
             MenuItem(
-                label='Support List',
+                label='Supports',
                 fugue_icon='',
                 name=_('support_list'),
-                href='/assets/supports/',
+                href=reverse('support_list'),
             ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
@@ -167,26 +156,27 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
-        base_items = (
-            ('add_device', _('Add device'), 'fugue-block--plus'),
-            ('add_part', _('Add part'), 'fugue-block--plus'),
-            ('asset_search', _('Search'), 'fugue-magnifier'),
-        )
-        license_items = (
-            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
-            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
-        )
-        support_items = (
-            ('support_list', _('Support list'), ''),
-            ('add_support', _('Add Support'), ''),
-        )
+        if self.mainmenu_selected.startswith('devices'):
+            base_items = (
+                ('add_device', _('Add device'), 'fugue-block--plus', True),
+                ('add_part', _('Add part'), 'fugue-block--plus', True),
+                ('asset_search', _('Search'), 'fugue-magnifier', True),
+            )
+        elif self.mainmenu_selected.startswith('licences'):
+            base_items = (
+                ('add_licence', _('Add licence'), 'fugue-cheque--plus', False),
+            )
+        elif self.mainmenu_selected.startswith('supports'):
+            base_items = (
+                ('add_support', _('Add Support'), '', False),
+            )
+        else:
+            base_items = ()
         other_items = (
-            ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
+            ('xls_upload', _('XLS upload'), 'fugue-cheque--plus', False),
         )
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
-            {'caption': _('License'), 'items': license_items},
-            {'caption': _('Support'), 'items': support_items},
             {'caption': _('Others'), 'items': other_items},
         ]
         sidebar_menu = tuple()
@@ -196,10 +186,13 @@ class AssetsBase(Base):
                 [MenuItem(
                     label=label,
                     fugue_icon=icon,
-                    href=reverse(view, kwargs={
-                        'mode': (self.mode or 'dc')
-                    })
-                ) for view, label, icon in item['items']]
+                    href=(
+                        reverse(view, kwargs={'mode': self.mode})
+                        if modal else
+                        reverse(view)
+                    )
+
+                ) for view, label, icon, modal in item['items']]
             )
             if sidebar_menu:
                 sidebar_menu += menu_item
@@ -306,6 +299,8 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
 class _AssetSearch(AssetsBase):
 
+    mainmenu_selected = 'devices'
+
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
             {
@@ -384,6 +379,7 @@ class _AssetSearch(AssetsBase):
             'user',
             'purpose',
             'service_name',
+            'warehouse',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -468,6 +464,8 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'warehouse':
+                    all_q &= Q(warehouse__id=field_value)
                 elif field == 'owner':
                     all_q &= Q(owner__id=field_value)
                 elif field == 'location':
@@ -614,8 +612,10 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True, show_conditions=show_dc),
             _('Discovered', bob_tag=True, field='is_discovered', export=True,
               foreign_field_name='is_discovered', show_conditions=show_dc),
-            _('Actions', bob_tag=True),
-
+            _('Actions', bob_tag=True,
+              show_conditions=(
+                  lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,
+              )),
             _('Department', field='department', foreign_field_name='venture',
               export=True),
             _('Barcode salvaged', field='barcode_salvaged',
@@ -712,8 +712,8 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
-            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
             'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
+            'asset_hide_action_search': settings.ASSET_HIDE_ACTION_SEARCH,
             'assets_count': self.assets_count,
         })
         return ret
@@ -829,24 +829,24 @@ def _get_return_link(mode):
 
 
 @transaction.commit_on_success
-def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
-                   barcode=None, office_info_data=None):
-    device_info = DeviceInfo()
+def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
     if mode == 'dc':
-        device_info.ralph_device_id = device_info_data['ralph_device_id']
-        device_info.u_level = device_info_data['u_level']
-        device_info.u_height = device_info_data['u_height']
-    device_info.save(user=creator_profile.user)
-    asset = Asset(
-        device_info=device_info,
-        sn=sn.strip(),
-        created_by=creator_profile,
-        **asset_data
-    )
-    if barcode:
-        asset.barcode = barcode
-    if office_info_data:
-        _update_office_info(creator_profile.user, asset, office_info_data)
+        asset = Asset(created_by=creator_profile, **asset_data)
+        device_info = DeviceInfo()
+        device_info.ralph_device_id = cleaned_additional_info[
+            'ralph_device_id'
+        ]
+        device_info.u_level = cleaned_additional_info['u_level']
+        device_info.u_height = cleaned_additional_info['u_height']
+        device_info.save(user=creator_profile.user)
+        asset.device_info = device_info
+    elif mode == 'back_office':
+        _move_data(asset_data, cleaned_additional_info, ['purpose'])
+        asset = Asset(created_by=creator_profile, **asset_data)
+        office_info = OfficeInfo()
+        office_info.__dict__.update(**cleaned_additional_info)
+        office_info.save(user=creator_profile.user)
+        asset.office_info = office_info
     asset.save(user=creator_profile.user)
     return asset
 
@@ -854,74 +854,78 @@ def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
 class AddDevice(AssetsBase):
     template_name = 'assets/add_device.html'
     sidebar_selected = 'add device'
+    mainmenu_selected = 'devices'
 
     def get_context_data(self, **kwargs):
         ret = super(AddDevice, self).get_context_data(**kwargs)
         ret.update({
             'asset_form': self.asset_form,
-            'device_info_form': self.device_info_form,
+            'additional_info': self.additional_info,
             'form_id': 'add_device_asset_form',
             'edit_mode': False,
+            'multivalue_fields': ['sn', 'barcode', 'imei'],
         })
         return ret
 
+    def _set_additional_info_form(self):
+        if self.mode == 'dc':
+            # XXX: how to clean it?
+            if self.request.method == 'POST':
+                self.additional_info = DeviceForm(
+                    self.request.POST,
+                    mode=self.mode,
+                    exclude='create_stock',
+                )
+            else:
+                self.additional_info = DeviceForm(
+                    mode=self.mode,
+                    exclude='create_stock',
+                )
+        elif self.mode == 'back_office':
+            if self.request.method == 'POST':
+                self.additional_info = OfficeForm(self.request.POST)
+            else:
+                self.additional_info = OfficeForm()
+
     def get(self, *args, **kwargs):
-        mode = self.mode
-        self.asset_form = AddDeviceForm(mode=mode)
+        self.asset_form = AddDeviceForm(mode=self.mode)
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(mode=self.mode)
-        self.device_info_form = DeviceForm(
-            mode=mode,
-            exclude='create_stock',
-        )
+        self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        mode = self.mode
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
-        self.device_info_form = DeviceForm(
-            self.request.POST,
-            mode=mode,
-            exclude='create_stock',
-        )
-        if self.asset_form.is_valid() and self.device_info_form.is_valid():
+        self._set_additional_info_form()
+        if self.asset_form.is_valid() and self.additional_info.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in {
+                if f_name not in {
                     "barcode", "company", "cost_center", "department",
                     "employee_id", "imei", "licences", "manager", "sn",
                     "profit_center"
                 }:
-                    continue
-                asset_data[f_name] = f_value
-            serial_numbers = self.asset_form.cleaned_data['sn']
-            barcodes = self.asset_form.cleaned_data['barcode']
+                    asset_data[f_name] = f_value
+            sns = self.asset_form.cleaned_data.get('sn', [])
+            barcodes = self.asset_form.cleaned_data.get('barcode', [])
             imeis = (
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
-            office_info_data = {}
-            asset_data, office_info_data = _move_data(
-                asset_data, office_info_data, ['purpose']
-            )
             ids = []
-            for sn, index in zip(serial_numbers, range(len(serial_numbers))):
-                barcode = barcodes[index] if barcodes else None
+            for index in range(len(sns or barcodes)):
+                asset_data['sn'] = sns[index] if sns else None
+                asset_data['barcode'] = barcodes[index] if barcodes else None
                 if imeis:
-                    office_info_data['imei'] = imeis[index]
+                    self.additional_info.cleaned_data['imei'] = imeis[index]
                 device = _create_device(
                     creator_profile,
                     asset_data,
-                    self.device_info_form.cleaned_data,
-                    sn,
-                    mode,
-                    barcode,
-                    office_info_data,
+                    self.additional_info.cleaned_data,
+                    self.mode,
                 )
-                for licence in self.asset_form.cleaned_data['licences']:
-                    device.licence_set.add(licence)
                 ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
@@ -996,10 +1000,10 @@ def _update_part_info(user, asset, part_info_data):
 class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
+    mainmenu_selected = 'devices'
 
     def initialize_vars(self):
         self.parts = []
-        self.office_info_form = None
         self.asset = None
 
     def get_context_data(self, **kwargs):
@@ -1009,8 +1013,7 @@ class EditDevice(AssetsBase):
         ).order_by('-date')
         ret.update({
             'asset_form': self.asset_form,
-            'device_info_form': self.device_info_form,
-            'office_info_form': self.office_info_form,
+            'additional_info': self.additional_info,
             'part_form': MoveAssetPartForm(),
             'form_id': 'edit_device_asset_form',
             'edit_mode': True,
@@ -1020,6 +1023,57 @@ class EditDevice(AssetsBase):
             'history_link': self.get_history_link(),
         })
         return ret
+
+    def _update_additional_info(self, modifier):
+        if self.asset.type in AssetType.DC.choices:
+            self.asset = _update_device_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+            if self.additional_info.cleaned_data.get('create_stock'):
+                self.asset.create_stock_device()
+        elif self.asset.type in AssetType.BO.choices:
+            new_src, new_dst = _move_data(
+                self.asset_form.cleaned_data,
+                self.additional_info.cleaned_data,
+                ['imei', 'purpose'],
+            )
+            self.asset_form.cleaned_data = new_src
+            self.additional_info.cleaned_data = new_dst
+            self.asset = _update_office_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+
+    def _set_additional_info_form(self):
+        if self.mode == 'dc':
+            # XXX: how do it better, differ only by one arg?
+            if self.request.method == 'POST':
+                self.additional_info = DeviceForm(
+                    self.request.POST,
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+            else:
+                self.additional_info = DeviceForm(
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+        elif self.mode == 'back_office':
+            # XXX: how do it better, differ only by one arg?
+            if self.request.method == 'POST':
+                self.additional_info = OfficeForm(
+                    self.request.POST,
+                    instance=self.asset.office_info,
+                )
+            else:
+                self.additional_info = OfficeForm(
+                    instance=self.asset.office_info,
+                )
+                fields = ['imei', 'purpose']
+                for field in fields:
+                    if field in self.asset_form.fields:
+                        self.asset_form.fields[field].initial = (
+                            getattr(self.asset.office_info, field, '')
+                        )
 
     def get(self, *args, **kwargs):
         self.initialize_vars()
@@ -1031,11 +1085,7 @@ class EditDevice(AssetsBase):
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
         )
-        self.write_office_info2asset_form()
-        self.device_info_form = DeviceForm(
-            instance=self.asset.device_info,
-            mode=self.mode,
-        )
+        self._set_additional_info_form()
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
 
@@ -1052,11 +1102,7 @@ class EditDevice(AssetsBase):
             instance=self.asset,
             mode=self.mode,
         )
-        self.device_info_form = DeviceForm(
-            post_data,
-            mode=self.mode,
-            instance=self.asset.device_info,
-        )
+        self._set_additional_info_form()
         self.part_form = MoveAssetPartForm(post_data)
         if 'move_parts' in post_data.keys():
             destination_asset = post_data.get('new_asset')
@@ -1079,45 +1125,22 @@ class EditDevice(AssetsBase):
                     info_part.save()
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
-            if self.asset.type in AssetType.BO.choices:
-                self.office_info_form = OfficeForm(
-                    post_data, self.request.FILES,
-                )
             if all((
                 self.asset_form.is_valid(),
-                self.device_info_form.is_valid(),
-                self.asset.type not in AssetType.BO.choices or
-                self.office_info_form.is_valid(),
+                self.additional_info.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
-
-                if self.asset.type in AssetType.BO.choices:
-                    new_src, new_dst = _move_data(
-                        self.asset_form.cleaned_data,
-                        self.office_info_form.cleaned_data,
-                        ['imei', 'purpose'],
-                    )
-                    self.asset_form.cleaned_data = new_src
-                    self.office_info_form.cleaned_data = new_dst
-                    self.asset = _update_office_info(
-                        modifier_profile.user, self.asset,
-                        self.office_info_form.cleaned_data
-                    )
-                self.asset = _update_device_info(
-                    modifier_profile.user, self.asset,
-                    self.device_info_form.cleaned_data
-                )
-                if self.device_info_form.cleaned_data.get('create_stock'):
-                    self.asset.create_stock_device()
+                self._update_additional_info(modifier_profile.user)
                 self.asset.save(user=self.request.user)
                 self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
+
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
@@ -1231,7 +1254,7 @@ class EditPart(AssetsBase):
     def get_parent_link(self):
         asset = self.asset.part_info.source_device
         if asset:
-            return reverse('dc_device_edit', kwargs={
+            return reverse('device_edit', kwargs={
                 'asset_id': asset.id,
                 'mode': self.mode,
             })
@@ -1447,7 +1470,7 @@ class AddPart(AssetsBase):
 
 
 class HistoryAsset(AssetsBase):
-    template_name = 'assets/history_asset.html'
+    template_name = 'assets/history.html'
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1473,12 +1496,22 @@ class HistoryAsset(AssetsBase):
         else:
             page_size = HISTORY_PAGE_SIZE
         history_page = Paginator(history, page_size).page(page)
+        if asset.get_data_type() == 'device':
+            url_name = 'device_edit'
+        else:
+            url_name = 'part_edit'
+        object_url = reverse(
+            url_name, kwargs={'asset_id': asset.id, 'mode': self.mode},
+        )
         ret.update({
             'history': history,
             'history_page': history_page,
             'status': status,
             'query_variable_name': query_variable_name,
-            'asset': asset,
+            'object': asset,
+            'object_url': object_url,
+            'title': _('History asset'),
+            'show_status_button': True,
         })
         return ret
 
@@ -1621,247 +1654,6 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class LicenceFormView(AssetsBase):
-    """Base view that displays licence form."""
-
-    template_name = 'assets/add_licence.html'
-    sidebar_selected = 'list licence'
-
-    def _get_form(self, data=None, **kwargs):
-        self.form = LicenceForm(
-            mode=self.mode, data=data, **kwargs
-        )
-
-    def get_context_data(self, **kwargs):
-        ret = super(LicenceFormView, self).get_context_data(**kwargs)
-        ret.update({
-            'form': self.form,
-            'form_id': 'add_licence_form',
-            'edit_mode': False,
-            'caption': self.caption,
-            'licence': getattr(self, 'licence', None),
-            'mode': self.mode,
-            'section': 'licence_list',
-        })
-        return ret
-
-    def _save(self, request, *args, **kwargs):
-        try:
-            licence = self.form.save(commit=False)
-            if licence.asset_type is None:
-                licence.asset_type = MODE2ASSET_TYPE[self.mode]
-            licence.save()
-            self.form.save_m2m()
-            messages.success(self.request, self.message)
-            return HttpResponseRedirect(licence.url)
-        except ValueError:
-            return super(LicenceFormView, self).get(request, *args, **kwargs)
-
-
-class AddLicence(LicenceFormView):
-    """Add a new licence"""
-
-    caption = _('Add Licence')
-    message = _('Licence added')
-    sidebar_selected = 'add licence'
-
-    def get(self, request, *args, **kwargs):
-        self._get_form()
-        return super(AddLicence, self).get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        self._get_form(request.POST)
-        return self._save(request, *args, **kwargs)
-
-
-class EditLicence(LicenceFormView):
-    """Edit licence"""
-
-    caption = _('Edit Licence')
-    message = _('Licence changed')
-    sidebar_selected = 'licence edit'
-
-    def get(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
-        self._get_form(instance=self.licence)
-        return super(EditLicence, self).get(request, *args, **kwargs)
-
-    def post(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
-        self._get_form(request.POST, instance=self.licence)
-        return self._save(request, *args, **kwargs)
-
-
-class LicenceList(AssetsBase):
-    """The licence list."""
-
-    template_name = "assets/licence_list.html"
-    sidebar_selected = 'licence list'
-
-    def get_context_data(self, *args, **kwargs):
-        data = super(LicenceList, self).get_context_data(
-            *args, **kwargs
-        )
-        page = self.request.GET.get('page', 1)
-        categories = models_sam.SoftwareCategory.objects.annotate(
-            used=Count('licence__assets'),
-        )
-        if self.mode:
-            categories = categories.filter(
-                asset_type=MODE2ASSET_TYPE[self.mode]
-            )
-        categories_page = Paginator(
-            categories, LICENCE_PAGE_SIZE
-        ).page(page)
-        for category in categories_page:
-            category.licences_annotated = \
-                category.licence_set.annotate(used=Count('assets')).all()
-            category.total = sum(
-                licence.number_bought
-                for licence in category.licences_annotated
-            )
-        data['categories'] = categories_page
-        data['section'] = 'licence_list'
-        return data
-
-
-class InvoiceReport(_AssetSearch):
-    template_name = 'assets/invoice_report.html'
-
-    def show_unique_error_message(self, *args, **kwargs):
-        non_unique = {}
-        for name in ['invoice_no', 'invoice_date', 'provider']:
-            assets = self.assets.values(name).distinct()
-            if assets.count() != 1:
-                if name == 'invoice_date':
-                    data = ", ".join(
-                        asset[name].strftime(
-                            "%d-%m-%Y"
-                        ) for asset in assets if asset[name]
-                    )
-                else:
-                    data = ", ".join(
-                        asset[name] for asset in assets if asset[name]
-                    )
-                non_unique[name] = data
-        non_unique_items = " ".join(
-            [
-                "{}: {}".format(
-                    key, value,
-                ) for key, value in non_unique.iteritems() if value
-            ]
-        )
-        messages.error(
-            self.request,
-            "{}: {}".format(
-                _("Selected asset has different: "),
-                non_unique_items,
-            )
-        )
-
-    def get_return_link(self, *args, **kwargs):
-        if self.ids:
-            url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(id for id in self.ids),
-            )
-        else:
-            url = "{}search?{}".format(
-                _get_return_link(self.mode), self.request.GET.urlencode(),
-            )
-        return url
-
-    def get(self, *args, **kwargs):
-        if not settings.ASSETS_REPORTS['ENABLE']:
-            messages.error(self.request, _("Assets reports is disabled"))
-            return HttpResponseRedirect(_get_return_link(self.mode))
-        error = False
-        try:
-            self.template_file = ReportOdtSource.objects.get(
-                slug=settings.ASSETS_REPORTS['INVOICE_REPORT']['SLUG'],
-            )
-        except ReportOdtSource.DoesNotExist:
-            messages.error(self.request, _("Odt template does not exist!"))
-            error = True
-        self.ids = self.request.GET.getlist('select')
-        if self.request.GET.get('from_query'):
-            all_q = super(
-                InvoiceReport, self,
-            ).handle_search_data(*args, **kwargs)
-        else:
-            all_q = Q(pk__in=self.ids)
-        self.assets = self.get_all_items(all_q)
-        asset_distinct = self.assets.values(
-            'invoice_no', 'invoice_date', 'provider'
-        ).distinct()
-        if asset_distinct.count() != 1:
-            self.show_unique_error_message()
-            error = True
-        if not all(asset_distinct[0].viewvalues()):
-            messages.error(self.request, _(
-                "Asset invoice number, invoice date or provider can't be empty"
-            ))
-            error = True
-        if error:
-            return HttpResponseRedirect(self.get_return_link())
-        # generate invoice report
-        pdf_data = self.get_pdf_content()
-        if not pdf_data:
-            return HttpResponseRedirect(self.get_return_link())
-        response = HttpResponse(
-            content=pdf_data, content_type='application/pdf'
-        )
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            self.file_name,
-        )
-        return response
-
-    def get_pdf_content(self, *args, **kwargs):
-        content = None
-        data = self.get_report_data()
-        self.file_name = '{}-{}-{}.pdf'.format(
-            self.template_file.slug,
-            data['id'],
-            uuid.uuid4(),
-        )
-        output_path = '{}{}'.format(
-            settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
-            self.file_name,
-        )
-        generate_pdf(
-            self.template_file.template.path,
-            output_path,
-            data,
-        )
-        try:
-            with open(output_path, 'rb') as f:
-                content = f.read()
-                f.close()
-        except IOError as e:
-            logger.error(
-                "Can not read report for assets ids: {} ({})".format(
-                    ",".join(id for id in self.ids), e,
-                )
-            )
-            messages.error(self.request, _(
-                "The error occurred, was not possible to read generated file."
-            ))
-        return content
-
-    def get_report_data(self, *args, **kwargs):
-        first_asset = self.assets[0]
-        data = {
-            "id": slugify(first_asset.invoice_no),
-            "base_info": {
-                "invoice_no": first_asset.invoice_no,
-                "invoice_date": first_asset.invoice_date,
-                "provider": first_asset.provider,
-                "datetime": datetime.datetime.now(),
-            },
-            "assets": self.assets,
-        }
-        return data
-
-
 class SupportContractFormView(AssetsBase):
     """Base view that displays support form."""
 
@@ -1901,6 +1693,7 @@ class AddSupportContractForm(SupportContractFormView):
     """Add a new support"""
 
     caption = _('Add Support')
+    mainmenu_selected = 'supports'
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1917,6 +1710,7 @@ class SupportContractList(AssetsBase):
 
     template_name = "assets/support_list.html"
     sidebar_selected = None
+    mainmenu_selected = 'supports'
 
     def get_context_data(self, *args, **kwargs):
         data = super(SupportContractList, self).get_context_data(
@@ -2120,7 +1914,7 @@ class UserDetails(AssetsBase):
             self.user = User.objects.get(username=username)
         except User.DoesNotExist:
             messages.error(request, _('User {} not found'.format(username)))
-            return HttpResponseRedirect(reverse('user_list'))
+            return HttpResponseRedirect(reverse('user list'))
         self.assigned_assets = Asset.objects.filter(user=self.user)
         self.assigned_licences = self.user.licence_set.all()
         self.transitions_history = TransitionsHistory.objects.filter(
@@ -2131,7 +1925,7 @@ class UserDetails(AssetsBase):
     def get_context_data(self, **kwargs):
         ret = super(UserDetails, self).get_context_data(**kwargs)
         ret.update({
-            'section': 'user_list',
+            'section': 'user list',
             'user_object': self.user,
             'assigned_assets': self.assigned_assets,
             'assigned_licences': self.assigned_licences,
@@ -2146,6 +1940,7 @@ class UserList(Report, AssetsBase, DataTableMixin):
     template_name = 'assets/user_list.html'
     csv_file_name = 'users'
     sort_variable_name = 'sort'
+    mainmenu_selected = 'users'
     _ = DataTableColumnAssets
     columns = [
         _(
@@ -2175,7 +1970,7 @@ class UserList(Report, AssetsBase, DataTableMixin):
             'sort': self.sort,
             'columns': self.columns,
             'form': SearchUserForm(self.request.GET),
-            'section': 'user_list',
+            'section': 'user list',
         })
         return ret
 
@@ -2217,7 +2012,7 @@ class EditUser(AssetsBase):
             'form_id': 'user_relation_form',
             'caption': self.caption,
             'edited_user': self.user,
-            'section': 'user_list',
+            'section': 'user list',
         })
         return ret
 

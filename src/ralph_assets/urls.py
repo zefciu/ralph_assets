@@ -12,7 +12,6 @@ from django.views.generic import RedirectView
 from ralph_assets.views import (
     AddAttachment,
     AddDevice,
-    AddLicence,
     AddPart,
     AssetSearch,
     BulkEdit,
@@ -21,11 +20,9 @@ from ralph_assets.views import (
     DeleteAttachment,
     DeleteLicence,
     EditDevice,
-    EditLicence,
     EditPart,
     EditUser,
     HistoryAsset,
-    InvoiceReport,
     SupportContractList,
     AddSupportContractForm,
     EditSupportContractForm,
@@ -33,11 +30,23 @@ from ralph_assets.views import (
     UserDetails,
     UserList,
 )
-from ralph_assets.views_transition import TransitionView
 from ralph_assets.views_import import XlsUploadView
-from ralph_assets.views_sam import SoftwareCategoryList, LicenceList
-
+from ralph_assets.views_sam import (
+    AddLicence,
+    EditLicence,
+    HistoryLicence,
+    LicenceList,
+    SoftwareCategoryList,
+)
+from ralph_assets.views_invoice_report import (
+    AssetInvoiceReport,
+    LicenceInvoiceReport,
+)
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
+from ralph_assets.views_transition import (
+    TransitionView,
+    TransitionHistoryFileHandler,
+)
 
 
 urlpatterns = patterns(
@@ -65,7 +74,7 @@ urlpatterns = patterns(
         name='device_edit'),
     url(r'(?P<mode>(back_office|dc))/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(EditPart.as_view()),
-        name='dc'),
+        name='part_edit'),
     url(r'/ajax/dependencies/category/$',
         CategoryDependencyView.as_view(),
         name='category_dependency_view'),
@@ -84,9 +93,16 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
-    url(r'(?P<mode>(back_office|dc))/invoice_report/$',
-        login_required(InvoiceReport.as_view()),
-        name='invoice_report'),
+    url(
+        r'(?P<mode>(back_office|dc))/invoice_report/$',
+        login_required(AssetInvoiceReport.as_view()),
+        name='assets_invoice_report',
+    ),
+    url(
+        r'sam/licences/invoice_report/$',
+        login_required(LicenceInvoiceReport.as_view()),
+        name='sam_invoice_report',
+    ),
     url(
         r'(?P<mode>(back_office|dc))/transition/$',
         login_required(TransitionView.as_view()),
@@ -98,7 +114,7 @@ urlpatterns = patterns(
         name='add_attachment'
     ),
     url(
-        r'(?P<mode>(back_office|dc))/xls/$',
+        r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),
@@ -113,7 +129,12 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/add_licence/$',
+        r'sam/licences/$',
+        login_required(LicenceList.as_view()),
+        name='licence_list',
+    ),
+    url(
+        r'sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',
     ),
@@ -123,22 +144,17 @@ urlpatterns = patterns(
         name='edit_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/supports/$',
+        r'sup/supports/$',
         login_required(SupportContractList.as_view()),
         name='support_list',
     ),
     url(
-        r'supports/$',
-        login_required(SupportContractList.as_view()),
-        name='support_list',
-    ),
-    url(
-        r'(?P<mode>(back_office|dc))/supports/add_support/$',
+        r'sup/add_support/$',
         login_required(AddSupportContractForm.as_view()),
         name='add_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/supports/edit_support/'
+        r'(?P<mode>(back_office|dc))/sup/edit_support/'
         r'(?P<support_id>[0-9]+)$',
         login_required(EditSupportContractForm.as_view()),
         name='edit_support',
@@ -167,5 +183,15 @@ urlpatterns = patterns(
         r'user/details/(?P<username>[^\/]+)/$',
         login_required(UserDetails.as_view()),
         name='user_view',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/history/licence/(?P<licence_id>[0-9]+)/$',
+        login_required(HistoryLicence.as_view()),
+        name='licence_history',
+    ),
+    url(
+        r'transition-history-file/(?P<history_id>[0-9]+)$',
+        login_required(TransitionHistoryFileHandler.as_view()),
+        name='transition_history_file',
     ),
 )

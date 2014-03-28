@@ -6,19 +6,26 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import logging
 import uuid
 
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
+from django.views.generic import TemplateView
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.views import _AssetSearch, _get_return_link
+from ralph_assets.views_invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
+
+
+logger = logging.getLogger(__name__)
 
 
 class TransitionDispatcher(object):
@@ -40,6 +47,7 @@ class TransitionDispatcher(object):
         affected_user,
         template_file=None,
         warehouse=None,
+        loan_end_date=None,
     ):
         self.instance = instance
         self.transition = transition
@@ -48,37 +56,53 @@ class TransitionDispatcher(object):
         self.affected_user = affected_user
         self.template_file = template_file
         self.warehouse = warehouse
+        self.loan_end_date = loan_end_date
         self.report_file_patch = None
 
     def _action_assign_user(self):
         for asset in self.assets:
             asset.user = self.affected_user
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_assign_owner(self):
         for asset in self.assets:
             asset.owner = self.affected_user
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_unassign_user(self):
         for asset in self.assets:
             asset.user = None
-            asset.save()
+            asset.save(user=self.logged_user)
+
+    def _action_assign_loan_end_date(self):
+        for asset in self.assets:
+            asset.loan_end_date = self.loan_end_date
+            asset.save(user=self.logged_user)
+
+    def _action_unassign_loan_end_date(self):
+        for asset in self.assets:
+            asset.loan_end_date = None
+            asset.save(user=self.logged_user)
 
     def _action_unassign_owner(self):
         for asset in self.assets:
             asset.owner = None
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_assign_warehouse(self):
         for asset in self.assets:
             asset.warehouse = self.warehouse
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_change_status(self):
         for asset in self.assets:
             asset.status = self.transition.to_status
-            asset.save()
+            asset.save(user=self.logged_user)
+
+    def _action_unassign_licences(self):
+        for asset in self.assets:
+            asset.licence_set.clear()
+            asset.save(user=self.logged_user)
 
     def _get_report_data(self):
         uid = uuid.uuid4()
@@ -137,7 +161,7 @@ class TransitionDispatcher(object):
     @nested_commit_on_success
     def run(self):
         self.file_name = None
-        actions = self.transition.actions_names()
+        actions = self.transition.actions_names
         if 'change_status' in actions:
             self._action_change_status()
         if 'assign_owner' in actions:
@@ -148,8 +172,14 @@ class TransitionDispatcher(object):
             self._action_assign_user()
         elif 'unassign_user' in actions:
             self._action_unassign_user()
+        if 'assign_loan_end_date' in actions:
+            self._action_assign_loan_end_date()
+        elif 'unassign_loan_end_date' in actions:
+            self._action_unassign_loan_end_date()
         if 'assign_warehouse' in actions:
             self._action_assign_warehouse()
+        if 'unassign_licences' in actions:
+            self._action_unassign_licences()
         if 'release_report' in actions:
             self._action_release_report()
         elif 'return_report' in actions:
@@ -190,6 +220,8 @@ class TransitionView(_AssetSearch):
             form.fields.pop('user')
         if not self.assign_warehouse:
             form.fields.pop('warehouse')
+        if not self.assign_loan_end_date:
+            form.fields.pop('loan_end_date')
         return form
 
     def get_assets(self, *args, **kwargs):
@@ -204,7 +236,7 @@ class TransitionView(_AssetSearch):
         return self.get_all_items(all_q)
 
     def get_warehouse(self, *args, **kwargs):
-        if 'assign_warehouse' in self.transition_object.actions_names():
+        if 'assign_warehouse' in self.transition_object.actions_names:
             return self.form.cleaned_data.get('warehouse')
 
     def get_affected_user(self, *args, **kwargs):
@@ -215,7 +247,10 @@ class TransitionView(_AssetSearch):
 
     def get_report_file_link(self, *args, **kwargs):
         if self.transition_history:
-            return self.transition_history.report_file.url
+            return reverse(
+                'transition_history_file',
+                kwargs={'history_id': self.transition_history.id},
+            )
 
     def check_reports_template_exists(self, *args, **kwargs):
         try:
@@ -248,10 +283,13 @@ class TransitionView(_AssetSearch):
             error = True
         else:
             self.assign_user = (
-                'assign_user' in self.transition_object.actions_names()
+                'assign_user' in self.transition_object.actions_names
             )
             self.assign_warehouse = (
-                'assign_warehouse' in self.transition_object.actions_names()
+                'assign_warehouse' in self.transition_object.actions_names
+            )
+            self.assign_loan_end_date = (
+                'assign_loan_end_date' in self.transition_object.actions_names
             )
         if self.transition_type == 'return-asset' or not self.assign_user:
             assets = self.assets.values('user__username').distinct()
@@ -305,6 +343,7 @@ class TransitionView(_AssetSearch):
                 self.get_affected_user(),
                 self.template_file,
                 self.get_warehouse(),
+                loan_end_date=self.request.POST.get('loan_end_date'),
             )
             dispatcher.run()
             self.report_file_path = dispatcher.report_file_patch
@@ -325,5 +364,47 @@ class TransitionView(_AssetSearch):
             'assets': self.assets,
             'transition_form': self.form,
             'transition_type': self.transition_type.replace('-', ' ').title(),
+            'actions_names': self.transition_object.actions_names,
         })
         return ret
+
+
+class TransitionHistoryFileHandler(TemplateView):
+    def get_context_data(self, **kwargs):
+        # we don't need data from TemplateView...
+        return {}
+
+    def raise_404_error(self):
+        raise Http404(_("Transition history file not found"))
+
+    def render_to_response(self, context, **response_kwargs):
+        try:
+            history_object = TransitionsHistory.objects.get(
+                id=self.kwargs.get('history_id'),
+            )
+        except TransitionsHistory.DoesNotExist:
+            self.raise_404_error()
+        file_name = self.generate_file_name(history_object)
+        pdf_data, error = self.get_file_content_from_history(history_object)
+        if pdf_data and not error:
+            return generate_pdf_response(pdf_data, file_name)
+        self.raise_404_error()
+
+    def get_file_content_from_history(self, history_object):
+        try:
+            content = history_object.report_file.read()
+        except IOError as e:
+            logger.error(
+                "Can not read transition history file: {} ({})".format(
+                    history_object.id, e,
+                )
+            )
+            return None, True
+        return content, False
+
+    def generate_file_name(self, history_object):
+        return "{}_{}_{}.pdf".format(
+            history_object.created.date(),
+            history_object.affected_user.get_full_name(),
+            history_object.transition.name,
+        )

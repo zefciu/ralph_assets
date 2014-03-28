@@ -1,4 +1,5 @@
 {% extends 'assets/base.html' %}
+{% load assets %}
 {% load bob %}
 {% load i18n %}
 {% load icons %}
@@ -24,10 +25,11 @@ form.form-inline {
 
 
 {% block sidebar_search%}
+
     <div class="form search-form well well-small" id="sidebar_search">
         {% trans "Hint: you can use quotation marks for exact matches." %}
         <hr>
-        {% form form=form method="GET" action='' submit_label='Search' css_class=''%}
+        {% collapsed_form form %}
     </div>
 {% endblock %}
 
@@ -87,8 +89,8 @@ form.form-inline {
                             {% endif %}
                         </td>
                     {% endif %}
+                    {% if not asset_hide_action_search %}
                     <td>
-
                     <div class="btn-group">
                       <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
                         Action
@@ -119,6 +121,7 @@ form.form-inline {
                         </ul>
                     </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
                 </tbody>

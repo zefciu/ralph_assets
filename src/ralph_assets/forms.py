@@ -78,6 +78,65 @@ asset_fieldset = lambda: OrderedDict([
     ]),
 ])
 
+asset_search_back_office_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
+        'collapsed': [
+            'warehouse', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
+            'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
+asset_search_dc_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': [
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+        ],
+        'collapsed': [
+            'status', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
 LOOKUPS = {
     'asset': ('ralph_assets.models', 'DeviceLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
@@ -95,6 +154,44 @@ LOOKUPS = {
 }
 
 
+class MultivalFieldForm(ModelForm):
+    """A form that has several multiline fields that need to have the
+    same number of entries."""
+
+    def different_multival_counters(self, cleaned_data):
+        """Adds a validation error if if form's multivalues fields have
+        different count of items."""
+        items_count_per_multi = set()
+        for field in self.multival_fields:
+            if cleaned_data.get(field, []):
+                items_count_per_multi.add(len(cleaned_data.get(field, [])))
+        if len(items_count_per_multi) > 1:
+            for field in self.multival_fields:
+                if field in cleaned_data:
+                    msg = "Fields: {} - require the same count".format(
+                        ', '.join(self.multival_fields)
+                    )
+                    self.errors.setdefault(field, [])
+                    self.errors[field].append(msg)
+
+    def unique_multival_fields(self, data):
+        for field_name in self.multival_fields:
+            try:
+                self[field_name].field.check_field_uniqueness(
+                    self._meta.model,
+                    data.get(field_name, [])
+                )
+            except ValidationError as err:
+                self._errors.setdefault(field_name, [])
+                self._errors[field_name] += err.messages
+
+    def clean(self):
+        data = super(MultivalFieldForm, self).clean()
+        self.different_multival_counters(data)
+        self.unique_multival_fields(data)
+        return data
+
+
 def move_after(_list, static, dynamic):
     """
     Move *static* elem. after *dynamic* elem. in list *_list*
@@ -106,6 +203,96 @@ def move_after(_list, static, dynamic):
     _list.insert(next_pos, dynamic)
     return _list
 
+
+def validate_snbcs(snbcs):
+    """
+    This validator checks if all snbcs item are snbc.
+    Name 'snbc' is a join of 'serial number' (sn) and barcode ('bc'), because
+    both things shares the same validation requirements.
+    """
+    def _validate_snbc(snbc):
+        if ' ' in snbc:
+            raise ValidationError(
+                _("Item can't contain white characters.")
+            )
+        if len(snbc) > 200:
+            raise ValidationError(
+                _("Item max length is 200 characters.")
+            )
+    for snbc in snbcs:
+        _validate_snbc(snbc)
+
+
+class MultilineField(CharField):
+    """
+    This widget is a textarea which treats its content as many values seperated
+    by: commas or "new lines"
+    Validation:
+        - separated values cannot duplicate each other,
+        - empty values are disallowed,
+        - db uniqueness is also checked.
+    """
+    separators = ",|\n"
+
+    def __init__(self, db_field_path, *args, **kwargs):
+        """
+        :param string db_field_path: check arg *field_path* of function
+        *_check_field_uniqueness*
+        """
+        self.db_field_path = db_field_path
+        super(MultilineField, self).__init__(*args, **kwargs)
+
+    def validate(self, values):
+        if not values and self.required:
+            error_msg = _(
+                "Field can't be empty. Please put the item OR items separated "
+                "by new line or comma."
+            )
+            raise ValidationError(error_msg, code='required')
+        items = set()
+        for value in values:
+            if value in items:
+                raise ValidationError(_("There are duplicates in field."))
+            elif value == '':
+                raise ValidationError(_("Empty items disallowed, remove it."))
+            elif value:
+                items.add(value)
+
+    def to_python(self, value):
+        items = []
+        if value:
+            for item in re.split(self.separators, value):
+                items.append(item.strip())
+        return items
+
+    def clean(self, value):
+        value = super(MultilineField, self).clean(value)
+        return value
+
+    def check_field_uniqueness(self, Model, values):
+        '''
+            Check field (pointed by *self.db_field_path*) uniqueness.
+            If duplicated value is found then raise ValidationError
+
+            :param string Model: model field to be unique (as a string)
+            :param list values: list of field values
+        '''
+        if not self.db_field_path or not values:
+            return
+        conditions = {
+            '{}__in'.format(self.db_field_path): values
+        }
+        assets = Model.objects.filter(**conditions)
+        if assets:
+            raise ValidationError(mark_safe(
+                'Following items already exist: ' +
+                ', '.join([
+                    '<a href="{}">{}</a>'.format(asset.url, asset.id)
+                    for asset in assets
+                ])
+            ))
+
+
 imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
 imei_since_2003 = re.compile(r'^\d{8} *\d{6} *\d$')
 
@@ -114,6 +301,11 @@ def validate_imei(imei):
     is_imei = imei_until_2003.match(imei) or imei_since_2003.match(imei)
     if not is_imei:
         raise ValidationError('"{}" is not IMEI format'.format(imei))
+
+
+def validate_imeis(imeis):
+    for imei in imeis:
+        validate_imei(imei)
 
 
 class ModeNotSetException(Exception):
@@ -125,7 +317,7 @@ class BarcodeField(CharField):
         return value if value else None
 
 
-class BulkEditAssetForm(ModelForm):
+class BulkEditAssetForm(DependencyForm, ModelForm):
     '''
         Form model for bulkedit assets, contains column definition and
         validadtion. Most important are sn and barcode fields. When you type
@@ -134,15 +326,6 @@ class BulkEditAssetForm(ModelForm):
     '''
     class Meta:
         model = Asset
-        fields = (
-            'type', 'model', 'warehouse', 'property_of', 'device_info',
-            'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
-            'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'source',
-            'status', 'task_url', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date', 'production_year',
-            'user', 'owner', 'service_name',
-        )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
@@ -151,6 +334,18 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
+
+    @property
+    def dependencies(self):
+        return [
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
+        ]
 
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
@@ -186,14 +381,24 @@ class BulkEditAssetForm(ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
-        serial_number_unique = _check_serial_numbers_uniqueness(
-            [self.cleaned_data['sn']]
-        )[0]
-        if 'sn' in self.changed_data and not serial_number_unique:
+        serial_number_exists = \
+            Asset.objects.filter(sn=self.cleaned_data['sn']).count()
+        if 'sn' in self.changed_data and serial_number_exists:
             self._errors["sn"] = self.error_class([
                 _("Asset with this Sn already exists.")
+
             ])
         return self.cleaned_data
+
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            barcode_exists = Asset.objects.filter(barcode=barcode).count()
+            if 'barcode' in self.changed_data and barcode_exists:
+                self._errors["barcode"] = self.error_class([
+                    _("Asset with this barcode already exists.")
+                ])
+        return barcode
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
@@ -224,7 +429,13 @@ class BulkEditAssetForm(ModelForm):
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
-
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'task_url', 'deprecation_rate',
+            'order_no',
+        )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
@@ -233,7 +444,12 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
 
 class DataCenterBulkEditAssetForm(BulkEditAssetForm):
-    pass
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'service_name', 'invoice_no', 'invoice_date',
+            'price', 'task_url', 'deprecation_rate', 'order_no',
+        )
 
 
 class DeviceForm(ModelForm):
@@ -340,120 +556,6 @@ class BasePartForm(ModelForm):
             ].initial = self.instance.source_device.id
         if self.instance.device:
             self.fields['device'].initial = self.instance.device.id
-
-
-def _validate_multivalue_data(data):
-    '''
-        Check if data is a correct string with serial numbers and split
-        it to list
-
-        :param string: string with serial numbers splited by new line or comma
-        :return list: list of serial numbers
-    '''
-    error_msg = _("Field can't be empty. Please put the items separated "
-                  "by new line or comma.")
-    data = data.strip()
-    if not data:
-        raise ValidationError(error_msg)
-    items = []
-    for item in filter(len, re.split(",|\n", data)):
-        item = item.strip()
-        if item in items:
-            raise ValidationError(
-                _("There are duplicate serial numbers in field.")
-            )
-        elif ' ' in item:
-            raise ValidationError(
-                _("Serial number can't contain white characters.")
-            )
-        elif item:
-            items.append(item)
-    if not items:
-        raise ValidationError(error_msg)
-    return items
-
-
-def _check_field_uniqueness(field_path, values):
-    '''
-        Check field (pointed by *field_path*) uniqueness.
-        If duplicated value is found then return false status with information
-        about not unique ids
-
-        :param string field_path: model field to be unique (as a string)
-        :param list values: list of field values
-        :return tuple: status and not unique ids or empty list
-        :rtype tuple:
-    '''
-    conditions = {
-        '{}__in'.format(field_path): values
-    }
-    assets = Asset.objects.filter(**conditions)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        last_field = asset
-        for field_name in field_path.split('__'):
-            last_field = getattr(last_field, field_name)
-        not_unique.append((last_field, asset.id, asset.type))
-    return False, not_unique
-
-
-def _check_serial_numbers_uniqueness(serial_numbers):
-    '''
-        Check serial numbers uniqueness. If find any not unique
-        serial number then return false status with information
-        about not unique serial numbers
-
-        :param list serial_numbers: list of serial numbers
-        :return tuple: status and not unique serial numbers or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('sn', serial_numbers)
-    return status, duplicated
-
-
-def _check_barcodes_uniqueness(barcodes):
-    '''
-        Check barcodes uniqueness. If find any not unique
-        barcode then return false status with information
-        about not unique barcode
-
-        :param list barcodes: list of barcodes
-        :return tuple: status and not unique barcodes or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('barcode', barcodes)
-    return status, duplicated
-
-
-def _check_imeis_uniqueness(imeis):
-    '''
-        Check imei uniqueness. If find any not unique
-        imei then return false status with information
-        about not unique imei
-
-        :param list imeis: list of imeis
-        :return tuple: status and not unique imeis or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('office_info__imei', imeis)
-    return status, duplicated
-
-
-def _sn_additional_validation(serial_numbers):
-    '''
-        Raise ValidationError if any of serial numbers is not unique
-
-        :param list serial_numbers: list of serial numbers
-    '''
-    is_unique, not_unique_sn = _check_serial_numbers_uniqueness(serial_numbers)
-    if not is_unique:
-        # ToDo: links to assets with duplicate sn
-        msg = "Following serial number already exists in DB: %s" % (
-            ", ".join(item[0] for item in not_unique_sn)
-        )
-        raise ValidationError(msg)
 
 
 class DependencyAssetForm(DependencyForm):
@@ -900,7 +1002,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
-
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -981,8 +1082,11 @@ class AddPartForm(BaseAddAssetForm):
     '''
         Add new part for device
     '''
-    sn = CharField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+
+    sn = MultilineField(
+        db_field_path='sn', label=_("SN/SNs"), required=True,
+        widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
     )
 
     def __init__(self, *args, **kwargs):
@@ -990,107 +1094,52 @@ class AddPartForm(BaseAddAssetForm):
         self.fieldsets = asset_fieldset()
         self.fieldsets['Basic Info'].remove('barcode')
 
-    def clean_sn(self):
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
 
-
-class AddDeviceForm(BaseAddAssetForm):
+class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new device form
     '''
-    sn = CharField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+    sn = MultilineField(
+        db_field_path='sn', label=_("SN/SNs"), required=False,
+        widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
     )
-    barcode = CharField(
-        label=_("Barcode/Barcodes"), required=False,
+    barcode = MultilineField(
+        db_field_path='barcode', label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
     )
-    imei = CharField(
-        label=_("IMEI"), required=False,
+    imei = MultilineField(
+        db_field_path='office_info__imei', label=_("IMEI"), required=False,
         widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_imeis],
     )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
-
-    def clean_sn(self):
-        '''
-            Validate if sn is correct and change string with serial numbers
-            to list
-        '''
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
-
-    def clean_barcode(self):
-        data = self.cleaned_data["barcode"].strip()
-        barcodes = []
-        if data:
-            for barcode in filter(len, re.split(",|\n", data)):
-                barcode = barcode.strip()
-                if barcode in barcodes:
-                    raise ValidationError(
-                        _("There are duplicate barcodes in the field.")
-                    )
-                elif ' ' in barcode:
-                    raise ValidationError(
-                        _("Serial number can't contain white characters.")
-                    )
-                elif barcode:
-                    barcodes.append(barcode)
-            if not barcodes:
-                raise ValidationError(_("Barcode list could be empty or "
-                                        "must have the same number of "
-                                        "items as a SN list."))
-            is_unique, not_unique_bc = _check_barcodes_uniqueness(barcodes)
-            if not is_unique:
-                # ToDo: links to assets with duplicate barcodes
-                msg = "Following barcodes already exists in DB: %s" % (
-                    ", ".join(item[0] for item in not_unique_bc)
-                )
-                raise ValidationError(msg)
-        return barcodes
-
-    def clean_imei(self):
-        imeis = []
-        data = self.cleaned_data['imei'].strip()
-        if data:
-            for imei in filter(len, re.split(",|\n", data)):
-                imei = imei.strip()
-                if imei in imeis:
-                    raise ValidationError(
-                        _("There are duplicate IMEIs in the field.")
-                    )
-                elif validate_imei(imei):
-                    # Exception raised by validator
-                    pass
-                imeis.append(imei)
-            is_unique, not_unique_bc = _check_imeis_uniqueness(imeis)
-            if not is_unique:
-                # ToDo: links to assets with duplicate imeis
-                msg = "Following IMEIs already exists in DB: %s" % (
-                    ", ".join(item[0] for item in not_unique_bc)
-                )
-                raise ValidationError(msg)
-        return imeis
+        self.multival_fields = ['sn', 'barcode', 'imei']
 
     def clean(self):
+        """
+        These form requirements:
+            1. *barcode* OR *sn* is REQUIRED,
+            2. multivalue field value if provided MUST be the same length as
+            rest of multivalues.
+        """
         cleaned_data = super(AddDeviceForm, self).clean()
-        serial_numbers = cleaned_data.get("sn", [])
-        barcodes = cleaned_data.get("barcode", [])
-        imeis = cleaned_data.get("imei", None)
-        if barcodes and len(serial_numbers) != len(barcodes):
-            self._errors["barcode"] = self.error_class([
-                _("Barcode list could be empty or must have the same number "
-                  "of items as a SN list.")
-            ])
-        if imeis and len(serial_numbers) != len(imeis):
-            self._errors["imei"] = self.error_class([
-                _("IMEI list could be empty or must have the same number "
-                  "of items as a SN list.")
-            ])
+        if 'sn' in self.data or 'barcode' in self.data:
+            if self.different_multival_counters(cleaned_data):
+                for field in self.multival_fields:
+                    if field in cleaned_data:
+                        msg = "Fields: {} - require the same count".format(
+                            ', '.join(self.multival_fields)
+                        )
+                        self.errors.setdefault(field, []).append(msg)
+        else:
+            msg = _('SN or BARCODE field is required')
+            for field in ['sn', 'barcode']:
+                self.errors[field].append(msg) if field in self.errors else \
+                    [msg]
+            self.different_multival_counters(cleaned_data)
         return cleaned_data
 
 
@@ -1386,6 +1435,9 @@ class SearchAssetForm(Form):
     service_name = ModelChoiceField(
         queryset=Service.objects.all(), empty_label="----", required=False,
     )
+    warehouse = AutoCompleteSelectField(
+        LOOKUPS['asset_warehouse'], required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -1405,7 +1457,10 @@ class SearchAssetForm(Form):
 
 
 class DataCenterSearchAssetForm(SearchAssetForm):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_dc_fieldsets()
 
 
 class BackOfficeSearchAssetForm(SearchAssetForm):
@@ -1415,6 +1470,10 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         label='Purpose',
         required=False,
     )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_back_office_fieldsets()
 
 
 class DeleteAssetConfirmForm(Form):

@@ -92,6 +92,9 @@ class AssetType(Choices):
     back_office = _("back office")
     administration = _("administration")
 
+    OTHER = Choices.Group(200)
+    other = _("other")
+
 
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
