@@ -105,7 +105,7 @@ form.form-inline {
             <div class="progress" id="async-progress">
                 <div class="bar"></div>
             </div>
-            <div class="btn-group">
+            <div class="btn-group pull-left">
               <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
                 {% trans "Bulk actions..." %}
                 <span class="caret"></span>
@@ -137,4 +137,57 @@ form.form-inline {
                 </li>
             </ul>
             </div>
+            {% if asset_transitions_enable %}
+            <div class="btn-group pull-left">
+                <a class="btn dropdown-toggle btn-info" data-toggle="dropdown" href="#">
+                    {% trans "Transition asset" %}
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="disabled section-title">
+                        <a href="#">{% trans "Release" %}</a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_release_transition_selected' data-transition-type="release-asset">
+                            {% trans "from selected assets" %}
+                        </a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_release_transition_search_query' data-transition-type="release-asset">
+                            {% trans "from search query" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li class="disabled section-title">
+                        <a href="#">{% trans "Return" %}</a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_return_transition_selected' data-transition-type="return-asset">
+                            {% trans "from selected assets" %}
+                        </a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_return_transition_search_query' data-transition-type="return-asset">
+                            {% trans "from search query" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li class="disabled section-title">
+                        <a href="#">{% trans "Loan" %}</a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_loan_transition_selected' data-transition-type="loan-asset">
+                            {% trans "from selected assets" %}
+                        </a>
+                    </li>
+                    <li class="dropdown-menu-indended">
+                        <a href="#" id='post_loan_transition_search_query' data-transition-type="loan-asset">
+                            {% trans "from search query" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
 {% endblock %}
+
+

@@ -120,7 +120,8 @@ class BulkEditAssetForm(ModelForm):
         }
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -197,9 +198,9 @@ class BulkEditAssetForm(ModelForm):
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
+        choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
+        required=False,
     )
 
 
@@ -628,7 +629,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
@@ -807,7 +809,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
@@ -1037,10 +1040,11 @@ class AddDeviceForm(BaseAddAssetForm):
 
 
 class BackOfficeAddDeviceForm(AddDeviceForm):
+
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
-        label='Purpose'
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -1089,10 +1093,11 @@ class EditDeviceForm(BaseEditAssetForm):
 
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
+
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
-        label='Purpose'
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -1284,9 +1289,9 @@ class DataCenterSearchAssetForm(SearchAssetForm):
 class BackOfficeSearchAssetForm(SearchAssetForm):
     imei = CharField(required=False, label='IMEI')
     purpose = ChoiceField(
-        required=False,
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose'
+        label='Purpose',
+        required=False,
     )
 
 
