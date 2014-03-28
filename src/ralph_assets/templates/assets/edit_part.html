@@ -1,5 +1,5 @@
 {% extends 'assets/add_assets.html' %}
-
+{% load assets_tags %}
 {% load bob %}
 
 {% block form_title %}Edit part{% endblock %}
@@ -43,7 +43,9 @@
         </table>
     </div>
 {% endif %}
+{% transition_history asset %}
 {% endblock %}
+
 
 {% block additional_inputs %}
   {% for field in part_info_form %}

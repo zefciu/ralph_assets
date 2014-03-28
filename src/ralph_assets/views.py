@@ -150,33 +150,49 @@ class AssetsBase(Base):
 
     def get_sidebar_items(self):
         if self.mode == 'back_office':
-            sidebar_caption = _('Back office actions')
+            base_sidebar_caption = _('Back office actions')
             self.mainmenu_selected = 'back_office'
         else:
-            sidebar_caption = _('Data center actions')
+            base_sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'dc'
-        items = (
+        base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
+        )
+        license_items = (
+            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+        )
+        other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
-        sidebar_menu = (
-            [MenuHeader(sidebar_caption)] +
-            [MenuItem(
-                label=label,
-                fugue_icon=icon,
-                href=reverse(view, kwargs={
-                    'mode': (self.mode or 'dc')
-                })
-            ) for view, label, icon in items]
-        )
+        items = [
+            {'caption': base_sidebar_caption, 'items': base_items},
+            {'caption': _('License'), 'items': license_items},
+            {'caption': _('Others'), 'items': other_items},
+        ]
+        sidebar_menu = tuple()
+        for item in items:
+            menu_item = (
+                [MenuHeader(item['caption'])] +
+                [MenuItem(
+                    label=label,
+                    fugue_icon=icon,
+                    href=reverse(view, kwargs={
+                        'mode': (self.mode or 'dc')
+                    })
+                ) for view, label, icon in item['items']]
+            )
+            if sidebar_menu:
+                sidebar_menu += menu_item
+            else:
+                sidebar_menu = menu_item
         sidebar_menu += [
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='/admin/ralph_assets',
+                href=reverse('admin:app_list', args=('ralph_assets',))
             )
         ]
         return sidebar_menu
@@ -197,7 +213,7 @@ class AssetsBase(Base):
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
             fields = ['imei', 'purpose']
             for field in fields:
-                if not field in self.asset_form.fields:
+                if field not in self.asset_form.fields:
                     continue
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
@@ -556,6 +572,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
+            'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
         })
         return ret
 
@@ -1000,6 +1017,7 @@ class EditPart(AssetsBase):
             'status_history': status_history,
             'history_link': self.get_history_link(),
             'parent_link': self.get_parent_link(),
+            'asset': self.asset,
         })
         return ret
 
@@ -1113,7 +1131,7 @@ class BulkEdit(AssetsBase, Base):
         for idx, asset in enumerate(assets):
             if asset.office_info:
                 for field in ['purpose']:
-                    if not field in self.asset_formset.forms[idx].fields:
+                    if field not in self.asset_formset.forms[idx].fields:
                         continue
                     self.asset_formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
