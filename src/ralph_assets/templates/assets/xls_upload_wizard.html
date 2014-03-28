@@ -30,7 +30,7 @@ is OK. Submitting the data is irreversible.</p>
 <table>
     <thead>
         <th>{% trans "Asset id" %}</th>
-        {% for name in all_columns %}
+        {% for name in all_column_names %}
         <th>{{ name }}</th>
         {% endfor %}
     </thead>
@@ -49,7 +49,7 @@ is OK. Submitting the data is irreversible.</p>
 <h1>Assets to be added</h1>
 <table>
     <thead>
-        {% for name in all_columns %}
+        {% for name in all_column_names %}
         <th>{{ name }}</th>
         {% endfor %}
     </thead>
