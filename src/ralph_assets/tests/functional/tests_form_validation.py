@@ -43,8 +43,6 @@ class TestValidations(TestCase):
         # Prepare required fields (formset_name, field_name)
         self.required_fields = [
             ('asset_form', 'model'),
-            ('asset_form', 'support_period'),
-            ('asset_form', 'support_type'),
             ('asset_form', 'warehouse'),
             ('asset_form', 'category'),
         ]
@@ -65,6 +63,7 @@ class TestValidations(TestCase):
 
     def test_try_send_empty_edit_form(self):
         send_post = self.client.post(
+            # TODO: there is high probability thst device is not exists
             '/assets/dc/edit/device/1/',
             {'ralph_device_id': ''},  # Test hock
         )
@@ -148,12 +147,6 @@ class TestValidations(TestCase):
             ),
             dict(
                 row=1, field='model', error='This field is required.',
-            ),
-            dict(
-                row=1, field='source', error='This field is required.',
-            ),
-            dict(
-                row=1, field='status', error='This field is required.',
             ),
             dict(
                 row=2,

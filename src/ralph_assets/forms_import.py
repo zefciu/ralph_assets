@@ -9,7 +9,19 @@ import xlrd
 import itertools as it
 
 from django import forms
+from django.db.models.fields import NOT_PROVIDED
 from django.contrib.contenttypes.models import ContentType
+from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext_lazy as _
+
+from ralph_assets.models_assets import AssetType
+
+
+def get_amendment_model(mode):
+    return {
+        'dc': ('device_info', 'ralph_assets.deviceinfo'),
+        'back_office': ('office_info', 'ralph_assets.officeinfo'),
+    }[mode]
 
 
 class DataUploadField(forms.FileField):
@@ -28,7 +40,7 @@ class DataUploadField(forms.FileField):
             (sheet_name, book.sheet_by_name(sheet_name)) for
             sheet_name in book.sheet_names()
         ):
-            if not sheet:
+            if not sheet.nrows:
                 continue
             name_row = sheet.row(0)
             update = name_row[0].value == 'id'
@@ -44,19 +56,27 @@ class DataUploadField(forms.FileField):
                     asset_id = int(row[0].value)
                     update_per_sheet[sheet_name][asset_id] = {}
                     for key, cell in it.izip(col_names, row[1:]):
-                        update_per_sheet[sheet_name][asset_id][key] = \
+                        update_per_sheet[sheet_name][asset_id][slugify(key)] =\
                             cell.value
             else:
                 for row in (sheet.row(i) for i in xrange(1, sheet.nrows)):
                     asset_data = {}
                     add_per_sheet[sheet_name].append(asset_data)
                     for key, cell in it.izip(col_names, row):
-                        asset_data[key] = cell.value
+                        asset_data[slugify(key)] = cell.value
 
         return names_per_sheet, update_per_sheet, add_per_sheet
 
     def _process_csv(self, file_):
-        reader = csv.reader(file_)
+        def unicode_rows(reader):
+            for row in reader:
+                try:
+                    yield [cell.decode('utf-8') for cell in row]
+                except UnicodeDecodeError:
+                    raise forms.ValidationError(
+                        'Problems with character encoding. Use UTF-8'
+                    )
+        reader = unicode_rows(csv.reader(file_))
         update_per_sheet = {'csv': {}}
         add_per_sheet = {'csv': []}
         name_row = next(reader)
@@ -79,6 +99,10 @@ class DataUploadField(forms.FileField):
 
     def to_python(self, value):
         file_ = super(DataUploadField, self).to_python(value)
+        if file_ is None:
+            raise forms.ValidationError(
+                _('Please provide a file for import.')
+            )
         try:
             filetype = {
                 'application/vnd.openxmlformats-officedocument.'
@@ -109,13 +133,23 @@ class ModelChoiceField(forms.ChoiceField):
 class ColumnChoiceField(forms.ChoiceField):
     """A field that allows to choose a field from a model."""
 
-    def __init__(self, model, *args, **kwargs):
-        self.Model = get_model_by_name(model)
+    def __init__(self, model, mode, *args, **kwargs):
         kwargs['choices'] = [('', '-----')]
+        Model = get_model_by_name(model)
         kwargs['choices'] += [
             (field.name, unicode(field.verbose_name))
-            for field in self.Model._meta.fields if field.name != 'id'
+            for field in Model._meta.fields if field.name != 'id'
         ]
+        if model == 'ralph_assets.asset':
+            amd_field, amd_model = get_amendment_model(mode)
+            AmdModel = get_model_by_name(amd_model)
+            kwargs['choices'] += [
+                (
+                    '.'.join([amd_field, field.name]),
+                    unicode(field.verbose_name)
+                )
+                for field in AmdModel._meta.fields if field.name != 'id'
+            ]
         kwargs['required'] = False
         super(ColumnChoiceField, self).__init__(*args, **kwargs)
 
@@ -128,6 +162,29 @@ class XlsUploadForm(forms.Form):
 
 class XlsColumnChoiceForm(forms.Form):
     """The column choice. This form will be filled on the fly."""
+
+    def clean(self, *args, **kwargs):
+        result = super(XlsColumnChoiceForm, self).clean(*args, **kwargs)
+        if self.update:
+            return result
+        matched = set(result.values()) - {''}
+        Model = get_model_by_name(self.model_reflected)
+        required = {
+            field.name
+            for field in Model._meta.fields
+            if not (
+                field.blank or
+                field.default != NOT_PROVIDED or
+                field.choices == AssetType() or
+                field.name in {'rght', 'tree_id', 'lft', 'level'}
+            )
+        }
+        missing = required - matched
+        if missing:
+            raise forms.ValidationError(
+                _('Missing fields: %s' % ', '.join(missing))
+            )
+        return result
 
 
 class XlsConfirmForm(forms.Form):

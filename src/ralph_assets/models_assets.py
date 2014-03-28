@@ -43,12 +43,26 @@ from ralph.discovery.models_util import SavingUser
 SAVE_PRIORITY = 0
 
 
-class CreatableFromStr(object):
+class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
     @classmethod  # Decided not to play with abstractclassmethods
     def create_from_string(cls, asset_type, s):
         raise NotImplementedError
+
+
+class Sluggy(models.Model):
+    """An object with a unique slug."""
+
+    class Meta:
+        abstract = True
+
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        primary_key=True
+    )
 
 
 class LicenseType(Choices):
@@ -128,7 +142,7 @@ class AssetCategoryType(Choices):
 
 
 class AssetManufacturer(
-    CreatableFromStr,
+    CreatableFromString,
     TimeTrackable,
     EditorTrackable,
     Named
@@ -142,7 +156,12 @@ class AssetManufacturer(
 
 
 class AssetModel(
-        TimeTrackable, EditorTrackable, Named, WithConcurrentGetOrCreate):
+    CreatableFromString,
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate
+):
     '''
     Asset models describing hardware and contain standard information like
     created at
@@ -165,13 +184,22 @@ class AssetModel(
     def __unicode__(self):
         return "%s %s" % (self.manufacturer, self.name)
 
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(type=asset_type, name=s)
+
 
 class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
     """The company or other entity that are owners of assets."""
 
 
 class AssetCategory(
-        MPTTModel, TimeTrackable, EditorTrackable, WithConcurrentGetOrCreate):
+    MPTTModel,
+    TimeTrackable,
+    EditorTrackable,
+    WithConcurrentGetOrCreate,
+    Sluggy,
+):
     name = models.CharField(max_length=50, unique=False)
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
@@ -184,9 +212,6 @@ class AssetCategory(
         related_name='children',
     )
 
-    slug = models.SlugField(max_length=100, unique=True, blank=True,
-                            primary_key=True)
-
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -198,10 +223,19 @@ class AssetCategory(
         return self.name
 
 
-class Warehouse(TimeTrackable, EditorTrackable, Named,
-                WithConcurrentGetOrCreate):
+class Warehouse(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 def _get_file_path(instance, filename):
@@ -236,6 +270,15 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
     pass
 
 
+class Attachment(SavingUser, TimeTrackable):
+    original_filename = models.CharField(max_length=255, unique=False)
+    file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+
+    def save(self, *args, **kwargs):
+        self.original_filename = self.file.name
+        super(Attachment, self).save(*args, **kwargs)
+
+
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     '''
     Asset model contain fields with basic information about single asset
@@ -252,7 +295,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     type = models.PositiveSmallIntegerField(choices=AssetType())
     model = models.ForeignKey('AssetModel', on_delete=models.PROTECT)
     source = models.PositiveIntegerField(
-        verbose_name=_("source"), choices=AssetSource(), db_index=True
+        verbose_name=_("source"), choices=AssetSource(), db_index=True,
+        null=True, blank=True,
     )
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True
@@ -264,31 +308,38 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=200, null=True, blank=True, unique=True, default=None
     )
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
+        max_digits=10, decimal_places=2, default=0, blank=True, null=True,
     )
     support_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     support_period = models.PositiveSmallIntegerField(
+        blank=True,
         default=0,
+        null=True,
         verbose_name="support period in months"
     )
-    support_type = models.CharField(max_length=150)
+    support_type = models.CharField(max_length=150, blank=True)
     support_void_reporting = models.BooleanField(default=True, db_index=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     status = models.PositiveSmallIntegerField(
         default=AssetStatus.new.id,
         verbose_name=_("status"),
         choices=AssetStatus(),
+        null=True,
+        blank=True,
     )
     remarks = models.CharField(
         verbose_name='Additional remarks',
         max_length=1024,
         blank=True,
     )
-    niw = models.CharField(max_length=50, null=True, blank=True,
-                           verbose_name='Inventory number')
+    niw = models.CharField(
+        max_length=200, null=True, blank=True, default=None,
+        verbose_name='Inventory number'
+    )
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     production_use_date = models.DateField(null=True, blank=True)
@@ -331,6 +382,15 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     )
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
+    )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
+    loan_end_date = models.DateField(
+        null=True, blank=True, default=None, verbose_name=_('Loan end date'),
+    )
+    note = models.CharField(
+        verbose_name=_('Note'),
+        max_length=1024,
+        blank=True,
     )
 
     def __unicode__(self):
@@ -375,13 +435,17 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         return asset
 
     def get_data_type(self):
-        if self.device_info:
-            return 'device'
-        elif self.part_info:
+        if self.part_info:
             return 'part'
         else:
-            # should not return this value ;-)
-            return 'Unknown'
+            return 'device'
+
+    def save(self, commit=True, *args, **kwargs):
+        if self.source == '':
+            # XXX: replace '' with null, bec. null=True on model doesn't work
+            self.source = None
+        instance = super(Asset, self).save(commit=commit, *args, **kwargs)
+        return instance
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
@@ -434,10 +498,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def is_deprecated(self, date=None):
         date = date or datetime.date.today()
-        if self.force_deprecation:
+        if self.force_deprecation or not self.invoice_date:
             return True
-        if not self.invoice_date:
-            return False
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )
@@ -570,6 +632,13 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         verbose_name=_("purpose"), choices=AssetPurpose(), null=True,
         blank=True, default=None
     )
+
+    def save(self, commit=True, *args, **kwargs):
+        if self.purpose == '':
+            # XXX: replace '' with null, bec. null=True on model doesn't work
+            self.purpose = None
+        instance = super(OfficeInfo, self).save(commit=commit, *args, **kwargs)
+        return instance
 
     def __unicode__(self):
         return "{} - {} - {}".format(

@@ -14,7 +14,9 @@ from ajax_select.fields import (
     AutoCompleteField,
     AutoCompleteSelectMultipleField,
 )
-from bob.forms import Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import dependency_conditions
+from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
     CharField,
@@ -118,7 +120,8 @@ class BulkEditAssetForm(ModelForm):
         }
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -195,9 +198,9 @@ class BulkEditAssetForm(ModelForm):
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
+        choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
+        required=False,
     )
 
 
@@ -454,31 +457,92 @@ class DependencyAssetForm(DependencyForm):
             Dependency(
                 'slots',
                 'category',
-                AssetCategory.objects.filter(is_blade=True).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(is_blade=True).all()
+                ),
                 SHOW,
             ),
             Dependency(
                 'imei',
                 'category',
-                AssetCategory.objects.filter(pk__in=[
-                    "1-1-back-office-mobile-devices",
-                    "1-1-1-back-office-mobile-devices-mobile-phone",
-                    "1-1-1-back-office-mobile-devices-smartphone",
-                    "1-1-1-back-office-mobile-devices-tablet",
-                ]).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                        "1-1-1-back-office-mobile-devices-tablet",
+                    ]).all()
+                ),
                 SHOW,
             ),
             Dependency(
                 'imei',
                 'category',
-                AssetCategory.objects.filter(pk__in=[
-                    "1-1-back-office-mobile-devices",
-                    "1-1-1-back-office-mobile-devices-mobile-phone",
-                    "1-1-1-back-office-mobile-devices-smartphone",
-                ]).all(),
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                    ]).all()
+                ),
                 REQUIRE,
             ),
+            Dependency(
+                'location',
+                'owner',
+                dependency_conditions.NotEmpty(),
+                AJAX_UPDATE,
+                url=reverse('category_dependency_view'),
+                page_load_update=False,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                SHOW,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                REQUIRE,
+            ),
+            Dependency(
+                'note',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                SHOW,
+            ),
         ]
+        ad_fields = (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        )
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
+                    AJAX_UPDATE,
+                    url=reverse('category_dependency_view'),
+                ) for slave in ad_fields
+            ]
+        )
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
+                    SHOW,
+                ) for slave in ad_fields
+            ]
+        )
         for dep in deps:
             yield dep
 
@@ -519,7 +583,16 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'slots',
             'production_year',
             'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -529,6 +602,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -554,7 +629,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
@@ -562,6 +638,31 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
+        required=False,
+    )
+    location = CharField(required=False)
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
         required=False,
     )
     user = AutoCompleteSelectField(
@@ -594,6 +695,16 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_category(self):
         data = self.cleaned_data["category"]
@@ -650,7 +761,16 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'slots',
             'production_year',
             'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
             'user',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -662,6 +782,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
             'barcode': Textarea(attrs={'rows': 1}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -687,7 +809,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
@@ -695,6 +818,31 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
+        required=False,
+    )
+    location = CharField(required=False)
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
         required=False,
     )
     user = AutoCompleteSelectField(
@@ -720,6 +868,16 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_sn(self):
         return self.instance.sn
@@ -882,10 +1040,11 @@ class AddDeviceForm(BaseAddAssetForm):
 
 
 class BackOfficeAddDeviceForm(AddDeviceForm):
+
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
-        label='Purpose'
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -934,10 +1093,11 @@ class EditDeviceForm(BaseEditAssetForm):
 
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
+
     purpose = ChoiceField(
-        required=True,
-        choices=models_assets.AssetPurpose(),
-        label='Purpose'
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -1089,6 +1249,21 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    loan_end_date_from = DateField(
+        required=False, widget=DateWidget(attrs={
+            'placeholder': _('Start YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label=_("Loan end date"),
+    )
+    loan_end_date_to = DateField(
+        required=False, widget=DateWidget(attrs={
+            'class': 'end-date-field ',
+            'placeholder': _('End YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label='',
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -1114,9 +1289,9 @@ class DataCenterSearchAssetForm(SearchAssetForm):
 class BackOfficeSearchAssetForm(SearchAssetForm):
     imei = CharField(required=False, label='IMEI')
     purpose = ChoiceField(
-        required=False,
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose'
+        label='Purpose',
+        required=False,
     )
 
 
@@ -1165,9 +1340,6 @@ class SplitDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        #self.fields['delete'].widget = ButtonWidget(
-        #    attrs={'class': 'btn-danger delete_row', 'value': '-'}
-        #)
 
     def clean(self):
         cleaned_data = super(SplitDevice, self).clean()
@@ -1190,3 +1362,9 @@ class SplitDevice(ModelForm):
             self.errors['sn'] = error_text
             self.errors['barcode'] = error_text
         return cleaned_data
+
+
+class AttachmentForm(ModelForm):
+    class Meta:
+        model = models_assets.Attachment
+        fields = ['file']
