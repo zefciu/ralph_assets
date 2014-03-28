@@ -1270,6 +1270,12 @@ class AddPart(AssetsBase):
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
+            for f_name in {
+                "barcode", "company", "cost_center", "department",
+                "employee_id", "imei", "licences", "manager", "profit_center"
+            }:
+                if f_name in asset_data:
+                    del asset_data[f_name]
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
