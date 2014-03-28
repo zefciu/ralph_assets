@@ -14,9 +14,22 @@ register = template.Library()
 
 
 @register.simple_tag
-def get_edit_url(o):
+def get_edit_url(object_):
     """Returns the url of edit page for a given object (currently implemented
     for Users, expand if needed)
     """
-    if isinstance(o, User):
-        return reverse('edit_user', kwargs={'username': o.username})
+    if isinstance(object_, User):
+        return reverse('edit_user', kwargs={'username': object_.username})
+
+
+@register.inclusion_tag('assets/templatetags/transition_history.html')
+def transition_history(asset):
+    transitions_history = None
+    if hasattr(asset, 'transitionshistory_set'):
+        transitions_history = asset.transitionshistory_set.all()
+    return {'transitions_history': transitions_history}
+
+
+@register.filter
+def get_item(obj, key):
+    return obj[key]
