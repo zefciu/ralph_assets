@@ -315,6 +315,13 @@ class _AssetSearch(AssetsBase):
             'task_url',
             'imei',
             'guardian',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
             'user',
             'purpose',
         ]
@@ -383,6 +390,22 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'owner':
+                    all_q &= Q(owner__id=field_value)
+                elif field == 'location':
+                    all_q &= Q(location__icontains=field_value)
+                elif field == 'employee_id':
+                    all_q &= Q(owner__profile__employee_id=field_value)
+                elif field == 'company':
+                    all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'profit_center':
+                    all_q &= Q(owner__profile__profit_center=field_value)
+                elif field == 'cost_center':
+                    all_q &= Q(owner__profile__cost_center=field_value)
+                elif field == 'department':
+                    all_q &= Q(
+                        owner__profile__department__icontains=field_value
+                    )
                 elif field == 'user':
                     all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
