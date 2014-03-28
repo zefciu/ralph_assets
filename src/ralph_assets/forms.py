@@ -1452,4 +1452,3 @@ class SearchUserForm(Form):
     """Form for left bar at the user_list view."""
 
     username = CharField(required=False)
-

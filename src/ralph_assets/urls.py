@@ -23,10 +23,12 @@ from ralph_assets.views import (
     EditDevice,
     EditLicence,
     EditPart,
+    EditUser,
     HistoryAsset,
     InvoiceReport,
     LicenceList,
     SplitDeviceView,
+    UserList,
     XlsUploadView,
 )
 from ralph_assets.views_transition import TransitionView
@@ -128,12 +130,12 @@ urlpatterns = patterns(
     ),
     url(
         r'users/$',
-        login_required(assets_views.UserList.as_view()),
+        login_required(UserList.as_view()),
         name='user_list',
     ),
     url(
         r'user/(?P<username>[^\/]+)/$',
-        login_required(assets_views.EditUser.as_view()),
+        login_required(EditUser.as_view()),
         name='edit_user',
     ),
 )
