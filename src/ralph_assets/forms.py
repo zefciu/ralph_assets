@@ -14,7 +14,14 @@ from ajax_select.fields import (
     AutoCompleteField,
     AutoCompleteSelectMultipleField,
 )
-from bob.forms import AJAX_UPDATE, Dependency, DependencyForm, REQUIRE, SHOW
+from bob.forms import (
+    AJAX_UPDATE,
+    CLONE,
+    Dependency,
+    DependencyForm,
+    REQUIRE,
+    SHOW,
+)
 from bob.forms import dependency_conditions
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
@@ -530,6 +537,12 @@ class DependencyAssetForm(DependencyForm):
                 'status',
                 dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
+            ),
+            Dependency(
+                'niw',
+                'barcode',
+                dependency_conditions.NotEmpty(),
+                CLONE,
             ),
         ]
         ad_fields = (
