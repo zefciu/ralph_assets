@@ -4,6 +4,22 @@
 
 {% load assets_tags %}
 
+{% block scripts %}
+{{ block.super }}
+<script type="text/javascript">
+  $(document).ready(function () {
+    $("#id_user").change(function() {
+      $('#id_owner_on_deck').html($("#id_user_on_deck").html());
+        if($(this).val() !== "") {
+        $('#id_status option').filter(function () {
+          return $(this).val() == '2';
+        }).prop('selected', true);
+      }
+    });
+  });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="row">
   <h3>{% block form_title %}{% endblock %}</h3>
@@ -14,7 +30,7 @@
 
   <div class="row">
     <div class="row-fluid">
-      
+
       <div class="span6">
       {% for fieldset_label, fields in asset_form.fieldsets.items %}
         <div class="row-fluid well fieldset">
