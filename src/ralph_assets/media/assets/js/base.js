@@ -30,12 +30,6 @@
         }
     };
 
-    Bulk.prototype.addAttachment = function(type) {
-        var ids = this.get_ids();
-        if (ids.length){
-            window.location.href = 'add_attachment/' + type + '/?select=' + ids.join('&select=');
-        }
-    };
     Bulk.prototype.invoice_report_search_query = function () {
         var params = window.location.search;
         if (params.length){
@@ -43,9 +37,24 @@
         }
     };
 
+    Bulk.prototype.addAttachment = function(type) {
+        var ids = this.get_ids();
+        if (ids.length){
+            window.location.href = 'add_attachment/' + type + '/?select=' + ids.join('&select=');
+        }
+    };
+
     Bulk.prototype.transition_selected = function(type) {
         var ids = this.get_ids();
-        if (
+        var params = window.location.search;
+        var selected_all_pages = $('.selected-assets-info-box').data('selected');
+
+        if (selected_all_pages &&
+            params.length &&
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+        ) {
+             window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
+        } else if (
             ids.length &&
             $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
         ) {
@@ -53,13 +62,30 @@
         }
     };
 
-    Bulk.prototype.transition_search_query = function(type) {
-        var params = window.location.search;
-        if (
-            params.length &&
-            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
-        ) {
-            window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
+    Bulk.prototype.append_bob_select_item = function() {
+        // append item to select on all pages
+        if ($('[data-searched-items]').data('searched-items') && $('.pagination li').length > 1 ){
+            var item = $('.select-all-pages');
+            var new_item = item.clone();
+            item.remove();
+            $('#assets_table .dropdown .dropdown-menu'  ).prepend(new_item);
+            new_item.show();
+        }
+    }
+
+    Bulk.prototype.select_all_pages = function() {
+        var selected_box = $('.selected-assets-info-box');
+        var selected_all_pages = selected_box.data('selected');
+
+        $('.bob-select-all-pages i').toggleClass('fugue-blue-documents-stack fugue-documents-stack');
+        $('.bob-select-all-pages span').toggle();
+        $(selected_box).toggle();
+        selected_all_pages = !selected_all_pages;
+        selected_box.data('selected', selected_all_pages);
+        if (selected_all_pages){
+            $(".bob-select-all").trigger("click");
+        } else {
+            $(".bob-select-none").trigger("click");
         }
     };
 
@@ -83,13 +109,6 @@
             bulk.transition_selected(type);
         });
 
-        $(" #post_release_transition_search_query, \
-            #post_return_transition_search_query, \
-            #post_loan_transition_search_query \
-        ").click(function() {
-            var type = $(this).data('transition-type');
-            bulk.transition_search_query(type);
-        });
         $('#post_add_attachment').click(function() {
             bulk.addAttachment('asset');
         });
@@ -115,6 +134,12 @@
                 progressBar: '#async-progress',
                 etaEl: '#eta'
             });
+        });
+
+        bulk.append_bob_select_item();
+
+        $('.bob-select-all-pages').click(function() {
+            bulk.select_all_pages();
         });
     });
 
