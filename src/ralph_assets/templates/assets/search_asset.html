@@ -32,6 +32,12 @@ form.form-inline {
 {% endblock %}
 
 {% block content %}
+
+    {% if assets_count %}
+        <div class="alert alert-info">
+            <b>{{assets_count}}</b> {% trans "items searched" %}
+        </div>
+    {% endif %}
     <h3>{{header}}</h3>
         <table id='assets_table' class="table table-bordered table-striped">
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
