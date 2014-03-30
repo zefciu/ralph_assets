@@ -542,10 +542,12 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         all_q = super(
             _AssetSearchDataTable, self,
         ).handle_search_data(*args, **kwargs)
+        queryset = self.get_all_items(all_q)
+        self.assets_count = queryset.count() if all_q.children else None
         if get_csv:
-            return self.get_csv_data(self.get_all_items(all_q))
+            return self.get_csv_data(queryset)
         else:
-            self.data_table_query(self.get_all_items(all_q))
+            self.data_table_query(queryset)
 
     def get_csv_header(self):
         header = super(_AssetSearchDataTable, self).get_csv_header()
@@ -601,6 +603,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
             'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
+            'assets_count': self.assets_count,
         })
         return ret
 
