@@ -42,17 +42,19 @@ from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
-    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
+    AttachmentForm,
+    BackOfficeSearchAssetForm,
     BasePartForm,
-    SplitDevice,
+    DataCenterSearchAssetForm,
     DeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    BackOfficeSearchAssetForm,
-    DataCenterSearchAssetForm,
+    SearchUserForm,
+    SplitDevice,
+    UserRelationForm
 )
 from ralph_assets.forms_import import (
     ColumnChoiceField,
@@ -124,22 +126,28 @@ class AssetsBase(Base):
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                label='Data center',
+                label=_('Data center'),
                 name='dc',
                 fugue_icon='fugue-building',
                 href='/assets/dc',
             ),
             MenuItem(
-                label='BackOffice',
+                label=_('BackOffice'),
                 fugue_icon='fugue-printer',
                 name='back_office',
                 href='/assets/back_office',
             ),
             MenuItem(
-                label='Licence List',
+                label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name=_('licence_list'),
-                href='/assets/sam/',
+                name='licence_list',
+                href=reverse('licence_list'),
+            ),
+            MenuItem(
+                label=_('User list'),
+                fugue_icon='fugue-user-green-female',
+                name='user_list',
+                href=reverse('user_list'),
             ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
@@ -2097,3 +2105,97 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class UserList(Report, AssetsBase, DataTableMixin):
+    """List of users in system."""
+
+    template_name = 'assets/user_list.html'
+    csv_file_name = 'users'
+    sort_variable_name = 'sort'
+    _ = DataTableColumnAssets
+    columns = [
+        _(
+            'Username',
+            bob_tag=True,
+            field='username',
+            sort_expression='username',
+        ),
+        _(
+            'Edit relations',
+            bob_tag=True
+        ),
+    ]
+    sort_expression = 'user__username'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(UserList, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(UserList, self).get_context_data_paginator(
+                *args,
+                **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+            'form': SearchUserForm(self.request.GET),
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        users = self.handle_search_data(*args, **kwargs)
+        self.data_table_query(users)
+        if self.export_requested():
+            return self.response
+        return super(UserList, self).get(*args, **kwargs)
+
+    def handle_search_data(self, *args, **kwargs):
+        q = Q()
+        if self.request.GET.get('user'):
+            q &= Q(id=self.request.GET['user'])
+        if self.request.GET.get('user_text'):
+            q &= Q(username__contains=self.request.GET['user_text'])
+        return User.objects.filter(q).all()
+
+
+class EditUser(AssetsBase):
+    """An assets-specific user view."""
+
+    template_name = 'assets/user_edit.html'
+    caption = _('Edit user relations')
+    message = _('Licence changed')
+
+    def prepare(self, username):
+        self.user = User.objects.get(username=username)
+
+    def get(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(user=self.user)
+        return super(EditUser, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(EditUser, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'user_relation_form',
+            'caption': self.caption,
+            'user': self.user,
+        })
+        return ret
+
+    def post(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(data=request.POST, user=self.user)
+        if self.form.is_valid():
+            self.user.licence_set.clear()
+            for licence in self.form.cleaned_data['licences']:
+                self.user.licence_set.add(licence)
+            messages.success(request, _('User relations updated'))
+            return HttpResponseRedirect(
+                reverse('edit_user', kwargs={'username': self.user.username})
+            )
+        else:
+            return super(EditUser, self).get(request, *args, **kwargs)

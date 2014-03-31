@@ -1429,3 +1429,29 @@ class AttachmentForm(ModelForm):
     class Meta:
         model = models_assets.Attachment
         fields = ['file']
+
+
+class UserRelationForm(Form):
+    """A form that allows licence assignment for a user."""
+
+    def __init__(self, user, *args, **kwargs):
+        initial = kwargs.setdefault('initial', {})
+        initial['licences'] = [
+            licence['pk']
+            for licence in user.licence_set.values('pk')
+        ]
+        super(UserRelationForm, self).__init__(*args, **kwargs)
+
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
+    )
+
+
+class SearchUserForm(Form):
+    """Form for left bar at the user_list view."""
+
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
