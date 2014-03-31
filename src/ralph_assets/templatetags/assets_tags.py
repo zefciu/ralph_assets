@@ -16,3 +16,8 @@ def transition_history(asset):
     if hasattr(asset, 'transitionshistory_set'):
         transitions_history = asset.transitionshistory_set.all()
     return {'transitions_history': transitions_history}
+
+
+@register.filter
+def get_item(obj, key):
+    return obj[key]

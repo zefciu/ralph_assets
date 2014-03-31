@@ -117,6 +117,7 @@ class AssetsBase(Base):
             'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
             'mode': self.mode,
+            'multivalues_fields': ['sn', 'barcode', 'imei'],
         })
         return ret
 
@@ -147,7 +148,7 @@ class AssetsBase(Base):
                     label='Ralph Pricing',
                     fugue_icon='fugue-money-coin',
                     name='back_office',
-                    href='/pricing/all-ventures/',
+                    href='/scrooge/all-ventures/',
                 ),
             )
         return mainmenu
@@ -315,6 +316,13 @@ class _AssetSearch(AssetsBase):
             'task_url',
             'imei',
             'guardian',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
             'user',
             'purpose',
         ]
@@ -383,6 +391,22 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'owner':
+                    all_q &= Q(owner__id=field_value)
+                elif field == 'location':
+                    all_q &= Q(location__icontains=field_value)
+                elif field == 'employee_id':
+                    all_q &= Q(owner__profile__employee_id=field_value)
+                elif field == 'company':
+                    all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'profit_center':
+                    all_q &= Q(owner__profile__profit_center=field_value)
+                elif field == 'cost_center':
+                    all_q &= Q(owner__profile__cost_center=field_value)
+                elif field == 'department':
+                    all_q &= Q(
+                        owner__profile__department__icontains=field_value
+                    )
                 elif field == 'user':
                     all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
@@ -1272,6 +1296,12 @@ class AddPart(AssetsBase):
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
+            for f_name in {
+                "barcode", "company", "cost_center", "department",
+                "employee_id", "imei", "licences", "manager", "profit_center"
+            }:
+                if f_name in asset_data:
+                    del asset_data[f_name]
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
@@ -1644,7 +1674,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         if field_name is None:
                             continue
                         value = self._get_field_value(field_name, value)
-                        if field_name.startswith(amd_field + '.'):
+                        if amd_field and field_name.startswith(
+                            amd_field + '.'
+                        ):
                             _, field_name = field_name.split('.', 1)
                             amd_kwargs[field_name] = value
                         else:

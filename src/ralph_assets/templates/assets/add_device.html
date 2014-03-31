@@ -11,8 +11,7 @@
 {% endblock %}
 
 {% block multivalue_inputs %}
-<div id="one-level-textareas">
-  <div class="span3">
+  <div class="span4">
     <div class="control-group{% if asset_form.sn.errors %} error{% endif %}">
       <label {% if asset_form.sn.field.required %}class="required"{% endif %}>{{ asset_form.sn.label }}</label>
       {{ asset_form.sn }}
@@ -21,6 +20,7 @@
       {% endif %}
     </div>
   </div>
+
   <div class="span3">
     <div class="control-group{% if asset_form.barcode.errors %} error{% endif %}">
       <label {% if asset_form.barcode.required %}class="required"{% endif %}>{{ asset_form.barcode.label }}</label>
@@ -30,6 +30,7 @@
       {% endif %}
     </div>
   </div>
+
   <div class="span3">
     <div class="control-group{% if asset_form.imei.errors %} error{% endif %}">
       <label {% if asset_form.imei.required %}class="required"{% endif %}>{{ asset_form.imei.label }}</label>
@@ -39,5 +40,4 @@
       {% endif %}
     </div>
   </div>
-</div>
 {% endblock %}
