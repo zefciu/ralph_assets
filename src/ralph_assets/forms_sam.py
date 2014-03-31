@@ -67,11 +67,11 @@ class LicenceForm(forms.ModelForm):
         widget=SoftwareCategoryWidget,
     )
 
-    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'])
+    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
-        if len(result['assets']) > result['number_bought']:
+        if len(result.get('assets', [])) > result['number_bought']:
             raise forms.ValidationError(_(
                 "You don't have sufficient licences!"
             ))
