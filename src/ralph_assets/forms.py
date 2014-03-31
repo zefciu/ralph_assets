@@ -94,7 +94,7 @@ def move_after(_list, static, dynamic):
     :return list: return _list with moved *dynamic* elem.
     """
     _list.remove(dynamic)
-    next_pos = _list.index(static)
+    next_pos = _list.index(static) + 1
     _list.insert(next_pos, dynamic)
     return _list
 
@@ -143,6 +143,16 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
+
+    _table_headings = [
+        'Model', 'Warehouse', 'Property of', 'Invoice Number', 'Invoice date',
+        'Order Number', 'SN', 'Barcode', 'Price', 'Deprecation Rate',
+        'Support price', 'Support period', 'Support type',
+        'Support void reporting', 'Provider', 'Source', 'Status', 'Task url',
+        'Request date', 'Delivery date', 'Production use date',
+        'Provider order date', 'Production year', 'Owner', 'User',
+    ]
+
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
         required=False,

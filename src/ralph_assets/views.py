@@ -1143,11 +1143,21 @@ class EditPart(AssetsBase):
 class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
 
+    def dispatch(self, request, mode=None, *args, **kwargs):
+        self.mode = mode
+        self.form = self.form_dispatcher('BulkEditAsset')
+        self.table_headings = self.form._table_headings[:]
+        if self.mode == 'back_office':
+            self.table_headings.insert(0, 'Type')
+            self.table_headings.append('Purpose')
+        return super(AssetsBase, self).dispatch(request, mode, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
         ret.update({
             'formset': self.asset_formset,
             'mode': self.mode,
+            'table_headings': self.table_headings,
         })
         return ret
 
@@ -1157,10 +1167,9 @@ class BulkEdit(AssetsBase, Base):
         if not assets_count:
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         assets = Asset.objects.filter(
@@ -1178,10 +1187,9 @@ class BulkEdit(AssetsBase, Base):
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
