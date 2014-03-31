@@ -12,7 +12,7 @@
       $('#id_owner_on_deck').html($("#id_user_on_deck").html());
         if($(this).val() !== "") {
         $('#id_status option').filter(function () {
-          return $(this).val() == '2';
+          return $(this).text() == 'in progress';
         }).prop('selected', true);
       }
     });
