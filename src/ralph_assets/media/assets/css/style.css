@@ -89,3 +89,12 @@ p.help {
     box-sizing: border-box;
     -moz-box-sizing: border-box;
 }
+
+.select-all-pages,
+.selected-assets-info-box {
+  display: none;
+}
+
+.bolded {
+  font-weight: bold;
+}
