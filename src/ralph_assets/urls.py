@@ -23,10 +23,12 @@ from ralph_assets.views import (
     EditDevice,
     EditLicence,
     EditPart,
+    EditUser,
     HistoryAsset,
     InvoiceReport,
     LicenceList,
     SplitDeviceView,
+    UserList,
     XlsUploadView,
 )
 from ralph_assets.views_transition import TransitionView
@@ -125,5 +127,15 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
+    ),
+    url(
+        r'users/$',
+        login_required(UserList.as_view()),
+        name='user_list',
+    ),
+    url(
+        r'user/(?P<username>[^\/]+)/$',
+        login_required(EditUser.as_view()),
+        name='edit_user',
     ),
 )
