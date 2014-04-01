@@ -9,8 +9,7 @@
 <script type="text/javascript">
   $(document).ready(function () {
     $("#id_user").change(function() {
-      $('#id_owner_on_deck').html($("#id_user_on_deck").html());
-        if($(this).val() !== "") {
+      if($(this).val() !== "") {
         $('#id_status option').filter(function () {
           return $(this).text() == 'in progress';
         }).prop('selected', true);
