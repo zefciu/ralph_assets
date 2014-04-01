@@ -95,6 +95,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     bought_date = models.DateField(
         verbose_name=_('Purchase date'),
         null=True,
+        blank=True,
     )
     valid_thru = models.DateField(
         null=True,
@@ -103,7 +104,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
+        max_digits=10, decimal_places=2, default=0, null=True, blank=True,
     )
     accounting_id = models.CharField(
         max_length=200,
