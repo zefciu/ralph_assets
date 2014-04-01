@@ -130,8 +130,8 @@ class BulkEditAssetForm(ModelForm):
             'type', 'model', 'warehouse', 'property_of', 'device_info',
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider',
-            'source', 'status', 'task_url', 'request_date', 'delivery_date',
+            'support_type', 'support_void_reporting', 'provider', 'source',
+            'task_url', 'status', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
             'owner', 'user',
         )
@@ -143,15 +143,6 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
-
-    _table_headings = [
-        'Model', 'Warehouse', 'Property of', 'Invoice Number', 'Invoice date',
-        'Order Number', 'SN', 'Barcode', 'Price', 'Deprecation Rate',
-        'Support price', 'Support period', 'Support type',
-        'Support void reporting', 'Provider', 'Source', 'Status', 'Task url',
-        'Request date', 'Delivery date', 'Production use date',
-        'Provider order date', 'Production year', 'Owner', 'User',
-    ]
 
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(

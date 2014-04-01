@@ -1146,10 +1146,6 @@ class BulkEdit(AssetsBase, Base):
     def dispatch(self, request, mode=None, *args, **kwargs):
         self.mode = mode
         self.form = self.form_dispatcher('BulkEditAsset')
-        self.table_headings = self.form._table_headings[:]
-        if self.mode == 'back_office':
-            self.table_headings.insert(0, 'Type')
-            self.table_headings.append('Purpose')
         return super(AssetsBase, self).dispatch(request, mode, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1157,7 +1153,6 @@ class BulkEdit(AssetsBase, Base):
         ret.update({
             'formset': self.asset_formset,
             'mode': self.mode,
-            'table_headings': self.table_headings,
         })
         return ret
 
