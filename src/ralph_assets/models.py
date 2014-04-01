@@ -11,7 +11,7 @@ import difflib
 from ajax_select import LookupChannel
 from django.contrib.auth.models import User
 from django.utils.html import escape
-from django.db.models import Q, F, Count
+from django.db.models import Q
 
 from ralph_assets.models_assets import (
     Asset,
@@ -35,6 +35,11 @@ from ralph_assets.models_sam import (  # noqa
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.models_transition import (
+    Action,
+    Transition,
+    TransitionsHistory,
+)
 from ralph.discovery.models import Device, DeviceType
 
 
@@ -76,13 +81,35 @@ class FreeLicenceLookup(LookupChannel):
     model = Licence
 
     def get_query(self, q, _):
-        query = Q(
-            Q(software_category__name__icontains=q) &
-            Q(used__lt=F('number_bought'))
+        return self.model.objects.raw(
+            """SELECT
+                ralph_assets_licence.*,
+                ralph_assets_softwarecategory.name,
+                (
+                    COUNT(ralph_assets_licence_assets.asset_id)  +
+                    COUNT(ralph_assets_licence_users.user_id)
+                ) AS used
+            FROM
+                ralph_assets_licence
+            INNER JOIN ralph_assets_softwarecategory ON (
+                ralph_assets_licence.software_category_id =
+                ralph_assets_softwarecategory.id
+            )
+            LEFT JOIN ralph_assets_licence_assets ON (
+                ralph_assets_licence.id =
+                ralph_assets_licence_assets.licence_id
+            )
+            LEFT JOIN ralph_assets_licence_users ON (
+                ralph_assets_licence.id =
+                ralph_assets_licence_users.licence_id
+            )
+            WHERE ralph_assets_softwarecategory.name LIKE %s
+            GROUP BY ralph_assets_licence.id
+            HAVING used < ralph_assets_licence.number_bought
+            LIMIT 10;
+            """,
+            ('%{}%'.format(q),)
         )
-        return self.model.objects.annotate(
-            used=Count('assets')
-        ).filter(query).all()[:10]
 
     def get_result(self, obj):
         return obj.id
@@ -98,7 +125,7 @@ class FreeLicenceLookup(LookupChannel):
         </li>
         """.format(
             escape(str(obj)),
-            str(obj.number_bought - obj.assets.count())
+            str(obj.number_bought - obj.assets.count() - obj.users.count())
         )
 
 
@@ -306,6 +333,7 @@ class UserLookup(LookupChannel):
         )
 
 __all__ = [
+    'Action',
     'Asset',
     'AssetCategory',
     'AssetCategoryType',
@@ -319,6 +347,8 @@ __all__ = [
     'OfficeInfo',
     'PartInfo',
     'ReportOdtSource',
+    'Transition',
+    'TransitionsHistory',
     'Warehouse',
     'DeviceLookup',
     'DCDeviceLookup',

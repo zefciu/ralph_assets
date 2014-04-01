@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from ajax_select import LookupChannel
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.html import escape
@@ -74,10 +75,8 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     number_bought = models.IntegerField(
         verbose_name=_('Number of purchased items'),
     )
-    sn = models.CharField(
+    sn = models.TextField(
         verbose_name=_('SN / Key'),
-        max_length=200,
-        unique=True,
         null=True,
     )
     parent = TreeForeignKey(
@@ -95,6 +94,7 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
     )
     bought_date = models.DateField(
         verbose_name=_('Purchase date'),
+        null=True,
     )
     valid_thru = models.DateField(
         null=True,
@@ -118,11 +118,12 @@ class Licence(MPTTModel, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetType()
     )
     assets = models.ManyToManyField(Asset)
+    users = models.ManyToManyField(User)
     attachments = models.ManyToManyField(
         models_assets.Attachment, null=True, blank=True
     )
 
-    def __str__(self):
+    def __unicode__(self):
         return "{} x {} - {}".format(
             self.number_bought,
             self.software_category.name,

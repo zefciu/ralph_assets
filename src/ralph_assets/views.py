@@ -42,19 +42,25 @@ from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
-    AttachmentForm,
     AddDeviceForm,
     AddPartForm,
+    AttachmentForm,
+    BackOfficeSearchAssetForm,
     BasePartForm,
-    SplitDevice,
+    DataCenterSearchAssetForm,
     DeviceForm,
     EditPartForm,
     MoveAssetPartForm,
     OfficeForm,
-    BackOfficeSearchAssetForm,
-    DataCenterSearchAssetForm,
+    SearchUserForm,
+    SplitDevice,
+    UserRelationForm
 )
-from ralph_assets.forms_import import ColumnChoiceField, get_model_by_name
+from ralph_assets.forms_import import (
+    ColumnChoiceField,
+    get_model_by_name,
+    get_amendment_model,
+)
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
 from ralph_assets.models import (
@@ -113,37 +119,43 @@ class AssetsBase(Base):
             'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
             'mode': self.mode,
+            'multivalues_fields': ['sn', 'barcode', 'imei'],
         })
-
         return ret
 
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                label='Data center',
+                label=_('Data center'),
                 name='dc',
                 fugue_icon='fugue-building',
                 href='/assets/dc',
             ),
             MenuItem(
-                label='BackOffice',
+                label=_('BackOffice'),
                 fugue_icon='fugue-printer',
                 name='back_office',
                 href='/assets/back_office',
             ),
             MenuItem(
-                label='Licence List',
+                label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name=_('licence_list'),
-                href='/assets/sam/',
+                name='licence_list',
+                href=reverse('licence_list'),
+            ),
+            MenuItem(
+                label=_('User list'),
+                fugue_icon='fugue-user-green-female',
+                name='user_list',
+                href=reverse('user_list'),
             ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
             mainmenu.append(
                 MenuItem(
-                    label='Ralph Pricing',
+                    label='Scrooge',
                     fugue_icon='fugue-money-coin',
-                    name='back_office',
+                    name='scrooge',
                     href='/scrooge/all-ventures/',
                 ),
             )
@@ -151,33 +163,49 @@ class AssetsBase(Base):
 
     def get_sidebar_items(self):
         if self.mode == 'back_office':
-            sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'back office'
+            base_sidebar_caption = _('Back office actions')
+            self.mainmenu_selected = 'back_office'
         else:
-            sidebar_caption = _('Data center actions')
+            base_sidebar_caption = _('Data center actions')
             self.mainmenu_selected = 'dc'
-        items = (
+        base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
+        )
+        license_items = (
+            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
             ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
+        )
+        other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
-        sidebar_menu = (
-            [MenuHeader(sidebar_caption)] +
-            [MenuItem(
-                label=label,
-                fugue_icon=icon,
-                href=reverse(view, kwargs={
-                    'mode': (self.mode or 'dc')
-                })
-            ) for view, label, icon in items]
-        )
+        items = [
+            {'caption': base_sidebar_caption, 'items': base_items},
+            {'caption': _('License'), 'items': license_items},
+            {'caption': _('Others'), 'items': other_items},
+        ]
+        sidebar_menu = tuple()
+        for item in items:
+            menu_item = (
+                [MenuHeader(item['caption'])] +
+                [MenuItem(
+                    label=label,
+                    fugue_icon=icon,
+                    href=reverse(view, kwargs={
+                        'mode': (self.mode or 'dc')
+                    })
+                ) for view, label, icon in item['items']]
+            )
+            if sidebar_menu:
+                sidebar_menu += menu_item
+            else:
+                sidebar_menu = menu_item
         sidebar_menu += [
             MenuItem(
                 label='Admin',
                 fugue_icon='fugue-toolbox',
-                href='/admin/ralph_assets',
+                href=reverse('admin:app_list', args=('ralph_assets',))
             )
         ]
         return sidebar_menu
@@ -198,7 +226,7 @@ class AssetsBase(Base):
             self.office_info_form = OfficeForm(instance=self.asset.office_info)
             fields = ['imei', 'purpose']
             for field in fields:
-                if not field in self.asset_form.fields:
+                if field not in self.asset_form.fields:
                     continue
                 self.asset_form.fields[field].initial = (
                     getattr(self.asset.office_info, field, '')
@@ -296,6 +324,13 @@ class _AssetSearch(AssetsBase):
             'task_url',
             'imei',
             'guardian',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
             'user',
             'purpose',
         ]
@@ -364,6 +399,22 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'owner':
+                    all_q &= Q(owner__id=field_value)
+                elif field == 'location':
+                    all_q &= Q(location__icontains=field_value)
+                elif field == 'employee_id':
+                    all_q &= Q(owner__profile__employee_id=field_value)
+                elif field == 'company':
+                    all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'profit_center':
+                    all_q &= Q(owner__profile__profit_center=field_value)
+                elif field == 'cost_center':
+                    all_q &= Q(owner__profile__cost_center=field_value)
+                elif field == 'department':
+                    all_q &= Q(
+                        owner__profile__department__icontains=field_value
+                    )
                 elif field == 'user':
                     all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
@@ -416,7 +467,7 @@ class _AssetSearch(AssetsBase):
         # now fields within ranges.
         search_date_fields = [
             'invoice_date', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date',
+            'production_use_date', 'provider_order_date', 'loan_end_date',
         ]
         for date in search_date_fields:
             start = self.request.GET.get(date + '_from')
@@ -499,10 +550,12 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         all_q = super(
             _AssetSearchDataTable, self,
         ).handle_search_data(*args, **kwargs)
+        queryset = self.get_all_items(all_q)
+        self.assets_count = queryset.count() if all_q.children else None
         if get_csv:
-            return self.get_csv_data(self.get_all_items(all_q))
+            return self.get_csv_data(queryset)
         else:
-            self.data_table_query(self.get_all_items(all_q))
+            self.data_table_query(queryset)
 
     def get_csv_header(self):
         header = super(_AssetSearchDataTable, self).get_csv_header()
@@ -557,6 +610,8 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
+            'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
+            'assets_count': self.assets_count,
         })
         return ret
 
@@ -869,8 +924,6 @@ class EditDevice(AssetsBase):
             Asset.admin_objects,
             id=kwargs.get('asset_id')
         )
-        if not self.asset.device_info:  # it isn't device asset
-            raise Http404()
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
@@ -985,7 +1038,6 @@ class EditDevice(AssetsBase):
 
 class EditPart(AssetsBase):
     template_name = 'assets/edit_part.html'
-    sidebar_selected = None
 
     def initialize_vars(self):
         self.office_info_form = None
@@ -1004,6 +1056,7 @@ class EditPart(AssetsBase):
             'status_history': status_history,
             'history_link': self.get_history_link(),
             'parent_link': self.get_parent_link(),
+            'asset': self.asset,
         })
         return ret
 
@@ -1089,7 +1142,11 @@ class EditPart(AssetsBase):
 
 class BulkEdit(AssetsBase, Base):
     template_name = 'assets/bulk_edit.html'
-    sidebar_selected = None
+
+    def dispatch(self, request, mode=None, *args, **kwargs):
+        self.mode = mode
+        self.form = self.form_dispatcher('BulkEditAsset')
+        return super(AssetsBase, self).dispatch(request, mode, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
@@ -1105,10 +1162,9 @@ class BulkEdit(AssetsBase, Base):
         if not assets_count:
             messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         assets = Asset.objects.filter(
@@ -1118,7 +1174,7 @@ class BulkEdit(AssetsBase, Base):
         for idx, asset in enumerate(assets):
             if asset.office_info:
                 for field in ['purpose']:
-                    if not field in self.asset_formset.forms[idx].fields:
+                    if field not in self.asset_formset.forms[idx].fields:
                         continue
                     self.asset_formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
@@ -1126,10 +1182,9 @@ class BulkEdit(AssetsBase, Base):
         return super(BulkEdit, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        bulk_form_class = self.form_dispatcher('BulkEditAsset')
         AssetFormSet = modelformset_factory(
             Asset,
-            form=bulk_form_class,
+            form=self.form,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
@@ -1252,6 +1307,12 @@ class AddPart(AssetsBase):
         if self.asset_form.is_valid() and self.part_info_form.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
+            for f_name in {
+                "barcode", "company", "cost_center", "department",
+                "employee_id", "imei", "licences", "manager", "profit_center"
+            }:
+                if f_name in asset_data:
+                    del asset_data[f_name]
             asset_data['barcode'] = None
             serial_numbers = self.asset_form.cleaned_data['sn']
             del asset_data['sn']
@@ -1284,7 +1345,6 @@ class AddPart(AssetsBase):
 
 class HistoryAsset(AssetsBase):
     template_name = 'assets/history_asset.html'
-    sidebar_selected = None
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1460,9 +1520,10 @@ class SplitDeviceView(AssetsBase):
 
 class XlsUploadView(SessionWizardView, AssetsBase):
     """The wizard view for xls/csv upload."""
+
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
-    sidebar_selected = None
+    sidebar_selected = 'xls upload'
     mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
@@ -1474,10 +1535,12 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             model = self.get_cleaned_data_for_step('upload')['model']
             form.model_reflected = model
+            form.update = any(update_per_sheet.values())
             for name_list in names_per_sheet.values():
                 for name in name_list:
                     form.fields[slugify(name)] = ColumnChoiceField(
                         model=model,
+                        mode=self.mode,
                         label=name,
                     )
         elif step == 'confirm':
@@ -1503,6 +1566,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 self.get_cleaned_data_for_step('upload')['file']
             mappings = self.storage.data['mappings']
             all_columns = list(mappings.values())
+            all_column_names = all_columns
             data_dicts = {}
             for sheet_name, sheet_data in update_per_sheet.items():
                 for asset_id, asset_data in sheet_data.items():
@@ -1519,22 +1583,28 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             for sheet_name, sheet_data in add_per_sheet.items():
                 for asset_data in sheet_data:
                     asset_data = dict(
-                        (mappings[k], v)
+                        (mappings[slugify(k)], v)
                         for (k, v) in asset_data.items()
-                        if k in mappings
+                        if slugify(k) in mappings
                     )
                     row = []
                     for column in all_columns:
                         row.append(asset_data.get(column, ''))
                     add_table.append(row)
             data['all_columns'] = all_columns
+            data['all_column_names'] = all_column_names
             data['update_table'] = update_table
             data['add_table'] = add_table
         return data
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        field, _, _, _ = self.Model._meta.get_field_by_name(
+        if '.' in field_name:
+            Model = self.AmdModel
+            _, field_name = field_name.split('.', 1)
+        else:
+            Model = self.Model
+        field, _, _, _ = Model._meta.get_field_by_name(
             field_name
         )
         if not value:
@@ -1546,9 +1616,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if field.choices:
-            value_lower = value.lower()
+            value_lower = value.lower().strip()
             for k, v in field.choices:
-                if value_lower == v.lower():
+                if value_lower == v.lower().strip():
                     value = k
                     break
 
@@ -1582,9 +1652,13 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.get_cleaned_data_for_step('upload')['file']
         failed_assets = []
         errors = {}
-        self.Model = get_model_by_name(
-            self.get_cleaned_data_for_step('upload')['model']
-        )
+        model = self.get_cleaned_data_for_step('upload')['model']
+        self.Model = get_model_by_name(model)
+        if model == 'ralph_assets.asset':
+            amd_field, amd_model = get_amendment_model(self.mode)
+            self.AmdModel = get_model_by_name(amd_model)
+        else:
+            amd_field = amd_model = self.AmdModel = None
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
@@ -1604,14 +1678,25 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
                 try:
-                    kwargs = dict(
-                        (
-                            mappings[key],
-                            self._get_field_value(mappings[key], value)
-                        ) for key, value in asset_data.items()
-                        if key in mappings
-                    )
+                    kwargs = {}
+                    amd_kwargs = {}
+                    for key, value in asset_data.items():
+                        field_name = mappings.get(slugify(key))
+                        if field_name is None:
+                            continue
+                        value = self._get_field_value(field_name, value)
+                        if amd_field and field_name.startswith(
+                            amd_field + '.'
+                        ):
+                            _, field_name = field_name.split('.', 1)
+                            amd_kwargs[field_name] = value
+                        else:
+                            kwargs[field_name] = value
                     asset = self.Model(**kwargs)
+                    if self.AmdModel is not None:
+                        amd_model_object = self.AmdModel(**amd_kwargs)
+                        amd_model_object.save()
+                        setattr(asset, amd_field, amd_model_object)
                     if isinstance(asset, Asset):
                         asset.type = MODE2ASSET_TYPE[self.mode]
                     else:
@@ -1633,7 +1718,7 @@ class LicenceFormView(AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = None
+    sidebar_selected = 'add licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1701,7 +1786,6 @@ class LicenceList(AssetsBase):
     """The licence list."""
 
     template_name = "assets/licence_list.html"
-    sidebar_selected = None
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
@@ -1731,7 +1815,6 @@ class LicenceList(AssetsBase):
 
 class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
-    sidebar_selected = None
 
     def show_unique_error_message(self, *args, **kwargs):
         non_unique = {}
@@ -1873,7 +1956,6 @@ class AddAttachment(AssetsBase):
     Parent can be one of these models: License, Asset.
     """
     template_name = 'assets/add_attachment.html'
-    sidebar_selected = None
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
@@ -2026,3 +2108,97 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class UserList(Report, AssetsBase, DataTableMixin):
+    """List of users in system."""
+
+    template_name = 'assets/user_list.html'
+    csv_file_name = 'users'
+    sort_variable_name = 'sort'
+    _ = DataTableColumnAssets
+    columns = [
+        _(
+            'Username',
+            bob_tag=True,
+            field='username',
+            sort_expression='username',
+        ),
+        _(
+            'Edit relations',
+            bob_tag=True
+        ),
+    ]
+    sort_expression = 'user__username'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(UserList, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(UserList, self).get_context_data_paginator(
+                *args,
+                **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+            'form': SearchUserForm(self.request.GET),
+        })
+        return ret
+
+    def get(self, *args, **kwargs):
+        users = self.handle_search_data(*args, **kwargs)
+        self.data_table_query(users)
+        if self.export_requested():
+            return self.response
+        return super(UserList, self).get(*args, **kwargs)
+
+    def handle_search_data(self, *args, **kwargs):
+        q = Q()
+        if self.request.GET.get('user'):
+            q &= Q(id=self.request.GET['user'])
+        if self.request.GET.get('user_text'):
+            q &= Q(username__contains=self.request.GET['user_text'])
+        return User.objects.filter(q).all()
+
+
+class EditUser(AssetsBase):
+    """An assets-specific user view."""
+
+    template_name = 'assets/user_edit.html'
+    caption = _('Edit user relations')
+    message = _('Licence changed')
+
+    def prepare(self, username):
+        self.user = User.objects.get(username=username)
+
+    def get(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(user=self.user)
+        return super(EditUser, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(EditUser, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'user_relation_form',
+            'caption': self.caption,
+            'user': self.user,
+        })
+        return ret
+
+    def post(self, request, username, *args, **kwargs):
+        self.prepare(username)
+        self.form = UserRelationForm(data=request.POST, user=self.user)
+        if self.form.is_valid():
+            self.user.licence_set.clear()
+            for licence in self.form.cleaned_data['licences']:
+                self.user.licence_set.add(licence)
+            messages.success(request, _('User relations updated'))
+            return HttpResponseRedirect(
+                reverse('edit_user', kwargs={'username': self.user.username})
+            )
+        else:
+            return super(EditUser, self).get(request, *args, **kwargs)

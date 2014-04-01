@@ -32,7 +32,16 @@ form.form-inline {
 {% endblock %}
 
 {% block content %}
+
+    {% if assets_count %}
+        <div class="alert alert-info">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "items searched" %}
+        </div>
+    {% endif %}
     <h3>{{header}}</h3>
+        <div class="alert alert-success selected-assets-info-box" data-selected="false">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "assets selected" %}
+        </div>
         <table id='assets_table' class="table table-bordered table-striped">
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
                 <tbody>
@@ -105,7 +114,7 @@ form.form-inline {
             <div class="progress" id="async-progress">
                 <div class="bar"></div>
             </div>
-            <div class="btn-group">
+            <div class="btn-group pull-left">
               <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
                 {% trans "Bulk actions..." %}
                 <span class="caret"></span>
@@ -137,4 +146,40 @@ form.form-inline {
                 </li>
             </ul>
             </div>
+            {% if asset_transitions_enable %}
+            <div class="btn-group pull-left">
+                <a class="btn dropdown-toggle btn-info" data-toggle="dropdown" href="#">
+                    {% trans "Transition asset" %}
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="#" id='post_release_transition_selected' data-transition-type="release-asset">
+                            {% trans "Release assets" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li >
+                        <a href="#" id='post_return_transition_selected' data-transition-type="return-asset">
+                            {% trans "Return assets" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#" id='post_loan_transition_selected' data-transition-type="loan-asset">
+                            {% trans "Loan assets" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+            <li class="select-all-pages">
+                <a href="#" class="bob-select-all-pages">
+                    {% icon 'fugue-documents-stack' %}
+                    <span>{% trans "Select on all pages" %}</span>
+                    <span class="bolded" style="display:none;">{% trans "Deselect on all pages" %}</span>
+                </a>
+            </li>
 {% endblock %}
+
+

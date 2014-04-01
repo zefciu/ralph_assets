@@ -174,7 +174,7 @@ class AssetModel(
         blank=True,
         default=0,
     )
-    height_of_device = models.IntegerField(
+    height_of_device = models.FloatField(
         verbose_name="Height of device",
         blank=True,
         default=0,
@@ -295,7 +295,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     type = models.PositiveSmallIntegerField(choices=AssetType())
     model = models.ForeignKey('AssetModel', on_delete=models.PROTECT)
     source = models.PositiveIntegerField(
-        verbose_name=_("source"), choices=AssetSource(), db_index=True
+        verbose_name=_("source"), choices=AssetSource(), db_index=True,
+        null=True, blank=True,
     )
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True
@@ -307,13 +308,15 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=200, null=True, blank=True, unique=True, default=None
     )
     price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
+        max_digits=10, decimal_places=2, default=0, blank=True, null=True,
     )
     support_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     support_period = models.PositiveSmallIntegerField(
+        blank=True,
         default=0,
+        null=True,
         verbose_name="support period in months"
     )
     support_type = models.CharField(max_length=150, blank=True)
@@ -323,14 +326,18 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         default=AssetStatus.new.id,
         verbose_name=_("status"),
         choices=AssetStatus(),
+        null=True,
+        blank=True,
     )
     remarks = models.CharField(
         verbose_name='Additional remarks',
         max_length=1024,
         blank=True,
     )
-    niw = models.CharField(max_length=50, null=True, blank=True,
-                           verbose_name='Inventory number')
+    niw = models.CharField(
+        max_length=200, null=True, blank=True, default=None,
+        verbose_name='Inventory number'
+    )
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     location = models.CharField(max_length=128, null=True, blank=True)
     request_date = models.DateField(null=True, blank=True)
@@ -377,6 +384,14 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         User, null=True, blank=True, related_name="user",
     )
     attachments = models.ManyToManyField(Attachment, null=True, blank=True)
+    loan_end_date = models.DateField(
+        null=True, blank=True, default=None, verbose_name=_('Loan end date'),
+    )
+    note = models.CharField(
+        verbose_name=_('Note'),
+        max_length=1024,
+        blank=True,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -424,6 +439,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             return 'part'
         else:
             return 'device'
+
+    def save(self, commit=True, *args, **kwargs):
+        if self.source == '':
+            # XXX: replace '' with null, bec. null=True on model doesn't work
+            self.source = None
+        instance = super(Asset, self).save(commit=commit, *args, **kwargs)
+        return instance
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
@@ -476,10 +498,8 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
 
     def is_deprecated(self, date=None):
         date = date or datetime.date.today()
-        if self.force_deprecation:
+        if self.force_deprecation or not self.invoice_date:
             return True
-        if not self.invoice_date:
-            return False
         deprecation_date = self.invoice_date + relativedelta(
             months=self.get_deprecation_months(),
         )
@@ -612,6 +632,13 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         verbose_name=_("purpose"), choices=AssetPurpose(), null=True,
         blank=True, default=None
     )
+
+    def save(self, commit=True, *args, **kwargs):
+        if self.purpose == '':
+            # XXX: replace '' with null, bec. null=True on model doesn't work
+            self.purpose = None
+        instance = super(OfficeInfo, self).save(commit=commit, *args, **kwargs)
+        return instance
 
     def __unicode__(self):
         return "{} - {} - {}".format(

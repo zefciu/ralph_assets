@@ -1,5 +1,5 @@
 {% extends 'assets/add_assets.html' %}
-
+{% load assets %}
 {% load bob %}
 
 {% block form_title %}Edit device{% endblock %}
@@ -52,6 +52,9 @@
           </table>
       </div>
 {% endif %}
+
+{% transition_history asset %}
+
       <div class="span6">
           <h5>Device parts</h5>
           {% if parts %}
