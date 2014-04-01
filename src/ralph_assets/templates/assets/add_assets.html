@@ -4,21 +4,6 @@
 
 {% load assets %}
 
-{% block scripts %}
-{{ block.super }}
-<script type="text/javascript">
-  $(document).ready(function () {
-    $("#id_user").change(function() {
-      if($(this).val() !== "") {
-        $('#id_status option').filter(function () {
-          return $(this).text() == 'in progress';
-        }).prop('selected', true);
-      }
-    });
-  });
-</script>
-{% endblock %}
-
 {% block content %}
 <div class="row">
   <h3>{% block form_title %}{% endblock %}</h3>
