@@ -131,7 +131,7 @@ class BulkEditAssetForm(ModelForm):
             'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
             'deprecation_rate', 'support_price', 'support_period',
             'support_type', 'support_void_reporting', 'provider', 'source',
-            'task_url', 'status', 'request_date', 'delivery_date',
+            'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
             'owner', 'user',
         )
