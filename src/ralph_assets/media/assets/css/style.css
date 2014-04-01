@@ -58,6 +58,10 @@ p.help {
     list-style-type: none;
 }
 
+.bulk-table td {
+    vertical-align:middle;
+}
+
 .bulk-table input, .bulk-table select {
     min-width: 100px;
 }
