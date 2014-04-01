@@ -141,6 +141,15 @@
         $('.bob-select-all-pages').click(function() {
             bulk.select_all_pages();
         });
+
+        // set status as 'in progress' if user is selected
+        $("#id_user").change(function() {
+            if($(this).val() !== "") {
+                $('#id_status option').filter(function () {
+                    return $(this).text() == 'in progress';
+                }).prop('selected', true);
+            }
+        });
     });
 
 })();

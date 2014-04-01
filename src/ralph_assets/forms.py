@@ -66,8 +66,8 @@ asset_fieldset = lambda: OrderedDict([
         'delivery_date',
     ]),
     ('User Info', [
-        'owner', 'employee_id', 'company', 'department', 'manager',
-        'profit_center', 'cost_center', 'user'
+        'user', 'owner', 'employee_id', 'company', 'department', 'manager',
+        'profit_center', 'cost_center',
     ]),
 ])
 
@@ -133,7 +133,7 @@ class BulkEditAssetForm(ModelForm):
             'support_type', 'support_void_reporting', 'provider', 'source',
             'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
-            'owner', 'user',
+            'user', 'owner',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -546,6 +546,13 @@ class DependencyAssetForm(DependencyForm):
                 CLONE,
                 page_load_update=False,
             ),
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
         ]
         ad_fields = (
             'company',
@@ -616,6 +623,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'user',
             'owner',
             'location',
             'company',
@@ -624,7 +632,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'profit_center',
             'department',
             'manager',
-            'user',
             'loan_end_date',
             'note',
         )
@@ -797,6 +804,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'user',
             'owner',
             'location',
             'company',
@@ -805,7 +813,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'profit_center',
             'department',
             'manager',
-            'user',
             'loan_end_date',
             'note',
         )
@@ -853,6 +860,10 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         min_length=15, max_length=18, validators=[validate_imei],
         label=_("IMEI"), required=False,
     )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
@@ -880,10 +891,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     manager = CharField(
         max_length=1024,
-        required=False,
-    )
-    user = AutoCompleteSelectField(
-        LOOKUPS['asset_user'],
         required=False,
     )
 
