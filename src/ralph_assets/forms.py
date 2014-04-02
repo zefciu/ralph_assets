@@ -55,7 +55,7 @@ from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
-RALPH_DATE_FORMAT = ['%Y-%m-%d', '%Y/%m/%d']
+RALPH_DATE_FORMAT = ['%Y-%m-%d']
 
 asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
