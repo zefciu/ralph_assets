@@ -102,3 +102,7 @@ p.help {
 .bolded {
   font-weight: bold;
 }
+
+.datepicker + span.help-block {
+    margin-bottom: 20px;
+}
