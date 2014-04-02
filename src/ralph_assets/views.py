@@ -320,6 +320,7 @@ class _AssetSearch(AssetsBase):
             'department',
             'user',
             'purpose',
+            'service_name',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -445,6 +446,8 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(office_info__imei=field_value)
                     else:
                         all_q &= Q(office_info__imei__icontains=field_value)
+                elif field == 'service_name':
+                    all_q &= Q(service_name=field_value)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 else:
