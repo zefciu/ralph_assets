@@ -19,6 +19,7 @@ from ralph_assets.models import (
     AssetManufacturer,
     AssetModel,
     AssetOwner,
+    CoaOemOs,
     Licence,
     LicenceType,
     ReportOdtSource,
@@ -160,3 +161,10 @@ class TransitionsHistoryAdmin(ModelAdmin):
 
 
 admin.site.register(TransitionsHistory, TransitionsHistoryAdmin)
+
+
+class CoaOemOsAdmin(ModelAdmin):
+    list_display = ('name',)
+
+
+admin.site.register(CoaOemOs, CoaOemOsAdmin)
