@@ -29,9 +29,9 @@ from ralph_assets.views import (
     LicenceList,
     SplitDeviceView,
     UserList,
-    XlsUploadView,
 )
 from ralph_assets.views_transition import TransitionView
+from ralph_assets.views_import import XlsUploadView
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
