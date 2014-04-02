@@ -104,5 +104,5 @@ p.help {
 }
 
 .datepicker + span.help-block {
-    margin: 0 0 20px;
+    margin-bottom: 20px;
 }
