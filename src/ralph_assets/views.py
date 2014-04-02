@@ -16,14 +16,11 @@ from bob.menu import MenuItem, MenuHeader
 from bob.views import DependencyView
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q
-from django.db.models.fields import CharField, DecimalField, TextField
-from django.db.models.fields.related import RelatedField
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponse,
@@ -31,12 +28,11 @@ from django.http import (
     HttpResponseRedirect,
     Http404,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from inkpy.api import generate_pdf
 from rq import get_current_job
-from lck.django.common.models import Named
 
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
@@ -72,8 +68,6 @@ from ralph_assets.models_assets import (
     AssetType,
     MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
-    CreatableFromString,
-    Sluggy,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph.business.models import Venture
