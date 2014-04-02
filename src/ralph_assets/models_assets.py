@@ -613,18 +613,18 @@ def device_post_save(sender, instance, **kwargs):
             pass
 
 
+class CoaOemOs(Named):
+    """Define oem installed operating system"""
+
+
 class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
-    license_key = models.CharField(max_length=255, blank=True)
-    version = models.CharField(max_length=50, blank=True)
-    attachment = models.FileField(
-        upload_to=_get_file_path, blank=True)
-    license_type = models.IntegerField(
-        choices=LicenseType(), verbose_name=_("license type"),
-        null=True, blank=True
+    license_key = models.TextField(null=True, blank=True,)
+    coa_number = models.CharField(
+        max_length=256, verbose_name="COA number", null=True, blank=True,
     )
-    date_of_last_inventory = models.DateField(
-        null=True, blank=True)
-    last_logged_user = models.CharField(max_length=100, null=True, blank=True)
+    coa_oem_os = models.ForeignKey(
+        CoaOemOs, verbose_name="COA oem os", null=True, blank=True,
+    )
     imei = models.CharField(
         max_length=18, null=True, blank=True, unique=True
     )
@@ -642,9 +642,10 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
 
     def __unicode__(self):
         return "{} - {} - {}".format(
-            self.license_key,
-            self.version,
-            self.license_type
+            self.coa_oem_os,
+            self.coa_number,
+            self.purpose,
+            self.imei,
         )
 
     def __init__(self, *args, **kwargs):
