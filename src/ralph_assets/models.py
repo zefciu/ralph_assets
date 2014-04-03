@@ -28,6 +28,7 @@ from ralph_assets.models_assets import (
     OfficeInfo,
     PartInfo,
     ReportOdtSource,
+    Service,
     Warehouse,
 )
 from ralph_assets.models_sam import (  # noqa
@@ -333,6 +334,7 @@ class UserLookup(LookupChannel):
             department=obj.profile.department,
         )
 
+
 __all__ = [
     'Action',
     'Asset',
@@ -349,6 +351,7 @@ __all__ = [
     'OfficeInfo',
     'PartInfo',
     'ReportOdtSource',
+    'Service',
     'Transition',
     'TransitionsHistory',
     'Warehouse',

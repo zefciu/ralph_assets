@@ -23,6 +23,7 @@ from ralph_assets.models import (
     Licence,
     LicenceType,
     ReportOdtSource,
+    Service,
     SoftwareCategory,
     Transition,
     TransitionsHistory,
@@ -168,3 +169,10 @@ class CoaOemOsAdmin(ModelAdmin):
 
 
 admin.site.register(CoaOemOs, CoaOemOsAdmin)
+
+
+class ServiceAdmin(ModelAdmin):
+    list_display = ('name', 'profit_center', 'cost_center')
+
+
+admin.site.register(Service, ServiceAdmin)

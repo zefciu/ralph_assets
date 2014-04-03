@@ -32,6 +32,7 @@ from django.forms import (
     DateField,
     Form,
     IntegerField,
+    ModelChoiceField,
     ModelForm,
     ValidationError,
 )
@@ -50,6 +51,7 @@ from ralph_assets.models import (
     DeviceInfo,
     OfficeInfo,
     PartInfo,
+    Service,
 )
 from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
@@ -61,6 +63,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
+        'service_name',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -135,7 +138,7 @@ class BulkEditAssetForm(ModelForm):
             'support_type', 'support_void_reporting', 'provider', 'source',
             'status', 'task_url', 'request_date', 'delivery_date',
             'production_use_date', 'provider_order_date', 'production_year',
-            'user', 'owner',
+            'user', 'owner', 'service_name',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -197,7 +200,7 @@ class BulkEditAssetForm(ModelForm):
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
             'provider', 'source', 'status', 'production_year', 'purpose',
-            'property_of',
+            'property_of', 'service_name',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
@@ -617,6 +620,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'support_void_reporting',
             'provider',
             'remarks',
+            'service_name',
             'request_date',
             'provider_order_date',
             'delivery_date',
@@ -795,6 +799,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_void_reporting',
             'provider',
             'remarks',
+            'service_name',
             'sn',
             'barcode',
             'request_date',
@@ -1350,6 +1355,9 @@ class SearchAssetForm(Form):
         }),
         label='',
         input_formats=RALPH_DATE_FORMAT,
+    )
+    service_name = ModelChoiceField(
+        queryset=Service.objects.all(), empty_label="----", required=False,
     )
 
     def __init__(self, *args, **kwargs):
