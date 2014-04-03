@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
@@ -45,10 +45,7 @@ class ImportProblemAdmin(ModelAdmin):
 
     def change_view(self, request, object_id, extra_context=None):
         extra_context = extra_context or {}
-        try:
-            problem = ImportProblem.objects.get(pk=object_id)
-        except ImportProblem.DoesNotExist:
-            raise Http404()
+        problem = get_object_or_404(ImportProblem, pk=object_id)
         extra_context['resource_link'] = get_edit_url(problem.resource)
         return super(ImportProblemAdmin, self).change_view(
             request,

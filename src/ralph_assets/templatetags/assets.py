@@ -14,11 +14,11 @@ register = template.Library()
 
 
 @register.simple_tag
-def get_edit_url(object_):
+def edit_url(object_):
     """Returns the url of edit page for a given object (currently implemented
     for Users, expand if needed)
     """
-    return url(object_)
+    return get_edit_url(object_)
 
 
 @register.inclusion_tag('assets/templatetags/transition_history.html')

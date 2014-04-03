@@ -122,7 +122,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             field_name
         )
         if not value:
-            if isinstance(field, (TextField, CharField)):
+            if (
+                isinstance(field, (TextField, CharField)) and
+                field_name != 'imei'
+            ):
                 return ''
             else:
                 return
