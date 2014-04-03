@@ -106,3 +106,7 @@ p.help {
 .datepicker + span.help-block {
     margin-bottom: 20px;
 }
+
+.xls-upload-info {
+    margin-top: 25px;
+}
