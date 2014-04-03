@@ -279,6 +279,11 @@ class Attachment(SavingUser, TimeTrackable):
         super(Attachment, self).save(*args, **kwargs)
 
 
+class Service(Named, TimeTrackable):
+    profit_center = models.CharField(max_length=1024, blank=True)
+    cost_center = models.CharField(max_length=1024, blank=True)
+
+
 class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     '''
     Asset model contain fields with basic information about single asset
@@ -362,6 +367,7 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         max_length=64,
         default=0,
     )
+    service_name = models.ForeignKey(Service, null=True, blank=True)
     admin_objects = AssetAdminManager()
     admin_objects_dc = DCAdminManager()
     admin_objects_bo = BOAdminManager()
