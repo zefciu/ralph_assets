@@ -20,6 +20,7 @@ from ralph_assets.models import (
     AssetModel,
     AssetOwner,
     CoaOemOs,
+    ImportProblem,
     Licence,
     LicenceType,
     ReportOdtSource,
@@ -27,13 +28,31 @@ from ralph_assets.models import (
     SoftwareCategory,
     Transition,
     TransitionsHistory,
+    url,
     Warehouse,
 )
 
-admin.site.register(SoftwareCategory)
-admin.site.register(LicenceType)
+
 admin.site.register(AssetOwner)
 admin.site.register(Licence)
+admin.site.register(LicenceType)
+admin.site.register(SoftwareCategory)
+
+class ImportProblemAdmin(ModelAdmin):
+    
+    change_form_template = "assets/import_problem_change_form.html"
+
+    def change_view(self, request, object_id, extra_context=None):
+        extra_context = extra_context or {}
+        problem = ImportProblem.objects.get(pk=object_id)
+        extra_context['resource_link'] = url(problem.resource)
+        return super(ImportProblemAdmin, self).change_view(
+            request,
+            object_id,
+            extra_context,
+        )
+
+admin.site.register(ImportProblem, ImportProblemAdmin)
 
 
 class WarehouseAdmin(ModelAdmin):

@@ -42,6 +42,7 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
+from ralph_assets.models_util import ImportProblem, WithForm
 from ralph.discovery.models import Device, DeviceType
 
 
@@ -333,6 +334,13 @@ class UserLookup(LookupChannel):
             last_name=obj.last_name,
             department=obj.profile.department,
         )
+
+
+def url(object_):
+    if isinstance(object_, User):
+        return reverse('edit_user', kwargs={'username': object_.username})
+    elif isinstance(object_, WithForm):
+        return object_.url
 
 
 __all__ = [

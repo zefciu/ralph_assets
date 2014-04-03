@@ -27,6 +27,7 @@ from ralph_assets.models_assets import (
     CreatableFromString,
     Sluggy,
 )
+from ralph_assets.models_util import add_problem, ProblemSeverity
 from ralph_assets.views import AssetsBase
 from ralph_assets.models import Asset
 
@@ -190,21 +191,32 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
-                try:
-                    kwargs = {}
-                    amd_kwargs = {}
-                    for key, value in asset_data.items():
-                        field_name = mappings.get(slugify(key))
-                        if field_name is None:
-                            continue
+                not_found_messages = []
+                kwargs = {}
+                amd_kwargs = {}
+                for key, value in asset_data.items():
+                    field_name = mappings.get(slugify(key))
+                    if field_name is None:
+                        continue
+                    try:
                         value = self._get_field_value(field_name, value)
-                        if amd_field and field_name.startswith(
-                            amd_field + '.'
-                        ):
-                            _, field_name = field_name.split('.', 1)
-                            amd_kwargs[field_name] = value
-                        else:
-                            kwargs[field_name] = value
+                    except ObjectDoesNotExist:
+                        not_found_messages.append(
+                            'Cannot find value for {}. '
+                            'Resource {} not found.'.format(
+                                key,
+                                value,
+                            )
+                        )
+                        value = None
+                    if amd_field and field_name.startswith(
+                        amd_field + '.'
+                    ):
+                        _, field_name = field_name.split('.', 1)
+                        amd_kwargs[field_name] = value
+                    else:
+                        kwargs[field_name] = value
+                try:
                     asset = self.Model(**kwargs)
                     if self.AmdModel is not None:
                         amd_model_object = self.AmdModel(**amd_kwargs)
@@ -217,6 +229,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     asset.save()
                 except Exception as exc:
                     errors[tuple(asset_data.values())] = repr(exc)
+                else:
+                    for message in not_found_messages:
+                        add_problem(asset, ProblemSeverity.correct_me, message)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors
