@@ -20,7 +20,6 @@ from ralph_assets.models import (
     AssetModel,
     AssetOwner,
     CoaOemOs,
-    ImportProblem,
     Licence,
     LicenceType,
     ReportOdtSource,
@@ -31,6 +30,7 @@ from ralph_assets.models import (
     url,
     Warehouse,
 )
+from ralph_assets.models_util import ImportProblem
 
 
 admin.site.register(AssetOwner)
@@ -38,8 +38,8 @@ admin.site.register(Licence)
 admin.site.register(LicenceType)
 admin.site.register(SoftwareCategory)
 
+
 class ImportProblemAdmin(ModelAdmin):
-    
     change_form_template = "assets/import_problem_change_form.html"
 
     def change_view(self, request, object_id, extra_context=None):

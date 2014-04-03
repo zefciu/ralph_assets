@@ -38,7 +38,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
-from ralph.discovery.models_util import SavingUser 
+from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
 
 
@@ -545,7 +545,7 @@ class Asset(
 
     @property
     def url(self):
-        return reverse('device_edit', kwargs = {
+        return reverse('device_edit', kwargs={
             'mode': ASSET_TYPE2MODE[self.type],
             'asset_id': self.id,
         })

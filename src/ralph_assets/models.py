@@ -10,6 +10,7 @@ import difflib
 
 from ajax_select import LookupChannel
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.db.models import Q
 
@@ -42,7 +43,7 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
-from ralph_assets.models_util import ImportProblem, WithForm
+from ralph_assets.models_util import WithForm
 from ralph.discovery.models import Device, DeviceType
 
 
