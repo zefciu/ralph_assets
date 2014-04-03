@@ -5,7 +5,9 @@
 {% block content %}
 
 {% if wizard.steps.current == 'upload' %}
-<h1>{% trans "Data upload" %} <small>{% trans "step 1/3" %}</small></h1>
+<h1>{% trans "Data upload" %}
+  <small>{% trans "step" %} {{wizard.steps.step1}}/{{wizard.steps.count}}</small>
+</h1>
 {% blocktrans %}
 <p class='lead'>Upload an <em>XLS</em> or <em>CSV</em> file.
 The file <strong> should contain</strong> labels for fields as
