@@ -273,6 +273,7 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 class Attachment(SavingUser, TimeTrackable):
     original_filename = models.CharField(max_length=255, unique=False)
     file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+    uploaded_by = models.ForeignKey(User, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         self.original_filename = self.file.name
@@ -534,6 +535,11 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not dev or not dev.model:
             return False
         return dev.model.type != DeviceType.unknown.id
+
+    def latest_attachments(self):
+        attachments = self.attachments.all().order_by('-created')[:5]
+        for attachment in attachments:
+            yield attachment
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')

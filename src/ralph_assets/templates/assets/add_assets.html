@@ -48,45 +48,80 @@
       </div>
 
       {% if asset %}
-      <div id='attachments-box' class="span6">
-        <div class="row-fluid well">
-          <h5>{% trans "Attachments:" %}</h6>
-          <a class='btn btn-primary' target='_blank'
-            href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}"
-          >{% trans "add new one" %}</a>
-        {% if asset.attachments.all %}
-          <h6>{% trans "Attached:" %}</h6>
-          <ul id='attchments-list'>
-          {% for attachment in asset.attachments.all %}
-            <li> <a href="{{MEDIA_URL}}{{attachment.file.name}}"><span>{{attachment.original_filename}}</span></a></li>
-              <div class="btn-group">
-                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                  {% trans "Action" %}
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <span class='btn btn-link delete-attachment'
-                      data-form-id='delete-attachment-{{attachment.id}}'
-                      data-delete-type='from_one'
-                    >
-                      {% trans "Delete from THIS asset" %}
-                    </span>
-                    <li class="divider"></li>
-                    <span class='btn btn-link delete-attachment'
-                      data-form-id='delete-attachment-{{attachment.id}}'
-                      data-delete-type='from_all'
-                    >
-                      {% trans "Delete from ALL assets" %}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-          {% endfor %}
-          </ul>
-        {% endif %}
-        </div>
+      <div class="span6">
+          <a target='_blank' href="">
+            {% trans "TODO: link, All attachments" %}
+          </a>
+          <a class='pull-right' target='_blank'
+            href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}">
+            {% trans "Add attachment" %}
+          </a>
       </div>
+
+        {# TODO: move it to seperate file when submitting outside form will be removed #}
+        <div class="span6">
+            <h5>Attachments history: </h5>
+            <table class="table table-striped table-bordered details-history">
+                <thead><tr>
+                    <th>{% trans "Date" %}</th>
+                    <th>{% trans "Author" %}</th>
+                    <th>{% trans "Original file name" %}</th>
+                    <th>{% trans "Actions" %}</th>
+                </tr></thead>
+                <tbody>
+                {% for file in asset.latest_attachments %}
+                  <tr>
+                    <td>{{ file.created|timesince_limited }}</td>
+                    <td>{{ file.uploaded_by|default:'' }}</td>
+                    <td>
+                      <a href="{{MEDIA_URL}}{{file.file.name}}">
+                      {{ file.original_filename }}
+                      </a>
+                    </td>
+                    <td>
+                      <div class="btn-group">
+                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                          Action
+                          <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu pull-right">
+                          <li>
+                            <span class='btn btn-link delete-attachment'
+                              data-form-id='delete-attachment-{{file.id}}'
+                              data-delete-type='from_one'
+                            >
+                              {% trans "Delete from THIS asset" %}
+                            </span>
+                            <li class="divider"></li>
+                            <span class='btn btn-link delete-attachment'
+                              data-form-id='delete-attachment-{{file.id}}'
+                              data-delete-type='from_all'
+                            >
+                              {% trans "Delete from ALL assets" %}
+                            </span>
+                          </li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+                  <tr>
+                    <td colspan='3'>
+          <a style='text-align:right' target='_blank' href="">
+            {% trans "Show all" %}
+          </a>
+                    </td>
+                    <td style='text-align:center' >
+          <a target='_blank'
+            href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}">
+            {% trans "Add attachment" %}
+          </a>
+                    </td>
+                  </tr>
+                </tbody>
+            </table>
+        </div>
+
       {% endif %}
 
       {% block office_info_inputs %}{% endblock %}
