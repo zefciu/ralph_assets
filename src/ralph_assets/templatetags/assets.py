@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 from django import template
 
-from ralph_assets.models import url
+from ralph_assets.models import get_edit_url
 
 
 register = template.Library()

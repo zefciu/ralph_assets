@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
@@ -27,7 +28,7 @@ from ralph_assets.models import (
     SoftwareCategory,
     Transition,
     TransitionsHistory,
-    url,
+    get_edit_url,
     Warehouse,
 )
 from ralph_assets.models_util import ImportProblem
@@ -44,8 +45,11 @@ class ImportProblemAdmin(ModelAdmin):
 
     def change_view(self, request, object_id, extra_context=None):
         extra_context = extra_context or {}
-        problem = ImportProblem.objects.get(pk=object_id)
-        extra_context['resource_link'] = url(problem.resource)
+        try:
+            problem = ImportProblem.objects.get(pk=object_id)
+        except ImportProblem.DoesNotExist:
+            raise Http404()
+        extra_context['resource_link'] = get_edit_url(problem.resource)
         return super(ImportProblemAdmin, self).change_view(
             request,
             object_id,
