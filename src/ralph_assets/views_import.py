@@ -11,8 +11,12 @@ from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models.fields import CharField, DecimalField, TextField
-from django.db.models.fields.related import RelatedField
+from django.db.models.fields import (
+    CharField,
+    DecimalField,
+    TextField,
+)
+from django.db.models.fields.related import RelatedField, ManyToManyField
 from django.shortcuts import render
 from django.template.defaultfilters import slugify
 from lck.django.common.models import Named
@@ -122,7 +126,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             field_name
         )
         if not value:
-            if (
+            if isinstance(field, ManyToManyField):
+                return []
+            elif (
                 isinstance(field, (TextField, CharField)) and
                 field_name != 'imei'
             ):
@@ -160,6 +166,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     value.save()
                 else:
                     raise
+        if isinstance(field, ManyToManyField):
+            value = [value]
         return value
 
     @transaction.commit_on_success
@@ -197,6 +205,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 not_found_messages = []
                 kwargs = {}
                 amd_kwargs = {}
+                m2m = {}
                 for key, value in asset_data.items():
                     field_name = mappings.get(slugify(key))
                     if field_name is None:
@@ -211,30 +220,34 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                                 value,
                             )
                         )
-                        value = None
+                        value = self._get_field_value(field_name, '')
                     if amd_field and field_name.startswith(
                         amd_field + '.'
                     ):
                         _, field_name = field_name.split('.', 1)
                         amd_kwargs[field_name] = value
+                    elif isinstance(value, list):
+                        m2m[field_name] = value
                     else:
                         kwargs[field_name] = value
-                try:
-                    asset = self.Model(**kwargs)
-                    if self.AmdModel is not None:
-                        amd_model_object = self.AmdModel(**amd_kwargs)
-                        amd_model_object.save()
-                        setattr(asset, amd_field, amd_model_object)
-                    if isinstance(asset, Asset):
-                        asset.type = MODE2ASSET_TYPE[self.mode]
-                    else:
-                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                    asset.save()
-                except Exception as exc:
-                    errors[tuple(asset_data.values())] = repr(exc)
+                # try:
+                asset = self.Model(**kwargs)
+                if self.AmdModel is not None:
+                    amd_model_object = self.AmdModel(**amd_kwargs)
+                    amd_model_object.save()
+                    setattr(asset, amd_field, amd_model_object)
+                if isinstance(asset, Asset):
+                    asset.type = MODE2ASSET_TYPE[self.mode]
                 else:
-                    for message in not_found_messages:
-                        add_problem(asset, ProblemSeverity.correct_me, message)
+                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                asset.save()
+                # except Exception as exc:
+                #     errors[tuple(asset_data.values())] = repr(exc)
+                # else:
+                #     for message in not_found_messages:
+                #         add_problem(asset, ProblemSeverity.correct_me, message)
+                for key, value in m2m.items():
+                    getattr(asset, key).add(*value)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors
