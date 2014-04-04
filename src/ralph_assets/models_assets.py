@@ -29,6 +29,7 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.db.utils import DatabaseError
@@ -38,6 +39,7 @@ from django.utils.translation import ugettext_lazy as _
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
+from ralph_assets.models_util import WithForm
 
 
 SAVE_PRIORITY = 0
@@ -285,7 +287,13 @@ class Service(Named, TimeTrackable):
     cost_center = models.CharField(max_length=1024, blank=True)
 
 
-class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
+class Asset(
+    TimeTrackable,
+    EditorTrackable,
+    SavingUser,
+    SoftDeletable,
+    WithForm,
+):
     '''
     Asset model contain fields with basic information about single asset
     '''
@@ -535,6 +543,13 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not dev or not dev.model:
             return False
         return dev.model.type != DeviceType.unknown.id
+
+    @property
+    def url(self):
+        return reverse('device_edit', kwargs={
+            'mode': ASSET_TYPE2MODE[self.type],
+            'asset_id': self.id,
+        })
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
