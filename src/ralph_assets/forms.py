@@ -57,6 +57,8 @@ from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
+RALPH_DATE_FORMAT = ['%Y-%m-%d']
+
 asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
@@ -1246,6 +1248,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Request date",
+        input_formats=RALPH_DATE_FORMAT,
     )
     request_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1253,13 +1256,16 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT,
+    )
     provider_order_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
             'data-collapsed': True,
         }),
         label="Provider order date",
+        input_formats=RALPH_DATE_FORMAT,
     )
     provider_order_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1267,13 +1273,16 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT,
+    )
     delivery_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
             'data-collapsed': True,
         }),
         label="Delivery date",
+        input_formats=RALPH_DATE_FORMAT,
     )
     delivery_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1281,7 +1290,9 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT,
+    )
     deprecation_rate = ChoiceField(
         required=False, choices=[('', '----'),
                                  ('null', 'None'),
@@ -1299,6 +1310,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Invoice date",
+        input_formats=RALPH_DATE_FORMAT,
     )
     invoice_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1306,7 +1318,9 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT,
+    )
 
     production_use_date_from = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1314,6 +1328,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Production use date",
+        input_formats=RALPH_DATE_FORMAT,
     )
     production_use_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1330,6 +1345,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label=_("Loan end date"),
+        input_formats=RALPH_DATE_FORMAT,
     )
     loan_end_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -1338,6 +1354,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label='',
+        input_formats=RALPH_DATE_FORMAT,
     )
     service_name = ModelChoiceField(
         queryset=Service.objects.all(), empty_label="----", required=False,

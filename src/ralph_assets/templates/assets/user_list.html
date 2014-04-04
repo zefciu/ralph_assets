@@ -31,7 +31,7 @@
                     <td>
                         <a href="{% url user_view row.username %}">{{ row.username }}</a>
                     </td>
-                    <td><a href="{% get_edit_url row %}">Edit </a></td>
+                    <td><a href="{% edit_url row %}">Edit </a></td>
                 </tr>
                 {% endfor %}
                 </tbody>
