@@ -12,7 +12,8 @@
                 'description': "Attribute 'data-trgt' not specified.",
             };
         }
-        var targets = $('#' + trgt_id).children('.hideable');
+        var threshold = $(trigger).attr('data-threshold') || 5;
+        var targets = $('#' + trgt_id).children().slice(threshold);
         $(targets).each(function(idx, trgt) {
             $(trgt).toggle();
         });

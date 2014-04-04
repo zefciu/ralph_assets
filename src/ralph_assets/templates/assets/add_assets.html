@@ -47,78 +47,7 @@
         </div>
       </div>
 
-      {% if asset %}
-        {# TODO: move it to seperate file when submitting outside form will be removed #}
-        <div class="span6">
-            <h5>Attachments history:
-
-            {% if asset.attachments.all|length > 5 %}
-            <div class='pull-right btn btn-info toggle-child-display'
-              data-alt-msg='{% trans "Show last 5" %}'
-              data-trgt='attachments-rows'
-            >
-              {% trans "Show all" %}
-            </div>
-            {% endif %}
-            </h5>
-
-            <table class="table table-striped table-bordered details-history">
-                <thead><tr>
-                  <td style='text-align:center' colspan='4'>
-                    <a class='btn' target='_blank'
-                      href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}">
-                      {% trans "Add attachment" %}
-                    </a>
-                  </td>
-                  </tr>
-                  <tr>
-                    <th>{% trans "Date" %}</th>
-                    <th>{% trans "Author" %}</th>
-                    <th>{% trans "Original file name" %}</th>
-                    <th>{% trans "Actions" %}</th>
-                </tr></thead>
-                <tbody id='attachments-rows'>
-                {% for file in asset.attachments.all %}
-                <tr class='{% if forloop.counter > 5 %}hide hideable{% endif %} '>
-                    <td>{{ file.created|timesince_limited }}</td>
-                    <td>{{ file.uploaded_by|default:'' }}</td>
-                    <td>
-                      <a href="{{MEDIA_URL}}{{file.file.name}}">
-                      {{ file.original_filename }}
-                      </a>
-                    </td>
-                    <td>
-                      <div class="btn-group">
-                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                          Action
-                          <span class="caret"></span>
-                        </a>
-                        <ul class="dropdown-menu pull-right">
-                          <li>
-                            <span class='btn btn-link delete-attachment'
-                              data-form-id='delete-attachment-{{file.id}}'
-                              data-delete-type='from_one'
-                            >
-                              {% trans "Delete from THIS asset" %}
-                            </span>
-                            <li class="divider"></li>
-                            <span class='btn btn-link delete-attachment'
-                              data-form-id='delete-attachment-{{file.id}}'
-                              data-delete-type='from_all'
-                            >
-                              {% trans "Delete from ALL assets" %}
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-      {% endif %}
+      {% include 'assets/attachment_table.html' with attachment_parent=asset mode=mode parent_name='asset'%}
 
       {% block office_info_inputs %}{% endblock %}
 
@@ -135,22 +64,5 @@
   </div>
 </form>
 
-{% if asset %}
-  <div id='attachments-forms'>
-  {% if asset.attachments.all %}
-    {% for attachment in asset.attachments.all %}
-      <form id='delete-attachment-{{attachment.id}}' class='form-inline'
-        method="POST" action="{% url delete_attachment mode=mode parent='asset' %}"
-        target="_blank"
-      >
-        {% csrf_token %}
-        <input type='hidden' name='parent_id' value='{{ asset.id }}'>
-        <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
-        <input type='hidden' name='delete_type' value=''>
-      </form>
-    {% endfor %}
-  {% endif %}
-  </div>
-{% endif %}
-
+{% include 'assets/attachment_deletion.html' with attachment_parent=asset mode=mode parent_name='asset'%}
 {% endblock %}
