@@ -19,7 +19,9 @@ def get_edit_url(object_):
     for Users, expand if needed)
     """
     if isinstance(object_, User):
-        return reverse('edit_user', kwargs={'username': object_.username})
+        return reverse(
+            'edit_user_relations', kwargs={'username': object_.username},
+        )
 
 
 @register.inclusion_tag('assets/templatetags/transition_history.html')
