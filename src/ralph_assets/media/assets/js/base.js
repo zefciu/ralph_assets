@@ -3,13 +3,34 @@
 
     var Bulk = function () {};
 
+    var toggleChildDisplay = function() {
+        var trigger = this;
+        var trgt_id = $(trigger).attr('data-trgt');
+        if (trgt_id.length === 0) {
+            throw {
+                'name': "TargetNotSpecified",
+                'description': "Attribute 'data-trgt' not specified.",
+            };
+        }
+        var targets = $('#' + trgt_id).children('.hideable');
+        $(targets).each(function(idx, trgt) {
+            $(trgt).toggle();
+        });
+
+        // swap button text msg
+        var currentMsg = $(trigger).text();
+        var altMsg = $(trigger).attr('data-alt-msg');
+        $(trigger).attr('data-alt-msg', currentMsg);
+        $(trigger).text(altMsg);
+    };
+
     Bulk.prototype.get_ids = function(){
         var ids = [];
         $("#assets_table input[type=checkbox]").each(
             function(index, val){
                 if(val.checked) {
                     ids.push($(val).val());
-                };
+                }
             }
         );
         return ids;
@@ -150,6 +171,8 @@
                 }).prop('selected', true);
             }
         });
+
+        $('.toggle-child-display').click(toggleChildDisplay);
     });
 
 })();

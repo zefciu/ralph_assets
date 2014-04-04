@@ -536,11 +536,6 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
             return False
         return dev.model.type != DeviceType.unknown.id
 
-    def latest_attachments(self):
-        attachments = self.attachments.all().order_by('-created')[:5]
-        for attachment in attachments:
-            yield attachment
-
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
 def create_asset_post_save(sender, instance, created, **kwargs):
