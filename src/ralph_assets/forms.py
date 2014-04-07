@@ -559,6 +559,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         return validate_production_year(self)
 
     def clean(self):
+        self.cleaned_data = super(BaseEditAssetForm, self).clean()
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         return self.cleaned_data
