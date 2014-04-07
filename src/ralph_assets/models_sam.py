@@ -54,6 +54,7 @@ class SoftwareCategory(Named, CreatableFromString):
 
 
 class Licence(
+    models_assets.LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
     WithConcurrentGetOrCreate,

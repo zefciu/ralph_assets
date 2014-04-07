@@ -45,6 +45,14 @@ from ralph_assets.models_util import WithForm
 SAVE_PRIORITY = 0
 
 
+class LicenseAndAsset(object):
+
+    def latest_attachments(self):
+        attachments = self.attachments.all().order_by('-created')
+        for attachment in attachments:
+            yield attachment
+
+
 class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
@@ -275,6 +283,7 @@ class DCManager(DCAdminManager, ViewableSoftDeletableManager):
 class Attachment(SavingUser, TimeTrackable):
     original_filename = models.CharField(max_length=255, unique=False)
     file = models.FileField(upload_to=_get_file_path, blank=False, null=True)
+    uploaded_by = models.ForeignKey(User, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         self.original_filename = self.file.name
@@ -287,6 +296,7 @@ class Service(Named, TimeTrackable):
 
 
 class Asset(
+    LicenseAndAsset,
     TimeTrackable,
     EditorTrackable,
     SavingUser,

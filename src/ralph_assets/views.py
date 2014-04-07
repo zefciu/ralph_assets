@@ -1803,9 +1803,11 @@ class AddAttachment(AssetsBase):
         )
         if self.attachments_formset.is_valid():
             for form in self.attachments_formset.forms:
-                instance = form.save()
+                attachment = form.save(commit=False)
+                attachment.uploaded_by = self.request.user
+                form.save()
                 for parent in self.selected_parents:
-                    parent.attachments.add(instance)
+                    parent.attachments.add(attachment)
             messages.success(self.request, _("Changes saved."))
             return HttpResponseRedirect(_get_return_link(self.mode))
         messages.error(self.request, _("Please correct the errors."))

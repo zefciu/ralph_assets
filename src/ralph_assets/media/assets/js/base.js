@@ -2,6 +2,29 @@
     "use strict";
 
     var Bulk = function () {};
+    var TableListing = function () {};
+
+    TableListing.prototype.toggleChildDisplay = function(){
+        var trigger = this;
+        var trgt_id = $(trigger).attr('data-trgt');
+        if (trgt_id.length === 0) {
+            throw {
+                'name': "TargetNotSpecified",
+                'description': "Attribute 'data-trgt' not specified.",
+            };
+        }
+        var threshold = $(trigger).attr('data-threshold') || 5;
+        var targets = $('#' + trgt_id).children().slice(threshold);
+        $(targets).each(function(idx, trgt) {
+            $(trgt).toggle();
+        });
+
+        // swap button text msg
+        var currentMsg = $(trigger).text();
+        var altMsg = $(trigger).attr('data-alt-msg');
+        $(trigger).attr('data-alt-msg', currentMsg);
+        $(trigger).text(altMsg);
+    };
 
     Bulk.prototype.get_ids = function(){
         var ids = [];
@@ -9,7 +32,7 @@
             function(index, val){
                 if(val.checked) {
                     ids.push($(val).val());
-                };
+                }
             }
         );
         return ids;
@@ -91,6 +114,8 @@
 
     $(document).ready(function() {
         var bulk = new Bulk();
+        var tableListing = new TableListing();
+
         $('#post_edit_all').click(function() {
             bulk.edit_selected();
         });
@@ -150,6 +175,8 @@
                 }).prop('selected', true);
             }
         });
+
+        $('.toggle-child-display').click(tableListing.toggleChildDisplay);
     });
 
 })();

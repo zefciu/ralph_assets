@@ -47,47 +47,7 @@
         </div>
       </div>
 
-      {% if asset %}
-      <div id='attachments-box' class="span6">
-        <div class="row-fluid well">
-          <h5>{% trans "Attachments:" %}</h6>
-          <a class='btn btn-primary' target='_blank'
-            href="{% url add_attachment mode=mode parent='asset' %}?select={{asset.id}}"
-          >{% trans "add new one" %}</a>
-        {% if asset.attachments.all %}
-          <h6>{% trans "Attached:" %}</h6>
-          <ul id='attchments-list'>
-          {% for attachment in asset.attachments.all %}
-            <li> <a href="{{MEDIA_URL}}{{attachment.file.name}}"><span>{{attachment.original_filename}}</span></a></li>
-              <div class="btn-group">
-                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                  {% trans "Action" %}
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <span class='btn btn-link delete-attachment'
-                      data-form-id='delete-attachment-{{attachment.id}}'
-                      data-delete-type='from_one'
-                    >
-                      {% trans "Delete from THIS asset" %}
-                    </span>
-                    <li class="divider"></li>
-                    <span class='btn btn-link delete-attachment'
-                      data-form-id='delete-attachment-{{attachment.id}}'
-                      data-delete-type='from_all'
-                    >
-                      {% trans "Delete from ALL assets" %}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-          {% endfor %}
-          </ul>
-        {% endif %}
-        </div>
-      </div>
-      {% endif %}
+      {% include 'assets/attachment_table.html' with attachment_parent=asset mode=mode parent_name='asset'%}
 
       {% block office_info_inputs %}{% endblock %}
 
@@ -104,22 +64,5 @@
   </div>
 </form>
 
-{% if asset %}
-  <div id='attachments-forms'>
-  {% if asset.attachments.all %}
-    {% for attachment in asset.attachments.all %}
-      <form id='delete-attachment-{{attachment.id}}' class='form-inline'
-        method="POST" action="{% url delete_attachment mode=mode parent='asset' %}"
-        target="_blank"
-      >
-        {% csrf_token %}
-        <input type='hidden' name='parent_id' value='{{ asset.id }}'>
-        <input type='hidden' name='attachment_id' value='{{ attachment.id }}'>
-        <input type='hidden' name='delete_type' value=''>
-      </form>
-    {% endfor %}
-  {% endif %}
-  </div>
-{% endif %}
-
+{% include 'assets/attachment_deletion.html' with attachment_parent=asset mode=mode parent_name='asset'%}
 {% endblock %}

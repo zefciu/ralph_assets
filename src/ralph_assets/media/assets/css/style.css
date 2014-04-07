@@ -107,6 +107,10 @@ p.help {
     margin-bottom: 20px;
 }
 
+.hide {
+    display: none;
+}
+
 .xls-upload-info {
     margin-top: 25px;
 }
