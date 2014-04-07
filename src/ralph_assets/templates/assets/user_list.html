@@ -28,7 +28,9 @@
                 <tbody>
                 {% for row in bob_page %}
                 <tr>
-                    <td>{{ row.username }}</td>
+                    <td>
+                        <a href="{% url user_view row.username %}">{{ row.username }}</a>
+                    </td>
                     <td><a href="{% edit_url row %}">Edit </a></td>
                 </tr>
                 {% endfor %}

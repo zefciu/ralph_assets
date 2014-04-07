@@ -62,6 +62,7 @@ from ralph_assets.models import (
     PartInfo,
     ReportOdtSource,
     SoftwareCategory,
+    TransitionsHistory,
 )
 from ralph_assets.models_assets import (
     Attachment,
@@ -1912,6 +1913,36 @@ class CategoryDependencyView(DependencyView):
         return values
 
 
+class UserDetails(AssetsBase):
+    """Detail user profile, relations with assets and licences"""
+    template_name = 'assets/user_details.html'
+    sidebar_selected = None
+
+    def get(self, request, username, *args, **kwargs):
+        try:
+            self.user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            messages.error(request, _('User {} not found'.format(username)))
+            return HttpResponseRedirect(reverse('user_list'))
+        self.assigned_assets = Asset.objects.filter(user=self.user)
+        self.assigned_licences = self.user.licence_set.all()
+        self.transitions_history = TransitionsHistory.objects.filter(
+            affected_user=self.user,
+        )
+        return super(UserDetails, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ret = super(UserDetails, self).get_context_data(**kwargs)
+        ret.update({
+            'section': 'user list',
+            'user_object': self.user,
+            'assigned_assets': self.assigned_assets,
+            'assigned_licences': self.assigned_licences,
+            'transitions_history': self.transitions_history,
+        })
+        return ret
+
+
 class UserList(Report, AssetsBase, DataTableMixin):
     """List of users in system."""
 
@@ -1987,7 +2018,7 @@ class EditUser(AssetsBase):
             'form': self.form,
             'form_id': 'user_relation_form',
             'caption': self.caption,
-            'user': self.user,
+            'edited_user': self.user,
         })
         return ret
 
@@ -1996,7 +2027,7 @@ class EditUser(AssetsBase):
         self.form = UserRelationForm(data=request.POST, user=self.user)
         if self.form.is_valid():
             self.user.licence_set.clear()
-            for licence in self.form.cleaned_data['licences']:
+            for licence in self.form.cleaned_data.get('licences'):
                 self.user.licence_set.add(licence)
             messages.success(request, _('User relations updated'))
             return HttpResponseRedirect(

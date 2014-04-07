@@ -339,7 +339,9 @@ class UserLookup(LookupChannel):
 
 def get_edit_url(object_):
     if isinstance(object_, User):
-        return reverse('edit_user', kwargs={'username': object_.username})
+        return reverse(
+            'edit_user_relations', kwargs={'username': object_.username},
+        )
     elif isinstance(object_, WithForm):
         return object_.url
 
