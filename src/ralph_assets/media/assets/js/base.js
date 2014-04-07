@@ -2,8 +2,9 @@
     "use strict";
 
     var Bulk = function () {};
+    var TableListing = function () {};
 
-    var toggleChildDisplay = function() {
+    TableListing.prototype.toggleChildDisplay = function(){
         var trigger = this;
         var trgt_id = $(trigger).attr('data-trgt');
         if (trgt_id.length === 0) {
@@ -113,6 +114,8 @@
 
     $(document).ready(function() {
         var bulk = new Bulk();
+        var tableListing = new TableListing();
+
         $('#post_edit_all').click(function() {
             bulk.edit_selected();
         });
@@ -173,7 +176,7 @@
             }
         });
 
-        $('.toggle-child-display').click(toggleChildDisplay);
+        $('.toggle-child-display').click(tableListing.toggleChildDisplay);
     });
 
 })();

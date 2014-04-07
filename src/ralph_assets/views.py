@@ -1804,7 +1804,7 @@ class AddAttachment(AssetsBase):
         if self.attachments_formset.is_valid():
             for form in self.attachments_formset.forms:
                 attachment = form.save(commit=False)
-                attachment.uploaded_by = self.request.user.get_profile().user
+                attachment.uploaded_by = self.request.user
                 form.save()
                 for parent in self.selected_parents:
                     parent.attachments.add(attachment)
