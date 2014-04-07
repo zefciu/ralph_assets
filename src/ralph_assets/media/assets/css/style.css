@@ -110,3 +110,7 @@ p.help {
 .hide {
     display: none;
 }
+
+.xls-upload-info {
+    margin-top: 25px;
+}
