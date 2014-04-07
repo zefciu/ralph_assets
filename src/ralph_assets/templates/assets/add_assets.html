@@ -16,20 +16,41 @@
     <div class="row-fluid">
 
       <div class="span6">
-      {% for fieldset_label, fields in asset_form.fieldsets.items %}
-        <div class="row-fluid well fieldset">
-          <h6>{{fieldset_label}}</h6>
+      {% with left_col_fieldsets=asset_form.fieldsets.items|slice:":2" %}
+        {% for fieldset_label, fields in left_col_fieldsets %}
+          <div class="row-fluid well fieldset">
+            <h6>{{fieldset_label}}</h6>
 
-        {% for field in fields %}
-          {% with field=asset_form|get_item:field %}
-            {% if field.html_name not in multivalues_fields or edit_mode %}
-              {% field_wrapper field %}
-            {% endif %}
-          {% endwith %}
+          {% for field in fields %}
+            {% with field=asset_form|get_item:field %}
+              {% if field.html_name not in multivalues_fields or edit_mode %}
+                {% field_wrapper field %}
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+
+          </div>
         {% endfor %}
+      {% endwith %}
+      </div>
 
-        </div>
-      {% endfor %}
+      <div class="span6">
+      {% with right_col_fieldsets=asset_form.fieldsets.items|slice:"2:" %}
+        {% for fieldset_label, fields in right_col_fieldsets %}
+          <div class="row-fluid well fieldset">
+            <h6>{{fieldset_label}}</h6>
+
+          {% for field in fields %}
+            {% with field=asset_form|get_item:field %}
+              {% if field.html_name not in multivalues_fields or edit_mode %}
+                {% field_wrapper field %}
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+
+          </div>
+        {% endfor %}
+      {% endwith %}
       </div>
 
       <div class="span6">
