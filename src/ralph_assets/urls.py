@@ -28,8 +28,8 @@ from ralph_assets.views import (
     InvoiceReport,
     LicenceList,
     SplitDeviceView,
-    UserList,
     UserDetails,
+    UserList,
 )
 from ralph_assets.views_transition import TransitionView
 from ralph_assets.views_import import XlsUploadView
