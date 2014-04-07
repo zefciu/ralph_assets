@@ -31,7 +31,6 @@ $(document).ready(function () {
             FORM_COUNT -= 1;
         }
         $('input[name="form-TOTAL_FORMS"]').val(FORM_COUNT);
-        $('input[name="form-INITIAL_FORMS"]').val(FORM_COUNT);
     }
 
     function cleanup_fields(row) {
@@ -49,7 +48,7 @@ $(document).ready(function () {
     function renumber_forms() {
         var form = $('.form-split tr');
         form.each(function (i, elem) {
-            $(elem).find('input').each(function (j, elem) {
+            $(elem).find('input, select').each(function (j, elem) {
                 var numberPattern = /\d+/g;
                 var name = $(elem).attr('name');
                 $(elem).attr('name', name.replace(numberPattern, i - 1));
