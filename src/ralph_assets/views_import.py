@@ -230,24 +230,28 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         m2m[field_name] = value
                     else:
                         kwargs[field_name] = value
-                # try:
-                asset = self.Model(**kwargs)
-                if self.AmdModel is not None:
-                    amd_model_object = self.AmdModel(**amd_kwargs)
-                    amd_model_object.save()
-                    setattr(asset, amd_field, amd_model_object)
-                if isinstance(asset, Asset):
-                    asset.type = MODE2ASSET_TYPE[self.mode]
+                try:
+                    asset = self.Model(**kwargs)
+                    if self.AmdModel is not None:
+                        amd_model_object = self.AmdModel(**amd_kwargs)
+                        amd_model_object.save()
+                        setattr(asset, amd_field, amd_model_object)
+                    if isinstance(asset, Asset):
+                        asset.type = MODE2ASSET_TYPE[self.mode]
+                    else:
+                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                    asset.save()
+                except Exception as exc:
+                    errors[tuple(asset_data.values())] = repr(exc)
                 else:
-                    asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                asset.save()
-                # except Exception as exc:
-                #     errors[tuple(asset_data.values())] = repr(exc)
-                # else:
-                #     for message in not_found_messages:
-                #         add_problem(asset, ProblemSeverity.correct_me, message)
-                for key, value in m2m.items():
-                    getattr(asset, key).add(*value)
+                    for message in not_found_messages:
+                        add_problem(
+                            asset,
+                            ProblemSeverity.correct_me,
+                            message
+                        )
+                    for key, value in m2m.items():
+                        getattr(asset, key).add(*value)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors
