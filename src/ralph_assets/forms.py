@@ -1131,6 +1131,12 @@ class EditPartForm(BaseEditAssetForm):
 
 
 class EditDeviceForm(BaseEditAssetForm):
+
+    def __init__(self, *args, **kwargs):
+        super(EditDeviceForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Assigned licenses info'] = ['licences']
+
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
         deleted = cleaned_data.get("deleted")
@@ -1161,7 +1167,6 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
-        self.fieldsets = asset_fieldset()
         for after, field in (
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
@@ -1174,7 +1179,6 @@ class DataCenterEditDeviceForm(EditDeviceForm):
 
     def __init__(self, *args, **kwargs):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
-        self.fieldsets = asset_fieldset()
         for after, field in (
             ('status', 'slots'),
         ):
