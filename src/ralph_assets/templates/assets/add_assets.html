@@ -5,20 +5,24 @@
 {% load assets %}
 
 {% block content %}
-<div class="row">
+
+<div class="row-fluid">
   <h3>{% block form_title %}{% endblock %}</h3>
 </div>
 
-<form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
-  {% csrf_token %}
+<div class="row-fluid">
+  <div class="span12">
+    <form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
+      {% csrf_token %}
 
-  <div class="row">
     <div class="row-fluid">
 
       <div class="span6">
+        {# <div>left col</div> #}
       {% with left_col_fieldsets=asset_form.fieldsets.items|slice:":2" %}
+        {# 'basic info', 'financial info' #}
         {% for fieldset_label, fields in left_col_fieldsets %}
-          <div class="row-fluid well fieldset">
+          <div class="well fieldset">
             <h6>{{fieldset_label}}</h6>
 
           {% for field in fields %}
@@ -35,9 +39,11 @@
       </div>
 
       <div class="span6 user_info">
+        {# <div>right col</div> #}
       {% with right_col_fieldsets=asset_form.fieldsets.items|slice:"2:" %}
+        {# 'user info' #}
         {% for fieldset_label, fields in right_col_fieldsets %}
-          <div class="row-fluid well fieldset">
+          <div class="well fieldset">
             <h6>{{fieldset_label}}</h6>
 
           {% for field in fields %}
@@ -47,43 +53,44 @@
               {% endif %}
             {% endwith %}
           {% endfor %}
-
           </div>
         {% endfor %}
       {% endwith %}
-      </div>
 
-      <div class="span6">
-        <div class="row-fluid well">
+        <div class="well">
           <h6>Additional Info</h6>
           {% block additional_inputs %}{% endblock %}
         </div>
-      </div>
 
-      <div class="span6">
-        <div id="one-level-textareas-wrapper" class="row">
+        <div id="one-level-textareas-wrapper" >
           <div id="one-level-textareas">
             {% block multivalue_inputs %} {# sn, barcode, imei #} {% endblock %}
           </div>
         </div>
-      </div>
 
       {% include 'assets/attachment_table.html' with attachment_parent=asset mode=mode parent_name='asset'%}
 
       {% block office_info_inputs %}{% endblock %}
 
+      </div>
+
     </div>
 
-  </div>
-
-  <div class="row">
-    <div class="span12">
-      <div class="form-actions">
-        <button name="asset" type="submit" class="btn btn-primary">Save</button>
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="form-actions">
+          <button name="asset" type="submit" class="btn btn-primary">
+            {% trans "Save" %}
+          </button>
+        </div>
       </div>
     </div>
+
+    </form>
+
   </div>
-</form>
+</div>
 
 {% include 'assets/attachment_deletion.html' with attachment_parent=asset mode=mode parent_name='asset'%}
+
 {% endblock %}
