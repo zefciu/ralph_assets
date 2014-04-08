@@ -981,7 +981,7 @@ class EditDevice(AssetsBase):
                 self.asset_form.is_valid(),
                 self.device_info_form.is_valid(),
                 self.asset.type not in AssetType.BO.choices or
-                self.office_info_form.is_valid()
+                self.office_info_form.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
