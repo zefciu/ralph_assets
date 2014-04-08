@@ -2031,7 +2031,10 @@ class EditUser(AssetsBase):
                 self.user.licence_set.add(licence)
             messages.success(request, _('User relations updated'))
             return HttpResponseRedirect(
-                reverse('edit_user', kwargs={'username': self.user.username})
+                reverse(
+                    'edit_user_relations',
+                    kwargs={'username': self.user.username}
+                )
             )
         else:
             return super(EditUser, self).get(request, *args, **kwargs)
