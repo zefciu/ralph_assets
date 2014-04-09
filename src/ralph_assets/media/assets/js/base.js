@@ -168,7 +168,7 @@
         });
 
         // set status as 'in progress' if user is selected
-        $("#id_user").change(function() {
+        $("div.user_info #id_user").change(function() {
             if($(this).val() !== "") {
                 $('#id_status option').filter(function () {
                     return $(this).text() == 'in progress';
