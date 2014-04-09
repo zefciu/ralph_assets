@@ -55,21 +55,29 @@ form.form-inline {
                             {% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}
                         </a>
                     </td>
-                    <td>{{row.sn|default:'-' }}</td>
+                    <td>{{row.get_status_display}}</td>
                     <td>{{row.barcode|default:'-' }}</td>
-                    <td>{{row.invoice_date|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.model.category|default:'-' }}</td>
+                        <td>{{row.model.manufacturer.name|default:'-' }}</td>
+                    {% endif %}
                     <td>{{row.model.name|default:'-' }}</td>
                     {% if mode == 'back_office' %}
-                        <td>{{row.model.manufacturer.name|default:'-' }}</td>
-                        <td>{{row.model.category|default:'-' }}</td>
                         <td>{{row.user|default:'-' }}</td>
                     {% endif %}
-                    <td>{{row.invoice_no|default:'-' }}</td>
-                    <td>{{row.order_no|default:'-' }}</td>
-                    <td>{{row.get_status_display}}</td>
                     <td>{{row.warehouse}}</td>
-                    <td>{{row.price}}</td>
+                    <td>{{row.sn|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.office_info.imei|default:'-' }}</td>
+                        <td>{{row.property_of|default:'-' }}</td>
+                        <td>{{row.office_info.get_purpose|default:'-' }}</td>
+                        <td>{{row.service_name|default:'-' }}</td>
+                    {% endif %}
+                    <td>{{row.invoice_date|default:'-' }}</td>
                     {% if mode == 'dc' %}
+                        <td>{{row.invoice_no|default:'-' }}</td>
+                        <td>{{row.order_no|default:'-' }}</td>
+                        <td>{{row.price}}</td>
                         <td>{{row.venture}}</td>
                         <td>
                             {% if row.is_discovered %}
