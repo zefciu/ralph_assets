@@ -107,6 +107,60 @@ imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
 imei_since_2003 = re.compile(r'^\d{8} *\d{6} *\d$')
 
 
+def validate_sn_db_uniqness(multilines_value):
+    '''
+    TODO: docstring
+    '''
+    multilines_value = multilines_value.strip()
+    sns = set()
+    for line in filter(len, re.split(",|\n", multilines_value)):
+        sn = line.strip()
+        sns.add(sn)
+    is_unique, not_unique_sn = _check_field_uniqueness('sn', sns)
+    if not is_unique:
+        msg = "Following serial number already exists in DB: %s" % (
+            ", ".join(item[0] for item in not_unique_sn)
+        )
+        raise ValidationError(msg)
+
+
+def validate_sn(sn):
+    """
+    TODO: docstring
+    """
+    if ' ' in sn:
+        raise ValidationError(
+            _("Serial number can't contain white characters.")
+        )
+    if len(sn) > 200:
+        raise ValidationError(
+            _("Serial number max length is 200 characters.")
+        )
+
+
+def validate_multiline_sn(multilines_value):
+    """
+    TODO: docstring
+    """
+    multilines_value = multilines_value.strip()
+    for line in filter(len, re.split(",|\n", multilines_value)):
+        validate_sn(line.strip())
+
+
+def validate_multiline_uniquness(multilines_value):
+    """
+    TODO: docstring
+    """
+    items = set()
+    multilines_value = multilines_value.strip()
+    for line in filter(len, re.split(",|\n", multilines_value)):
+        line = line.strip()
+        if line in items:
+            raise ValidationError(_("There are duplicates in field."))
+        elif line:
+            items.add(line)
+
+
 def validate_imei(imei):
     is_imei = imei_until_2003.match(imei) or imei_since_2003.match(imei)
     if not is_imei:
@@ -988,6 +1042,10 @@ class AddPartForm(BaseAddAssetForm):
     '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+        validators=[
+            validate_multiline_uniquness, validate_multiline_sn,
+            validate_sn_db_uniqness
+        ],
     )
 
     def __init__(self, *args, **kwargs):
@@ -996,9 +1054,14 @@ class AddPartForm(BaseAddAssetForm):
         self.fieldsets['Basic Info'].remove('barcode')
 
     def clean_sn(self):
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
+        '''
+            Change string with serial numbers to list.
+        '''
+        sns = []
+        sns_text = self.cleaned_data["sn"].strip()
+        for item in filter(len, re.split(",|\n", sns_text)):
+            sns.append(item.strip())
+        return sns
 
 
 class AddDeviceForm(BaseAddAssetForm):
@@ -1007,6 +1070,10 @@ class AddDeviceForm(BaseAddAssetForm):
     '''
     sn = CharField(
         label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+        validators=[
+            validate_multiline_uniquness, validate_multiline_sn,
+            validate_sn_db_uniqness
+        ],
     )
     barcode = CharField(
         label=_("Barcode/Barcodes"), required=False,
@@ -1022,12 +1089,13 @@ class AddDeviceForm(BaseAddAssetForm):
 
     def clean_sn(self):
         '''
-            Validate if sn is correct and change string with serial numbers
-            to list
+            Change string with serial numbers to list.
         '''
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
+        sns = []
+        sns_text = self.cleaned_data["sn"].strip()
+        for item in filter(len, re.split(",|\n", sns_text)):
+            sns.append(item.strip())
+        return sns
 
     def clean_barcode(self):
         data = self.cleaned_data["barcode"].strip()
