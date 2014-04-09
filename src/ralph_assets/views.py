@@ -270,8 +270,6 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
                 **kwargs
             )
         )
-        import ipdb; ipdb.set_trace()
-        
         ret.update({
             'sort_variable_name': self.sort_variable_name,
             'url_query': self.request.GET,
@@ -283,6 +281,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
     def get(self, request, *args, **kwargs):
         self.form = self.Form(self.request.GET)
         qs = self.handle_search_data(request)
+        
         self.data_table_query(qs)
         if self.export_requested():
             return self.response
@@ -290,7 +289,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
     def handle_search_data(self, request):
         q = self.form.get_query()
-        return User.objects.filter(q).all()
+        return self.Model.objects.filter(q).all()
 
 class _AssetSearch(AssetsBase):
 

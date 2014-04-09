@@ -19,8 +19,9 @@
                 <tbody>
                 {% for row in bob_page %}
                 <tr>
-                    <td>{{ row.username }}</td>
-                    <td><a href="{% edit_url row %}">Edit </a></td>
+                    {% for column in columns %}
+                        {% render_cell column row %}
+                    {% endfor %}
                 </tr>
                 {% endfor %}
                 </tbody>
