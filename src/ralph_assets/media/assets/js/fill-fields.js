@@ -1,4 +1,23 @@
-  // Fill fields in bulk edit and split asset forms
+// Fill fields in bulk edit and split asset forms
+
+function copyAutocompleter(src, dst) {
+  /*
+  Copy autocompleter value (model, category, etc.) of *src* to *dst*.
+  */
+  var errorMsg = "Can't find hidden input within: ";
+  var hidSrc = $($(src).parent()).find('input:hidden');
+  var hidDst = $($(dst).parent()).find('input:hidden');
+  if (hidSrc.length === 0) {
+      throw new Error(errorMsg + $(src).parent().html());
+  }
+  if (hidDst.length === 0) {
+      throw new Error(errorMsg + $(el).parent().html());
+  }
+  hidDst.val(hidSrc.val()).trigger(
+      {type: 'change', cloneSource: hidSrc}
+  );
+}
+
 $(document).ready(function () {
   // Disable autocomplete without cluttering html attributes
   $('input').attr('autocomplete', 'off');
@@ -44,15 +63,14 @@ $(document).ready(function () {
       var input_id = $("#float_toolbar").data('input_id');
       var input_name = $("#float_toolbar").data('input_name');
       var matcher = /(.*)-([0-9]+)-(.*)/;
-      var results, pre, number, post, value_to_fill, el;
+      var results, pre, number, post, value_to_fill, el, sourceField;
       if (input_id != '') {
           results = matcher.exec(input_id);
-          value_to_fill = $('#' + input_id).val();
+          sourceField = $('#' + input_id);
       } else if (input_name != '') {
           results = matcher.exec(input_name);
-          value_to_fill = $('input[name="' + input_name + '"]').val();
+          sourceField = $('input[name="' + input_name + '"]');
       }
-
       pre = results[1];
       number = results[2];
       post = results[3];
@@ -65,7 +83,12 @@ $(document).ready(function () {
           if (!el.length) {
               break;
           }
-          el.val(value_to_fill);
+          var isAutocompleter = $(el).hasClass('ui-autocomplete-input');
+          if (isAutocompleter) {
+            copyAutocompleter(sourceField, el);
+          } else {
+            el.val(sourceField.val());
+          }
       }
       $("#float_toolbar").hide();
       return false;
