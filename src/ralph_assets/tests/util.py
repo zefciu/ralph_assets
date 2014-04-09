@@ -41,7 +41,7 @@ SCREEN_ERROR_MESSAGES = dict(
         "Please correct errors and check both"
         "\"serial numbers\" and \"barcodes\" for duplicates"
     ), quote=True),
-    duplicated_sn_in_field='There are duplicate serial numbers in field.',
+    duplicated_sn_in_field='There are duplicates in field.',
     contain_white_character="Serial number can't contain white characters.",
     django_required='This field is required.',
     count_sn_and_bc='Barcode list could be empty or must have the same number '

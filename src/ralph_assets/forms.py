@@ -115,7 +115,8 @@ def validate_sn_db_uniqness(multilines_value):
     sns = set()
     for line in filter(len, re.split(",|\n", multilines_value)):
         sn = line.strip()
-        sns.add(sn)
+        if sn:
+            sns.add(sn)
     is_unique, not_unique_sn = _check_field_uniqueness('sn', sns)
     if not is_unique:
         msg = "Following serial number already exists in DB: %s" % (
@@ -144,7 +145,9 @@ def validate_multiline_sn(multilines_value):
     """
     multilines_value = multilines_value.strip()
     for line in filter(len, re.split(",|\n", multilines_value)):
-        validate_sn(line.strip())
+        line = line.strip()
+        if line:
+            validate_sn(line)
 
 
 def validate_multiline_uniquness(multilines_value):
@@ -155,10 +158,12 @@ def validate_multiline_uniquness(multilines_value):
     multilines_value = multilines_value.strip()
     for line in filter(len, re.split(",|\n", multilines_value)):
         line = line.strip()
-        if line in items:
-            raise ValidationError(_("There are duplicates in field."))
-        elif line:
-            items.add(line)
+        if line:
+            # skip '' empty string
+            if line in items:
+                raise ValidationError(_("There are duplicates in field."))
+            else:
+                items.add(line)
 
 
 def validate_imei(imei):
@@ -1060,7 +1065,9 @@ class AddPartForm(BaseAddAssetForm):
         sns = []
         sns_text = self.cleaned_data["sn"].strip()
         for item in filter(len, re.split(",|\n", sns_text)):
-            sns.append(item.strip())
+            line = item.strip()
+            if line:
+                sns.append(line)
         return sns
 
 
@@ -1094,7 +1101,9 @@ class AddDeviceForm(BaseAddAssetForm):
         sns = []
         sns_text = self.cleaned_data["sn"].strip()
         for item in filter(len, re.split(",|\n", sns_text)):
-            sns.append(item.strip())
+            line = item.strip()
+            if line:
+                sns.append(line)
         return sns
 
     def clean_barcode(self):
