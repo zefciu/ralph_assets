@@ -1,8 +1,11 @@
 // Fill fields in bulk edit and split asset forms
 
-function copyAutocompleter(src, dst) {
+var FieldsFiller = function () {};
+FieldsFiller.prototype.copyAutocompletedValue = function(src, dst) {
   /*
-  Copy autocompleter value (model, category, etc.) of *src* to *dst*.
+  Copy autocompleted field value (like: model, category, user, etc.) from
+   *src* to *dst*.
+  Both *src* and *dst* are regular inputs in autocompleter.
   */
   var errorMsg = "Can't find hidden input within: ";
   var hidSrc = $($(src).parent()).find('input:hidden');
@@ -16,9 +19,10 @@ function copyAutocompleter(src, dst) {
   hidDst.val(hidSrc.val()).trigger(
       {type: 'change', cloneSource: hidSrc}
   );
-}
+};
 
 $(document).ready(function () {
+  var fieldsFiller = new FieldsFiller();
   // Disable autocomplete without cluttering html attributes
   $('input').attr('autocomplete', 'off');
 
@@ -52,7 +56,7 @@ $(document).ready(function () {
       toolbar.css("left", parseInt(offset.left) + width + distance_left + "px");
       toolbar.css("top", parseInt(offset.top) + height + distance_top + "px");
       toolbar.show();
-  }
+  };
 
   $("input[type=text].fillable,select.fillable").focus(function (event) {
       toggle_toolbar(this);
@@ -85,7 +89,7 @@ $(document).ready(function () {
           }
           var isAutocompleter = $(el).hasClass('ui-autocomplete-input');
           if (isAutocompleter) {
-            copyAutocompleter(sourceField, el);
+            fieldsFiller.copyAutocompletedValue(sourceField, el);
           } else {
             el.val(sourceField.val());
           }
