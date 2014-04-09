@@ -200,7 +200,8 @@ class BulkEditAssetForm(ModelForm):
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
             'provider', 'source', 'status', 'production_year', 'purpose',
-            'property_of', 'service_name',
+            'property_of', 'service_name', 'warehouse', 'user', 'owner',
+            'task_url',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
