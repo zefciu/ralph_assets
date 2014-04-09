@@ -255,6 +255,43 @@ class DataTableColumnAssets(DataTableColumn):
         self.foreign_field_name = foreign_field_name
 
 
+class GenericSearch(Report, AssetsBase, DataTableMixin):
+    """A generic view that contains a bob grid and a search form"""
+
+    sort_variable_name = 'sort'
+    export_variable_name = 'export'
+    template_name = 'assets/search.html'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(GenericSearch, self).get_context_data_paginator(
+                *args,
+                **kwargs
+            )
+        )
+        import ipdb; ipdb.set_trace()
+        
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+        })
+        return ret 
+
+    def get(self, request, *args, **kwargs):
+        self.form = self.Form(self.request.GET)
+        qs = self.handle_search_data(request)
+        self.data_table_query(qs)
+        if self.export_requested():
+            return self.response
+        return super(GenericSearch, self).get(request, *args, **kwargs)
+
+    def handle_search_data(self, request):
+        q = self.form.get_query()
+        return User.objects.filter(q).all()
+
 class _AssetSearch(AssetsBase):
 
     def set_mode(self, mode):

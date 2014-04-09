@@ -14,6 +14,7 @@ from ajax_select.fields import (
 )
 from django import forms
 from django.utils.translation import ugettext_lazy as _
+from django_search_forms.form import SearchForm
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
@@ -114,3 +115,6 @@ class LicenceForm(forms.ModelForm):
             'invoice_date': DateWidget,
             'valid_thru': DateWidget,
         }
+
+class SoftwareCategorySearchForm(SearchForm):
+    model = models_sam.SoftwareCategory

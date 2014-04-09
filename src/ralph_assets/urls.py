@@ -33,6 +33,7 @@ from ralph_assets.views import (
 )
 from ralph_assets.views_transition import TransitionView
 from ralph_assets.views_import import XlsUploadView
+from ralph_assets.views_sam import SoftwareCategoryList
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
@@ -108,6 +109,11 @@ urlpatterns = patterns(
         r'sam/$',
         login_required(LicenceList.as_view()),
         name='licence_list',
+    ),
+    url(
+        r'sam/categories/$',
+        login_required(SoftwareCategoryList.as_view()),
+        name='software_categories',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/add_licence/$',
