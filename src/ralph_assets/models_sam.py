@@ -100,8 +100,8 @@ class Licence(
         blank=True,
         verbose_name=_('Inventory number'),
     )
-    bought_date = models.DateField(
-        verbose_name=_('Purchase date'),
+    invoice_date = models.DateField(
+        verbose_name=_('Invoice date'),
         null=True,
         blank=True,
     )
@@ -131,12 +131,16 @@ class Licence(
     attachments = models.ManyToManyField(
         models_assets.Attachment, null=True, blank=True
     )
+    provider = models.CharField(max_length=100, null=True, blank=True)
+    invoice_no = models.CharField(
+        max_length=128, db_index=True, null=True, blank=True
+    )
 
     def __unicode__(self):
         return "{} x {} - {}".format(
             self.number_bought,
             self.software_category.name,
-            self.bought_date,
+            self.invoice_date,
         )
 
     @property
