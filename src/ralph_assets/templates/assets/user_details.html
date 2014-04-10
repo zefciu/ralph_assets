@@ -99,28 +99,31 @@
     </div>
 </div>
 <div class="row">
-   <div class="span6">
-    <h5>{% trans "Assigned icences" %}:</h5>
-    <table class="table table-striped table-bordered ">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>{% trans "Software category" %}</th>
-                <th>{% trans "Inventory number" %}</th>
-                <th>{% trans "Link" %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for licence in assigned_licences %}
+    <div class="span6">
+        <h5>{% trans "Assigned licences" %}:</h5>
+        <table class="table table-striped table-bordered ">
+            <thead>
                 <tr>
-                    <td>{{ forloop.counter }} </td>
-                    <td>{{ licence.software_category }}</a></td>
-                    <td>{{ licence.niw }}</a></td>
-                    <td><a href="{{ licence.url }}">{% trans "go to licence" %}</a></td>
+                    <th>#</th>
+                    <th>{% trans "Software category" %}</th>
+                    <th>{% trans "Inventory number" %}</th>
+                    <th>{% trans "Link" %}</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for licence in assigned_licences %}
+                    <tr>
+                        <td>{{ forloop.counter }} </td>
+                        <td>{{ licence.software_category }}</a></td>
+                        <td>{{ licence.niw }}</a></td>
+                        <td><a href="{{ licence.url }}">{% trans "go to licence" %}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a class='btn' href="{% url edit_user_relations username=user_object.username %}">
+                {% trans "Edit licences" %}
+        </a>
     </div>
 </div>
 <div class="row">
