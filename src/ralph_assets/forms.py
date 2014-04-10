@@ -107,7 +107,8 @@ def move_after(_list, static, dynamic):
 def validate_snbcs(snbcs):
     """
     This validator checks if all snbcs item are snbc.
-    snbc is a join of 'serial number' (sn) and barcode ('bc').
+    Name 'snbc' is a join of 'serial number' (sn) and barcode ('bc'), because
+    both things shares the same validation requirements.
     """
     def _validate_snbc(snbc):
         if ' ' in snbc:
