@@ -2239,5 +2239,11 @@
       "fields": {
          "name": "assign_warehouse"
       }
+   }, {
+      "pk": 7,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "assign_owner"
+      }
    }
 ]

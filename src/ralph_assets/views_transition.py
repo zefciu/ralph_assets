@@ -55,6 +55,11 @@ class TransitionDispatcher(object):
             asset.user = self.affected_user
             asset.save()
 
+    def _action_assign_owner(self):
+        for asset in self.assets:
+            asset.owner = self.affected_user
+            asset.save()
+
     def _action_unassign_user(self):
         for asset in self.assets:
             asset.user = None
@@ -130,6 +135,8 @@ class TransitionDispatcher(object):
         actions = self.transition.actions_names()
         if 'change_status' in actions:
             self._action_change_status()
+        if 'assign_owner' in actions:
+            self._action_assign_owner()
         if 'assign_user' in actions:
             self._action_assign_user()
         elif 'unassign_user' in actions:
