@@ -91,6 +91,7 @@ LOOKUPS = {
 
 }
 
+
 def move_after(_list, static, dynamic):
     """
     Move *static* elem. after *dynamic* elem. in list *_list*
@@ -103,37 +104,39 @@ def move_after(_list, static, dynamic):
     return _list
 
 
-def validate_sn_db_uniqness(serial_numbers):
-    '''
-    TODO: docstring
-    '''
-    is_unique, not_unique_sn = _check_field_uniqueness('sn', serial_numbers)
-    if not is_unique:
-        sns_string = ", ".join(item[0] for item in not_unique_sn)
-        description = _("Following serial number(s) already exists in DB")
-        msg = "{}: {}".format(description, sns_string)
-        raise ValidationError(msg)
-
-
-def validate_sn(sns):
-    for sn in sns:
-        if ' ' in sn:
+def validate_snbcs(snbcs):
+    """
+    This validator checks if all snbcs item are snbc.
+    snbc is a join of 'serial number' (sn) and barcode ('bc').
+    """
+    def _validate_snbc(snbc):
+        if ' ' in snbc:
             raise ValidationError(
-                _("Serial number can't contain white characters.")
+                _("Item can't contain white characters.")
             )
-        if len(sn) > 200:
+        if len(snbc) > 200:
             raise ValidationError(
-                _("Serial number max length is 200 characters.")
+                _("Item max length is 200 characters.")
             )
+    for snbc in snbcs:
+        _validate_snbc(snbc)
 
 
 class MultilineField(CharField):
+    """
+    :param string db_field_path: *check _check_field_uniqueness*'s arg
+    *field_path*
+    """
     separators = ",|\n"
+
+    def __init__(self, db_field_path, *args, **kwargs):
+        self.db_field_path = db_field_path
+        super(MultilineField, self).__init__(*args, **kwargs)
 
     def validate(self, values):
         if not values and self.required:
             error_msg = _(
-                "Field can't be empty. Please put the items separated "
+                "Field can't be empty. Please put the item OR items separated "
                 "by new line or comma."
             )
             raise ValidationError(error_msg, code='required')
@@ -145,6 +148,14 @@ class MultilineField(CharField):
                 raise ValidationError(_("Empty items disallowed, remove it."))
             elif value:
                 items.add(value)
+        is_unique, not_unique_items = _check_field_uniqueness(
+            self.db_field_path, items
+        )
+        if not is_unique:
+            not_unique_string = ", ".join(item[0] for item in not_unique_items)
+            description = _("Following items already exists in DB")
+            msg = "{}: {}".format(description, not_unique_string)
+            raise ValidationError(msg)
 
     def to_python(self, value):
         items = []
@@ -155,6 +166,7 @@ class MultilineField(CharField):
 
     def clean(self, value):
         value = super(MultilineField, self).clean(value)
+        return value
 
 
 imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
@@ -165,6 +177,11 @@ def validate_imei(imei):
     is_imei = imei_until_2003.match(imei) or imei_since_2003.match(imei)
     if not is_imei:
         raise ValidationError('"{}" is not IMEI format'.format(imei))
+
+
+def validate_imeis(imeis):
+    for imei in imeis:
+        validate_imei(imei)
 
 
 class ModeNotSetException(Exception):
@@ -399,38 +416,6 @@ class BasePartForm(ModelForm):
             ].initial = self.instance.source_device.id
         if self.instance.device:
             self.fields['device'].initial = self.instance.device.id
-
-
-def _validate_multivalue_data(data):
-    '''
-        Check if data is a correct string with serial numbers and split
-        it to list
-
-        :param string: string with serial numbers splited by new line or comma
-        :return list: list of serial numbers
-    '''
-    #TODO: remove?
-    error_msg = _("Field can't be empty. Please put the items separated "
-                  "by new line or comma.")
-    data = data.strip()
-    if not data:
-        raise ValidationError(error_msg)
-    items = []
-    for item in filter(len, re.split(",|\n", data)):
-        item = item.strip()
-        if item in items:
-            raise ValidationError(
-                _("There are duplicate serial numbers in field.")
-            )
-        elif ' ' in item:
-            raise ValidationError(
-                _("Serial number can't contain white characters.")
-            )
-        elif item:
-            items.append(item)
-    if not items:
-        raise ValidationError(error_msg)
-    return items
 
 
 def _check_field_uniqueness(field_path, values):
@@ -1043,8 +1028,9 @@ class AddPartForm(BaseAddAssetForm):
     '''
 
     sn = MultilineField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
-        validators=[validate_sn, validate_sn_db_uniqness],
+        db_field_path='sn', label=_("SN/SNs"), required=True,
+        widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
     )
 
     def __init__(self, *args, **kwargs):
@@ -1058,76 +1044,24 @@ class AddDeviceForm(BaseAddAssetForm):
         Add new device form
     '''
     sn = MultilineField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
-        validators=[validate_sn, validate_sn_db_uniqness],
+        db_field_path='sn', label=_("SN/SNs"), required=True,
+        widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
     )
-    barcode = CharField(
-        label=_("Barcode/Barcodes"), required=False,
+    barcode = MultilineField(
+        db_field_path='barcode', label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
     )
-    imei = CharField(
-        label=_("IMEI"), required=False,
+    imei = MultilineField(
+        db_field_path='office_info__imei', label=_("IMEI"), required=False,
         widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_imeis],
     )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
 
-
-    def clean_barcode(self):
-        data = self.cleaned_data["barcode"].strip()
-        barcodes = []
-        if data:
-            for barcode in filter(len, re.split(",|\n", data)):
-                barcode = barcode.strip()
-                if barcode in barcodes:
-                    raise ValidationError(
-                        _("There are duplicate barcodes in the field.")
-                    )
-                elif ' ' in barcode:
-                    raise ValidationError(
-                        _("Serial number can't contain white characters.")
-                    )
-                elif barcode:
-                    barcodes.append(barcode)
-            if not barcodes:
-                raise ValidationError(_("Barcode list could be empty or "
-                                        "must have the same number of "
-                                        "items as a SN list."))
-            is_unique, not_unique_bc = _check_barcodes_uniqueness(barcodes)
-            if not is_unique:
-                # ToDo: links to assets with duplicate barcodes
-                msg = "Following barcodes already exists in DB: %s" % (
-                    ", ".join(item[0] for item in not_unique_bc)
-                )
-                raise ValidationError(msg)
-        return barcodes
-
-    def clean_imei(self):
-        imeis = []
-        data = self.cleaned_data['imei'].strip()
-        if data:
-            for imei in filter(len, re.split(",|\n", data)):
-                imei = imei.strip()
-                if imei in imeis:
-                    raise ValidationError(
-                        _("There are duplicate IMEIs in the field.")
-                    )
-                elif validate_imei(imei):
-                    # Exception raised by validator
-                    pass
-                imeis.append(imei)
-            is_unique, not_unique_bc = _check_imeis_uniqueness(imeis)
-            if not is_unique:
-                # ToDo: links to assets with duplicate imeis
-                msg = "Following IMEIs already exists in DB: %s" % (
-                    ", ".join(item[0] for item in not_unique_bc)
-                )
-                raise ValidationError(msg)
-        return imeis
-
     def clean(self):
-        # TODO: rewrite it by new concept (multiline widget)
         cleaned_data = super(AddDeviceForm, self).clean()
         serial_numbers = cleaned_data.get("sn", [])
         barcodes = cleaned_data.get("barcode", [])

@@ -42,11 +42,15 @@ SCREEN_ERROR_MESSAGES = dict(
         "\"serial numbers\" and \"barcodes\" for duplicates"
     ), quote=True),
     duplicated_sn_in_field='There are duplicates in field.',
-    contain_white_character="Serial number can't contain white characters.",
-    django_required='This field is required.',
+    contain_white_character="Item can't contain white characters.",
+    django_required=(
+        "Field can't be empty. Please put the item OR items separated "
+        "by new line or comma."
+    ),
     count_sn_and_bc='Barcode list could be empty or must have the same number '
                     'of items as a SN list.',
-    barcode_already_exist='Following barcodes already exists in DB: '
+    barcode_already_exist='Following items already exists in DB: ',
+    empty_items_disallowed="Empty items disallowed, remove it.",
 )
 
 
