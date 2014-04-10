@@ -304,13 +304,13 @@
         }
     },
     {
-        "pk": "1-1-1-back-office-equipment-phone-fe-voip",
+        "pk": "1-1-1-back-office-equipment-phone",
         "model": "ralph_assets.assetcategory",
         "fields": {
             "parent": "1-1-back-office-equipment",
             "rght": 32,
             "modified_by": null,
-            "name": "Phone (f.e. VoIP)",
+            "name": "Phone",
             "cache_version": 1,
             "created": "2014-01-02T09:00:00",
             "level": 2,
