@@ -140,7 +140,7 @@ class Licence(
         return "{} x {} - {}".format(
             self.number_bought,
             self.software_category.name,
-            self.bought_date,
+            self.invoice_date,
         )
 
     @property

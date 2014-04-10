@@ -94,14 +94,16 @@ class LicenceForm(forms.ModelForm):
             'sn',
             'parent',
             'niw',
-            'bought_date',
+            'invoice_date',
             'valid_thru',
             'order_no',
             'price',
             'accounting_id',
             'assets',
+            'provider',
+            'invoice_no',
         )
         widgets = {
-            'bought_date': DateWidget,
+            'invoice_date': DateWidget,
             'valid_thru': DateWidget,
         }
