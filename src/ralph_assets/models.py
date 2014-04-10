@@ -32,7 +32,7 @@ from ralph_assets.models_assets import (
     Service,
     Warehouse,
 )
-from ralph_assets.models_sam import (  # noqa
+from ralph_assets.models_sam import (
     Licence,
     LicenceType,
     SoftwareCategory,
@@ -45,6 +45,9 @@ from ralph_assets.models_transition import (
 )
 from ralph_assets.models_util import WithForm
 from ralph.discovery.models import Device, DeviceType
+
+
+RALPH_DATE_FORMAT = '%Y-%m-%d'
 
 
 class DeviceLookup(LookupChannel):
@@ -131,6 +134,47 @@ class FreeLicenceLookup(LookupChannel):
             escape(str(obj)),
             str(obj.number_bought - obj.assets.count() - obj.users.count())
         )
+
+
+class LicenceLookup(LookupChannel):
+    model = Licence
+
+    def get_query(self, q, request):
+        query = Q(software_category__name__icontains=q)
+        try:
+            number = int(q)
+        except ValueError:
+            pass
+        else:
+            query |= Q(number_bought=number)
+        return (self.get_base_objects().filter(query)
+                .order_by('software_category__name')[:10])
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        element = """
+            <span class='licence-bought'>%s</span>
+            x
+            <span class='licence-name'>%s</span>
+            <span class='licence-niw'>(%s)</span>
+        """ % (
+            escape(obj.number_bought),
+            escape(obj.software_category.name or ''),
+            escape(obj.niw),
+        )
+        return """
+            <li class='asset-container'>
+                %s
+            </li>
+            """ % (element,)
+
+    def get_base_objects(self):
+        return self.model.objects
 
 
 class RalphDeviceLookup(LookupChannel):
