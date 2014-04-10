@@ -55,6 +55,11 @@ class TransitionDispatcher(object):
             asset.user = self.affected_user
             asset.save()
 
+    def _action_assign_owner(self):
+        for asset in self.assets:
+            asset.owner = self.affected_user
+            asset.save()
+
     def _action_unassign_user(self):
         for asset in self.assets:
             asset.user = None
@@ -130,6 +135,8 @@ class TransitionDispatcher(object):
         actions = self.transition.actions_names()
         if 'change_status' in actions:
             self._action_change_status()
+        if 'assign_owner' in actions:
+            self._action_assign_owner()
         if 'assign_user' in actions:
             self._action_assign_user()
         elif 'unassign_user' in actions:
@@ -194,10 +201,9 @@ class TransitionView(_AssetSearch):
             return self.form.cleaned_data.get('warehouse')
 
     def get_affected_user(self, *args, **kwargs):
-        if 'return-asset' in self.transition_object.name:
+        affected_user = self.form.cleaned_data.get('user')
+        if not affected_user:
             affected_user = self.assets[0].user
-        else:
-            affected_user = self.form.cleaned_data.get('user')
         return affected_user
 
     def get_report_file_link(self, *args, **kwargs):
@@ -240,7 +246,7 @@ class TransitionView(_AssetSearch):
             self.assign_warehouse = (
                 'assign_warehouse' in self.transition_object.actions_names()
             )
-        if self.transition_type == 'return-asset':
+        if self.transition_type == 'return-asset' or not self.assign_user:
             assets = self.assets.values('user__username').distinct()
             assets_count = assets.annotate(cnt=Count('user')).count()
             if assets_count not in (0, 1):
