@@ -9,6 +9,6 @@ install:
     - pip install git+https://github.com/allegro/ralph@develop  --use-mirrors --allow-all-external --allow-unverified ipaddr --allow-unverified postmarkup --allow-unverified python-graph-core --allow-unverified pysphere
     - pip install . --use-mirrors
 before_script:
-  - flake8 --exclude="migrations" --statistics src/ralph_assets
+  - flake8 --exclude=migrations,settings.py --ignore=E501 src/ralph
 # command to run tests, e.g. python setup.py test
 script: DJANGO_SETTINGS_PROFILE=test-assets ralph test ralph_assets
