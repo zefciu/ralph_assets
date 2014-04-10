@@ -664,6 +664,9 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         blank=True, default=None
     )
 
+    def get_purpose(self):
+        return AssetPurpose.from_id(self.purpose).raw if self.purpose else None
+
     def save(self, commit=True, *args, **kwargs):
         if self.purpose == '':
             # XXX: replace '' with null, bec. null=True on model doesn't work
