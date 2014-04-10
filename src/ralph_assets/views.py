@@ -560,7 +560,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         ]
 
     def column_visible(self, mode):
-        return True if self.mode == mode else False
+        return self.mode == mode
 
     def handle_search_data(self, get_csv=False, *args, **kwargs):
         if self.form.is_valid():
