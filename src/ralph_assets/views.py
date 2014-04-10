@@ -164,16 +164,11 @@ class AssetsBase(Base):
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
         )
-        license_items = (
-            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
-            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
-        )
         other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
-            {'caption': _('License'), 'items': license_items},
             {'caption': _('Others'), 'items': other_items},
         ]
         sidebar_menu = tuple()
@@ -275,6 +270,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
             'url_query': self.request.GET,
             'sort': self.sort,
             'columns': self.columns,
+            'form': self.form,
         })
         return ret 
 

@@ -90,7 +90,7 @@ LOOKUPS = {
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
-
+    'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
 }
 
 

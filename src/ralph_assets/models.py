@@ -274,6 +274,20 @@ class AssetManufacturerLookup(LookupChannel):
         return '{}'.format(escape(obj.manufacturer.name))
 
 
+class SoftwareCategoryLookup(LookupChannel):
+    model=SoftwareCategory
+
+    def get_query(self, q, request):
+        return self.model.objects.filter(Q(name__icontains=q)).order_by(
+            'name'
+        )[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+
+
+
 class WarehouseLookup(LookupChannel):
     model = Warehouse
 

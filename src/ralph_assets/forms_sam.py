@@ -15,6 +15,7 @@ from ajax_select.fields import (
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django_search_forms.form import SearchForm
+from django_search_forms.fields_ajax import RelatedAjaxSearchField
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
@@ -117,4 +118,16 @@ class LicenceForm(forms.ModelForm):
         }
 
 class SoftwareCategorySearchForm(SearchForm):
-    model = models_sam.SoftwareCategory
+    class Meta(object):
+        Model = models_sam.SoftwareCategory
+        fields = ['name']
+
+
+class LicenceSearchForm(SearchForm):
+    class Meta(object):
+        Model = models_sam.Licence
+        fields = []
+
+    software_category = RelatedAjaxSearchField(
+        LOOKUPS['softwarecategory'],
+    )
