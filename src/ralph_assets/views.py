@@ -52,6 +52,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
+from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -61,7 +62,6 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
     ReportOdtSource,
-    SoftwareCategory,
     TransitionsHistory,
 )
 from ralph_assets.models_assets import (
@@ -1625,7 +1625,7 @@ class LicenceList(AssetsBase):
             *args, **kwargs
         )
         page = self.request.GET.get('page', 1)
-        categories = SoftwareCategory.objects.annotate(
+        categories = models_sam.SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
         )
         if self.mode:
