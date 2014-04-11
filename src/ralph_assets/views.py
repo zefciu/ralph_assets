@@ -277,7 +277,6 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
     def get(self, request, *args, **kwargs):
         self.form = self.Form(self.request.GET)
         qs = self.handle_search_data(request)
-        
         self.data_table_query(qs)
         if self.export_requested():
             return self.response
