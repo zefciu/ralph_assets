@@ -34,8 +34,6 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_sam import (
     Licence,
-    LicenceType,
-    SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_transition import (
