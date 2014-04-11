@@ -42,7 +42,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
     template_name = 'assets/xls_upload_wizard.html'
     file_storage = FileSystemStorage(location=settings.FILE_UPLOAD_TEMP_DIR)
     sidebar_selected = 'xls upload'
-    mainmenu_selected = 'dc'
 
     def get_form(self, step=None, data=None, files=None):
         if step is None:
@@ -113,6 +112,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             data['all_column_names'] = all_column_names
             data['update_table'] = update_table
             data['add_table'] = add_table
+        data['section'] = None
         return data
 
     def _get_field_value(self, field_name, value):
