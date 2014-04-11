@@ -3,6 +3,15 @@ Change Log
 
 1.4.1
 ~~~~~~~
+
+* Changed AssetModel schema. Now height_of_device is a float field
+
+* Changed in api_pricing conditions for getting assets
+
+
+1.4.1
+~~~~~~~
+
 * Added Warehouse column to template bulk_edit file
 
 
