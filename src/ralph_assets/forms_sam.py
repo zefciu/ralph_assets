@@ -8,8 +8,9 @@ from __future__ import unicode_literals
 
 from ajax_select.fields import (
     AutoCompleteField,
-    AutoCompleteWidget,
+    AutoCompleteSelectField,
     AutoCompleteSelectMultipleField,
+    AutoCompleteWidget,
 )
 from django import forms
 from django.utils.translation import ugettext_lazy as _
@@ -57,6 +58,12 @@ class SoftwareCategoryField(AutoCompleteField):
 
 class LicenceForm(forms.ModelForm):
     """Licence add/edit form for licences."""
+
+    parent = AutoCompleteSelectField(
+        ('ralph_assets.models', 'LicenceLookup'),
+        required=False,
+        label=_('Parent licence'),
+    )
 
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
