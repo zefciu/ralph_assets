@@ -3,7 +3,7 @@
 {% load i18n %}
 {% block content %}
 <div class="row-fluid">
-    <h3>{% block form_title %}{% trans "Add licence" %}{% endblock %}</h3>
+    <h3>{% block form_title %}{{caption}}{% endblock %}</h3>
 </div>
 {% for error in form.non_field_errors %}
 <div class="alert alert-danger">

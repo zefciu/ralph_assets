@@ -52,6 +52,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
+from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -61,7 +62,6 @@ from ralph_assets.models import (
     OfficeInfo,
     PartInfo,
     ReportOdtSource,
-    SoftwareCategory,
     TransitionsHistory,
 )
 from ralph_assets.models_assets import (
@@ -98,15 +98,23 @@ def _move_data(src, dst, fields):
 class AssetsBase(Base):
     template_name = "assets/base.html"
     sidebar_selected = None
+    mainmenu_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
+        if self.mode == 'back_office':
+            base_sidebar_caption = _('Back office actions')
+            self.mainmenu_selected = self.mode
+        elif self.mode == 'dc':
+            base_sidebar_caption = _('Data center actions')
+            self.mainmenu_selected = self.mode
+        else:
+            base_sidebar_caption = ''
         ret.update({
-            'sidebar_items': self.get_sidebar_items(),
             'mainmenu_items': self.get_mainmenu_items(),
-            'section': 'assets',
-            'sidebar_selected': self.sidebar_selected,
             'section': self.mainmenu_selected,
+            'sidebar_items': self.get_sidebar_items(base_sidebar_caption),
+            'sidebar_selected': self.sidebar_selected,
             'mode': self.mode,
             'multivalues_fields': ['sn', 'barcode', 'imei'],
         })
@@ -150,13 +158,7 @@ class AssetsBase(Base):
             )
         return mainmenu
 
-    def get_sidebar_items(self):
-        if self.mode == 'back_office':
-            base_sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = 'back_office'
-        else:
-            base_sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = 'dc'
+    def get_sidebar_items(self, base_sidebar_caption):
         base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
@@ -1574,7 +1576,7 @@ class LicenceFormView(AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = 'add licence'
+    sidebar_selected = 'list licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1590,6 +1592,7 @@ class LicenceFormView(AssetsBase):
             'caption': self.caption,
             'licence': getattr(self, 'licence', None),
             'mode': self.mode,
+            'section': 'licence_list',
         })
         return ret
 
@@ -1611,6 +1614,7 @@ class AddLicence(LicenceFormView):
 
     caption = _('Add Licence')
     message = _('Licence added')
+    sidebar_selected = 'add licence'
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1626,6 +1630,7 @@ class EditLicence(LicenceFormView):
 
     caption = _('Edit Licence')
     message = _('Licence changed')
+    sidebar_selected = 'licence edit'
 
     def get(self, request, licence_id, *args, **kwargs):
         self.licence = Licence.objects.get(pk=licence_id)
@@ -1642,13 +1647,14 @@ class LicenceList(AssetsBase):
     """The licence list."""
 
     template_name = "assets/licence_list.html"
+    sidebar_selected = 'licence list'
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
             *args, **kwargs
         )
         page = self.request.GET.get('page', 1)
-        categories = SoftwareCategory.objects.annotate(
+        categories = models_sam.SoftwareCategory.objects.annotate(
             used=Count('licence__assets'),
         )
         if self.mode:
@@ -1666,6 +1672,7 @@ class LicenceList(AssetsBase):
                 for licence in category.licences_annotated
             )
         data['categories'] = categories_page
+        data['section'] = 'licence_list'
         return data
 
 
@@ -1989,7 +1996,7 @@ class UserDetails(AssetsBase):
     def get_context_data(self, **kwargs):
         ret = super(UserDetails, self).get_context_data(**kwargs)
         ret.update({
-            'section': 'user list',
+            'section': 'user_list',
             'user_object': self.user,
             'assigned_assets': self.assigned_assets,
             'assigned_licences': self.assigned_licences,
@@ -2033,6 +2040,7 @@ class UserList(Report, AssetsBase, DataTableMixin):
             'sort': self.sort,
             'columns': self.columns,
             'form': SearchUserForm(self.request.GET),
+            'section': 'user_list',
         })
         return ret
 
@@ -2074,6 +2082,7 @@ class EditUser(AssetsBase):
             'form_id': 'user_relation_form',
             'caption': self.caption,
             'edited_user': self.user,
+            'section': 'user_list',
         })
         return ret
 
