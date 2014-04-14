@@ -82,6 +82,7 @@ MAX_PAGE_SIZE = 65535
 LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
+SEARCH_DELIMITERS = re.compile(r";|\|")
 
 logger = logging.getLogger(__name__)
 
@@ -291,6 +292,16 @@ class _AssetSearch(AssetsBase):
             return self.admin_objects.filter(query)
         return self.objects.filter(query)
 
+    def _search_fields_or(self, fields, values):
+        q = Q()
+        for value in values:
+            value = value.strip()
+            if not value:
+                continue
+            for field in fields:
+                q |= Q(**{field: value})
+        return q
+
     def handle_search_data(self, *args, **kwargs):
         search_fields = [
             'id',
@@ -331,11 +342,14 @@ class _AssetSearch(AssetsBase):
             field_value = self.request.GET.get(field)
             if field_value:
                 exact = False
+                multi = False
                 # if search term is enclosed in "", we want exact matches
                 if isinstance(field_value, basestring) and \
                         QUOTATION_MARKS.search(field_value):
                     exact = True
                     field_value = field_value[1:-1]
+                elif re.search(SEARCH_DELIMITERS, field_value):
+                    multi = True
                 if field == 'part_info':
                     if field_value == 'device':
                         all_q &= Q(part_info__isnull=True)
@@ -363,16 +377,31 @@ class _AssetSearch(AssetsBase):
                 elif field == 'barcode':
                     if exact:
                         all_q &= Q(barcode=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['barcode'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(barcode__contains=field_value)
                 elif field == 'sn':
                     if exact:
                         all_q &= Q(sn=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['sn'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(sn__icontains=field_value)
                 elif field == 'niw':
                     if exact:
                         all_q &= Q(niw=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['niw'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
                     else:
                         all_q &= Q(niw__icontains=field_value)
                 elif field == 'provider':
