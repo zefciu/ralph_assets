@@ -270,7 +270,7 @@ class DeviceForm(ModelForm):
             del self.fields['create_stock']
 
     def clean_ralph_device_id(self):
-        return self.data['ralph_device_id'] or None
+        return self.data.get('ralph_device_id', None)
 
     def clean_create_stock(self):
         create_stock = self.cleaned_data.get('create_stock', False)
@@ -907,7 +907,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
-
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']

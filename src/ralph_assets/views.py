@@ -921,7 +921,6 @@ class EditDevice(AssetsBase):
 
     def initialize_vars(self):
         self.parts = []
-        self.office_info_form = None
         self.asset = None
 
     def get_context_data(self, **kwargs):
@@ -931,8 +930,10 @@ class EditDevice(AssetsBase):
         ).order_by('-date')
         ret.update({
             'asset_form': self.asset_form,
-            'device_info_form': self.device_info_form,
-            'office_info_form': self.office_info_form,
+            #TODO: remove it
+            #'device_info_form': self.device_info_form,
+            #'office_info_form': self.office_info_form,
+            'additional_info': self.additional_info,
             'part_form': MoveAssetPartForm(),
             'form_id': 'edit_device_asset_form',
             'edit_mode': True,
@@ -942,6 +943,80 @@ class EditDevice(AssetsBase):
             'history_link': self.get_history_link(),
         })
         return ret
+
+    def _update_additional_info(self, modifier):
+        # TODO: simplifie
+        if self.asset.type in AssetType.DC.choices:
+            self.asset = _update_device_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+            if self.additional_info.cleaned_data.get('create_stock'):
+                self.asset.create_stock_device()
+            #:
+        elif self.asset.type in AssetType.BO.choices:
+            #TODO: additional info inject
+            new_src, new_dst = _move_data(
+                self.asset_form.cleaned_data,
+                self.additional_info.cleaned_data,
+                ['imei', 'purpose'],
+            )
+            self.asset_form.cleaned_data = new_src
+            self.additional_info.cleaned_data = new_dst
+            self.asset = _update_office_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+
+
+    def _set_additional_info_form(self, request=None):
+        #TODO: make it acceptable
+        print('aa', self.mode)
+        if self.mode == 'dc':
+            if request:
+                #TODO: remove it
+                #self.device_info_form = DeviceForm(
+                #    post_data,
+                #    mode=self.mode,
+                #    instance=self.asset.device_info,
+                #)
+                self.additional_info = DeviceForm(
+                    self.request.POST,
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+            else:
+                self.additional_info = DeviceForm(
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+        elif self.mode == 'back_office':
+            if request:
+                #TODO: remove it
+                #if self.asset.type in AssetType.BO.choices:
+                #    self.office_info_form = OfficeForm(
+                #        #TODO: add instance passing
+                #        post_data, self.request.FILES,
+                #    )
+                ##..
+                self.additional_info = OfficeForm(
+                    self.request.POST,
+                    self.request.FILES,
+                    #TODO: should it be here? in orig it wasn't
+                    instance=self.asset.office_info,
+                )
+            else:
+                self.additional_info = OfficeForm(
+                    instance=self.asset.office_info,
+                )
+                #self.write_office_info2asset_form()
+                #TODO: move data between forms, more generic?
+                fields = ['imei', 'purpose']
+                for field in fields:
+                    if field in self.asset_form.fields:
+                        self.asset_form.fields[field].initial = (
+                            getattr(self.asset.office_info, field, '')
+                        )
+                print('bb', 'backoffice')
+
 
     def get(self, *args, **kwargs):
         self.initialize_vars()
@@ -953,11 +1028,7 @@ class EditDevice(AssetsBase):
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
         )
-        self.write_office_info2asset_form()
-        self.device_info_form = DeviceForm(
-            instance=self.asset.device_info,
-            mode=self.mode,
-        )
+        self._set_additional_info_form()
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
 
@@ -974,11 +1045,7 @@ class EditDevice(AssetsBase):
             instance=self.asset,
             mode=self.mode,
         )
-        self.device_info_form = DeviceForm(
-            post_data,
-            mode=self.mode,
-            instance=self.asset.device_info,
-        )
+        self._set_additional_info_form(self.request)
         self.part_form = MoveAssetPartForm(post_data)
         if 'move_parts' in post_data.keys():
             destination_asset = post_data.get('new_asset')
@@ -1001,45 +1068,26 @@ class EditDevice(AssetsBase):
                     info_part.save()
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
-            if self.asset.type in AssetType.BO.choices:
-                self.office_info_form = OfficeForm(
-                    post_data, self.request.FILES,
-                )
             if all((
                 self.asset_form.is_valid(),
-                self.device_info_form.is_valid(),
-                self.asset.type not in AssetType.BO.choices or
-                self.office_info_form.is_valid(),
+                self.additional_info.is_valid(),
+                ##TODO: replace with 'additional form' check
+                #self.device_info_form.is_valid(),
+                #self.asset.type not in AssetType.BO.choices or
+                #self.office_info_form.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
-
-                if self.asset.type in AssetType.BO.choices:
-                    new_src, new_dst = _move_data(
-                        self.asset_form.cleaned_data,
-                        self.office_info_form.cleaned_data,
-                        ['imei', 'purpose'],
-                    )
-                    self.asset_form.cleaned_data = new_src
-                    self.office_info_form.cleaned_data = new_dst
-                    self.asset = _update_office_info(
-                        modifier_profile.user, self.asset,
-                        self.office_info_form.cleaned_data
-                    )
-                self.asset = _update_device_info(
-                    modifier_profile.user, self.asset,
-                    self.device_info_form.cleaned_data
-                )
-                if self.device_info_form.cleaned_data.get('create_stock'):
-                    self.asset.create_stock_device()
+                self._update_additional_info(modifier_profile.user)
                 self.asset.save(user=self.request.user)
                 self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
+
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
