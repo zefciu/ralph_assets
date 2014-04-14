@@ -36,7 +36,7 @@ from django.forms import (
     ModelForm,
     ValidationError,
 )
-from django.forms.widgets import HiddenInput, Textarea
+from django.forms.widgets import HiddenInput, Textarea, TextInput
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -1240,9 +1240,36 @@ class SearchAssetForm(Form):
         required=False,
         choices=[('', '----')] + AssetSource(),
     )
-    niw = CharField(required=False, label='Inventory number')
-    sn = CharField(required=False, label='SN')
-    barcode = CharField(required=False, label='Barcode')
+    niw = CharField(
+        required=False,
+        label='Inventory number',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+          },
+        )
+    )
+    sn = CharField(
+        required=False,
+        label='SN',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+          },
+        )
+    )
+    barcode = CharField(
+        required=False,
+        label='Barcode',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+          },
+        )
+    )
     ralph_device_id = IntegerField(
         required=False,
         label='Ralph device id',
