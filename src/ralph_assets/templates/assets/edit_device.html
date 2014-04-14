@@ -5,6 +5,7 @@
 {% block form_title %}Edit device{% endblock %}
 
 {% block additional_inputs %}
+  {# TODO: move block to add_assets.html when adddevice view is cleaned #}
   {% for field in additional_info %}
     {% field_wrapper field %}
   {% endfor %}
@@ -38,10 +39,11 @@
               </tbody>
           </table>
       </div>
-{% endif %}
-
+  {% endif %}
   {% transition_history asset %}
+{% endblock %}
 
+{% block parts %}
   <div>
     <h5>Device parts</h5>
     {% if parts %}

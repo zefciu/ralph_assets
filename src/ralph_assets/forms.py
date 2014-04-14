@@ -270,7 +270,7 @@ class DeviceForm(ModelForm):
             del self.fields['create_stock']
 
     def clean_ralph_device_id(self):
-        return self.data.get('ralph_device_id', None)
+        return self.data['ralph_device_id'] or None
 
     def clean_create_stock(self):
         create_stock = self.cleaned_data.get('create_stock', False)
