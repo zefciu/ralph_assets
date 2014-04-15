@@ -34,6 +34,7 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_sam import (
     Licence,
+    SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_transition import (
@@ -275,7 +276,7 @@ class AssetManufacturerLookup(LookupChannel):
 
 
 class SoftwareCategoryLookup(LookupChannel):
-    model=SoftwareCategory
+    model = SoftwareCategory
 
     def get_query(self, q, request):
         return self.model.objects.filter(Q(name__icontains=q)).order_by(
@@ -284,8 +285,6 @@ class SoftwareCategoryLookup(LookupChannel):
 
     def get_result(self, obj):
         return obj.name
-
-
 
 
 class WarehouseLookup(LookupChannel):

@@ -137,8 +137,8 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name='licence_list',
-                href=reverse('licence_list'),
+                name='software_categories',
+                href=reverse('software_categories'),
             ),
             MenuItem(
                 label=_('User list'),
@@ -272,7 +272,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
             'columns': self.columns,
             'form': self.form,
         })
-        return ret 
+        return ret
 
     def get(self, request, *args, **kwargs):
         self.form = self.Form(self.request.GET)
@@ -285,6 +285,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
     def handle_search_data(self, request):
         q = self.form.get_query()
         return self.Model.objects.filter(q).all()
+
 
 class _AssetSearch(AssetsBase):
 

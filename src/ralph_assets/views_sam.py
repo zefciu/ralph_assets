@@ -1,8 +1,15 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import urllib
 
 from bob.data_table import DataTableColumn
 from django.utils.translation import ugettext_lazy as _
-from ralph_assets.views import GenericSearch, DataTableColumnAssets
+from ralph_assets.views import GenericSearch
 from ralph_assets.models_sam import SoftwareCategory, Licence
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
@@ -15,22 +22,23 @@ class SoftwareCategoryNameColumn(DataTableColumn):
     licences"""
 
     def render_cell_content(self, resource):
-        name = super(SoftwareCategoryNameColumn, self).render_cell_content(resource)
+        name = super(
+            SoftwareCategoryNameColumn, self
+        ).render_cell_content(resource)
         return '<a href="/assets/sam/licences/?{qs}">{name}</a>'.format(
             qs=urllib.urlencode({'software_category': resource.id}),
             name=name,
         )
+
 
 class LicenceLinkColumn(DataTableColumn):
     """A column that links to the edit page of a licence simply displaying
     'Licence' in a grid"""
     def render_cell_content(self, resource):
         return '<a href="{url}">{licence}</a>'.format(
-            url = resource.url,
-            licence = unicode(_('Licence')),
+            url=resource.url,
+            licence=unicode(_('Licence')),
         )
-
-
 
 
 class SoftwareCategoryList(GenericSearch):
@@ -103,8 +111,8 @@ class LicenceList(GenericSearch):
         DataTableColumn(
             _('Invoice date'),
             bob_tag=True,
-            field='bought_date',
-            sort_expression='bought_date',
+            field='invoice_date',
+            sort_expression='invoice_date',
         ),
         DataTableColumn(
             _('Valid thru'),
