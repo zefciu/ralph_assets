@@ -261,8 +261,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
         ret.update(
             super(GenericSearch, self).get_context_data_paginator(
-                *args,
-                **kwargs
+                *args, **kwargs
             )
         )
         ret.update({

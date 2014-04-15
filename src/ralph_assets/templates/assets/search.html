@@ -10,26 +10,26 @@
         <hr>
         {% form form=form method="GET" action='' submit_label='Search' css_class=''%}
     </div>
-    {% endblock %}
+{% endblock %}
 
 {% block content %}
     <h3>{{header}}</h3>
         <table id='assets_table' class="table table-bordered table-striped">
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
-                <tbody>
-                {% for row in bob_page %}
-                <tr>
-                    {% for column in columns %}
-                        {% render_cell column row %}
-                    {% endfor %}
-                </tr>
+            <tbody>
+            {% for row in bob_page %}
+            <tr>
+                {% for column in columns %}
+                    {% render_cell column row %}
                 {% endfor %}
-                </tbody>
+            </tr>
+            {% endfor %}
+            </tbody>
         </table>
 
-            {% pagination bob_page url_query=url_query show_all=0 show_csv=1 fugue_icons=1 export_variable_name=export_variable_name %}
-            <div id="eta"></div>
-            <div class="progress" id="async-progress">
-                <div class="bar"></div>
-            </div>
+        {% pagination bob_page url_query=url_query show_all=0 show_csv=1 fugue_icons=1 export_variable_name=export_variable_name %}
+        <div id="eta"></div>
+        <div class="progress" id="async-progress">
+            <div class="bar"></div>
+        </div>
 {% endblock %}
