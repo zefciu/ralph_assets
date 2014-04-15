@@ -1250,7 +1250,7 @@ class SearchAssetForm(Form):
             attrs={
               'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
-          },
+            },
         )
     )
     sn = CharField(
@@ -1260,7 +1260,7 @@ class SearchAssetForm(Form):
             attrs={
               'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
-          },
+            },
         )
     )
     barcode = CharField(
@@ -1270,7 +1270,7 @@ class SearchAssetForm(Form):
             attrs={
               'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
-          },
+            },
         )
     )
     ralph_device_id = IntegerField(
