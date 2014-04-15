@@ -1,10 +1,12 @@
 Change Log
 ----------
 
-1.4.1
+1.4.2
 ~~~~~~~
 
 * Changed AssetModel schema. Now height_of_device is a float field
+
+* Added to AssetModel column named cores_count
 
 * Changed in api_pricing conditions for getting assets
 
