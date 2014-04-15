@@ -26,7 +26,7 @@ from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, SHOW, Dependency
+from bob.forms import DependencyForm, SHOW, Dependency, dependency_conditions
 
 from ralph_assets.models import (
     Asset,
@@ -353,7 +353,9 @@ class DependencyAssetForm(DependencyForm):
         yield Dependency(
             'slots',
             'category',
-            AssetCategory.objects.filter(is_blade=True).all(),
+            dependency_conditions.MemberOf(
+                AssetCategory.objects.filter(is_blade=True).all(),
+            ),
             SHOW,
         )
 
