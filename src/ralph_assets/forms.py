@@ -78,9 +78,9 @@ asset_fieldset = lambda: OrderedDict([
     ]),
 ])
 
-asset_search_back_office_fieldsets = lambda : OrderedDict([
+asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
-        'noncollapsed': ['barcode','status','imei', 'sn', 'model'],
+        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
@@ -107,9 +107,11 @@ asset_search_back_office_fieldsets = lambda : OrderedDict([
     })
 ])
 
-asset_search_dc_fieldsets = lambda : OrderedDict([
+asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
-        'noncollapsed': ['barcode','sn', 'model', 'manufacturer', 'warehouse'],
+        'noncollapsed': [
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+        ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
