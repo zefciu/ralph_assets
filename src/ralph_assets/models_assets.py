@@ -112,17 +112,17 @@ class AssetModel(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
     category = models.ForeignKey('AssetCategory', null=True, blank=True)
     power_consumption = models.IntegerField(
-        verbose_name="Power consumption",
+        verbose_name=_("Power consumption"),
         blank=True,
         default=0,
     )
     height_of_device = models.FloatField(
-        verbose_name="Height of device",
+        verbose_name=_("Height of device"),
         blank=True,
         default=0,
     )
     cores_count = models.IntegerField(
-        verbose_name="Cores count",
+        verbose_name=_("Cores count"),
         blank=True,
         default=0,
     )
