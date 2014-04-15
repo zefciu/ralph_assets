@@ -35,6 +35,7 @@ setup(
         'django-mptt==0.5.5',
         'xlrd==0.9.2',
         'inkpy==0.0.1-alpha',
+        'django-search-forms[ajax]==0.1',
     ],
     entry_points={
         'django.pluggable_app': [

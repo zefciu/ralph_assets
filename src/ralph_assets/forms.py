@@ -88,9 +88,10 @@ LOOKUPS = {
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'licence': ('ralph_assets.models', 'LicenceLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
-
+    'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
 }
 
 

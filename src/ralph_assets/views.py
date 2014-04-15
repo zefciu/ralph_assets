@@ -137,8 +137,8 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name='licence_list',
-                href=reverse('licence_list'),
+                name='software_categories',
+                href=reverse('software_categories'),
             ),
             MenuItem(
                 label=_('User list'),
@@ -164,16 +164,11 @@ class AssetsBase(Base):
             ('add_part', _('Add part'), 'fugue-block--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
         )
-        license_items = (
-            ('licence_list', _('Licence list'), 'fugue-cheque-sign'),
-            ('add_licence', _('Add Licence'), 'fugue-cheque--plus'),
-        )
         other_items = (
             ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
         )
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
-            {'caption': _('License'), 'items': license_items},
             {'caption': _('Others'), 'items': other_items},
         ]
         sidebar_menu = tuple()
@@ -253,6 +248,42 @@ class DataTableColumnAssets(DataTableColumn):
     def __init__(self, header_name, foreign_field_name=None, **kwargs):
         super(DataTableColumnAssets, self).__init__(header_name, **kwargs)
         self.foreign_field_name = foreign_field_name
+
+
+class GenericSearch(Report, AssetsBase, DataTableMixin):
+    """A generic view that contains a bob grid and a search form"""
+
+    sort_variable_name = 'sort'
+    export_variable_name = 'export'
+    template_name = 'assets/search.html'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
+        ret.update(
+            super(GenericSearch, self).get_context_data_paginator(
+                *args, **kwargs
+            )
+        )
+        ret.update({
+            'sort_variable_name': self.sort_variable_name,
+            'url_query': self.request.GET,
+            'sort': self.sort,
+            'columns': self.columns,
+            'form': self.form,
+        })
+        return ret
+
+    def get(self, request, *args, **kwargs):
+        self.form = self.Form(self.request.GET)
+        qs = self.handle_search_data(request)
+        self.data_table_query(qs)
+        if self.export_requested():
+            return self.response
+        return super(GenericSearch, self).get(request, *args, **kwargs)
+
+    def handle_search_data(self, request):
+        q = self.form.get_query()
+        return self.Model.objects.filter(q).all()
 
 
 class _AssetSearch(AssetsBase):
