@@ -366,6 +366,7 @@ class _AssetSearch(AssetsBase):
             'user',
             'purpose',
             'service_name',
+            'warehouse',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -450,6 +451,8 @@ class _AssetSearch(AssetsBase):
                         all_q &= Q(invoice_no=field_value)
                     else:
                         all_q &= Q(invoice_no__icontains=field_value)
+                elif field == 'warehouse':
+                    all_q &= Q(warehouse__id=field_value)
                 elif field == 'owner':
                     all_q &= Q(owner__id=field_value)
                 elif field == 'location':
