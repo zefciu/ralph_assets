@@ -196,17 +196,9 @@ class BulkEditAssetForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        fillable_fields = [
-            'type', 'model', 'device_info', 'invoice_no', 'order_no',
-            'request_date', 'delivery_date', 'invoice_date',
-            'production_use_date', 'provider_order_date',
-            'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year', 'purpose',
-            'property_of', 'service_name', 'warehouse', 'user', 'owner',
-            'task_url',
-        ]
+        banned_fillables = set(['sn', 'barcode', 'imei'])
         for field_name in self.fields:
-            if field_name in fillable_fields:
+            if field_name not in banned_fillables:
                 classes = "span12 fillable"
             elif field_name == 'support_void_reporting':
                 classes = ""
