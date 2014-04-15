@@ -1200,7 +1200,7 @@ class EditPart(AssetsBase):
     def get_parent_link(self):
         asset = self.asset.part_info.source_device
         if asset:
-            return reverse('dc_device_edit', kwargs={
+            return reverse('device_edit', kwargs={
                 'asset_id': asset.id,
                 'mode': self.mode,
             })
