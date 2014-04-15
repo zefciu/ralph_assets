@@ -18,6 +18,7 @@ from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
     DateRangeSearchField,
     ExactSearchField,
+    MultiSearchField,
     RelatedSearchField,
     TextSearchField,
 )
@@ -135,7 +136,7 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
-    niw = ExactSearchField()
+    niw = MultiSearchField()
     sn = TextSearchField()
     software_category = RelatedAjaxSearchField(
         LOOKUPS['softwarecategory'],
