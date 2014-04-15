@@ -8,8 +8,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import datetime
+import logging
+import os
 
 from dateutil.relativedelta import relativedelta
 from lck.django.choices import Choices
@@ -37,6 +38,8 @@ from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 
+
+logger = logging.getLogger(__name__)
 
 SAVE_PRIORITY = 0
 
@@ -115,6 +118,11 @@ class AssetModel(
     )
     height_of_device = models.FloatField(
         verbose_name="Height of device",
+        blank=True,
+        default=0,
+    )
+    cores_count = models.IntegerField(
+        verbose_name="Cores count",
         blank=True,
         default=0,
     )
@@ -287,9 +295,18 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
         if not self.device_info or not self.device_info.ralph_device_id:
             return 0
         try:
-            return Device.objects.get(
+            cores_count = Device.objects.get(
                 pk=self.device_info.ralph_device_id,
             ).get_core_count()
+            if self.model and self.model.cores_count != cores_count:
+                logger.warning(('Cores count for <{}> different in ralph than '
+                                'in assets ({} vs {})').format(
+                        self,
+                        cores_count,
+                        self.model.cores_count,
+                    )
+                )
+            return cores_count
         except Device.DoesNotExist:
             return 0
 
