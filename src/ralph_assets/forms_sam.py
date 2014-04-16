@@ -14,11 +14,21 @@ from ajax_select.fields import (
 )
 from django import forms
 from django.utils.translation import ugettext_lazy as _
+from django_search_forms.form import SearchForm
+from django_search_forms.fields import (
+    DateRangeSearchField,
+    ExactSearchField,
+    MultiSearchField,
+    RelatedSearchField,
+    TextSearchField,
+)
+from django_search_forms.fields_ajax import RelatedAjaxSearchField
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS
 from ralph_assets.models_assets import MODE2ASSET_TYPE
+from ralph_assets.models_sam import AssetOwner, LicenceType
 
 
 class SoftwareCategoryWidget(AutoCompleteWidget):
@@ -114,3 +124,30 @@ class LicenceForm(forms.ModelForm):
             'invoice_date': DateWidget,
             'valid_thru': DateWidget,
         }
+
+
+class SoftwareCategorySearchForm(SearchForm):
+    class Meta(object):
+        Model = models_sam.SoftwareCategory
+        fields = ['name']
+
+
+class LicenceSearchForm(SearchForm):
+    class Meta(object):
+        Model = models_sam.Licence
+        fields = []
+    niw = MultiSearchField()
+    sn = TextSearchField()
+    software_category = RelatedAjaxSearchField(
+        LOOKUPS['softwarecategory'],
+    )
+    property_of = RelatedSearchField(Model=AssetOwner)
+    licence_type = RelatedSearchField(LicenceType)
+    parent_licence = RelatedAjaxSearchField(
+        LOOKUPS['licence']
+    )
+    valid_thru = DateRangeSearchField()
+    invoice_no = ExactSearchField()
+    invoice_date = DateRangeSearchField()
+    order_no = ExactSearchField()
+    order_date = DateRangeSearchField()

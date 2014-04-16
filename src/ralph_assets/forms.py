@@ -78,6 +78,65 @@ asset_fieldset = lambda: OrderedDict([
     ]),
 ])
 
+asset_search_back_office_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
+        'collapsed': [
+            'warehouse', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
+            'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
+asset_search_dc_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': [
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+        ],
+        'collapsed': [
+            'status', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
 LOOKUPS = {
     'asset': ('ralph_assets.models', 'DeviceLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
@@ -88,9 +147,10 @@ LOOKUPS = {
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'licence': ('ralph_assets.models', 'LicenceLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
-
+    'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
 }
 
 
@@ -196,17 +256,9 @@ class BulkEditAssetForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        fillable_fields = [
-            'type', 'model', 'device_info', 'invoice_no', 'order_no',
-            'request_date', 'delivery_date', 'invoice_date',
-            'production_use_date', 'provider_order_date',
-            'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year', 'purpose',
-            'property_of', 'service_name', 'warehouse', 'user', 'owner',
-            'task_url',
-        ]
+        banned_fillables = set(['sn', 'barcode', 'imei'])
         for field_name in self.fields:
-            if field_name in fillable_fields:
+            if field_name not in banned_fillables:
                 classes = "span12 fillable"
             elif field_name == 'support_void_reporting':
                 classes = ""
@@ -1392,6 +1444,9 @@ class SearchAssetForm(Form):
     service_name = ModelChoiceField(
         queryset=Service.objects.all(), empty_label="----", required=False,
     )
+    warehouse = AutoCompleteSelectField(
+        LOOKUPS['asset_warehouse'], required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -1411,7 +1466,10 @@ class SearchAssetForm(Form):
 
 
 class DataCenterSearchAssetForm(SearchAssetForm):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_dc_fieldsets()
 
 
 class BackOfficeSearchAssetForm(SearchAssetForm):
@@ -1421,6 +1479,10 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         label='Purpose',
         required=False,
     )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_back_office_fieldsets()
 
 
 class DeleteAssetConfirmForm(Form):
