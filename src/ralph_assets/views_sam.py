@@ -9,7 +9,7 @@ import urllib
 
 from bob.data_table import DataTableColumn
 from django.utils.translation import ugettext_lazy as _
-from ralph_assets.views import GenericSearch
+from ralph_assets.views import GenericSearch, LicenseSelectedMixin
 from ralph_assets.models_sam import SoftwareCategory, Licence
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
@@ -41,7 +41,7 @@ class LicenceLinkColumn(DataTableColumn):
         )
 
 
-class SoftwareCategoryList(GenericSearch):
+class SoftwareCategoryList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of software categories, which link to searches for
     licences."""
 
@@ -57,7 +57,7 @@ class SoftwareCategoryList(GenericSearch):
     ]
 
 
-class LicenceList(GenericSearch):
+class LicenceList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of licences."""
 
     Model = Licence
