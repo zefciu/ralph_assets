@@ -959,7 +959,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
-
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
