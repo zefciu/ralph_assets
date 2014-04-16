@@ -89,8 +89,8 @@ form.form-inline {
                             {% endif %}
                         </td>
                     {% endif %}
+                    {% if not asset_hide_action_search %}
                     <td>
-
                     <div class="btn-group">
                       <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
                         Action
@@ -121,6 +121,7 @@ form.form-inline {
                         </ul>
                     </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
                 </tbody>

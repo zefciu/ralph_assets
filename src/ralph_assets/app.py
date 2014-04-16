@@ -45,5 +45,6 @@ class Assets(RalphModule):
                 'RELEASE-ASSET': 'release-asset',
                 'LOAN-ASSET': 'loan-asset',
                 'RETURN-ASSET': 'return-asset',
-            }
+            },
         }
+        self.settings.setdefault("ASSET_HIDE_ACTION_SEARCH", False)

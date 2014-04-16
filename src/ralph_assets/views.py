@@ -599,7 +599,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True, show_conditions=show_dc),
             _('Discovered', bob_tag=True, field='is_discovered', export=True,
               foreign_field_name='is_discovered', show_conditions=show_dc),
-            _('Actions', bob_tag=True),
+            _('Actions', bob_tag=True,
+              show_conditions=(
+                lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,)),
 
             _('Department', field='department', foreign_field_name='venture',
               export=True),
@@ -699,6 +701,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'csv_url': self.request.path_info + '/csv',
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
             'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
+            'asset_hide_action_search': settings.ASSET_HIDE_ACTION_SEARCH,
             'assets_count': self.assets_count,
         })
         return ret
