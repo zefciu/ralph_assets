@@ -293,16 +293,16 @@ class TestMultivalueFields(TestCase):
                     SCREEN_ERROR_MESSAGES['duplicated_sn_in_field']
                 )
             elif test['remarks'] == 'asset2':
-                self.assertEqual(post.status_code, 302)
-                self.assertEqual(len(added_assets), 2)
-                self.assertEqual(
-                    ['sn1_2', 'sn2_2'], [asset.sn for asset in added_assets]
+                self.assertEqual(post.status_code, 200)
+                self.assertFormError(
+                    post, 'asset_form', 'sn',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
             elif test['remarks'] == 'asset3':
-                self.assertEqual(post.status_code, 302)
-                self.assertEqual(len(added_assets), 2)
-                self.assertEqual(
-                    ['sn1_3', 'sn2_3'], [asset.sn for asset in added_assets]
+                self.assertEqual(post.status_code, 200)
+                self.assertFormError(
+                    post, 'asset_form', 'sn',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
             elif test['remarks'] == 'asset4':
                 self.assertEqual(post.status_code, 302)
@@ -316,18 +316,24 @@ class TestMultivalueFields(TestCase):
                     post, 'asset_form', 'sn',
                     SCREEN_ERROR_MESSAGES['contain_white_character']
                 )
-            elif test['remarks'] in ['asset9', 'asset10']:
+            elif test['remarks'] in ['asset9']:
                 self.assertEqual(post.status_code, 200)
                 self.assertFormError(
                     post, 'asset_form', 'barcode',
                     SCREEN_ERROR_MESSAGES['contain_white_character']
+                )
+            elif test['remarks'] in ['asset10', 'asset11']:
+                self.assertEqual(post.status_code, 200)
+                self.assertFormError(
+                    post, 'asset_form', 'barcode',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
             elif test['remarks'] == 'asset6':
                 self.assertFormError(
                     post, 'asset_form', 'sn',
                     SCREEN_ERROR_MESSAGES['django_required']
                 )
-            elif test['remarks'] in ['asset6', 'asset7', 'asset 8', 'asset11']:
+            elif test['remarks'] in ['asset6', 'asset7', 'asset 8']:
                 self.assertEqual(post.status_code, 200)
                 self.assertFormError(
                     post, 'asset_form', 'barcode',
