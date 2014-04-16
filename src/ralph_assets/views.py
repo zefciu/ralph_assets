@@ -95,6 +95,10 @@ def _move_data(src, dst, fields):
     return src, dst
 
 
+class LicenseSelectedMixin(object):
+    mainmenu_selected = 'software_categories'
+
+
 class AssetsBase(Base):
     template_name = "assets/base.html"
     sidebar_selected = None
@@ -102,14 +106,12 @@ class AssetsBase(Base):
 
     def get_context_data(self, *args, **kwargs):
         ret = super(AssetsBase, self).get_context_data(**kwargs)
+        base_sidebar_caption = ''
+        self.mainmenu_selected = self.mainmenu_selected or self.mode
         if self.mode == 'back_office':
             base_sidebar_caption = _('Back office actions')
-            self.mainmenu_selected = self.mode
         elif self.mode == 'dc':
             base_sidebar_caption = _('Data center actions')
-            self.mainmenu_selected = self.mode
-        else:
-            base_sidebar_caption = ''
         ret.update({
             'mainmenu_items': self.get_mainmenu_items(),
             'section': self.mainmenu_selected,
@@ -601,7 +603,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               foreign_field_name='is_discovered', show_conditions=show_dc),
             _('Actions', bob_tag=True,
               show_conditions=(
-                lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,)),
+                  lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,)),
 
             _('Department', field='department', foreign_field_name='venture',
               export=True),
@@ -1609,11 +1611,10 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class LicenceFormView(AssetsBase):
+class LicenceFormView(LicenseSelectedMixin, AssetsBase):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
-    sidebar_selected = 'list licence'
 
     def _get_form(self, data=None, **kwargs):
         self.form = LicenceForm(
@@ -1629,7 +1630,6 @@ class LicenceFormView(AssetsBase):
             'caption': self.caption,
             'licence': getattr(self, 'licence', None),
             'mode': self.mode,
-            'section': 'licence_list',
         })
         return ret
 
@@ -1651,7 +1651,6 @@ class AddLicence(LicenceFormView):
 
     caption = _('Add Licence')
     message = _('Licence added')
-    sidebar_selected = 'add licence'
 
     def get(self, request, *args, **kwargs):
         self._get_form()
@@ -1667,7 +1666,6 @@ class EditLicence(LicenceFormView):
 
     caption = _('Edit Licence')
     message = _('Licence changed')
-    sidebar_selected = 'licence edit'
 
     def get(self, request, licence_id, *args, **kwargs):
         self.licence = Licence.objects.get(pk=licence_id)
@@ -1682,9 +1680,7 @@ class EditLicence(LicenceFormView):
 
 class LicenceList(AssetsBase):
     """The licence list."""
-
     template_name = "assets/licence_list.html"
-    sidebar_selected = 'licence list'
 
     def get_context_data(self, *args, **kwargs):
         data = super(LicenceList, self).get_context_data(
