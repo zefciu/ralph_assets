@@ -55,12 +55,6 @@ class TestAdding(TestCase):
             warehouse=self.warehouse.id,  # 1
             category=self.category.slug,
             deprecation_rate=0,
-            # XXX: not found on form
-            # support_period=48,
-            # support_type='standard',
-            # support_void_reporting=True,
-            # production_use_date='2001-01-04',
-            # production_year=2011,
         )
 
     def get_common_edit_form_data(self):
@@ -83,12 +77,6 @@ class TestAdding(TestCase):
             remarks='any remarks',
             category=self.category.slug,
             asset=True,  # Button name
-            # XXX: not found on form
-            # support_period=12,
-            # support_type='d2d',
-            # support_void_reporting=True,
-            # production_year=2011,
-            # production_use_date='2001-01-04', ##
         )
 
     def send_data_via_add_form(self):
@@ -96,9 +84,6 @@ class TestAdding(TestCase):
         data_in_add_form = self.get_common_add_form_data()
         dc_spec_data = dict(
             ralph_device_id='',
-            # u_level=1,
-            # u_height=1,
-            # slots=1.0,
         )
         data_in_add_form.update(dc_spec_data)
         send_post = self.client.post(url, data_in_add_form)
@@ -158,10 +143,6 @@ class TestAdding(TestCase):
                 provider='Provider2',
                 status=AssetStatus.in_progress.id,
                 remarks='any remarks',
-                # XXX: not found on form
-                # production_use_date='2001-01-04',
-                # support_period=12,
-                # support_type='d2d',
             )
         ]
         for data in correct_data:
