@@ -603,8 +603,8 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               foreign_field_name='is_discovered', show_conditions=show_dc),
             _('Actions', bob_tag=True,
               show_conditions=(
-                  lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,)),
-
+                  lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,
+              )),
             _('Department', field='department', foreign_field_name='venture',
               export=True),
             _('Barcode salvaged', field='barcode_salvaged',
@@ -819,24 +819,24 @@ def _get_return_link(mode):
 
 
 @transaction.commit_on_success
-def _create_device(creator_profile, asset_data, device_info_data, sn, mode,
-                   barcode=None, office_info_data=None):
-    device_info = DeviceInfo()
+def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
     if mode == 'dc':
-        device_info.ralph_device_id = device_info_data['ralph_device_id']
-        device_info.u_level = device_info_data['u_level']
-        device_info.u_height = device_info_data['u_height']
-    device_info.save(user=creator_profile.user)
-    asset = Asset(
-        device_info=device_info,
-        sn=sn.strip(),
-        created_by=creator_profile,
-        **asset_data
-    )
-    if barcode:
-        asset.barcode = barcode
-    if office_info_data:
-        _update_office_info(creator_profile.user, asset, office_info_data)
+        asset = Asset(created_by=creator_profile, **asset_data)
+        device_info = DeviceInfo()
+        device_info.ralph_device_id = cleaned_additional_info[
+            'ralph_device_id'
+        ]
+        device_info.u_level = cleaned_additional_info['u_level']
+        device_info.u_height = cleaned_additional_info['u_height']
+        device_info.save(user=creator_profile.user)
+        asset.device_info = device_info
+    elif mode == 'back_office':
+        _move_data(asset_data, cleaned_additional_info, ['purpose'])
+        asset = Asset(created_by=creator_profile, **asset_data)
+        office_info = OfficeInfo()
+        office_info.__dict__.update(**cleaned_additional_info)
+        office_info.save(user=creator_profile.user)
+        asset.office_info = office_info
     asset.save(user=creator_profile.user)
     return asset
 
@@ -849,69 +849,72 @@ class AddDevice(AssetsBase):
         ret = super(AddDevice, self).get_context_data(**kwargs)
         ret.update({
             'asset_form': self.asset_form,
-            'device_info_form': self.device_info_form,
+            'additional_info': self.additional_info,
             'form_id': 'add_device_asset_form',
             'edit_mode': False,
+            'multivalue_fields': ['sn', 'barcode', 'imei'],
         })
         return ret
 
+    def _set_additional_info_form(self):
+        if self.mode == 'dc':
+            # XXX: how to clean it?
+            if self.request.method == 'POST':
+                self.additional_info = DeviceForm(
+                    self.request.POST,
+                    mode=self.mode,
+                    exclude='create_stock',
+                )
+            else:
+                self.additional_info = DeviceForm(
+                    mode=self.mode,
+                    exclude='create_stock',
+                )
+        elif self.mode == 'back_office':
+            if self.request.method == 'POST':
+                self.additional_info = OfficeForm(self.request.POST)
+            else:
+                self.additional_info = OfficeForm()
+
     def get(self, *args, **kwargs):
-        mode = self.mode
-        self.asset_form = AddDeviceForm(mode=mode)
+        self.asset_form = AddDeviceForm(mode=self.mode)
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(mode=self.mode)
-        self.device_info_form = DeviceForm(
-            mode=mode,
-            exclude='create_stock',
-        )
+        self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        mode = self.mode
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
-        self.device_info_form = DeviceForm(
-            self.request.POST,
-            mode=mode,
-            exclude='create_stock',
-        )
-        if self.asset_form.is_valid() and self.device_info_form.is_valid():
+        self._set_additional_info_form()
+        if self.asset_form.is_valid() and self.additional_info.is_valid():
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name in {
+                if f_name not in {
                     "barcode", "company", "cost_center", "department",
                     "employee_id", "imei", "licences", "manager", "sn",
                     "profit_center"
                 }:
-                    continue
-                asset_data[f_name] = f_value
+                    asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
             barcodes = self.asset_form.cleaned_data['barcode']
             imeis = (
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
-            office_info_data = {}
-            asset_data, office_info_data = _move_data(
-                asset_data, office_info_data, ['purpose']
-            )
             ids = []
             for sn, index in zip(serial_numbers, range(len(serial_numbers))):
-                barcode = barcodes[index] if barcodes else None
+                asset_data['sn'] = sn
+                asset_data['barcode'] = barcodes[index] if barcodes else None
                 if imeis:
-                    office_info_data['imei'] = imeis[index]
+                    self.additional_info.cleaned_data['imei'] = imeis[index]
                 device = _create_device(
                     creator_profile,
                     asset_data,
-                    self.device_info_form.cleaned_data,
-                    sn,
-                    mode,
-                    barcode,
-                    office_info_data,
+                    self.additional_info.cleaned_data,
+                    self.mode,
                 )
-                for licence in self.asset_form.cleaned_data['licences']:
-                    device.licence_set.add(licence)
                 ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
@@ -989,7 +992,6 @@ class EditDevice(AssetsBase):
 
     def initialize_vars(self):
         self.parts = []
-        self.office_info_form = None
         self.asset = None
 
     def get_context_data(self, **kwargs):
@@ -999,8 +1001,7 @@ class EditDevice(AssetsBase):
         ).order_by('-date')
         ret.update({
             'asset_form': self.asset_form,
-            'device_info_form': self.device_info_form,
-            'office_info_form': self.office_info_form,
+            'additional_info': self.additional_info,
             'part_form': MoveAssetPartForm(),
             'form_id': 'edit_device_asset_form',
             'edit_mode': True,
@@ -1010,6 +1011,57 @@ class EditDevice(AssetsBase):
             'history_link': self.get_history_link(),
         })
         return ret
+
+    def _update_additional_info(self, modifier):
+        if self.asset.type in AssetType.DC.choices:
+            self.asset = _update_device_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+            if self.additional_info.cleaned_data.get('create_stock'):
+                self.asset.create_stock_device()
+        elif self.asset.type in AssetType.BO.choices:
+            new_src, new_dst = _move_data(
+                self.asset_form.cleaned_data,
+                self.additional_info.cleaned_data,
+                ['imei', 'purpose'],
+            )
+            self.asset_form.cleaned_data = new_src
+            self.additional_info.cleaned_data = new_dst
+            self.asset = _update_office_info(
+                modifier, self.asset, self.additional_info.cleaned_data
+            )
+
+    def _set_additional_info_form(self):
+        if self.mode == 'dc':
+            # XXX: how do it better, differ only by one arg?
+            if self.request.method == 'POST':
+                self.additional_info = DeviceForm(
+                    self.request.POST,
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+            else:
+                self.additional_info = DeviceForm(
+                    instance=self.asset.device_info,
+                    mode=self.mode,
+                )
+        elif self.mode == 'back_office':
+            # XXX: how do it better, differ only by one arg?
+            if self.request.method == 'POST':
+                self.additional_info = OfficeForm(
+                    self.request.POST,
+                    instance=self.asset.office_info,
+                )
+            else:
+                self.additional_info = OfficeForm(
+                    instance=self.asset.office_info,
+                )
+                fields = ['imei', 'purpose']
+                for field in fields:
+                    if field in self.asset_form.fields:
+                        self.asset_form.fields[field].initial = (
+                            getattr(self.asset.office_info, field, '')
+                        )
 
     def get(self, *args, **kwargs):
         self.initialize_vars()
@@ -1021,11 +1073,7 @@ class EditDevice(AssetsBase):
         self.asset_form = device_form_class(
             instance=self.asset, mode=self.mode
         )
-        self.write_office_info2asset_form()
-        self.device_info_form = DeviceForm(
-            instance=self.asset.device_info,
-            mode=self.mode,
-        )
+        self._set_additional_info_form()
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         return super(EditDevice, self).get(*args, **kwargs)
 
@@ -1042,11 +1090,7 @@ class EditDevice(AssetsBase):
             instance=self.asset,
             mode=self.mode,
         )
-        self.device_info_form = DeviceForm(
-            post_data,
-            mode=self.mode,
-            instance=self.asset.device_info,
-        )
+        self._set_additional_info_form()
         self.part_form = MoveAssetPartForm(post_data)
         if 'move_parts' in post_data.keys():
             destination_asset = post_data.get('new_asset')
@@ -1069,45 +1113,22 @@ class EditDevice(AssetsBase):
                     info_part.save()
                 messages.success(self.request, _("Selected parts was moved."))
         elif 'asset' in post_data.keys():
-            if self.asset.type in AssetType.BO.choices:
-                self.office_info_form = OfficeForm(
-                    post_data, self.request.FILES,
-                )
             if all((
                 self.asset_form.is_valid(),
-                self.device_info_form.is_valid(),
-                self.asset.type not in AssetType.BO.choices or
-                self.office_info_form.is_valid(),
+                self.additional_info.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
-
-                if self.asset.type in AssetType.BO.choices:
-                    new_src, new_dst = _move_data(
-                        self.asset_form.cleaned_data,
-                        self.office_info_form.cleaned_data,
-                        ['imei', 'purpose'],
-                    )
-                    self.asset_form.cleaned_data = new_src
-                    self.office_info_form.cleaned_data = new_dst
-                    self.asset = _update_office_info(
-                        modifier_profile.user, self.asset,
-                        self.office_info_form.cleaned_data
-                    )
-                self.asset = _update_device_info(
-                    modifier_profile.user, self.asset,
-                    self.device_info_form.cleaned_data
-                )
-                if self.device_info_form.cleaned_data.get('create_stock'):
-                    self.asset.create_stock_device()
+                self._update_additional_info(modifier_profile.user)
                 self.asset.save(user=self.request.user)
                 self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
+
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(
@@ -1221,7 +1242,7 @@ class EditPart(AssetsBase):
     def get_parent_link(self):
         asset = self.asset.part_info.source_device
         if asset:
-            return reverse('dc_device_edit', kwargs={
+            return reverse('device_edit', kwargs={
                 'asset_id': asset.id,
                 'mode': self.mode,
             })

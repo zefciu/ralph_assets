@@ -62,7 +62,7 @@ urlpatterns = patterns(
         name='device_edit'),
     url(r'(?P<mode>(back_office|dc))/edit/part/(?P<asset_id>[0-9]+)/$',
         login_required(EditPart.as_view()),
-        name='dc'),
+        name='part_edit'),
     url(r'/ajax/dependencies/category/$',
         CategoryDependencyView.as_view(),
         name='category_dependency_view'),
