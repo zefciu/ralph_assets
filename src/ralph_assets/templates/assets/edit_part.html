@@ -6,7 +6,6 @@
 {% block form_title %}{% trans "Edit part" %}{% endblock %}
 
 {% if office_info_form %}
-  {# TODO: make it like 'additional_inputs' in edit_device.html #}
   <div class="well">
     {% for field in office_info_form %}
       {% field_wrapper field %}

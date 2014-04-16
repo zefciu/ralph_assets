@@ -18,7 +18,6 @@
     <div class="row-fluid">
 
       <div class="span6">
-        {# <div>left col</div> #}
       {% with left_col_fieldsets=asset_form.fieldsets.items|slice:":2" %}
         {# 'basic info', 'financial info' #}
         {% for fieldset_label, fields in left_col_fieldsets %}
@@ -39,7 +38,6 @@
       </div>
 
       <div class="span6 user_info">
-        {# <div>right col</div> #}
       {% with right_col_fieldsets=asset_form.fieldsets.items|slice:"2:" %}
         {# 'user info' #}
         {% for fieldset_label, fields in right_col_fieldsets %}
@@ -59,6 +57,7 @@
 
         <div class="well">
           <h6>Additional Info</h6>
+          {# mode(DC|BO) specific fields #}
           {% block additional_inputs %}{% endblock %}
         </div>
 

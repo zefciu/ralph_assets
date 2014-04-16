@@ -6,7 +6,6 @@
 {% block form_title %}{% trans "Edit device" %}{% endblock %}
 
 {% block additional_inputs %}
-  {# TODO: move block to add_assets.html when adddevice view is cleaned #}
   {% for field in additional_info %}
     {% field_wrapper field %}
   {% endfor %}
