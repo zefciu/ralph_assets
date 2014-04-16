@@ -601,8 +601,8 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               foreign_field_name='is_discovered', show_conditions=show_dc),
             _('Actions', bob_tag=True,
               show_conditions=(
-                lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,)),
-
+                  lambda show: show, not settings.ASSET_HIDE_ACTION_SEARCH,
+              )),
             _('Department', field='department', foreign_field_name='venture',
               export=True),
             _('Barcode salvaged', field='barcode_salvaged',
