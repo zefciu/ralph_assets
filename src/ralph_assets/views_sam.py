@@ -17,7 +17,6 @@ from ralph_assets.models_sam import (
     Licence,
     SoftwareCategory,
 )
-from ralph_assets.views import GenericSearch, LicenseSelectedMixin
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
     LicenceSearchForm,
@@ -25,6 +24,7 @@ from ralph_assets.forms_sam import (
 from ralph_assets.views import (
     AssetsBase,
     GenericSearch,
+    LicenseSelectedMixin,
     HISTORY_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
