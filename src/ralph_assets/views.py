@@ -899,12 +899,15 @@ class AddDevice(AssetsBase):
                     asset_data[f_name] = f_value
             serial_numbers = self.asset_form.cleaned_data['sn']
             barcodes = self.asset_form.cleaned_data['barcode']
+            filled_multivalue = serial_numbers or barcodes
             imeis = (
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
             ids = []
-            for sn, index in zip(serial_numbers, range(len(serial_numbers))):
+            for sn, index in zip(
+                filled_multivalue, range(len(filled_multivalue))
+            ):
                 asset_data['sn'] = sn
                 asset_data['barcode'] = barcodes[index] if barcodes else None
                 if imeis:
