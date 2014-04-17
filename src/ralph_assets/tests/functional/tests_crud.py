@@ -11,8 +11,6 @@ from ralph_assets.models_assets import (
     AssetType,
     AssetSource,
     AssetStatus,
-    LicenseType,
-    OfficeInfo,
 )
 from ralph_assets.tests.util import (
     create_asset,
@@ -21,6 +19,7 @@ from ralph_assets.tests.util import (
     create_warehouse,
 )
 from ralph.ui.tests.global_utils import login_as_su
+import unittest
 
 
 class TestAdding(TestCase):
@@ -38,33 +37,55 @@ class TestAdding(TestCase):
             category=self.category
         )
 
-    def send_data_via_add_form(self):
-        url = '/assets/dc/add/device/'
-        data_in_add_form = dict(
+    def get_common_add_form_data(self):
+        return dict(
             type=AssetType.data_center.id,  # 1
             model=self.model.id,  # u'Model1'
             source=AssetSource.shipment.id,  # 1
             invoice_no='Invoice No1',
             order_no='Order no1',
             invoice_date='2001-01-01',
-            support_period=48,
-            support_type='standard',
-            support_void_reporting=True,
             provider='Provider2',
             status=AssetStatus.new.id,  # 1
             price=11,
             request_date='2001-01-02',
             delivery_date='2001-01-03',
-            production_use_date='2001-01-04',
             sn='2222-2222-2222-2222',
             barcode='bc-1111-1111-1111',
             warehouse=self.warehouse.id,  # 1
             category=self.category.slug,
-            ralph_device_id='',
-            slots=1.0,
             deprecation_rate=0,
-            production_year=2011,
         )
+
+    def get_common_edit_form_data(self):
+        return dict(
+            type=AssetType.data_center.id,  # 1
+            model=self.model2.id,  # u'Model1'
+            source=AssetSource.shipment.id,  # 1
+            invoice_no='Invoice No2',
+            order_no='Order No2',
+            provider='Provider2',
+            status=AssetStatus.in_progress.id,  # 1
+            invoice_date='2001-02-02',
+            request_date='2001-01-02',
+            delivery_date='2001-01-03',
+            provider_order_date='2001-01-05',
+            sn='3333-3333-3333-333',
+            barcode='bc-3333-3333-333',
+            warehouse=self.warehouse.id,  # 1
+            price=2.00,
+            remarks='any remarks',
+            category=self.category.slug,
+            asset=True,  # Button name
+        )
+
+    def send_data_via_add_form(self):
+        url = '/assets/dc/add/device/'
+        data_in_add_form = self.get_common_add_form_data()
+        dc_spec_data = dict(
+            ralph_device_id='',
+        )
+        data_in_add_form.update(dc_spec_data)
         send_post = self.client.post(url, data_in_add_form)
         # If everything is ok, redirect us to /assets/dc/search
         self.assertRedirects(
@@ -100,44 +121,16 @@ class TestAdding(TestCase):
         view = self.client.get(url)
         self.assertEqual(view.status_code, 200)
         old_fields = view.context['asset_form'].initial
-        data_in_edit_form = dict(
-            type=AssetType.data_center.id,  # 1
-            model=self.model2.id,  # u'Model1'
-            source=AssetSource.shipment.id,  # 1
-            invoice_no='Invoice No2',
-            order_no='Order No2',
-            support_period=12,
-            support_type='d2d',
-            support_void_reporting=True,
-            provider='Provider2',
-            status=AssetStatus.in_progress.id,  # 1
-            invoice_date='2001-02-02',
-            request_date='2001-01-02',
-            delivery_date='2001-01-03',
-            production_use_date='2001-01-04',
-            provider_order_date='2001-01-05',
-            sn='3333-3333-3333-333',
-            barcode='bc-3333-3333-333',
-            warehouse=self.warehouse.id,  # 1
-            license_key='0000-0000-0000-0000',
-            version='1.0',
-            price=2.00,
-            license_type=LicenseType.oem,
-            date_of_last_inventory='2003-02-02',
-            last_logged_user='James Bond',
-            remarks='any remarks',
-            category=self.category.slug,
+        data_in_edit_form = self.get_common_edit_form_data()
+        dc_spec_data = dict(
             slots=5.0,
             ralph_device_id='',
-            asset=True,  # Button name
             deprecation_rate=0,
-            production_year=2011,
         )
+        data_in_edit_form.update(dc_spec_data)
         self.client.post(url, data_in_edit_form)
         new_view = self.client.get(url)
         new_fields = new_view.context['asset_form'].initial
-        if new_view.context['office_info_form']:
-            new_office_info = new_view.context['office_info_form'].initial
         correct_data = [
             dict(
                 model=self.model2.id,
@@ -146,10 +139,7 @@ class TestAdding(TestCase):
                 invoice_date='2001-02-02',
                 request_date='2001-01-02',
                 delivery_date='2001-01-03',
-                production_use_date='2001-01-04',
                 provider_order_date='2001-01-05',
-                support_period=12,
-                support_type='d2d',
                 provider='Provider2',
                 status=AssetStatus.in_progress.id,
                 remarks='any remarks',
@@ -164,34 +154,11 @@ class TestAdding(TestCase):
                     unicode(new_fields[key]), unicode(data[key])
                 )
 
-        office = OfficeInfo.objects.filter(
-            license_key='0000-0000-0000-0000'
-        ).count()
-        if new_view.context['office_info_form']:
-            self.assertEqual(office, 1)
-            self.assertEqual(
-                new_office_info['license_key'], '0000-0000-0000-0000'
-            )
-
-        correct_data_office = [
-            dict(
-                version='1.0',
-                license_type=LicenseType.oem.id,
-                date_of_last_inventory='2003-02-02',
-                last_logged_user='James Bond',
-            )
-        ]
-        if new_view.context['office_info_form']:
-            for office in correct_data_office:
-                for key in office.keys():
-                    self.assertEqual(
-                        unicode(new_office_info[key]), unicode(office[key])
-                    )
-
     def test_send_data_via_add_and_edit_form(self):
         self.send_data_via_add_form()
         self.send_data_via_edit_form()
 
+    @unittest.skip("to be implement")
     def test_delete_asset(self):
         """todo"""
         pass

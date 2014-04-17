@@ -17,6 +17,7 @@ from ralph_assets.models_sam import (
     Licence,
     SoftwareCategory,
 )
+from ralph_assets.views import GenericSearch, LicenseSelectedMixin
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
     LicenceSearchForm,
@@ -53,7 +54,7 @@ class LicenceLinkColumn(DataTableColumn):
         )
 
 
-class SoftwareCategoryList(GenericSearch):
+class SoftwareCategoryList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of software categories, which link to searches for
     licences."""
 
@@ -69,7 +70,7 @@ class SoftwareCategoryList(GenericSearch):
     ]
 
 
-class LicenceList(GenericSearch):
+class LicenceList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of licences."""
 
     Model = Licence
