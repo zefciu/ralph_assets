@@ -1,7 +1,7 @@
 DEFAULT_DEPRECATION_RATE = 25
 
 ASSETS_REPORTS = {
-    'ENABLE': True,
+    'ENABLE': False,
     'INVOICE_REPORT': {'SLUG': 'invoice-report'},
     'RELEASE-ASSET': {'SLUG': 'release-asset'},
     'LOAN-ASSET': {'SLUG': 'loan-asset'},
