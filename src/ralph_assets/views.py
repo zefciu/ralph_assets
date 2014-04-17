@@ -1638,7 +1638,7 @@ class LicenceFormView(AssetsBase):
             licence = self.form.save(commit=False)
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
-            licence.save()
+            licence.save(user=self.request.user)
             self.form.save_m2m()
             messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
