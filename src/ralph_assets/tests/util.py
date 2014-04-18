@@ -47,8 +47,7 @@ SCREEN_ERROR_MESSAGES = dict(
         "Field can't be empty. Please put the item OR items separated "
         "by new line or comma."
     ),
-    count_sn_and_bc='Barcode list could be empty or must have the same number '
-                    'of items as a SN list.',
+    count_sn_and_bc="Fields: sn, barcode, imei - require the same count",
     barcode_already_exist='Following items already exists in DB: ',
     empty_items_disallowed="Empty items disallowed, remove it.",
 )

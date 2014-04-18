@@ -187,12 +187,20 @@ def validate_snbcs(snbcs):
 
 class MultilineField(CharField):
     """
-    :param string db_field_path: *check _check_field_uniqueness*'s arg
-    *field_path*
+    This widget is a textarea which treats its content as many values seperated
+    by: commas or "new lines"
+    Validation:
+        - seperated values cannot duplicate each other,
+        - empty values are disallowed,
+        - db uniqueness also is checked.
     """
     separators = ",|\n"
 
     def __init__(self, db_field_path, *args, **kwargs):
+        """
+        :param string db_field_path: check arg *field_path* of function
+        *_check_field_uniqueness*
+        """
         self.db_field_path = db_field_path
         super(MultilineField, self).__init__(*args, **kwargs)
 
@@ -1098,7 +1106,7 @@ class AddDeviceForm(BaseAddAssetForm):
         Add new device form
     '''
     sn = MultilineField(
-        db_field_path='sn', label=_("SN/SNs"), required=True,
+        db_field_path='sn', label=_("SN/SNs"), required=False,
         widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
     )
     barcode = MultilineField(
@@ -1114,22 +1122,43 @@ class AddDeviceForm(BaseAddAssetForm):
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
+        self.multival_fields = ['sn', 'barcode', 'imei']
+
+    def different_multival_counters(self, cleaned_data):
+        """
+        Tells if form's multivalues fields (sn, barcode, imei) have different
+        count of items.
+        """
+        items_count_per_multi = set()
+        for field in self.multival_fields:
+            if cleaned_data.get(field, []):
+                items_count_per_multi.add(len(cleaned_data.get(field, [])))
+        return len(items_count_per_multi) > 1
 
     def clean(self):
+        """
+        These form requriemnts:
+            1. *barcode* OR *sn* is a MUST,
+            2. if a multivalue field has value, it MUST be the same length as
+            rest of multivalues.
+        """
         cleaned_data = super(AddDeviceForm, self).clean()
-        serial_numbers = cleaned_data.get("sn", [])
-        barcodes = cleaned_data.get("barcode", [])
-        imeis = cleaned_data.get("imei", None)
-        if barcodes and len(serial_numbers) != len(barcodes):
-            self._errors["barcode"] = self.error_class([
-                _("Barcode list could be empty or must have the same number "
-                  "of items as a SN list.")
-            ])
-        if imeis and len(serial_numbers) != len(imeis):
-            self._errors["imei"] = self.error_class([
-                _("IMEI list could be empty or must have the same number "
-                  "of items as a SN list.")
-            ])
+        if 'sn' in self.data or 'barcode' in self.data:
+            if self.different_multival_counters(cleaned_data):
+                for field in self.multival_fields:
+                    if field in cleaned_data:
+                        msg = "Fields: {} - require the same count".format(
+                            ', '.join(self.multival_fields)
+                        )
+                        if field in self.errors:
+                            self.errors[field].append(msg)
+                        else:
+                            self.errors[field] = [msg]
+        else:
+            msg = _('SN or BARCODE field is required')
+            for field in ['sn', 'barcode']:
+                self.errors[field].append(msg) if field in self.errors else \
+                    [msg]
         return cleaned_data
 
 

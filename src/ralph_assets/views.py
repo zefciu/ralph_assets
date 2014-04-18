@@ -897,15 +897,15 @@ class AddDevice(AssetsBase):
                     "profit_center"
                 }:
                     asset_data[f_name] = f_value
-            serial_numbers = self.asset_form.cleaned_data['sn']
-            barcodes = self.asset_form.cleaned_data['barcode']
+            sns = self.asset_form.cleaned_data.get('sn', [])
+            barcodes = self.asset_form.cleaned_data.get('barcode', [])
             imeis = (
                 self.asset_form.cleaned_data.pop('imei')
                 if 'imei' in self.asset_form.cleaned_data else None
             )
             ids = []
-            for sn, index in zip(serial_numbers, range(len(serial_numbers))):
-                asset_data['sn'] = sn
+            for index in range(len(sns or barcodes)):
+                asset_data['sn'] = sns[index] if sns else None
                 asset_data['barcode'] = barcodes[index] if barcodes else None
                 if imeis:
                     self.additional_info.cleaned_data['imei'] = imeis[index]
