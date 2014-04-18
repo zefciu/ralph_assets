@@ -325,6 +325,16 @@ class BulkEditAssetForm(ModelForm):
             ])
         return self.cleaned_data
 
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            barcode_unique, barcodes = _check_barcodes_uniqueness([barcode])
+            if 'barcode' in self.changed_data and not barcode_unique:
+                self._errors["barcode"] = self.error_class([
+                    _("Asset with this barcode already exists.")
+                ])
+        return barcode
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
         banned_fillables = set(['sn', 'barcode', 'imei'])
