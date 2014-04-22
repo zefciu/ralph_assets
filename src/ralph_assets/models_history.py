@@ -93,7 +93,7 @@ class LicenceHistoryChange(db.Model):
         verbose_name_plural = _("history changes")
 
     def __unicode__(self):
-        return "{:r}.{:r} = {:r} -> {:r} by {:r} on {:r} ({:r})".format(
+        return "{!r}.{!r} = {!r} -> {!r} by {!r} on {!r} ({!r})".format(
             self.licence,
             self.field_name,
             self.old_value,
