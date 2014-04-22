@@ -154,6 +154,29 @@ LOOKUPS = {
 }
 
 
+class MultivalFieldForm(ModelForm):
+    """A form that has several multiline fields that need to have the
+    same number of entries."""
+
+    def different_multival_counters(self, cleaned_data):
+        """Adds a validation error if if form's multivalues fields have
+        different count of items."""
+        items_count_per_multi = set()
+        for field in self.multival_fields:
+            if cleaned_data.get(field, []):
+                items_count_per_multi.add(len(cleaned_data.get(field, [])))
+        if len(items_count_per_multi) > 1:
+            for field in self.multival_fields:
+                if field in cleaned_data:
+                    msg = "Fields: {} - require the same count".format(
+                        ', '.join(self.multival_fields)
+                    )
+                    if field in self.errors:
+                        self.errors[field].append(msg)
+                    else:
+                        self.errors[field] = [msg]
+            
+
 def move_after(_list, static, dynamic):
     """
     Move *static* elem. after *dynamic* elem. in list *_list*
@@ -1101,7 +1124,7 @@ class AddPartForm(BaseAddAssetForm):
         self.fieldsets['Basic Info'].remove('barcode')
 
 
-class AddDeviceForm(BaseAddAssetForm):
+class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new device form
     '''
@@ -1124,16 +1147,6 @@ class AddDeviceForm(BaseAddAssetForm):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
         self.multival_fields = ['sn', 'barcode', 'imei']
 
-    def different_multival_counters(self, cleaned_data):
-        """
-        Tells if form's multivalues fields (sn, barcode, imei) have different
-        count of items.
-        """
-        items_count_per_multi = set()
-        for field in self.multival_fields:
-            if cleaned_data.get(field, []):
-                items_count_per_multi.add(len(cleaned_data.get(field, [])))
-        return len(items_count_per_multi) > 1
 
     def clean(self):
         """
@@ -1143,22 +1156,13 @@ class AddDeviceForm(BaseAddAssetForm):
             rest of multivalues.
         """
         cleaned_data = super(AddDeviceForm, self).clean()
-        if 'sn' in self.data or 'barcode' in self.data:
-            if self.different_multival_counters(cleaned_data):
-                for field in self.multival_fields:
-                    if field in cleaned_data:
-                        msg = "Fields: {} - require the same count".format(
-                            ', '.join(self.multival_fields)
-                        )
-                        if field in self.errors:
-                            self.errors[field].append(msg)
-                        else:
-                            self.errors[field] = [msg]
-        else:
+        if not ('sn' in self.data or 'barcode' in self.data):
             msg = _('SN or BARCODE field is required')
             for field in ['sn', 'barcode']:
                 self.errors[field].append(msg) if field in self.errors else \
                     [msg]
+        else:
+            self.different_multival_counters(cleaned_data)
         return cleaned_data
 
 
