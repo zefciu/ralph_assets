@@ -22,7 +22,7 @@
       {% for field in formset.forms.0.visible_fields %}
         <th>{{field.label}}</th>
       {% endfor %}
-        
+
       </tr></thead>
       <tbody>{% for form in formset %}
         <tr>
@@ -34,13 +34,11 @@
           </td>
 
           {% for field in form.visible_fields %}
-            {% if "-barcode" in field.html_name  %}
+            {% if form.device_info.value  %}
               <td class="control-group{% if form.device_info.value and field.errors %} error{% endif %}">
-                {% if form.device_info.value %}
                   {{ field }}
                   {% if field.errors %}
                     <span class="help-inline">{% for error in field.errors %}{{ error }} {% endfor %}</span>
-                  {% endif %}
                 {% endif %}
               </td>
             {% else %}

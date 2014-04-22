@@ -273,15 +273,6 @@ class BulkEditAssetForm(ModelForm):
     '''
     class Meta:
         model = Asset
-        fields = (
-            'type', 'model', 'warehouse', 'property_of', 'device_info',
-            'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
-            'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'source',
-            'status', 'task_url', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date', 'production_year',
-            'user', 'owner', 'service_name',
-        )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
@@ -334,6 +325,16 @@ class BulkEditAssetForm(ModelForm):
             ])
         return self.cleaned_data
 
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            barcode_unique, barcodes = _check_barcodes_uniqueness([barcode])
+            if 'barcode' in self.changed_data and not barcode_unique:
+                self._errors["barcode"] = self.error_class([
+                    _("Asset with this barcode already exists.")
+                ])
+        return barcode
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
         banned_fillables = set(['sn', 'barcode', 'imei'])
@@ -363,7 +364,13 @@ class BulkEditAssetForm(ModelForm):
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
-
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'task_url', 'deprecation_rate',
+            'order_no',
+        )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
@@ -372,7 +379,12 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
 
 class DataCenterBulkEditAssetForm(BulkEditAssetForm):
-    pass
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'service_name', 'invoice_no', 'invoice_date',
+            'price', 'task_url', 'deprecation_rate', 'order_no',
+        )
 
 
 class DeviceForm(ModelForm):
