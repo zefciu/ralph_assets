@@ -264,7 +264,7 @@ class BarcodeField(CharField):
         return value if value else None
 
 
-class BulkEditAssetForm(ModelForm):
+class BulkEditAssetForm(DependencyForm, ModelForm):
     '''
         Form model for bulkedit assets, contains column definition and
         validadtion. Most important are sn and barcode fields. When you type
@@ -281,6 +281,18 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
+
+    @property
+    def dependencies(self):
+        return [
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
+        ]
 
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
