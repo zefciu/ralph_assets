@@ -190,9 +190,9 @@ class MultilineField(CharField):
     This widget is a textarea which treats its content as many values seperated
     by: commas or "new lines"
     Validation:
-        - seperated values cannot duplicate each other,
+        - separated values cannot duplicate each other,
         - empty values are disallowed,
-        - db uniqueness also is checked.
+        - db uniqueness is also checked.
     """
     separators = ",|\n"
 
@@ -1137,9 +1137,9 @@ class AddDeviceForm(BaseAddAssetForm):
 
     def clean(self):
         """
-        These form requriemnts:
-            1. *barcode* OR *sn* is a MUST,
-            2. if a multivalue field has value, it MUST be the same length as
+        These form requirements:
+            1. *barcode* OR *sn* is REQUIRED,
+            2. multivalue field value if provided MUST be the same length as
             rest of multivalues.
         """
         cleaned_data = super(AddDeviceForm, self).clean()
@@ -1150,10 +1150,7 @@ class AddDeviceForm(BaseAddAssetForm):
                         msg = "Fields: {} - require the same count".format(
                             ', '.join(self.multival_fields)
                         )
-                        if field in self.errors:
-                            self.errors[field].append(msg)
-                        else:
-                            self.errors[field] = [msg]
+                        self.errors.setdefault(field, []).append(msg)
         else:
             msg = _('SN or BARCODE field is required')
             for field in ['sn', 'barcode']:
