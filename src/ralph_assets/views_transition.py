@@ -326,7 +326,7 @@ class TransitionView(_AssetSearch):
                 self.get_affected_user(),
                 self.template_file,
                 self.get_warehouse(),
-                loan_end_date=self.request.POST.get('loan_end_date')
+                loan_end_date=self.request.POST.get('loan_end_date'),
             )
             dispatcher.run()
             self.report_file_path = dispatcher.report_file_patch
