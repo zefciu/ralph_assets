@@ -96,7 +96,7 @@ def _move_data(src, dst, fields):
 
 
 class LicenseSelectedMixin(object):
-    mainmenu_selected = 'software_categories'
+    mainmenu_selected = 'licences'
 
 
 class AssetsBase(Base):
@@ -139,8 +139,8 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name='software_categories',
-                href=reverse('software_categories'),
+                name='licence_list',
+                href=reverse('licence_list'),
             ),
             MenuItem(
                 label=_('User list'),
