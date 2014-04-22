@@ -49,6 +49,7 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
     )
     actions = models.ManyToManyField(Action)
 
+    @property
     def actions_names(self, *args, **kwargs):
         return [action.name for action in self.actions.all()]
 
