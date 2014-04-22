@@ -1458,7 +1458,7 @@ class AddPart(AssetsBase):
 
 
 class HistoryAsset(AssetsBase):
-    template_name = 'assets/history_asset.html'
+    template_name = 'assets/history.html'
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1484,12 +1484,22 @@ class HistoryAsset(AssetsBase):
         else:
             page_size = HISTORY_PAGE_SIZE
         history_page = Paginator(history, page_size).page(page)
+        if asset.get_data_type() == 'device':
+            url_name = 'device_edit'
+        else:
+            url_name = 'part_edit'
+        object_url = reverse(
+            url_name, kwargs={'asset_id': asset.id, 'mode': self.mode},
+        )
         ret.update({
             'history': history,
             'history_page': history_page,
             'status': status,
             'query_variable_name': query_variable_name,
-            'asset': asset,
+            'object': asset,
+            'object_url': object_url,
+            'title': _('History asset'),
+            'show_status_button': True,
         })
         return ret
 
@@ -1659,7 +1669,7 @@ class LicenceFormView(LicenseSelectedMixin, AssetsBase):
             licence = self.form.save(commit=False)
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
-            licence.save()
+            licence.save(user=self.request.user)
             self.form.save_m2m()
             messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)

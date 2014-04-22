@@ -30,9 +30,13 @@ from ralph_assets.views import (
     UserDetails,
     UserList,
 )
-from ralph_assets.views_transition import TransitionView
 from ralph_assets.views_import import XlsUploadView
-from ralph_assets.views_sam import SoftwareCategoryList, LicenceList
+from ralph_assets.views_transition import TransitionView
+from ralph_assets.views_sam import (
+    HistoryLicence,
+    LicenceList,
+    SoftwareCategoryList,
+)
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 
@@ -143,5 +147,10 @@ urlpatterns = patterns(
         r'user/details/(?P<username>[^\/]+)/$',
         login_required(UserDetails.as_view()),
         name='user_view',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/history/licence/(?P<licence_id>[0-9]+)/$',
+        login_required(HistoryLicence.as_view()),
+        name='licence_history',
     ),
 )
