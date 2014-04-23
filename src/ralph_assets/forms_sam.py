@@ -151,3 +151,4 @@ class LicenceSearchForm(SearchForm):
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
+    id = MultiSearchField(widget=forms.HiddenInput())
