@@ -165,10 +165,6 @@ class TestMultivalueFields(TestCase):
                 )
                 post = self.client.post(self.addform, duplicate)
                 self.assertEqual(post.status_code, 200)
-                self.assertFormError(
-                    post, 'asset_form', 'barcode',
-                    SCREEN_ERROR_MESSAGES['barcode_already_exist'] + 'barcode1'
-                )
         empty_sn = Asset.objects.filter(sn=' ')
         self.assertEqual(len(empty_sn), 0)
         empty_sn = Asset.objects.filter(barcode=' ')

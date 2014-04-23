@@ -12,7 +12,6 @@ from django.views.generic import RedirectView
 from ralph_assets.views import (
     AddAttachment,
     AddDevice,
-    AddLicence,
     AddPart,
     AssetSearch,
     BulkEdit,
@@ -21,7 +20,6 @@ from ralph_assets.views import (
     DeleteAttachment,
     DeleteLicence,
     EditDevice,
-    EditLicence,
     EditPart,
     EditUser,
     HistoryAsset,
@@ -31,12 +29,14 @@ from ralph_assets.views import (
     UserList,
 )
 from ralph_assets.views_import import XlsUploadView
-from ralph_assets.views_transition import TransitionView
 from ralph_assets.views_sam import (
+    AddLicence,
+    EditLicence,
     HistoryLicence,
     LicenceList,
     SoftwareCategoryList,
 )
+from ralph_assets.views_transition import TransitionView
 
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 

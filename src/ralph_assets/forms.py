@@ -154,6 +154,44 @@ LOOKUPS = {
 }
 
 
+class MultivalFieldForm(ModelForm):
+    """A form that has several multiline fields that need to have the
+    same number of entries."""
+
+    def different_multival_counters(self, cleaned_data):
+        """Adds a validation error if if form's multivalues fields have
+        different count of items."""
+        items_count_per_multi = set()
+        for field in self.multival_fields:
+            if cleaned_data.get(field, []):
+                items_count_per_multi.add(len(cleaned_data.get(field, [])))
+        if len(items_count_per_multi) > 1:
+            for field in self.multival_fields:
+                if field in cleaned_data:
+                    msg = "Fields: {} - require the same count".format(
+                        ', '.join(self.multival_fields)
+                    )
+                    self.errors.setdefault(field, [])
+                    self.errors[field].append(msg)
+
+    def unique_multival_fields(self, data):
+        for field_name in self.multival_fields:
+            try:
+                self[field_name].field.check_field_uniqueness(
+                    self._meta.model,
+                    data.get(field_name, [])
+                )
+            except ValidationError as err:
+                self._errors.setdefault(field_name, [])
+                self._errors[field_name] += err.messages
+
+    def clean(self):
+        data = super(MultivalFieldForm, self).clean()
+        self.different_multival_counters(data)
+        self.unique_multival_fields(data)
+        return data
+
+
 def move_after(_list, static, dynamic):
     """
     Move *static* elem. after *dynamic* elem. in list *_list*
@@ -219,14 +257,6 @@ class MultilineField(CharField):
                 raise ValidationError(_("Empty items disallowed, remove it."))
             elif value:
                 items.add(value)
-        is_unique, not_unique_items = _check_field_uniqueness(
-            self.db_field_path, items
-        )
-        if not is_unique:
-            not_unique_string = ", ".join(item[0] for item in not_unique_items)
-            description = _("Following items already exists in DB")
-            msg = "{}: {}".format(description, not_unique_string)
-            raise ValidationError(msg)
 
     def to_python(self, value):
         items = []
@@ -238,6 +268,29 @@ class MultilineField(CharField):
     def clean(self, value):
         value = super(MultilineField, self).clean(value)
         return value
+
+    def check_field_uniqueness(self, Model, values):
+        '''
+            Check field (pointed by *self.db_field_path*) uniqueness.
+            If duplicated value is found then raise ValidationError
+
+            :param string Model: model field to be unique (as a string)
+            :param list values: list of field values
+        '''
+        if not self.db_field_path or not values:
+            return
+        conditions = {
+            '{}__in'.format(self.db_field_path): values
+        }
+        assets = Model.objects.filter(**conditions)
+        if assets:
+            raise ValidationError(mark_safe(
+                'Following items already exist: ' +
+                ', '.join([
+                    '<a href="{}">{}</a>'.format(asset.url, asset.id)
+                    for asset in assets
+                ])
+            ))
 
 
 imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
@@ -328,20 +381,20 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
-        serial_number_unique = _check_serial_numbers_uniqueness(
-            [self.cleaned_data['sn']]
-        )[0]
-        if 'sn' in self.changed_data and not serial_number_unique:
+        serial_number_exists = \
+            Asset.objects.filter(sn=self.cleaned_data['sn']).count()
+        if 'sn' in self.changed_data and serial_number_exists:
             self._errors["sn"] = self.error_class([
                 _("Asset with this Sn already exists.")
+
             ])
         return self.cleaned_data
 
     def clean_barcode(self):
         barcode = self.cleaned_data.get('barcode')
         if barcode:
-            barcode_unique, barcodes = _check_barcodes_uniqueness([barcode])
-            if 'barcode' in self.changed_data and not barcode_unique:
+            barcode_exists = Asset.objects.filter(barcode=barcode).count()
+            if 'barcode' in self.changed_data and barcode_exists:
                 self._errors["barcode"] = self.error_class([
                     _("Asset with this barcode already exists.")
                 ])
@@ -503,89 +556,6 @@ class BasePartForm(ModelForm):
             ].initial = self.instance.source_device.id
         if self.instance.device:
             self.fields['device'].initial = self.instance.device.id
-
-
-def _check_field_uniqueness(field_path, values):
-    '''
-        Check field (pointed by *field_path*) uniqueness.
-        If duplicated value is found then return false status with information
-        about not unique ids
-
-        :param string field_path: model field to be unique (as a string)
-        :param list values: list of field values
-        :return tuple: status and not unique ids or empty list
-        :rtype tuple:
-    '''
-    conditions = {
-        '{}__in'.format(field_path): values
-    }
-    assets = Asset.objects.filter(**conditions)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        last_field = asset
-        for field_name in field_path.split('__'):
-            last_field = getattr(last_field, field_name)
-        not_unique.append((last_field, asset.id, asset.type))
-    return False, not_unique
-
-
-def _check_serial_numbers_uniqueness(serial_numbers):
-    '''
-        Check serial numbers uniqueness. If find any not unique
-        serial number then return false status with information
-        about not unique serial numbers
-
-        :param list serial_numbers: list of serial numbers
-        :return tuple: status and not unique serial numbers or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('sn', serial_numbers)
-    return status, duplicated
-
-
-def _check_barcodes_uniqueness(barcodes):
-    '''
-        Check barcodes uniqueness. If find any not unique
-        barcode then return false status with information
-        about not unique barcode
-
-        :param list barcodes: list of barcodes
-        :return tuple: status and not unique barcodes or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('barcode', barcodes)
-    return status, duplicated
-
-
-def _check_imeis_uniqueness(imeis):
-    '''
-        Check imei uniqueness. If find any not unique
-        imei then return false status with information
-        about not unique imei
-
-        :param list imeis: list of imeis
-        :return tuple: status and not unique imeis or empty list
-        :rtype tuple:
-    '''
-    status, duplicated = _check_field_uniqueness('office_info__imei', imeis)
-    return status, duplicated
-
-
-def _sn_additional_validation(serial_numbers):
-    '''
-        Raise ValidationError if any of serial numbers is not unique
-
-        :param list serial_numbers: list of serial numbers
-    '''
-    is_unique, not_unique_sn = _check_serial_numbers_uniqueness(serial_numbers)
-    if not is_unique:
-        # ToDo: links to assets with duplicate sn
-        msg = "Following serial number already exists in DB: %s" % (
-            ", ".join(item[0] for item in not_unique_sn)
-        )
-        raise ValidationError(msg)
 
 
 class DependencyAssetForm(DependencyForm):
@@ -1125,7 +1095,7 @@ class AddPartForm(BaseAddAssetForm):
         self.fieldsets['Basic Info'].remove('barcode')
 
 
-class AddDeviceForm(BaseAddAssetForm):
+class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new device form
     '''
@@ -1148,17 +1118,6 @@ class AddDeviceForm(BaseAddAssetForm):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
         self.multival_fields = ['sn', 'barcode', 'imei']
 
-    def different_multival_counters(self, cleaned_data):
-        """
-        Tells if form's multivalues fields (sn, barcode, imei) have different
-        count of items.
-        """
-        items_count_per_multi = set()
-        for field in self.multival_fields:
-            if cleaned_data.get(field, []):
-                items_count_per_multi.add(len(cleaned_data.get(field, [])))
-        return len(items_count_per_multi) > 1
-
     def clean(self):
         """
         These form requirements:
@@ -1180,6 +1139,7 @@ class AddDeviceForm(BaseAddAssetForm):
             for field in ['sn', 'barcode']:
                 self.errors[field].append(msg) if field in self.errors else \
                     [msg]
+            self.different_multival_counters(cleaned_data)
         return cleaned_data
 
 
