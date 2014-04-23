@@ -134,14 +134,12 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         label=_("SN/SNs"),
         required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
-        # validators=[validate_snbcs],
     )
     niw = MultilineField(
         db_field_path='niw',
         label=_('Inventory number'),
         required=False,
         widget=forms.Textarea(attrs={'rows': 25}),
-        # validators=[validate_niw],
     )
 
     def clean(self):
