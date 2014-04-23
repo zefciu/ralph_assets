@@ -32,7 +32,7 @@ from ralph_assets.views import _AssetSearch, _get_return_link, GenericSearch
 logger = logging.getLogger(__name__)
 
 
-class BaseInvoiceReport(GenericSearch):  # _AssetSearch):
+class BaseInvoiceReport(GenericSearch):
 
     def show_unique_error_message(self, *args, **kwargs):
         non_unique = {}
@@ -75,13 +75,6 @@ class BaseInvoiceReport(GenericSearch):  # _AssetSearch):
             messages.error(self.request, _("Odt template does not exist!"))
             error = True
         self.ids = self.request.GET.getlist('select')
-        # if self.request.GET.get('from_query'):
-        #     import ipdb; ipdb.set_trace()
-        #     all_q = super(
-        #         BaseInvoiceReport, self,
-        #     ).handle_search_data(*args, **kwargs)
-        # else:
-        #     all_q = Q(pk__in=self.ids)
         self.items = self.get_all_items()
         item_distinct = self.items.values(
             'invoice_no', 'invoice_date', 'provider',
