@@ -208,7 +208,7 @@ class AddLicence(LicenceFormView):
             messages.success(self.request, '{} licences added'.format(len(
                 self.form.cleaned_data['sn'],
             )))
-            return HttpResponseRedirect(licence.url)
+            return HttpResponseRedirect(reverse('licence_list'))
         else:
             return super(AddLicence, self).get(request, *args, **kwargs)
 
