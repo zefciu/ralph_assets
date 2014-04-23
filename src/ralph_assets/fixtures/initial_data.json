@@ -2251,5 +2251,17 @@
       "fields": {
          "name": "unassign_owner"
       }
+   }, {
+      "pk": 9,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "assign_loan_end_date"
+      }
+   }, {
+      "pk": 10,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "unassign_loan_end_date"
+      }
    }
 ]

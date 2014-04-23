@@ -40,6 +40,7 @@ class TransitionDispatcher(object):
         affected_user,
         template_file=None,
         warehouse=None,
+        loan_end_date=None,
     ):
         self.instance = instance
         self.transition = transition
@@ -48,37 +49,48 @@ class TransitionDispatcher(object):
         self.affected_user = affected_user
         self.template_file = template_file
         self.warehouse = warehouse
+        self.loan_end_date = loan_end_date
         self.report_file_patch = None
 
     def _action_assign_user(self):
         for asset in self.assets:
             asset.user = self.affected_user
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_assign_owner(self):
         for asset in self.assets:
             asset.owner = self.affected_user
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_unassign_user(self):
         for asset in self.assets:
             asset.user = None
-            asset.save()
+            asset.save(user=self.logged_user)
+
+    def _action_assign_loan_end_date(self):
+        for asset in self.assets:
+            asset.loan_end_date = self.loan_end_date
+            asset.save(user=self.logged_user)
+
+    def _action_unassign_loan_end_date(self):
+        for asset in self.assets:
+            asset.loan_end_date = None
+            asset.save(user=self.logged_user)
 
     def _action_unassign_owner(self):
         for asset in self.assets:
             asset.owner = None
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_assign_warehouse(self):
         for asset in self.assets:
             asset.warehouse = self.warehouse
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _action_change_status(self):
         for asset in self.assets:
             asset.status = self.transition.to_status
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _get_report_data(self):
         uid = uuid.uuid4()
@@ -137,7 +149,7 @@ class TransitionDispatcher(object):
     @nested_commit_on_success
     def run(self):
         self.file_name = None
-        actions = self.transition.actions_names()
+        actions = self.transition.actions_names
         if 'change_status' in actions:
             self._action_change_status()
         if 'assign_owner' in actions:
@@ -148,6 +160,10 @@ class TransitionDispatcher(object):
             self._action_assign_user()
         elif 'unassign_user' in actions:
             self._action_unassign_user()
+        if 'assign_loan_end_date' in actions:
+            self._action_assign_loan_end_date()
+        elif 'unassign_loan_end_date' in actions:
+            self._action_unassign_loan_end_date()
         if 'assign_warehouse' in actions:
             self._action_assign_warehouse()
         if 'release_report' in actions:
@@ -190,6 +206,8 @@ class TransitionView(_AssetSearch):
             form.fields.pop('user')
         if not self.assign_warehouse:
             form.fields.pop('warehouse')
+        if not self.assign_loan_end_date:
+            form.fields.pop('loan_end_date')
         return form
 
     def get_assets(self, *args, **kwargs):
@@ -204,7 +222,7 @@ class TransitionView(_AssetSearch):
         return self.get_all_items(all_q)
 
     def get_warehouse(self, *args, **kwargs):
-        if 'assign_warehouse' in self.transition_object.actions_names():
+        if 'assign_warehouse' in self.transition_object.actions_names:
             return self.form.cleaned_data.get('warehouse')
 
     def get_affected_user(self, *args, **kwargs):
@@ -248,10 +266,13 @@ class TransitionView(_AssetSearch):
             error = True
         else:
             self.assign_user = (
-                'assign_user' in self.transition_object.actions_names()
+                'assign_user' in self.transition_object.actions_names
             )
             self.assign_warehouse = (
-                'assign_warehouse' in self.transition_object.actions_names()
+                'assign_warehouse' in self.transition_object.actions_names
+            )
+            self.assign_loan_end_date = (
+                'assign_loan_end_date' in self.transition_object.actions_names
             )
         if self.transition_type == 'return-asset' or not self.assign_user:
             assets = self.assets.values('user__username').distinct()
@@ -305,6 +326,7 @@ class TransitionView(_AssetSearch):
                 self.get_affected_user(),
                 self.template_file,
                 self.get_warehouse(),
+                loan_end_date=self.request.POST.get('loan_end_date'),
             )
             dispatcher.run()
             self.report_file_path = dispatcher.report_file_patch

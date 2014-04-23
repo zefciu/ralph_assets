@@ -8,17 +8,32 @@ from __future__ import unicode_literals
 import urllib
 
 from bob.data_table import DataTableColumn
-from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from ralph_assets.views import GenericSearch, LicenseSelectedMixin, AssetsBase
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import SoftwareCategory, Licence
+from django.core.paginator import Paginator
+from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext_lazy as _
+
+from ralph_assets.models_history import LicenceHistoryChange
+from ralph_assets.models_sam import (
+    Licence,
+    SoftwareCategory,
+)
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
     LicenceSearchForm,
     AddLicenceForm,
     EditLicenceForm,
+)
+from ralph_assets.views import (
+    AssetsBase,
+    GenericSearch,
+    LicenseSelectedMixin,
+    HISTORY_PAGE_SIZE,
+    MAX_PAGE_SIZE,
 )
 
 
@@ -216,3 +231,42 @@ class EditLicence(LicenceFormView):
         self.licence = Licence.objects.get(pk=licence_id)
         self._get_form(request.POST, instance=self.licence)
         return self._save(request, *args, **kwargs)
+
+
+class HistoryLicence(AssetsBase):
+    template_name = 'assets/history.html'
+
+    def get_context_data(self, **kwargs):
+        query_variable_name = 'history_page'
+        ret = super(HistoryLicence, self).get_context_data(**kwargs)
+        licence_id = kwargs.get('licence_id')
+        licence = Licence.objects.get(id=licence_id)
+        history = LicenceHistoryChange.objects.filter(
+            licence=licence,
+        ).order_by('-date')
+        try:
+            page = int(self.request.GET.get(query_variable_name, 1))
+        except ValueError:
+            page = 1
+        if page == 0:
+            page = 1
+            page_size = MAX_PAGE_SIZE
+        else:
+            page_size = HISTORY_PAGE_SIZE
+        history_page = Paginator(history, page_size).page(page)
+        ret.update({
+            'history': history,
+            'history_page': history_page,
+            'show_status_button': False,
+            'query_variable_name': query_variable_name,
+            'object': licence,
+            'object_url': reverse(
+                'edit_licence',
+                kwargs={
+                    'licence_id': licence.id,
+                    'mode': self.mode,
+                }
+            ),
+            'title': _('History licence'),
+        })
+        return ret

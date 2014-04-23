@@ -228,9 +228,9 @@ class MultilineField(CharField):
     This widget is a textarea which treats its content as many values seperated
     by: commas or "new lines"
     Validation:
-        - seperated values cannot duplicate each other,
+        - separated values cannot duplicate each other,
         - empty values are disallowed,
-        - db uniqueness also is checked.
+        - db uniqueness is also checked.
     """
     separators = ",|\n"
 
@@ -317,7 +317,7 @@ class BarcodeField(CharField):
         return value if value else None
 
 
-class BulkEditAssetForm(ModelForm):
+class BulkEditAssetForm(DependencyForm, ModelForm):
     '''
         Form model for bulkedit assets, contains column definition and
         validadtion. Most important are sn and barcode fields. When you type
@@ -326,15 +326,6 @@ class BulkEditAssetForm(ModelForm):
     '''
     class Meta:
         model = Asset
-        fields = (
-            'type', 'model', 'warehouse', 'property_of', 'device_info',
-            'invoice_no', 'invoice_date', 'order_no', 'sn', 'barcode', 'price',
-            'deprecation_rate', 'support_price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'source',
-            'status', 'task_url', 'request_date', 'delivery_date',
-            'production_use_date', 'provider_order_date', 'production_year',
-            'user', 'owner', 'service_name',
-        )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
@@ -343,6 +334,18 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
+
+    @property
+    def dependencies(self):
+        return [
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
+        ]
 
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
@@ -380,6 +383,16 @@ class BulkEditAssetForm(ModelForm):
                 ])
         return self.cleaned_data
 
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            barcode_exists = Asset.objects.filter(barcode=barcode).count()
+            if 'barcode' in self.changed_data and barcode_exists:
+                self._errors["barcode"] = self.error_class([
+                    _("Asset with this barcode already exists.")
+                ])
+        return barcode
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
         banned_fillables = set(['sn', 'barcode', 'imei'])
@@ -409,7 +422,13 @@ class BulkEditAssetForm(ModelForm):
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
-
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'task_url', 'deprecation_rate',
+            'order_no',
+        )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
@@ -418,7 +437,12 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
 
 class DataCenterBulkEditAssetForm(BulkEditAssetForm):
-    pass
+    class Meta:
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'service_name', 'invoice_no', 'invoice_date',
+            'price', 'task_url', 'deprecation_rate', 'order_no',
+        )
 
 
 class DeviceForm(ModelForm):
@@ -1089,18 +1113,25 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
 
     def clean(self):
         """
-        These form requriemnts:
-            1. *barcode* OR *sn* is a MUST,
-            2. if a multivalue field has value, it MUST be the same length as
+        These form requirements:
+            1. *barcode* OR *sn* is REQUIRED,
+            2. multivalue field value if provided MUST be the same length as
             rest of multivalues.
         """
         cleaned_data = super(AddDeviceForm, self).clean()
-        if not ('sn' in self.data or 'barcode' in self.data):
+        if 'sn' in self.data or 'barcode' in self.data:
+            if self.different_multival_counters(cleaned_data):
+                for field in self.multival_fields:
+                    if field in cleaned_data:
+                        msg = "Fields: {} - require the same count".format(
+                            ', '.join(self.multival_fields)
+                        )
+                        self.errors.setdefault(field, []).append(msg)
+        else:
             msg = _('SN or BARCODE field is required')
             for field in ['sn', 'barcode']:
                 self.errors[field].append(msg) if field in self.errors else \
                     [msg]
-        else:
             self.different_multival_counters(cleaned_data)
         return cleaned_data
 

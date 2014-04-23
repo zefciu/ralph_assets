@@ -92,7 +92,7 @@ def _move_data(src, dst, fields):
 
 
 class LicenseSelectedMixin(object):
-    mainmenu_selected = 'software_categories'
+    mainmenu_selected = 'licences'
 
 
 class AssetsBase(Base):
@@ -135,8 +135,8 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licence List'),
                 fugue_icon='fugue-cheque-sign',
-                name='software_categories',
-                href=reverse('software_categories'),
+                name='licence_list',
+                href=reverse('licence_list'),
             ),
             MenuItem(
                 label=_('User list'),
@@ -1455,7 +1455,7 @@ class AddPart(AssetsBase):
 
 
 class HistoryAsset(AssetsBase):
-    template_name = 'assets/history_asset.html'
+    template_name = 'assets/history.html'
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -1481,12 +1481,22 @@ class HistoryAsset(AssetsBase):
         else:
             page_size = HISTORY_PAGE_SIZE
         history_page = Paginator(history, page_size).page(page)
+        if asset.get_data_type() == 'device':
+            url_name = 'device_edit'
+        else:
+            url_name = 'part_edit'
+        object_url = reverse(
+            url_name, kwargs={'asset_id': asset.id, 'mode': self.mode},
+        )
         ret.update({
             'history': history,
             'history_page': history_page,
             'status': status,
             'query_variable_name': query_variable_name,
-            'asset': asset,
+            'object': asset,
+            'object_url': object_url,
+            'title': _('History asset'),
+            'show_status_button': True,
         })
         return ret
 
@@ -1627,6 +1637,41 @@ class SplitDeviceView(AssetsBase):
         except LookupError:
             components = []
         return components
+
+
+class LicenceFormView(LicenseSelectedMixin, AssetsBase):
+    """Base view that displays licence form."""
+
+    template_name = 'assets/add_licence.html'
+
+    def _get_form(self, data=None, **kwargs):
+        self.form = LicenceForm(
+            mode=self.mode, data=data, **kwargs
+        )
+
+    def get_context_data(self, **kwargs):
+        ret = super(LicenceFormView, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'add_licence_form',
+            'edit_mode': False,
+            'caption': self.caption,
+            'licence': getattr(self, 'licence', None),
+            'mode': self.mode,
+        })
+        return ret
+
+    def _save(self, request, *args, **kwargs):
+        try:
+            licence = self.form.save(commit=False)
+            if licence.asset_type is None:
+                licence.asset_type = MODE2ASSET_TYPE[self.mode]
+            licence.save(user=self.request.user)
+            self.form.save_m2m()
+            messages.success(self.request, self.message)
+            return HttpResponseRedirect(licence.url)
+        except ValueError:
+            return super(LicenceFormView, self).get(request, *args, **kwargs)
 
 
 class InvoiceReport(_AssetSearch):
