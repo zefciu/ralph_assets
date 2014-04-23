@@ -381,6 +381,13 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
+        serial_number_exists = \
+            Asset.objects.filter(sn=self.cleaned_data['sn']).count()
+        if 'sn' in self.changed_data and serial_number_exists:
+            self._errors["sn"] = self.error_class([
+                _("Asset with this Sn already exists.")
+
+            ])
         return self.cleaned_data
 
     def clean_barcode(self):

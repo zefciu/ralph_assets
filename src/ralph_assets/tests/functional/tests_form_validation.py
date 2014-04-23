@@ -137,10 +137,9 @@ class TestValidations(TestCase):
             dict(
                 row=0, field='invoice_date', error='Enter a valid date.',
             ),
-            # TODO
-            # dict(
-            #     row=0, field='sn', error='Asset already exists.',
-            # ),
+            dict(
+                row=0, field='sn', error='Asset with this Sn already exists.',
+            ),
             dict(
                 row=1,
                 field='invoice_date',
