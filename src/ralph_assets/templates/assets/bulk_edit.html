@@ -10,7 +10,7 @@
 </div>
 
 <div class="row"><h3>Bulk edit</h3></div>
-<form method="POST" class="form form-inline">
+<form method="POST" class="form form-inline" {% dependency_data formset.forms.0 %}>
   {% csrf_token %}
   {{ formset.management_form }}
   <div class="row overflow-x">
@@ -39,7 +39,7 @@
                   {{ field }}
                   {% if field.errors %}
                     <span class="help-inline">{% for error in field.errors %}{{ error }} {% endfor %}</span>
-                {% endif %}
+                  {% endif %}
               </td>
             {% else %}
               <td class="control-group{% if "-support_period" in field.html_name %} small{% endif %}{% if field.errors %} error{% endif %}">
