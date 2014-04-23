@@ -137,9 +137,10 @@ class TestValidations(TestCase):
             dict(
                 row=0, field='invoice_date', error='Enter a valid date.',
             ),
-            dict(
-                row=0, field='sn', error='Asset with this Sn already exists.',
-            ),
+            # TODO
+            # dict(
+            #     row=0, field='sn', error='Asset already exists.',
+            # ),
             dict(
                 row=1,
                 field='invoice_date',
@@ -154,16 +155,13 @@ class TestValidations(TestCase):
                 error='Invoice number cannot be empty.',
             )
         ]
-        # Tymek - please tak a look
-        # for bulk in bulk_data:
-        #     formset = send_post_with_empty_fields.context_data['formset']
-        #     import ipdb; ipdb.set_trace()
-        #     
-        #     self.assertEqual(
-        #         formset[bulk['row']]._errors[bulk['field']][0],
-        #         bulk['error']
-        #     )
+        for bulk in bulk_data:
+            formset = send_post_with_empty_fields.context_data['formset']
+            self.assertEqual(
+                formset[bulk['row']]._errors[bulk['field']][0],
+                bulk['error']
+            )
 
-        # # if sn was duplicated, the message should be shown on the screen
-        # msg = SCREEN_ERROR_MESSAGES['duplicated_sn_or_bc']
-        # self.assertTrue(msg in send_post_with_empty_fields.content)
+        # if sn was duplicated, the message should be shown on the screen
+        msg = SCREEN_ERROR_MESSAGES['duplicated_sn_or_bc']
+        self.assertTrue(msg in send_post_with_empty_fields.content)

@@ -8,14 +8,12 @@ from __future__ import unicode_literals
 import urllib
 
 from bob.data_table import DataTableColumn
+from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from ralph_assets.views import GenericSearch, LicenseSelectedMixin, AssetsBase
 from ralph_assets.models_assets import MODE2ASSET_TYPE
-from ralph_assets.models_sam import SoftwareCategory, Licence
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
-from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.models_history import LicenceHistoryChange
 from ralph_assets.models_sam import (

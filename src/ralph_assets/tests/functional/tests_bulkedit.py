@@ -69,7 +69,6 @@ class TestBulkEdit(TestCase):
         response = self.client.post(url, post_data, follow=True)
 
         # Find success message
-        
         self.assertTrue('Changes saved.' in response.content)
 
         # if everything is ok, server return response code = 302, and

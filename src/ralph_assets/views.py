@@ -1639,41 +1639,6 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class LicenceFormView(LicenseSelectedMixin, AssetsBase):
-    """Base view that displays licence form."""
-
-    template_name = 'assets/add_licence.html'
-
-    def _get_form(self, data=None, **kwargs):
-        self.form = LicenceForm(
-            mode=self.mode, data=data, **kwargs
-        )
-
-    def get_context_data(self, **kwargs):
-        ret = super(LicenceFormView, self).get_context_data(**kwargs)
-        ret.update({
-            'form': self.form,
-            'form_id': 'add_licence_form',
-            'edit_mode': False,
-            'caption': self.caption,
-            'licence': getattr(self, 'licence', None),
-            'mode': self.mode,
-        })
-        return ret
-
-    def _save(self, request, *args, **kwargs):
-        try:
-            licence = self.form.save(commit=False)
-            if licence.asset_type is None:
-                licence.asset_type = MODE2ASSET_TYPE[self.mode]
-            licence.save(user=self.request.user)
-            self.form.save_m2m()
-            messages.success(self.request, self.message)
-            return HttpResponseRedirect(licence.url)
-        except ValueError:
-            return super(LicenceFormView, self).get(request, *args, **kwargs)
-
-
 class InvoiceReport(_AssetSearch):
     template_name = 'assets/invoice_report.html'
 
