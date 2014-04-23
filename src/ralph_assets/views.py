@@ -20,7 +20,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponse,
@@ -50,9 +50,7 @@ from ralph_assets.forms import (
     SplitDevice,
     UserRelationForm
 )
-from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
-from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -67,7 +65,6 @@ from ralph_assets.models import (
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
-    MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
 )
 from ralph_assets.models_history import AssetHistoryChange

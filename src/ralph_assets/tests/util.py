@@ -48,7 +48,7 @@ SCREEN_ERROR_MESSAGES = dict(
         "by new line or comma."
     ),
     count_sn_and_bc="Fields: sn, barcode, imei - require the same count",
-    barcode_already_exist='Following items already exists in DB: ',
+    barcode_already_exist='Following items already exist: ',
     empty_items_disallowed="Empty items disallowed, remove it.",
 )
 

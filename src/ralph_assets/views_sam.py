@@ -8,15 +8,8 @@ from __future__ import unicode_literals
 import urllib
 
 from bob.data_table import DataTableColumn
-from django.db.models import Count
 from django.contrib import messages
-from django.core.paginator import Paginator
-from django.http import (
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseRedirect,
-    Http404,
-)
+from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from ralph_assets.views import GenericSearch, LicenseSelectedMixin, AssetsBase
 from ralph_assets.models_assets import MODE2ASSET_TYPE
@@ -30,6 +23,7 @@ from ralph_assets.forms_sam import (
 
 
 LICENCE_PAGE_SIZE = 10
+
 
 class SoftwareCategoryNameColumn(DataTableColumn):
     """A column with software category name linking to the search of
@@ -216,7 +210,6 @@ class EditLicence(LicenceFormView):
     def get(self, request, licence_id, *args, **kwargs):
         self.licence = Licence.objects.get(pk=licence_id)
         self._get_form(instance=self.licence)
-        
         return super(EditLicence, self).get(request, *args, **kwargs)
 
     def post(self, request, licence_id, *args, **kwargs):

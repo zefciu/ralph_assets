@@ -149,6 +149,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         self.different_multival_counters(data)
         return data
 
+
 class EditLicenceForm(LicenceForm):
     """Form for licence edit."""
 
