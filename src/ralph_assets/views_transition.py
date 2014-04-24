@@ -92,6 +92,11 @@ class TransitionDispatcher(object):
             asset.status = self.transition.to_status
             asset.save(user=self.logged_user)
 
+    def _action_unassign_licences(self):
+        for asset in self.assets:
+            asset.licence_set.clear()
+            asset.save()
+
     def _get_report_data(self):
         uid = uuid.uuid4()
         data = {
@@ -166,6 +171,8 @@ class TransitionDispatcher(object):
             self._action_unassign_loan_end_date()
         if 'assign_warehouse' in actions:
             self._action_assign_warehouse()
+        if 'unassign_licences' in actions:
+            self._action_unassign_licences()
         if 'release_report' in actions:
             self._action_release_report()
         elif 'return_report' in actions:
@@ -347,5 +354,6 @@ class TransitionView(_AssetSearch):
             'assets': self.assets,
             'transition_form': self.form,
             'transition_type': self.transition_type.replace('-', ' ').title(),
+            'actions_names': self.transition_object.actions_names,
         })
         return ret

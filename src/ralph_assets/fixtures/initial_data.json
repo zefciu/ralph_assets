@@ -2263,5 +2263,11 @@
       "fields": {
          "name": "unassign_loan_end_date"
       }
+   }, {
+      "pk": 11,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "unassign_licences"
+      }
    }
 ]
