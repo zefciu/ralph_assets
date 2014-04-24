@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponseBadRequest,
@@ -45,9 +45,7 @@ from ralph_assets.forms import (
     SplitDevice,
     UserRelationForm
 )
-from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
-from ralph_assets import models_sam
 from ralph_assets.models import (
     Asset,
     AssetModel,
@@ -61,7 +59,6 @@ from ralph_assets.models import (
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
-    MODE2ASSET_TYPE,
     ASSET_TYPE2MODE,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -73,7 +70,6 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
-LICENCE_PAGE_SIZE = 10
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 SEARCH_DELIMITERS = re.compile(r";|\|")
@@ -159,6 +155,7 @@ class AssetsBase(Base):
         base_items = (
             ('add_device', _('Add device'), 'fugue-block--plus'),
             ('add_part', _('Add part'), 'fugue-block--plus'),
+            ('add_licence', _('Add licence'), 'fugue-cheque--plus'),
             ('asset_search', _('Search'), 'fugue-magnifier'),
         )
         other_items = (
