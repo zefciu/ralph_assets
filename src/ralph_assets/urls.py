@@ -87,9 +87,11 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
-    url(r'(?P<mode>(back_office|dc))/invoice_report/$',
+    url(
+        r'(?P<mode>(back_office|dc))/invoice_report/$',
         login_required(AssetInvoiceReport.as_view()),
-        name='assets_invoice_report'),
+        name='assets_invoice_report',
+    ),
     url(
         r'sam/licences/invoice_report/$',
         login_required(LicenceInvoiceReport.as_view()),
