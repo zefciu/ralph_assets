@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponseBadRequest,
@@ -29,6 +29,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rq import get_current_job
 
+from ralph_assets import models_sam
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -45,6 +46,7 @@ from ralph_assets.forms import (
     SplitDevice,
     UserRelationForm
 )
+from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
 from ralph_assets.models import (
     Asset,
@@ -60,8 +62,10 @@ from ralph_assets.models_assets import (
     Attachment,
     AssetType,
     ASSET_TYPE2MODE,
+    MODE2ASSET_TYPE,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.view_sam import LICENCE_PAGE_SIZE
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
