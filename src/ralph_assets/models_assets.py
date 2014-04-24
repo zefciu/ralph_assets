@@ -291,24 +291,26 @@ class Asset(TimeTrackable, EditorTrackable, SavingUser, SoftDeletable):
     @property
     def cores_count(self):
         """Returns cores count assigned to device in Ralph"""
-        # TODO: get cores information from asset model
-        if not self.device_info or not self.device_info.ralph_device_id:
-            return 0
-        try:
-            cores_count = Device.objects.get(
-                pk=self.device_info.ralph_device_id,
-            ).get_core_count()
-            if self.model and self.model.cores_count != cores_count:
+        asset_cores_count = self.model.cores_count if self.model else 0
+        if settings.SHOW_RALPH_CORES_DIFF:
+            device_cores_count = None
+            try:
+                if self.device_info and self.device_info.ralph_device_id:
+                    device_cores_count = Device.objects.get(
+                        pk=self.device_info.ralph_device_id,
+                    ).get_core_count()
+            except Device.DoesNotExist:
+                pass
+            if (device_cores_count is not None and
+               asset_cores_count != device_cores_count):
                 logger.warning(('Cores count for <{}> different in ralph than '
                                 'in assets ({} vs {})').format(
                         self,
-                        cores_count,
-                        self.model.cores_count,
+                        device_cores_count,
+                        asset_cores_count,
                     )
                 )
-            return cores_count
-        except Device.DoesNotExist:
-            return 0
+        return asset_cores_count
 
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
