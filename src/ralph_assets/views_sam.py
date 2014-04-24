@@ -78,12 +78,25 @@ class SoftwareCategoryList(LicenseSelectedMixin, GenericSearch):
     ]
 
 
+class CheckBoxColumn(DataTableColumn):
+    """A column to select items in a grid"""
+    def render_cell_content(self, resource):
+        return '<input type="checkbox" name="select" value="{}">'.format(
+            resource.id,
+        )
+
+
 class LicenceList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of licences."""
 
     Model = Licence
     Form = LicenceSearchForm
     columns = [
+        CheckBoxColumn(
+            _('Dropdown'),
+            selectable=True,
+            bob_tag=True,
+        ),
         LicenceLinkColumn(
             _('Type'),
             bob_tag=True,

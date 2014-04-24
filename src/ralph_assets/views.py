@@ -5,10 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import datetime
 import logging
 import re
-import uuid
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -23,15 +21,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     Http404,
 )
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
 from rq import get_current_job
 
 from ralph_assets import forms as assets_forms
@@ -59,7 +54,6 @@ from ralph_assets.models import (
     Licence,
     OfficeInfo,
     PartInfo,
-    ReportOdtSource,
     TransitionsHistory,
 )
 from ralph_assets.models_assets import (
@@ -115,6 +109,7 @@ class AssetsBase(Base):
             'sidebar_selected': self.sidebar_selected,
             'mode': self.mode,
             'multivalues_fields': ['sn', 'barcode', 'imei'],
+            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
         })
         return ret
 
@@ -698,7 +693,6 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
             'sort_variable_name': self.sort_variable_name,
             'export_variable_name': self.export_variable_name,
             'csv_url': self.request.path_info + '/csv',
-            'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
             'asset_transitions_enable': settings.ASSETS_TRANSITIONS['ENABLE'],
             'asset_hide_action_search': settings.ASSET_HIDE_ACTION_SEARCH,
             'assets_count': self.assets_count,
@@ -1637,143 +1631,6 @@ class SplitDeviceView(AssetsBase):
         except LookupError:
             components = []
         return components
-
-
-class InvoiceReport(_AssetSearch):
-    template_name = 'assets/invoice_report.html'
-
-    def show_unique_error_message(self, *args, **kwargs):
-        non_unique = {}
-        for name in ['invoice_no', 'invoice_date', 'provider']:
-            assets = self.assets.values(name).distinct()
-            if assets.count() != 1:
-                if name == 'invoice_date':
-                    data = ", ".join(
-                        asset[name].strftime(
-                            "%d-%m-%Y"
-                        ) for asset in assets if asset[name]
-                    )
-                else:
-                    data = ", ".join(
-                        asset[name] for asset in assets if asset[name]
-                    )
-                non_unique[name] = data
-        non_unique_items = " ".join(
-            [
-                "{}: {}".format(
-                    key, value,
-                ) for key, value in non_unique.iteritems() if value
-            ]
-        )
-        messages.error(
-            self.request,
-            "{}: {}".format(
-                _("Selected asset has different: "),
-                non_unique_items,
-            )
-        )
-
-    def get_return_link(self, *args, **kwargs):
-        if self.ids:
-            url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(id for id in self.ids),
-            )
-        else:
-            url = "{}search?{}".format(
-                _get_return_link(self.mode), self.request.GET.urlencode(),
-            )
-        return url
-
-    def get(self, *args, **kwargs):
-        if not settings.ASSETS_REPORTS['ENABLE']:
-            messages.error(self.request, _("Assets reports is disabled"))
-            return HttpResponseRedirect(_get_return_link(self.mode))
-        error = False
-        try:
-            self.template_file = ReportOdtSource.objects.get(
-                slug=settings.ASSETS_REPORTS['INVOICE_REPORT']['SLUG'],
-            )
-        except ReportOdtSource.DoesNotExist:
-            messages.error(self.request, _("Odt template does not exist!"))
-            error = True
-        self.ids = self.request.GET.getlist('select')
-        if self.request.GET.get('from_query'):
-            all_q = super(
-                InvoiceReport, self,
-            ).handle_search_data(*args, **kwargs)
-        else:
-            all_q = Q(pk__in=self.ids)
-        self.assets = self.get_all_items(all_q)
-        asset_distinct = self.assets.values(
-            'invoice_no', 'invoice_date', 'provider'
-        ).distinct()
-        if asset_distinct.count() != 1:
-            self.show_unique_error_message()
-            error = True
-        if not all(asset_distinct[0].viewvalues()):
-            messages.error(self.request, _(
-                "Asset invoice number, invoice date or provider can't be empty"
-            ))
-            error = True
-        if error:
-            return HttpResponseRedirect(self.get_return_link())
-        # generate invoice report
-        pdf_data = self.get_pdf_content()
-        if not pdf_data:
-            return HttpResponseRedirect(self.get_return_link())
-        response = HttpResponse(
-            content=pdf_data, content_type='application/pdf'
-        )
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            self.file_name,
-        )
-        return response
-
-    def get_pdf_content(self, *args, **kwargs):
-        content = None
-        data = self.get_report_data()
-        self.file_name = '{}-{}-{}.pdf'.format(
-            self.template_file.slug,
-            data['id'],
-            uuid.uuid4(),
-        )
-        output_path = '{}{}'.format(
-            settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
-            self.file_name,
-        )
-        generate_pdf(
-            self.template_file.template.path,
-            output_path,
-            data,
-        )
-        try:
-            with open(output_path, 'rb') as f:
-                content = f.read()
-                f.close()
-        except IOError as e:
-            logger.error(
-                "Can not read report for assets ids: {} ({})".format(
-                    ",".join(id for id in self.ids), e,
-                )
-            )
-            messages.error(self.request, _(
-                "The error occurred, was not possible to read generated file."
-            ))
-        return content
-
-    def get_report_data(self, *args, **kwargs):
-        first_asset = self.assets[0]
-        data = {
-            "id": slugify(first_asset.invoice_no),
-            "base_info": {
-                "invoice_no": first_asset.invoice_no,
-                "invoice_date": first_asset.invoice_date,
-                "provider": first_asset.provider,
-                "datetime": datetime.datetime.now(),
-            },
-            "assets": self.assets,
-        }
-        return data
 
 
 class AddAttachment(AssetsBase):

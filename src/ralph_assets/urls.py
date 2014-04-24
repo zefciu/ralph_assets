@@ -23,7 +23,6 @@ from ralph_assets.views import (
     EditPart,
     EditUser,
     HistoryAsset,
-    InvoiceReport,
     SplitDeviceView,
     UserDetails,
     UserList,
@@ -36,9 +35,12 @@ from ralph_assets.views_sam import (
     LicenceList,
     SoftwareCategoryList,
 )
-from ralph_assets.views_transition import TransitionView
-
+from ralph_assets.views_invoice_report import (
+    AssetInvoiceReport,
+    LicenceInvoiceReport,
+)
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
+from ralph_assets.views_transition import TransitionView
 
 
 urlpatterns = patterns(
@@ -85,9 +87,16 @@ urlpatterns = patterns(
     url(r'(?P<mode>(back_office|dc))/split/asset/(?P<asset_id>[0-9]+)/$',
         login_required(SplitDeviceView.as_view()),
         name='device_split'),
-    url(r'(?P<mode>(back_office|dc))/invoice_report/$',
-        login_required(InvoiceReport.as_view()),
-        name='invoice_report'),
+    url(
+        r'(?P<mode>(back_office|dc))/invoice_report/$',
+        login_required(AssetInvoiceReport.as_view()),
+        name='assets_invoice_report',
+    ),
+    url(
+        r'sam/licences/invoice_report/$',
+        login_required(LicenceInvoiceReport.as_view()),
+        name='sam_invoice_report',
+    ),
     url(
         r'(?P<mode>(back_office|dc))/transition/$',
         login_required(TransitionView.as_view()),
