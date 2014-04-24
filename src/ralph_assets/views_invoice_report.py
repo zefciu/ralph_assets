@@ -165,7 +165,7 @@ class AssetInvoiceReport(BaseInvoiceReport):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(id_ for id_ in self.ids),
+                _get_return_link(self.mode), ",".join(self.ids),
             )
         else:
             url = "{}search?{}".format(
@@ -187,7 +187,7 @@ class LicenceInvoiceReport(BaseInvoiceReport):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}?id={}".format(
-                reverse('licence_list'), ",".join(id_ for id_ in self.ids),
+                reverse('licence_list'), ",".join(self.ids),
             )
         else:
             url = "{}?{}".format(
