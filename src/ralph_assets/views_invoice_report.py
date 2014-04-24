@@ -59,7 +59,7 @@ class BaseInvoiceReport(GenericSearch):
         messages.error(
             self.request,
             "{}: {}".format(
-                _("Selected item has different: "),
+                _("Selected items has different"),
                 non_unique_items,
             )
         )
