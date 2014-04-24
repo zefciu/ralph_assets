@@ -95,7 +95,7 @@ class TransitionDispatcher(object):
     def _action_unassign_licences(self):
         for asset in self.assets:
             asset.licence_set.clear()
-            asset.save()
+            asset.save(user=self.logged_user)
 
     def _get_report_data(self):
         uid = uuid.uuid4()
