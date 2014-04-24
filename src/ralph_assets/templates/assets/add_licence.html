@@ -22,11 +22,13 @@
       {% include 'assets/attachment_table.html' with attachment_parent=licence mode=mode parent_name='license' %}
     </div>
     <div class="span6">
-     <h6>
-        <a href="{% url licence_history mode licence.id %}">
-          {% trans "Licence history"%}
-        </a>
-      </h6>
+     {% if licence %}
+       <h6>
+          <a href="{% url licence_history mode licence.id %}">
+            {% trans "Licence history"%}
+          </a>
+        </h6>
+      {% endif %}
     </div>
   </div>
   <div class="row-fluid">
