@@ -40,7 +40,10 @@ from ralph_assets.views_invoice_report import (
     LicenceInvoiceReport,
 )
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
-from ralph_assets.views_transition import TransitionView
+from ralph_assets.views_transition import (
+    TransitionView,
+    TransitionHistoryFileHandler,
+)
 
 
 urlpatterns = patterns(
@@ -161,5 +164,10 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/history/licence/(?P<licence_id>[0-9]+)/$',
         login_required(HistoryLicence.as_view()),
         name='licence_history',
+    ),
+    url(
+        r'transition-history-file/(?P<history_id>[0-9]+)$',
+        login_required(TransitionHistoryFileHandler.as_view()),
+        name='transition_history_file',
     ),
 )
