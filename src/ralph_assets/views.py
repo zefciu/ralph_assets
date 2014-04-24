@@ -5,10 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import datetime
 import logging
 import re
-import uuid
 
 from collections import Counter
 from bob.data_table import DataTableColumn, DataTableMixin
@@ -23,15 +21,12 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
-    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     Http404,
 )
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
 from rq import get_current_job
 
 from ralph_assets import forms as assets_forms
@@ -61,7 +56,6 @@ from ralph_assets.models import (
     Licence,
     OfficeInfo,
     PartInfo,
-    ReportOdtSource,
     TransitionsHistory,
 )
 from ralph_assets.models_assets import (
@@ -1738,6 +1732,7 @@ class LicenceList(AssetsBase):
         data['categories'] = categories_page
         data['section'] = 'licence_list'
         return data
+
 
 class AddAttachment(AssetsBase):
     """

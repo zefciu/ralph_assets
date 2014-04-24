@@ -22,11 +22,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (
     Asset,
-    DeviceInfo,
     Licence,
     ReportOdtSource,
 )
-from ralph_assets.views import _AssetSearch, _get_return_link, GenericSearch
+from ralph_assets.views import _get_return_link, GenericSearch
 
 
 logger = logging.getLogger(__name__)
