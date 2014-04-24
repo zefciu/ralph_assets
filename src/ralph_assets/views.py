@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.forms.models import modelformset_factory, formset_factory
 from django.http import (
     HttpResponseBadRequest,
@@ -29,7 +29,6 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from rq import get_current_job
 
-from ralph_assets import models_sam
 from ralph_assets import forms as assets_forms
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -46,7 +45,6 @@ from ralph_assets.forms import (
     SplitDevice,
     UserRelationForm
 )
-from ralph_assets.forms_sam import LicenceForm
 from ralph_assets import models as assets_models
 from ralph_assets.models import (
     Asset,
@@ -62,10 +60,8 @@ from ralph_assets.models_assets import (
     Attachment,
     AssetType,
     ASSET_TYPE2MODE,
-    MODE2ASSET_TYPE,
 )
 from ralph_assets.models_history import AssetHistoryChange
-from ralph_assets.view_sam import LICENCE_PAGE_SIZE
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
@@ -1635,104 +1631,6 @@ class SplitDeviceView(AssetsBase):
         except LookupError:
             components = []
         return components
-
-
-class LicenceFormView(LicenseSelectedMixin, AssetsBase):
-    """Base view that displays licence form."""
-
-    template_name = 'assets/add_licence.html'
-
-    def _get_form(self, data=None, **kwargs):
-        self.form = LicenceForm(
-            mode=self.mode, data=data, **kwargs
-        )
-
-    def get_context_data(self, **kwargs):
-        ret = super(LicenceFormView, self).get_context_data(**kwargs)
-        ret.update({
-            'form': self.form,
-            'form_id': 'add_licence_form',
-            'edit_mode': False,
-            'caption': self.caption,
-            'licence': getattr(self, 'licence', None),
-            'mode': self.mode,
-        })
-        return ret
-
-    def _save(self, request, *args, **kwargs):
-        try:
-            licence = self.form.save(commit=False)
-            if licence.asset_type is None:
-                licence.asset_type = MODE2ASSET_TYPE[self.mode]
-            licence.save(user=self.request.user)
-            self.form.save_m2m()
-            messages.success(self.request, self.message)
-            return HttpResponseRedirect(licence.url)
-        except ValueError:
-            return super(LicenceFormView, self).get(request, *args, **kwargs)
-
-
-class AddLicence(LicenceFormView):
-    """Add a new licence"""
-
-    caption = _('Add Licence')
-    message = _('Licence added')
-
-    def get(self, request, *args, **kwargs):
-        self._get_form()
-        return super(AddLicence, self).get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        self._get_form(request.POST)
-        return self._save(request, *args, **kwargs)
-
-
-class EditLicence(LicenceFormView):
-    """Edit licence"""
-
-    caption = _('Edit Licence')
-    message = _('Licence changed')
-
-    def get(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
-        self._get_form(instance=self.licence)
-        return super(EditLicence, self).get(request, *args, **kwargs)
-
-    def post(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
-        self._get_form(request.POST, instance=self.licence)
-        return self._save(request, *args, **kwargs)
-
-
-class LicenceList(AssetsBase):
-    """The licence list."""
-    template_name = "assets/licence_list.html"
-
-    def get_context_data(self, *args, **kwargs):
-        data = super(LicenceList, self).get_context_data(
-            *args, **kwargs
-        )
-        page = self.request.GET.get('page', 1)
-        categories = models_sam.SoftwareCategory.objects.annotate(
-            used=Count('licence__assets'),
-        )
-        if self.mode:
-            categories = categories.filter(
-                asset_type=MODE2ASSET_TYPE[self.mode]
-            )
-        categories_page = Paginator(
-            categories, LICENCE_PAGE_SIZE
-        ).page(page)
-        for category in categories_page:
-            category.licences_annotated = \
-                category.licence_set.annotate(used=Count('assets')).all()
-            category.total = sum(
-                licence.number_bought
-                for licence in category.licences_annotated
-            )
-        data['categories'] = categories_page
-        data['section'] = 'licence_list'
-        return data
 
 
 class AddAttachment(AssetsBase):
