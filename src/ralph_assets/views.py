@@ -85,10 +85,6 @@ def _move_data(src, dst, fields):
     return src, dst
 
 
-class LicenseSelectedMixin(object):
-    mainmenu_selected = 'licences'
-
-
 class AssetsBase(Base):
     template_name = "assets/base.html"
     sidebar_selected = None
@@ -128,15 +124,15 @@ class AssetsBase(Base):
                 href='/assets/back_office',
             ),
             MenuItem(
-                label=_('Licence List'),
-                fugue_icon='fugue-cheque-sign',
+                label=_('Licences'),
+                fugue_icon='fugue-cheque',
                 name='licence_list',
                 href=reverse('licence_list'),
             ),
             MenuItem(
                 label=_('User list'),
                 fugue_icon='fugue-user-green-female',
-                name='user_list',
+                name='user list',
                 href=reverse('user_list'),
             ),
         ]
@@ -152,14 +148,20 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
-        base_items = (
-            ('add_device', _('Add device'), 'fugue-block--plus'),
-            ('add_part', _('Add part'), 'fugue-block--plus'),
-            ('add_licence', _('Add licence'), 'fugue-cheque--plus'),
-            ('asset_search', _('Search'), 'fugue-magnifier'),
-        )
+        if self.mainmenu_selected.startswith('devices'):
+            base_items = (
+                ('add_device', _('Add device'), 'fugue-block--plus', True),
+                ('add_part', _('Add part'), 'fugue-block--plus', True),
+                ('asset_search', _('Search'), 'fugue-magnifier', True),
+            )
+        elif self.mainmenu_selected.startswith('licences'):
+            base_items = (
+                ('add_licence', _('Add licence'), 'fugue-cheque--plus', False),
+            )
+        else:
+            base_items = ()
         other_items = (
-            ('xls_upload', _('XLS upload'), 'fugue-cheque--plus'),
+            ('xls_upload', _('XLS upload'), 'fugue-cheque--plus', False),
         )
         items = [
             {'caption': base_sidebar_caption, 'items': base_items},
@@ -172,10 +174,13 @@ class AssetsBase(Base):
                 [MenuItem(
                     label=label,
                     fugue_icon=icon,
-                    href=reverse(view, kwargs={
-                        'mode': (self.mode or 'dc')
-                    })
-                ) for view, label, icon in item['items']]
+                    href=(
+                        reverse(view, kwargs={'mode': self.mode})
+                        if modal else
+                        reverse(view)
+                    )
+
+                ) for view, label, icon, modal in item['items']]
             )
             if sidebar_menu:
                 sidebar_menu += menu_item
@@ -281,6 +286,8 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
 
 class _AssetSearch(AssetsBase):
+
+    mainmenu_selected = 'devices'
 
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
@@ -835,6 +842,7 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
 class AddDevice(AssetsBase):
     template_name = 'assets/add_device.html'
     sidebar_selected = 'add device'
+    mainmenu_selected = 'devices'
 
     def get_context_data(self, **kwargs):
         ret = super(AddDevice, self).get_context_data(**kwargs)
@@ -980,6 +988,7 @@ def _update_part_info(user, asset, part_info_data):
 class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
+    mainmenu_selected = 'devices'
 
     def initialize_vars(self):
         self.parts = []
@@ -1805,7 +1814,7 @@ class UserDetails(AssetsBase):
             self.user = User.objects.get(username=username)
         except User.DoesNotExist:
             messages.error(request, _('User {} not found'.format(username)))
-            return HttpResponseRedirect(reverse('user_list'))
+            return HttpResponseRedirect(reverse('user list'))
         self.assigned_assets = Asset.objects.filter(user=self.user)
         self.assigned_licences = self.user.licence_set.all()
         self.transitions_history = TransitionsHistory.objects.filter(
@@ -1816,7 +1825,7 @@ class UserDetails(AssetsBase):
     def get_context_data(self, **kwargs):
         ret = super(UserDetails, self).get_context_data(**kwargs)
         ret.update({
-            'section': 'user_list',
+            'section': 'user list',
             'user_object': self.user,
             'assigned_assets': self.assigned_assets,
             'assigned_licences': self.assigned_licences,
@@ -1831,6 +1840,7 @@ class UserList(Report, AssetsBase, DataTableMixin):
     template_name = 'assets/user_list.html'
     csv_file_name = 'users'
     sort_variable_name = 'sort'
+    mainmenu_selected = 'users'
     _ = DataTableColumnAssets
     columns = [
         _(
@@ -1860,7 +1870,7 @@ class UserList(Report, AssetsBase, DataTableMixin):
             'sort': self.sort,
             'columns': self.columns,
             'form': SearchUserForm(self.request.GET),
-            'section': 'user_list',
+            'section': 'user list',
         })
         return ret
 
@@ -1902,7 +1912,7 @@ class EditUser(AssetsBase):
             'form_id': 'user_relation_form',
             'caption': self.caption,
             'edited_user': self.user,
-            'section': 'user_list',
+            'section': 'user list',
         })
         return ret
 

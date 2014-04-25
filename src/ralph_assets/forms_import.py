@@ -159,6 +159,7 @@ class XlsUploadForm(forms.Form):
     """The first step for uploading the XLS file for asset bulk update."""
     model = ModelChoiceField()
     file = DataUploadField()
+    asset_type = forms.ChoiceField(choices=AssetType())
 
 
 class XlsColumnChoiceForm(forms.Form):

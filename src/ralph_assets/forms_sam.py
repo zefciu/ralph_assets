@@ -114,6 +114,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'valid_thru': DateWidget,
         }
         fields = (
+            'asset_type',
             'manufacturer',
             'licence_type',
             'property_of',
@@ -158,6 +159,7 @@ class EditLicenceForm(LicenceForm):
             'valid_thru': DateWidget,
         }
         fields = (
+            'asset_type',
             'manufacturer',
             'licence_type',
             'property_of',
