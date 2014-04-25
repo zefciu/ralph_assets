@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
@@ -246,7 +247,10 @@ class TransitionView(_AssetSearch):
 
     def get_report_file_link(self, *args, **kwargs):
         if self.transition_history:
-            return self.transition_history.report_file.url
+            return reverse(
+                'transition_history_file',
+                kwargs={'history_id': self.transition_history.id},
+            )
 
     def check_reports_template_exists(self, *args, **kwargs):
         try:
