@@ -29,13 +29,16 @@ from ralph_assets.forms_sam import (
 from ralph_assets.views import (
     AssetsBase,
     GenericSearch,
-    LicenseSelectedMixin,
     HISTORY_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
 
 
 LICENCE_PAGE_SIZE = 10
+
+
+class LicenseSelectedMixin(object):
+    mainmenu_selected = 'licences'
 
 
 class SoftwareCategoryNameColumn(DataTableColumn):

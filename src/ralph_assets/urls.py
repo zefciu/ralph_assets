@@ -108,7 +108,7 @@ urlpatterns = patterns(
         name='add_attachment'
     ),
     url(
-        r'(?P<mode>(back_office|dc))/xls/$',
+        r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
     ),
@@ -123,7 +123,12 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/add_licence/$',
+        r'sam/licences/$',
+        login_required(LicenceList.as_view()),
+        name='licence_list',
+    ),
+    url(
+        r'sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',
     ),
