@@ -152,6 +152,10 @@ class Licence(
             'mode': ASSET_TYPE2MODE[self.asset_type],
         })
 
+    @property
+    def used(self):
+        return self.assets.count() + self.users.count()
+
 
 class SoftwareCategoryLookup(LookupChannel):
     model = SoftwareCategory
