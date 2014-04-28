@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import datetime
 import logging
-import uuid
 
 from django.db.models import Q
 from django.contrib import messages
@@ -29,6 +28,16 @@ from ralph_assets.views import _get_return_link, GenericSearch
 
 
 logger = logging.getLogger(__name__)
+
+
+def generate_pdf_response(pdf_data, file_name):
+    response = HttpResponse(
+        content=pdf_data, content_type='application/pdf',
+    )
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(
+        file_name,
+    )
+    return response
 
 
 class BaseInvoiceReport(GenericSearch):
@@ -88,15 +97,6 @@ class BaseInvoiceReport(GenericSearch):
             error = True
         return error
 
-    def generate_response(self, pdf_data, file_name, *args, **kwargs):
-        response = HttpResponse(
-            content=pdf_data, content_type='application/pdf',
-        )
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-            file_name,
-        )
-        return response
-
     def get(self, *args, **kwargs):
         if not settings.ASSETS_REPORTS['ENABLE']:
             messages.error(self.request, _("Assets reports is disabled"))
@@ -107,13 +107,13 @@ class BaseInvoiceReport(GenericSearch):
         pdf_data, file_name = self.get_pdf_content()
         if not any((pdf_data, file_name)):
             return HttpResponseRedirect(self.get_return_link())
-        return self.generate_response(pdf_data, file_name)
+        return generate_pdf_response(pdf_data, file_name)
 
     def get_pdf_content(self, *args, **kwargs):
         content = None
         data = self.get_report_data()
-        file_name = '{}-{}-{}.pdf'.format(
-            self.template_file.slug, data['id'], uuid.uuid4(),
+        file_name = '{}-{}.pdf'.format(
+            self.template_file.slug, data['id'],
         )
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,

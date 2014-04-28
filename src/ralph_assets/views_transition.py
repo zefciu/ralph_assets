@@ -6,19 +6,26 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import logging
 import uuid
 
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
+from django.views.generic import TemplateView
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.views import _AssetSearch, _get_return_link
+from ralph_assets.views_invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
+
+
+logger = logging.getLogger(__name__)
 
 
 class TransitionDispatcher(object):
@@ -240,7 +247,10 @@ class TransitionView(_AssetSearch):
 
     def get_report_file_link(self, *args, **kwargs):
         if self.transition_history:
-            return self.transition_history.report_file.url
+            return reverse(
+                'transition_history_file',
+                kwargs={'history_id': self.transition_history.id},
+            )
 
     def check_reports_template_exists(self, *args, **kwargs):
         try:
@@ -357,3 +367,44 @@ class TransitionView(_AssetSearch):
             'actions_names': self.transition_object.actions_names,
         })
         return ret
+
+
+class TransitionHistoryFileHandler(TemplateView):
+    def get_context_data(self, **kwargs):
+        # we don't need data from TemplateView...
+        return {}
+
+    def raise_404_error(self):
+        raise Http404(_("Transition history file not found"))
+
+    def render_to_response(self, context, **response_kwargs):
+        try:
+            history_object = TransitionsHistory.objects.get(
+                id=self.kwargs.get('history_id'),
+            )
+        except TransitionsHistory.DoesNotExist:
+            self.raise_404_error()
+        file_name = self.generate_file_name(history_object)
+        pdf_data, error = self.get_file_content_from_history(history_object)
+        if pdf_data and not error:
+            return generate_pdf_response(pdf_data, file_name)
+        self.raise_404_error()
+
+    def get_file_content_from_history(self, history_object):
+        try:
+            content = history_object.report_file.read()
+        except IOError as e:
+            logger.error(
+                "Can not read transition history file: {} ({})".format(
+                    history_object.id, e,
+                )
+            )
+            return None, True
+        return content, False
+
+    def generate_file_name(self, history_object):
+        return "{}_{}_{}.pdf".format(
+            history_object.created.date(),
+            history_object.affected_user.get_full_name(),
+            history_object.transition.name,
+        )
