@@ -74,7 +74,10 @@ def get_licences_rows(filter_type='all'):
         base_row = row
         row = "{}{}{}\n".format(row, fill_empty_assets, fill_empty_licences)
         yield row
-        single_licence_cost = licence.price / licence.number_bought
+        if licence.number_bought > 0:
+            single_licence_cost = licence.price / licence.number_bought
+        else:
+            single_licence_cost = ''
         for asset in licence.assets.all().values(*LICENCES_ASSETS_COLUMNS):
             row = ""
             for column in LICENCES_ASSETS_COLUMNS:
