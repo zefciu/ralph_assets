@@ -1,6 +1,12 @@
 Change Log
 ----------
 
+1.4.3
+~~~~~~~
+
+* Added warning logger with cores count from ralph and assets
+
+
 1.4.2
 ~~~~~~~
 
