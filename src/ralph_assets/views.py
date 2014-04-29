@@ -1808,6 +1808,7 @@ class UserDetails(AssetsBase):
     """Detail user profile, relations with assets and licences"""
     template_name = 'assets/user_details.html'
     sidebar_selected = None
+    mainmenu_selected = 'users'
 
     def get(self, request, username, *args, **kwargs):
         try:
@@ -1896,6 +1897,7 @@ class EditUser(AssetsBase):
     template_name = 'assets/user_edit.html'
     caption = _('Edit user relations')
     message = _('Licence changed')
+    mainmenu_selected = 'users'
 
     def prepare(self, username):
         self.user = User.objects.get(username=username)
