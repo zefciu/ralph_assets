@@ -23,6 +23,9 @@ from ralph_assets.views import (
     EditPart,
     EditUser,
     HistoryAsset,
+    SupportContractList,
+    AddSupportContractForm,
+    EditSupportContractForm,
     SplitDeviceView,
     UserDetails,
     UserList,
@@ -139,6 +142,22 @@ urlpatterns = patterns(
         r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
         login_required(EditLicence.as_view()),
         name='edit_licence',
+    ),
+    url(
+        r'sup/supports/$',
+        login_required(SupportContractList.as_view()),
+        name='support_list',
+    ),
+    url(
+        r'sup/add_support/$',
+        login_required(AddSupportContractForm.as_view()),
+        name='add_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sup/edit_support/'
+        r'(?P<support_id>[0-9]+)$',
+        login_required(EditSupportContractForm.as_view()),
+        name='edit_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/delete/$',
