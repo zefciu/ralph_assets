@@ -88,6 +88,7 @@ class Licence(
     sn = models.TextField(
         verbose_name=_('SN / Key'),
         null=True,
+        blank=True,
     )
     parent = TreeForeignKey(
         'self',
@@ -98,9 +99,9 @@ class Licence(
     )
     niw = models.CharField(
         max_length=50,
-        null=True,
-        blank=True,
         verbose_name=_('Inventory number'),
+        null=False,
+        unique=True,
     )
     invoice_date = models.DateField(
         verbose_name=_('Invoice date'),
@@ -137,6 +138,7 @@ class Licence(
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True
     )
+    _used = None
 
     def __unicode__(self):
         return "{} x {} - {}".format(
@@ -154,7 +156,13 @@ class Licence(
 
     @property
     def used(self):
+        if self._used is not None:
+            return self._used
         return self.assets.count() + self.users.count()
+
+    @used.setter
+    def used(self, value):
+        self._used = value
 
 
 class SoftwareCategoryLookup(LookupChannel):

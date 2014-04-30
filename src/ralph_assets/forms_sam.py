@@ -133,13 +133,13 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
     sn = MultilineField(
         db_field_path='sn',
         label=_("SN/SNs"),
-        required=True,
+        required=False,
         widget=forms.Textarea(attrs={'rows': 25}),
     )
     niw = MultilineField(
         db_field_path='niw',
         label=_('Inventory number'),
-        required=False,
+        required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
     )
 
