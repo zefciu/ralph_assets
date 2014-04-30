@@ -1,43 +1,31 @@
 {% extends 'assets/add_assets.html' %}
-
+{% load assets %}
 {% load bob %}
+{% load i18n %}
 
-{% block form_title %}Edit device{% endblock %}
+{% block form_title %}{% trans "Edit device" %}{% endblock %}
 
 {% block additional_inputs %}
-  {% for field in device_info_form %}
+  {% for field in additional_info %}
     {% field_wrapper field %}
   {% endfor %}
 {% endblock %}
 
-{% block office_info_inputs %}
-  {% if office_info_form %}
-  <div class="span6 well">
-    {% for field in office_info_form %}
-      <div class="control-group{% if field.errors %} error{% endif %}">
-        <label class="control-label">{{ field.label }}</label>
-        <div class="form-field controls">
-          {{ field }}
-          {% if field.errors %}
-          <span class="help-inline">{% for error in field.errors %}{{ error }} {% endfor %}</span>
-          {% endif %}
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-  <div class="span6">
-      <h6><a href="{{ history_link }}">Full history</a></h6>
+{% include 'assets/attachment_table.html' with attachment_parent=asset mode=mode parent_name='asset'%}
+
+{% block tabular_info %}
+  <div>
+    <h6><a href="{{ history_link }}">{% trans "Full history" %}</a></h6>
   </div>
   {% if status_history %}
-      <div class="span6">
-          <h5>Status history</h5>
+      <div>
+          <h5>{% trans "Status history" %}</h5>
           <table class="table table-striped table-bordered details-history">
               <thead><tr>
-                  <th>Date</th>
-                  <th>Author</th>
-                  <th>Before</th>
-                  <th>After</th>
+                  <th>{% trans "Date" %}</th>
+                  <th>{% trans "Author" %}</th>
+                  <th>{% trans "Before" %}</th>
+                  <th>{% trans "After" %}</th>
               </tr></thead>
               <tbody>
               {% for h in status_history %}
@@ -51,48 +39,52 @@
               </tbody>
           </table>
       </div>
-{% endif %}
-      <div class="span6">
-          <h5>Device parts</h5>
-          {% if parts %}
-          <table class="table table-striped table-bordered details-history">
-              <thead><tr>
-                  <th></th>
-                  <th>Name</th>
-                  <th>Source device</th>
-                  <th>Author</th>
-              </tr></thead>
-              <tbody>
-              {% for part in parts%}
-                  <tr>
-                      <td><input type="checkbox" name="part_ids" value="{{ part.id }}"></td>
-                      <td><a href="../../../edit/part/{{ part.id }}">{{ part }}</a></td>
-                      <td><a href="../../../edit/device/{{ part.part_info.source_device.id }}">{{ part.part_info.source_device|default:'-'}}</a></td>
-                      <td>{{ part.user|default:'-'}}</td>
-                  </tr>
-              {% endfor %}
-              </tbody>
-          </table>
-          <div class="pull-left">
-            <div class="pull-left">
-            {% for field in part_form %}
-                {{ field.label }}: {{ field }}
-            {% endfor %}
-            </div>
-            <button class="btn btn-primary pull-left" name="move_parts"  type="submit">Move part</button>
-          </div>
-          {% endif %}
-          {% if not asset.has_parts %}
-            {% spaceless %}
-            <div class="pull-left">
-              <a href="{% url dc_device_split asset.id %}" class="btn btn-danger">
-                <i class="fugue-icon fugue-cutter"></i>&nbsp;Split device
-              </a>
-            </div>
-            {% endspaceless %}
-          {% endif %}
-          <div class="pull-right">
-              <a href="../../../add/part?device={{asset.id}}" class="btn btn-primary">Add part</a>
-          </div>
+  {% endif %}
+  {% transition_history asset %}
+{% endblock %}
+
+{% block parts %}
+  <div>
+    <h5>{% trans "Device parts" %}</h5>
+    {% if parts %}
+    <table class="table table-striped table-bordered details-history">
+        <thead><tr>
+            <th></th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Source device" %}</th>
+            <th>{% trans "Author" %}</th>
+        </tr></thead>
+        <tbody>
+        {% for part in parts%}
+            <tr>
+                <td><input type="checkbox" name="part_ids" value="{{ part.id }}"></td>
+                <td><a href="{% url part_edit mode=mode asset_id=part.id %}">{{ part }}</a></td>
+                <td><a href="{% url device_edit mode=mode asset_id=part.part_info.source_device.id %}">{{ part.part_info.source_device|default:'-'}}</a></td>
+                <td>{{ part.user|default:'-'}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="pull-left">
+      <div class="pull-left">
+      {% for field in part_form %}
+          {{ field.label }}: {{ field }}
+      {% endfor %}
       </div>
+      <button class="btn btn-primary pull-left" name="move_parts" type="submit">{% trans "Move part" %}</button>
+    </div>
+    {% endif %}
+    {% if not asset.has_parts %}
+      {% spaceless %}
+      <div class="pull-left">
+        <a href="{% url device_split mode='dc' asset_id=asset.id %}" class="btn btn-danger">
+          <i class="fugue-icon fugue-cutter"></i>&nbsp;{% trans "Split device" %}
+        </a>
+      </div>
+      {% endspaceless %}
+    {% endif %}
+    <div class="pull-right">
+      <a href="{% url add_part mode=mode  %}?device={{asset.id}}" class="btn btn-primary">{% trans "Add part" %}</a>
+    </div>
+  </div>
 {% endblock %}

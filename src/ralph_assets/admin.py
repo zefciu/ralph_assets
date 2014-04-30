@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
@@ -18,14 +19,47 @@ from ralph_assets.models import (
     AssetCategoryType,
     AssetManufacturer,
     AssetModel,
+    AssetOwner,
+    CoaOemOs,
+    Licence,
+    ReportOdtSource,
+    Service,
+    Transition,
+    TransitionsHistory,
+    get_edit_url,
     Warehouse,
 )
+from ralph_assets.models_util import ImportProblem
+from ralph_assets import models_sam
+
+
+admin.site.register(AssetOwner)
+admin.site.register(Licence)
+admin.site.register(models_sam.LicenceType)
+admin.site.register(models_sam.SoftwareCategory)
+
+
+class ImportProblemAdmin(ModelAdmin):
+    change_form_template = "assets/import_problem_change_form.html"
+
+    def change_view(self, request, object_id, extra_context=None):
+        extra_context = extra_context or {}
+        problem = get_object_or_404(ImportProblem, pk=object_id)
+        extra_context['resource_link'] = get_edit_url(problem.resource)
+        return super(ImportProblemAdmin, self).change_view(
+            request,
+            object_id,
+            extra_context,
+        )
+
+admin.site.register(ImportProblem, ImportProblemAdmin)
 
 
 class WarehouseAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)
     search_fields = ('name',)
+
 
 admin.site.register(Warehouse, WarehouseAdmin)
 
@@ -67,6 +101,7 @@ class AssetAdmin(ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+
 admin.site.register(Asset, AssetAdmin)
 
 
@@ -74,6 +109,7 @@ class AssetModelAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name',)
     search_fields = ('name',)
+
 
 admin.site.register(AssetModel, AssetModelAdmin)
 
@@ -100,8 +136,9 @@ class AssetCategoryAdmin(ModelAdmin):
         return name
     form = AssetCategoryAdminForm
     save_on_top = True
-    list_display = (name, 'parent')
+    list_display = (name, 'parent', 'slug')
     search_fields = ('name',)
+    prepopulated_fields = {"slug": ("type", "parent", "name")}
 
 
 admin.site.register(AssetCategory, AssetCategoryAdmin)
@@ -112,4 +149,49 @@ class AssetManufacturerAdmin(ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
+
 admin.site.register(AssetManufacturer, AssetManufacturerAdmin)
+
+
+class ReportOdtSourceAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = ('name', 'slug',)
+    prepopulated_fields = {"slug": ("name",)}
+
+
+admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)
+
+
+class TransitionAdmin(ModelAdmin):
+    prepopulated_fields = {"slug": ("name",)}
+    filter_horizontal = ('actions',)
+
+
+admin.site.register(Transition, TransitionAdmin)
+
+
+class TransitionsHistoryAdmin(ModelAdmin):
+    list_display = ('transition', 'logged_user', 'affected_user', 'created')
+    readonly_fields = (
+        'transition', 'assets', 'logged_user', 'affected_user', 'report_file',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+
+admin.site.register(TransitionsHistory, TransitionsHistoryAdmin)
+
+
+class CoaOemOsAdmin(ModelAdmin):
+    list_display = ('name',)
+
+
+admin.site.register(CoaOemOs, CoaOemOsAdmin)
+
+
+class ServiceAdmin(ModelAdmin):
+    list_display = ('name', 'profit_center', 'cost_center')
+
+
+admin.site.register(Service, ServiceAdmin)

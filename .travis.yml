@@ -3,7 +3,12 @@ python:
   - "2.7"
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install git+https://github.com/allegro/ralph.git@develop --allow-all-external --allow-unverified ipaddr --allow-unverified postmarkup --allow-unverified python-graph-core --allow-unverified pysphere
-  - pip install . --use-mirrors
-# command to run tests, e.g. python setup.py test
-script: DJANGO_SETTINGS_PROFILE=test-assets ralph test ralph_assets
+    - pip install flake8 --use-mirrors
+    - pip install git+https://github.com/quamilek/bob-ajax-selects.git@develop
+    - pip install git+https://github.com/allegro/django-bob.git@develop
+    - pip install git+https://github.com/allegro/ralph@develop  --use-mirrors --allow-all-external --allow-unverified ipaddr --allow-unverified postmarkup --allow-unverified python-graph-core --allow-unverified pysphere
+    - pip install . --use-mirrors
+before_script:
+  make flake
+script:
+  make quicktest

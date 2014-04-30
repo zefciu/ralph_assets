@@ -16,6 +16,7 @@ class Assets(RalphModule):
     module_name = 'ralph_assets'
     disp_name = 'Assets'
     icon = 'fugue-box-label'
+    default_settings_module = 'ralph_assets.settings'
 
     def __init__(self, **kwargs):
         super(Assets, self).__init__(

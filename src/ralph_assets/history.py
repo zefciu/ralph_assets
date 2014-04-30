@@ -6,6 +6,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.db.models.fields.related import RelatedField
+from django.db.models.fields import FieldDoesNotExist
+
 from ralph_assets.models_assets import Asset
 
 
@@ -21,11 +24,17 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
             continue
         if field in instance.insignificant_fields:
             continue
-        if field.endswith('_id'):
-            field = field[:-3]
-            parent_model = instance._meta.get_field_by_name(
-                field
-            )[0].related.parent_model
+        field_object = None
+        try:
+            field_object, _, _, _ = instance._meta.get_field_by_name(field)
+        except FieldDoesNotExist:
+            try:
+                field = field[:-3]
+                field_object, _, _, _ = instance._meta.get_field_by_name(field)
+            except FieldDoesNotExist:
+                continue
+        if isinstance(field_object, RelatedField):
+            parent_model = field_object.related.parent_model
             try:
                 if orig is not None:
                     orig = parent_model.objects.get(pk=orig)
@@ -37,9 +46,9 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
             continue
         if field in ('office_info', 'device_info', 'part_info'):
             continue
-        if field in ('type', 'license_type', 'status', 'source'):
-            orig = get_choices(instance, field, orig)
+        if hasattr(field_object, 'choices') and field_object.choices:
             new = get_choices(instance, field, new)
+            orig = get_choices(instance, field, orig)
         if field == 'attachment':
             if str(orig).strip() == str(new).strip():
                 continue
@@ -47,6 +56,10 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
 
 
 def get_choices(instance, field, id):
+    try:
+        id = int(id)
+    except (TypeError, ValueError):
+        return id
     choices = instance._meta.get_field_by_name(field)[0].get_choices()
     for choice_id, value in choices:
         if choice_id == id:

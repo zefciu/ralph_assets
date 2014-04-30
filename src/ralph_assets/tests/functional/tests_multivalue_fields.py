@@ -21,6 +21,22 @@ class TestMultivalueFields(TestCase):
         self.model = create_model()
         self.category = create_category()
         self.addform = '/assets/dc/add/device/'
+        self.common_test_data = dict(
+            type=AssetType.data_center.id,
+            model=self.model.id,
+            invoice_date='2001-01-02',
+            warehouse=self.warehouse.id,
+            status=AssetStatus.new.id,
+            price='10',
+            size=1,
+            slots=1,
+            category=self.category.slug,
+            ralph_device_id='',
+            asset=True,
+            source=1,
+            deprecation_rate=0,
+            production_year=2011,
+        )
 
     def test_add_form_testing_sn_and_barcode(self):
         """
@@ -34,256 +50,42 @@ class TestMultivalueFields(TestCase):
         """
 
         test_data = [
+            dict(sn='sn1_1, sn2_1, sn1_1', remarks='asset1'),
+            dict(sn='sn1_2, , , sn2_2', remarks='asset2'),
+            dict(sn='sn1_3, ,, sn2_3', remarks='asset3'),
+            dict(sn='sn1_4, ns2_4 \n sn3_4', remarks='asset4'),
             dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='sn1_1, sn2_1, sn1_1',
-                remarks='asset1',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='sn1_2, , , sn2_2',
-                remarks='asset2',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='sn1_3, ,, sn2_3',
-                remarks='asset3',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='sn1_4, ns2_4 \n sn3_4',
-                remarks='asset4',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
                 sn='name with white spaces, 0000-0000-0000-0000',
-                remarks='asset5',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
+                remarks='asset5'
             ),
+            dict(sn='', barcode='any', remarks='asset6'),
+            dict(sn='serialnumber1', barcode='any1, any2', remarks='asset7'),
             dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='',
-                barcode='any',
-                remarks='asset6',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='serialnumber1',
-                barcode='any1, any2',
-                remarks='asset7',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
                 sn='serialnumber2, serialnumber3',
                 barcode='any3',
                 remarks='asset8',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
             ),
             dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
                 sn='serialnumber4, serialnumber5',
                 barcode='any4, any 5',
                 remarks='asset9',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
             ),
             dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
                 sn='serialnumber6, serialnumber7, serialnumber8',
                 barcode='any6 , , any 7',
                 remarks='asset10',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
             ),
             dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
                 sn='serialnumber9, serialnumber10, serialnumber11',
                 barcode='any8 , \n, any9',
                 remarks='asset11',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
             ),
-            dict(
-                type=AssetType.data_center.id,
-                model=self.model.id,
-                support_period='1',
-                support_type='standard',
-                invoice_date='2001-01-02',
-                warehouse=self.warehouse.id,
-                status=AssetStatus.new.id,
-                sn='serialnumber12',
-                barcode='barcode1',
-                remarks='asset12',
-                price='10',
-                size=1,
-                slots=1,
-                category=self.category.id,
-                ralph_device_id='',
-                asset=True,
-                source=1,
-                deprecation_rate=0,
-                production_year=2011,
-            ),
+            dict(sn='serialnumber12', barcode='barcode1', remarks='asset12'),
         ]
         # Add form testing
-        for test in test_data:
+        for partial_data in test_data:
+            test = self.common_test_data.copy()
+            test.update(partial_data)
             post = self.client.post(self.addform, test)
             added_assets = Asset.objects.filter(remarks=test['remarks'])
             if test['remarks'] == 'asset1':
@@ -293,16 +95,16 @@ class TestMultivalueFields(TestCase):
                     SCREEN_ERROR_MESSAGES['duplicated_sn_in_field']
                 )
             elif test['remarks'] == 'asset2':
-                self.assertEqual(post.status_code, 302)
-                self.assertEqual(len(added_assets), 2)
-                self.assertEqual(
-                    ['sn1_2', 'sn2_2'], [asset.sn for asset in added_assets]
+                self.assertEqual(post.status_code, 200)
+                self.assertFormError(
+                    post, 'asset_form', 'sn',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
             elif test['remarks'] == 'asset3':
-                self.assertEqual(post.status_code, 302)
-                self.assertEqual(len(added_assets), 2)
-                self.assertEqual(
-                    ['sn1_3', 'sn2_3'], [asset.sn for asset in added_assets]
+                self.assertEqual(post.status_code, 200)
+                self.assertFormError(
+                    post, 'asset_form', 'sn',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
             elif test['remarks'] == 'asset4':
                 self.assertEqual(post.status_code, 302)
@@ -316,18 +118,25 @@ class TestMultivalueFields(TestCase):
                     post, 'asset_form', 'sn',
                     SCREEN_ERROR_MESSAGES['contain_white_character']
                 )
-            elif test['remarks'] in ['asset9', 'asset10']:
+            elif test['remarks'] in ['asset9']:
                 self.assertEqual(post.status_code, 200)
                 self.assertFormError(
                     post, 'asset_form', 'barcode',
                     SCREEN_ERROR_MESSAGES['contain_white_character']
                 )
-            elif test['remarks'] == 'asset6':
+            elif test['remarks'] in ['asset10', 'asset11']:
+                self.assertEqual(post.status_code, 200)
                 self.assertFormError(
-                    post, 'asset_form', 'sn',
-                    SCREEN_ERROR_MESSAGES['django_required']
+                    post, 'asset_form', 'barcode',
+                    SCREEN_ERROR_MESSAGES['empty_items_disallowed']
                 )
-            elif test['remarks'] in ['asset6', 'asset7', 'asset 8', 'asset11']:
+            elif test['remarks'] == 'asset6':
+                self.assertEqual(post.status_code, 302)
+                self.assertEqual(len(added_assets), 1)
+                self.assertEqual(
+                    ['any'], [asset.barcode for asset in added_assets]
+                )
+            elif test['remarks'] in ['asset7', 'asset 8']:
                 self.assertEqual(post.status_code, 200)
                 self.assertFormError(
                     post, 'asset_form', 'barcode',
@@ -356,10 +165,6 @@ class TestMultivalueFields(TestCase):
                 )
                 post = self.client.post(self.addform, duplicate)
                 self.assertEqual(post.status_code, 200)
-                self.assertFormError(
-                    post, 'asset_form', 'barcode',
-                    SCREEN_ERROR_MESSAGES['barcode_already_exist'] + 'barcode1'
-                )
         empty_sn = Asset.objects.filter(sn=' ')
         self.assertEqual(len(empty_sn), 0)
         empty_sn = Asset.objects.filter(barcode=' ')

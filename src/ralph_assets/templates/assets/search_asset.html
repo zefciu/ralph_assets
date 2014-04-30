@@ -1,4 +1,5 @@
 {% extends 'assets/base.html' %}
+{% load assets %}
 {% load bob %}
 {% load i18n %}
 {% load icons %}
@@ -20,49 +21,29 @@ form.form-inline {
 
 {% block scripts %}
     {{ block.super }}
-    <script type="text/javascript">
-      $(document).ready(function() {
-            $('#post_edit_all').click(function() {
-                var ids = [];
-                $("#assets_table input[type=checkbox]").each(
-                    function(index, val){
-                        if(val.checked) {
-                            ids.push($(val).val());
-                        };
-                    }
-                );
-                if (ids.length) {
-                    window.location.href = 'bulkedit?select=' + ids.join('&select=');
-                }
-                return false;
-            });
-            $('.del-asset-btn').click(function() {
-                if (!confirm("Are you sure to delete Asset?")) {
-                    return false;
-                }
-            });
-            require(['reports'], function(reports) {
-                reports.setup({
-                    trigger: $('.pagination').find('a').last(),
-                    progressBar: '#async-progress',
-                    etaEl: '#eta'
-                });
-            });
-        });
-    </script>
 {% endblock %}
 
 
 {% block sidebar_search%}
+
     <div class="form search-form well well-small" id="sidebar_search">
         {% trans "Hint: you can use quotation marks for exact matches." %}
         <hr>
-        {% form form=form method="GET" action='' submit_label='Search' css_class=''%}
+        {% collapsed_form form %}
     </div>
 {% endblock %}
 
 {% block content %}
+
+    {% if assets_count %}
+        <div class="alert alert-info">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "items searched" %}
+        </div>
+    {% endif %}
     <h3>{{header}}</h3>
+        <div class="alert alert-success selected-assets-info-box" data-selected="false">
+            <strong data-searched-items="{{assets_count}}">{{assets_count}}</strong> {% trans "assets selected" %}
+        </div>
         <table id='assets_table' class="table table-bordered table-striped">
         {% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
                 <tbody>
@@ -76,25 +57,40 @@ form.form-inline {
                             {% icon row.get_data_icon %}&nbsp;{{row.get_data_type|capfirst}}
                         </a>
                     </td>
-                    <td>{{row.sn|default:'-' }}</td>
-                    <td>{{row.barcode|default:'-' }}</td>
-                    <td>{{row.invoice_date|default:'-' }}</td>
-                    <td>{{row.model.name|default:'-' }}</td>
-                    <td>{{row.invoice_no|default:'-' }}</td>
-                    <td>{{row.order_no|default:'-' }}</td>
                     <td>{{row.get_status_display}}</td>
+                    <td>{{row.barcode|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.model.category|default:'-' }}</td>
+                        <td>{{row.model.manufacturer.name|default:'-' }}</td>
+                    {% endif %}
+                    <td>{{row.model.name|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.user|default:'-' }}</td>
+                    {% endif %}
                     <td>{{row.warehouse}}</td>
-                    <td>{{row.venture}}</td>
-                    <td>{{row.price}}</td>
+                    <td>{{row.sn|default:'-' }}</td>
+                    {% if mode == 'back_office' %}
+                        <td>{{row.office_info.imei|default:'-' }}</td>
+                        <td>{{row.property_of|default:'-' }}</td>
+                        <td>{{row.office_info.get_purpose|default:'-' }}</td>
+                        <td>{{row.service_name|default:'-' }}</td>
+                    {% endif %}
+                    <td>{{row.invoice_date|default:'-' }}</td>
+                    <td>{{row.invoice_no|default:'-' }}</td>
+                    {% if mode == 'dc' %}
+                        <td>{{row.order_no|default:'-' }}</td>
+                        <td>{{row.price}}</td>
+                        <td>{{row.venture}}</td>
+                        <td>
+                            {% if row.is_discovered %}
+                                <i class="fugue-icon fugue-tick-circle"></i>
+                            {% else %}
+                                <i class="fugue-icon fugue-cross-octagon"></i>
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                    {% if not asset_hide_action_search %}
                     <td>
-                        {% if row.is_discovered %}
-                            <i class="fugue-icon fugue-tick-circle"></i>
-                        {% else %}
-                            <i class="fugue-icon fugue-cross-octagon"></i>
-                        {% endif %}
-                    </td>
-                    <td>
-
                     <div class="btn-group">
                       <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
                         Action
@@ -103,14 +99,14 @@ form.form-inline {
                       <ul class="dropdown-menu pull-right">
 
                     {% if row.get_data_type == 'device' %}
-                        <li><a href="./edit/device/{{row.id}}">Edit</a></li>
-                        <li><a href="./history/device/{{row.id}}">History</a></li>
+                        <li><a href="./edit/device/{{row.id}}">{% trans "Edit" %}</a></li>
+                        <li><a href="./history/device/{{row.id}}">{% trans "History" %}</a></li>
                         {% if row.device_info.ralph_device_id%}
-                            <li><a href="{% url search 'info' row.device_info.ralph_device_id %}">View in Ralph</a></li>
+                            <li><a href="{% url search 'info' row.device_info.ralph_device_id %}">{% trans "View in Ralph" %}</a></li>
                         {% endif %}
                     {% else %}
-                        <li><a href="./edit/part/{{row.id}}">Edit</a></li>
-                        <li><a href="./history/part/{{row.id}}">History</a></li>
+                        <li><a href="./edit/part/{{row.id}}">{% trans "Edit" %}</a></li>
+                        <li><a href="./history/part/{{row.id}}">{% trans "History" %}</a></li>
                     {% endif %}
                         {% if not row.deleted %}
                             <li class="divider"></li>
@@ -125,6 +121,7 @@ form.form-inline {
                         </ul>
                     </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -135,15 +132,72 @@ form.form-inline {
             <div class="progress" id="async-progress">
                 <div class="bar"></div>
             </div>
-            <div class="btn-group">
+            <div class="btn-group pull-left">
               <a class="btn dropdown-toggle btn-primary" data-toggle="dropdown" href="#">
-                Bulk actions...
+                {% trans "Bulk actions..." %}
                 <span class="caret"></span>
               </a>
             <ul class="dropdown-menu">
                 <li>
-                    <a href="#" id='post_edit_all'>Edit selected</a>
+                    <a href="#" id='post_add_attachment'>{% trans "Add attachments" %}</a>
+                </li>
+            {% if asset_reports_enable %}
+                <li class="disabled section-title">
+                    <a href="#" style="">
+                        {% trans "Create invoice report" %}
+                    </a>
+                </li>
+                <li class="dropdown-menu-indended">
+                    <a href="#" id='post_invoice_report_selected'>
+                        {% trans "from selected assets" %}
+                    </a>
+                </li>
+                <li class="dropdown-menu-indended">
+                    <a href="#" id='post_invoice_report_search_query'>
+                        {% trans "from search query" %}
+                    </a>
+                </li>
+                <li class="divider"></li>
+            {% endif %}
+                <li>
+                    <a href="#" id='post_edit_all'>{% trans "Edit selected" %}</a>
                 </li>
             </ul>
             </div>
+            {% if asset_transitions_enable %}
+            <div class="btn-group pull-left">
+                <a class="btn dropdown-toggle btn-info" data-toggle="dropdown" href="#">
+                    {% trans "Transition asset" %}
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="#" id='post_release_transition_selected' data-transition-type="release-asset">
+                            {% trans "Release assets" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li >
+                        <a href="#" id='post_return_transition_selected' data-transition-type="return-asset">
+                            {% trans "Return assets" %}
+                        </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <a href="#" id='post_loan_transition_selected' data-transition-type="loan-asset">
+                            {% trans "Loan assets" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+            <li class="select-all-pages">
+                <a href="#" class="bob-select-all-pages">
+                    {% icon 'fugue-documents-stack' %}
+                    <span>{% trans "Select on all pages" %}</span>
+                    <span class="bolded" style="display:none;">{% trans "Deselect on all pages" %}</span>
+                </a>
+            </li>
 {% endblock %}
+
+

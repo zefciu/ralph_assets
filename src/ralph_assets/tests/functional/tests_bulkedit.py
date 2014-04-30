@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from ralph_assets.models_assets import AssetType, AssetStatus, AssetSource
+from ralph_assets.models_assets import AssetStatus
 from ralph_assets.tests.util import (
     create_asset,
     create_model,
@@ -51,9 +51,6 @@ class TestBulkEdit(TestCase):
                 'invoice_no': 'Invoice No1',
                 'order_no': 'Order No1',
                 'invoice_date': '2012-02-02',
-                'support_period': 24,
-                'support_type': 'standard1',
-                'provider': 'Provider1',
                 'status': AssetStatus.in_progress.id,
                 'sn': '3333-3333-3333-3333',
                 'barcode': 'bc-3333-3333-3333-3333',
@@ -63,9 +60,6 @@ class TestBulkEdit(TestCase):
                 'invoice_no': 'Invoice No2',
                 'order_no': 'Order No2',
                 'invoice_date': '2011-02-03',
-                'support_period': 48,
-                'support_type': 'standard2',
-                'provider': 'Provider2',
                 'status': AssetStatus.waiting_for_release.id,
                 'sn': '4444-4444-4444-4444',
                 'barcode': 'bc-4444-4444-4444-4444',
@@ -96,9 +90,6 @@ class TestBulkEdit(TestCase):
                 invoice_no='Invoice No1',
                 order_no='Order No1',
                 invoice_date='2012-02-02',
-                support_period=24,
-                support_type='standard1',
-                provider='Provider1',
                 status=AssetStatus.in_progress.id,
                 sn='3333-3333-3333-3333',
                 barcode='bc-3333-3333-3333-3333',
@@ -108,9 +99,6 @@ class TestBulkEdit(TestCase):
                 invoice_no='Invoice No2',
                 order_no='Order No2',
                 invoice_date='2011-02-03',
-                support_period=48,
-                support_type='standard2',
-                provider='Provider2',
                 status=AssetStatus.waiting_for_release.id,
                 sn='4444-4444-4444-4444',
                 barcode='bc-4444-4444-4444-4444',

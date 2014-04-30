@@ -9,24 +9,38 @@ from __future__ import unicode_literals
 import re
 import time
 
-from ajax_select.fields import AutoCompleteSelectField, AutoCompleteField
+from ajax_select.fields import (
+    AutoCompleteSelectField,
+    AutoCompleteField,
+    AutoCompleteSelectMultipleField,
+)
+from bob.forms import (
+    AJAX_UPDATE,
+    CLONE,
+    Dependency,
+    dependency_conditions,
+    DependencyForm,
+    REQUIRE,
+    SHOW,
+)
+from collections import OrderedDict
+from django.core.urlresolvers import reverse
 from django.forms import (
     BooleanField,
     CharField,
     ChoiceField,
     DateField,
-    FileField,
     Form,
     IntegerField,
+    ModelChoiceField,
     ModelForm,
     ValidationError,
 )
-from django.forms.widgets import HiddenInput, Textarea
+from django.forms.widgets import HiddenInput, Textarea, TextInput
 from django.utils.html import escape
-from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from bob.forms import DependencyForm, SHOW, Dependency, dependency_conditions
 
 from ralph_assets.models import (
     Asset,
@@ -38,19 +52,261 @@ from ralph_assets.models import (
     DeviceInfo,
     OfficeInfo,
     PartInfo,
+    RALPH_DATE_FORMAT,
+    Service,
 )
+from ralph_assets import models_assets
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget
 
 
+RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
+
+
+asset_fieldset = lambda: OrderedDict([
+    ('Basic Info', [
+        'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
+        'location', 'status', 'task_url', 'loan_end_date', 'remarks',
+        'service_name', 'property_of',
+    ]),
+    ('Financial Info', [
+        'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+        'deprecation_rate', 'source', 'request_date', 'provider_order_date',
+        'delivery_date',
+    ]),
+    ('User Info', [
+        'user', 'owner', 'employee_id', 'company', 'department', 'manager',
+        'profit_center', 'cost_center',
+    ]),
+])
+
+asset_search_back_office_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
+        'collapsed': [
+            'warehouse', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
+            'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
+asset_search_dc_fieldsets = lambda: OrderedDict([
+    ('Basic Info', {
+        'noncollapsed': [
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+        ],
+        'collapsed': [
+            'status', 'task_url', 'category', 'loan_end_date_from',
+            'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
+        ],
+    }),
+    ('User data', {
+        'noncollapsed': ['user', 'owner'],
+        'collapsed': [
+            'company', 'department', 'employee_id', 'cost_center',
+            'profit_center',
+        ],
+    }),
+    ('Financial data', {
+        'noncollapsed': [
+            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+        ],
+        'collapsed': [
+            'provider', 'source', 'ralph_device_id', 'request_date_from',
+            'request_date_to', 'provider_order_date_from',
+            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
+            'deprecation_rate',
+        ]
+    })
+])
+
 LOOKUPS = {
+    'asset': ('ralph_assets.models', 'DeviceLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
+    'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
+    'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_bodevice': ('ralph_assets.models', 'BODeviceLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
+    'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'licence': ('ralph_assets.models', 'LicenceLookup'),
+    'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
-
+    'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
 }
+
+
+class MultivalFieldForm(ModelForm):
+    """A form that has several multiline fields that need to have the
+    same number of entries."""
+
+    def different_multival_counters(self, cleaned_data):
+        """Adds a validation error if if form's multivalues fields have
+        different count of items."""
+        items_count_per_multi = set()
+        for field in self.multival_fields:
+            if cleaned_data.get(field, []):
+                items_count_per_multi.add(len(cleaned_data.get(field, [])))
+        if len(items_count_per_multi) > 1:
+            for field in self.multival_fields:
+                if field in cleaned_data:
+                    msg = "Fields: {} - require the same count".format(
+                        ', '.join(self.multival_fields)
+                    )
+                    self.errors.setdefault(field, [])
+                    self.errors[field].append(msg)
+
+    def unique_multival_fields(self, data):
+        for field_name in self.multival_fields:
+            try:
+                self[field_name].field.check_field_uniqueness(
+                    self._meta.model,
+                    data.get(field_name, [])
+                )
+            except ValidationError as err:
+                self._errors.setdefault(field_name, [])
+                self._errors[field_name] += err.messages
+
+    def clean(self):
+        data = super(MultivalFieldForm, self).clean()
+        self.different_multival_counters(data)
+        self.unique_multival_fields(data)
+        return data
+
+
+def move_after(_list, static, dynamic):
+    """
+    Move *static* elem. after *dynamic* elem. in list *_list*
+    Both *static* and *dynamic* MUST belong to *_list*.
+    :return list: return _list with moved *dynamic* elem.
+    """
+    _list.remove(dynamic)
+    next_pos = _list.index(static) + 1
+    _list.insert(next_pos, dynamic)
+    return _list
+
+
+def validate_snbcs(snbcs):
+    """
+    This validator checks if all snbcs item are snbc.
+    Name 'snbc' is a join of 'serial number' (sn) and barcode ('bc'), because
+    both things shares the same validation requirements.
+    """
+    def _validate_snbc(snbc):
+        if ' ' in snbc:
+            raise ValidationError(
+                _("Item can't contain white characters.")
+            )
+        if len(snbc) > 200:
+            raise ValidationError(
+                _("Item max length is 200 characters.")
+            )
+    for snbc in snbcs:
+        _validate_snbc(snbc)
+
+
+class MultilineField(CharField):
+    """
+    This widget is a textarea which treats its content as many values seperated
+    by: commas or "new lines"
+    Validation:
+        - separated values cannot duplicate each other,
+        - empty values are disallowed,
+        - db uniqueness is also checked.
+    """
+    separators = ",|\n"
+
+    def __init__(self, db_field_path, *args, **kwargs):
+        """
+        :param string db_field_path: check arg *field_path* of function
+        *_check_field_uniqueness*
+        """
+        self.db_field_path = db_field_path
+        super(MultilineField, self).__init__(*args, **kwargs)
+
+    def validate(self, values):
+        if not values and self.required:
+            error_msg = _(
+                "Field can't be empty. Please put the item OR items separated "
+                "by new line or comma."
+            )
+            raise ValidationError(error_msg, code='required')
+        items = set()
+        for value in values:
+            if value in items:
+                raise ValidationError(_("There are duplicates in field."))
+            elif value == '':
+                raise ValidationError(_("Empty items disallowed, remove it."))
+            elif value:
+                items.add(value)
+
+    def to_python(self, value):
+        items = []
+        if value:
+            for item in re.split(self.separators, value):
+                items.append(item.strip())
+        return items
+
+    def clean(self, value):
+        value = super(MultilineField, self).clean(value)
+        return value
+
+    def check_field_uniqueness(self, Model, values):
+        '''
+            Check field (pointed by *self.db_field_path*) uniqueness.
+            If duplicated value is found then raise ValidationError
+
+            :param string Model: model field to be unique (as a string)
+            :param list values: list of field values
+        '''
+        if not self.db_field_path or not values:
+            return
+        conditions = {
+            '{}__in'.format(self.db_field_path): values
+        }
+        assets = Model.objects.filter(**conditions)
+        if assets:
+            raise ValidationError(mark_safe(
+                'Following items already exist: ' +
+                ', '.join([
+                    '<a href="{}">{}</a>'.format(asset.url, asset.id)
+                    for asset in assets
+                ])
+            ))
+
+
+imei_until_2003 = re.compile(r'^\d{6} *\d{2} *\d{6} *\d$')
+imei_since_2003 = re.compile(r'^\d{8} *\d{6} *\d$')
+
+
+def validate_imei(imei):
+    is_imei = imei_until_2003.match(imei) or imei_since_2003.match(imei)
+    if not is_imei:
+        raise ValidationError('"{}" is not IMEI format'.format(imei))
+
+
+def validate_imeis(imeis):
+    for imei in imeis:
+        validate_imei(imei)
 
 
 class ModeNotSetException(Exception):
@@ -62,7 +318,7 @@ class BarcodeField(CharField):
         return value if value else None
 
 
-class BulkEditAssetForm(ModelForm):
+class BulkEditAssetForm(DependencyForm, ModelForm):
     '''
         Form model for bulkedit assets, contains column definition and
         validadtion. Most important are sn and barcode fields. When you type
@@ -71,14 +327,6 @@ class BulkEditAssetForm(ModelForm):
     '''
     class Meta:
         model = Asset
-        fields = (
-            'type', 'model', 'device_info', 'warehouse', 'invoice_no',
-            'invoice_date', 'order_no', 'sn', 'barcode', 'price',
-            'support_price', 'support_period', 'support_type',
-            'support_void_reporting', 'provider', 'source', 'status',
-            'request_date', 'delivery_date', 'production_use_date',
-            'provider_order_date', 'production_year',
-        )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
@@ -87,9 +335,23 @@ class BulkEditAssetForm(ModelForm):
             'provider_order_date': DateWidget(),
             'device_info': HiddenInput(),
         }
+
+    @property
+    def dependencies(self):
+        return [
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
+        ]
+
     barcode = BarcodeField(max_length=200, required=False)
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -97,6 +359,14 @@ class BulkEditAssetForm(ModelForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    owner = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
     )
 
     def clean(self):
@@ -112,24 +382,30 @@ class BulkEditAssetForm(ModelForm):
                 self._errors["invoice_no"] = self.error_class([
                     _("Invoice number cannot be empty.")
                 ])
-        if 'sn' in self.changed_data and\
-            not _check_serial_numbers_uniqueness([self.cleaned_data['sn']])[0]:
+        serial_number_exists = \
+            Asset.objects.filter(sn=self.cleaned_data['sn']).count()
+        if 'sn' in self.changed_data and serial_number_exists:
             self._errors["sn"] = self.error_class([
                 _("Asset with this Sn already exists.")
+
             ])
         return self.cleaned_data
 
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            barcode_exists = Asset.objects.filter(barcode=barcode).count()
+            if 'barcode' in self.changed_data and barcode_exists:
+                self._errors["barcode"] = self.error_class([
+                    _("Asset with this barcode already exists.")
+                ])
+        return barcode
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        fillable_fields = [
-            'type', 'model', 'device_info', 'invoice_no', 'order_no',
-            'request_date', 'delivery_date', 'invoice_date',
-            'production_use_date', 'provider_order_date',
-            'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'production_year',
-        ]
+        banned_fillables = set(['sn', 'barcode', 'imei'])
         for field_name in self.fields:
-            if field_name in fillable_fields:
+            if field_name not in banned_fillables:
                 classes = "span12 fillable"
             elif field_name == 'support_void_reporting':
                 classes = ""
@@ -138,11 +414,43 @@ class BulkEditAssetForm(ModelForm):
             self.fields[field_name].widget.attrs = {'class': classes}
         group_type = AssetType.from_id(self.instance.type).group.name
         if group_type == 'DC':
+            self.fields['type'].choices = [
+                (c.id, c.desc) for c in AssetType.DC.choices]
+
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             del self.fields['type']
         elif group_type == 'BO':
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [('', '---------')] + [
                 (choice.id, choice.name) for choice in AssetType.BO.choices
             ]
+
+            self.fields['type'].choices = [
+                (c.id, c.desc) for c in AssetType.BO.choices]
+
+
+class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
+    class Meta(BulkEditAssetForm.Meta):
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'provider', 'task_url',
+            'deprecation_rate', 'order_no',
+        )
+    purpose = ChoiceField(
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
+    )
+
+
+class DataCenterBulkEditAssetForm(BulkEditAssetForm):
+    class Meta(BulkEditAssetForm.Meta):
+        fields = (
+            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
+            'sn', 'property_of', 'service_name', 'invoice_no', 'invoice_date',
+            'price', 'task_url', 'deprecation_rate', 'order_no',
+        )
 
 
 class DeviceForm(ModelForm):
@@ -251,96 +559,22 @@ class BasePartForm(ModelForm):
             self.fields['device'].initial = self.instance.device.id
 
 
-def _validate_multivalue_data(data):
-    '''
-        Check if data is a correct string with serial numbers and split
-        it to list
-
-        :param string: string with serial numbers splited by new line or comma
-        :return list: list of serial numbers
-    '''
-    error_msg = _("Field can't be empty. Please put the items separated "
-                  "by new line or comma.")
-    data = data.strip()
-    if not data:
-        raise ValidationError(error_msg)
-    items = []
-    for item in filter(len, re.split(",|\n", data)):
-        item = item.strip()
-        if item in items:
-            raise ValidationError(
-                _("There are duplicate serial numbers in field.")
-            )
-        elif ' ' in item:
-            raise ValidationError(
-                _("Serial number can't contain white characters.")
-            )
-        elif item:
-            items.append(item)
-    if not items:
-        raise ValidationError(error_msg)
-    return items
-
-
-def _check_serial_numbers_uniqueness(serial_numbers):
-    '''
-        Check serial numbers uniqueness. If find any not unique
-        serial number then return false status with information
-        about not unique serial numbers
-
-        :param list serial_numbers: list of serial numbers
-        :return tuple: status and not unique serial numbers or empty list
-        :rtype tuple:
-    '''
-    assets = Asset.objects.filter(sn__in=serial_numbers)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        not_unique.append((asset.sn, asset.id, asset.type))
-    return False, not_unique
-
-
-def _check_barcodes_uniqueness(barcodes):
-    '''
-        Check barcodes uniqueness. If find any not unique
-        barcode then return false status with information
-        about not unique barcode
-
-        :param list barcodes: list of barcodes
-        :return tuple: status and not unique barcodes or empty list
-        :rtype tuple:
-    '''
-    assets = Asset.objects.filter(barcode__in=barcodes)
-    if not assets:
-        return True, []
-    not_unique = []
-    for asset in assets:
-        not_unique.append((asset.barcode, asset.id, asset.type))
-    return False, not_unique
-
-
-def _sn_additional_validation(serial_numbers):
-    '''
-        Raise ValidationError if any of serial numbers is not unique
-
-        :param list serial_numbers: list of serial numbers
-    '''
-    is_unique, not_unique_sn = _check_serial_numbers_uniqueness(serial_numbers)
-    if not is_unique:
-        # ToDo: links to assets with duplicate sn
-        msg = "Following serial number already exists in DB: %s" % (
-            ", ".join(item[0] for item in not_unique_sn)
-        )
-        raise ValidationError(msg)
-
-
 class DependencyAssetForm(DependencyForm):
     """
     Containts common solution for adding asset and editing asset section.
     Launches a plugin which depending on the category field gives the
     opportunity to complete fields such as slots
     """
+
+    def __init__(self, *args, **kwargs):
+        if 'instance' in kwargs:
+            initial = kwargs.setdefault('initial', {})
+            initial['licences'] = [
+                licence['pk']
+                for licence in kwargs['instance'].licence_set.values('pk')
+            ]
+        super(DependencyAssetForm, self).__init__(*args, **kwargs)
+
     @property
     def dependencies(self):
         """
@@ -350,29 +584,124 @@ class DependencyAssetForm(DependencyForm):
         :returns object: Logic to test if category is in selected categories
         :rtype object:
         """
-        yield Dependency(
-            'slots',
-            'category',
-            dependency_conditions.MemberOf(
-                AssetCategory.objects.filter(is_blade=True).all(),
+        deps = [
+            Dependency(
+                'slots',
+                'category',
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(is_blade=True).all()
+                ),
+                SHOW,
             ),
-            SHOW,
+            Dependency(
+                'imei',
+                'category',
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                        "1-1-1-back-office-mobile-devices-tablet",
+                    ]).all()
+                ),
+                SHOW,
+            ),
+            Dependency(
+                'imei',
+                'category',
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(pk__in=[
+                        "1-1-back-office-mobile-devices",
+                        "1-1-1-back-office-mobile-devices-mobile-phone",
+                        "1-1-1-back-office-mobile-devices-smartphone",
+                    ]).all()
+                ),
+                REQUIRE,
+            ),
+            Dependency(
+                'location',
+                'owner',
+                dependency_conditions.NotEmpty(),
+                AJAX_UPDATE,
+                url=reverse('category_dependency_view'),
+                page_load_update=False,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                SHOW,
+            ),
+            Dependency(
+                'loan_end_date',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                REQUIRE,
+            ),
+            Dependency(
+                'note',
+                'status',
+                dependency_conditions.Exact(AssetStatus.loan.id),
+                SHOW,
+            ),
+            Dependency(
+                'owner',
+                'user',
+                dependency_conditions.NotEmpty(),
+                CLONE,
+                page_load_update=False,
+            ),
+        ]
+        ad_fields = (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
         )
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
+                    AJAX_UPDATE,
+                    url=reverse('category_dependency_view'),
+                ) for slave in ad_fields
+            ]
+        )
+        deps.extend(
+            [
+                Dependency(
+                    slave,
+                    'owner',
+                    dependency_conditions.NotEmpty(),
+                    SHOW,
+                ) for slave in ad_fields
+            ]
+        )
+        for dep in deps:
+            yield dep
 
 
 class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to add new asset
     '''
+
     class Meta:
         model = Asset
         fields = (
             'niw',
             'type',
             'category',
+            'imei',
             'model',
             'status',
+            'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',
@@ -383,6 +712,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'support_void_reporting',
             'provider',
             'remarks',
+            'service_name',
             'request_date',
             'provider_order_date',
             'delivery_date',
@@ -392,6 +722,17 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'user',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -401,6 +742,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'support_type': Textarea(attrs={'rows': 5}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -408,6 +751,10 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
     )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
@@ -422,27 +769,84 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
+    )
+    imei = CharField(
+        min_length=15, max_length=18, validators=[validate_imei],
+        label=_("IMEI"), required=False,
+    )
+    owner = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    location = CharField(required=False)
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset()
+
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
         super(BaseAddAssetForm, self).__init__(*args, **kwargs)
+
         category = self.fields['category'].queryset
         if mode == "dc":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.data_center.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.data_center
             )
         elif mode == "back_office":
+            self.fields['model'].widget.plugin_options['add_link'] +=\
+                '&type=' + str(AssetType.back_office.id)
+            self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
 
     def clean_category(self):
         data = self.cleaned_data["category"]
@@ -452,6 +856,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             )
         return data
 
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
+
     def clean_production_year(self):
         return validate_production_year(self)
 
@@ -460,6 +867,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     '''
         Base class to display form used to edit asset
     '''
+
     class Meta:
         model = Asset
         fields = (
@@ -467,9 +875,12 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'sn',
             'type',
             'category',
+            'imei',
             'model',
             'status',
+            'task_url',
             'warehouse',
+            'property_of',
             'source',
             'invoice_no',
             'order_no',
@@ -480,6 +891,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_void_reporting',
             'provider',
             'remarks',
+            'service_name',
             'sn',
             'barcode',
             'request_date',
@@ -492,6 +904,17 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'force_deprecation',
             'slots',
             'production_year',
+            'user',
+            'owner',
+            'location',
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+            'loan_end_date',
+            'note',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -503,6 +926,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'support_type': Textarea(attrs={'rows': 5}),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
             'barcode': Textarea(attrs={'rows': 1}),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -510,6 +935,10 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
     )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
@@ -524,10 +953,49 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         empty_label="---",
     )
     source = ChoiceField(
-        choices=AssetSource(),
+        required=False,
+        choices=[('', '----')] + AssetSource(),
+    )
+    imei = CharField(
+        min_length=15, max_length=18, validators=[validate_imei],
+        label=_("IMEI"), required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    owner = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    location = CharField(required=False)
+    company = CharField(
+        max_length=64,
+        required=False,
+    )
+    employee_id = CharField(
+        max_length=64,
+        required=False,
+    )
+    cost_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    profit_center = CharField(
+        max_length=1024,
+        required=False,
+    )
+    department = CharField(
+        max_length=64,
+        required=False,
+    )
+    manager = CharField(
+        max_length=1024,
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
+        self.fieldsets = asset_fieldset()
         mode = kwargs.get('mode')
         if mode:
             del kwargs['mode']
@@ -546,6 +1014,16 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
                 type=AssetCategoryType.back_office
             )
 
+        for readonly_field in (
+            'company',
+            'employee_id',
+            'cost_center',
+            'profit_center',
+            'department',
+            'manager',
+        ):
+            self.fields[readonly_field].widget = ReadOnlyWidget()
+
     def clean_sn(self):
         return self.instance.sn
 
@@ -560,15 +1038,21 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     def clean_production_year(self):
         return validate_production_year(self)
 
+    def clean_imei(self):
+        return self.cleaned_data['imei'] or None
+
     def clean(self):
         self.cleaned_data = super(BaseEditAssetForm, self).clean()
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
-        return self.cleaned_data
+        cleaned_data = super(BaseEditAssetForm, self).clean()
+        return cleaned_data
 
 
 def validate_production_year(asset):
     data = asset.cleaned_data["production_year"]
+    if data is None:
+        return data
     # Matches any 4-digit number:
     year_re = re.compile('^\d{4}$')
     if not year_re.match(str(data)):
@@ -593,85 +1077,90 @@ class AddPartForm(BaseAddAssetForm):
     '''
         Add new part for device
     '''
-    sn = CharField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+
+    sn = MultilineField(
+        db_field_path='sn', label=_("SN/SNs"), required=True,
+        widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
     )
 
-    def clean_sn(self):
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
+    def __init__(self, *args, **kwargs):
+        super(AddPartForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Basic Info'].remove('barcode')
 
 
-class AddDeviceForm(BaseAddAssetForm):
+class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new device form
     '''
-    sn = CharField(
-        label=_("SN/SNs"), required=True, widget=Textarea(attrs={'rows': 25}),
+    sn = MultilineField(
+        db_field_path='sn', label=_("SN/SNs"), required=False,
+        widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
     )
-    barcode = CharField(
-        label=_("Barcode/Barcodes"), required=False,
+    barcode = MultilineField(
+        db_field_path='barcode', label=_("Barcode/Barcodes"), required=False,
         widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_snbcs],
+    )
+    imei = MultilineField(
+        db_field_path='office_info__imei', label=_("IMEI"), required=False,
+        widget=Textarea(attrs={'rows': 25}),
+        validators=[validate_imeis],
     )
 
     def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
-
-    def clean_sn(self):
-        '''
-            Validate if sn is correct and change string with serial numbers
-            to list
-        '''
-        data = _validate_multivalue_data(self.cleaned_data["sn"])
-        _sn_additional_validation(data)
-        return data
-
-    def clean_barcode(self):
-        data = self.cleaned_data["barcode"].strip()
-        barcodes = []
-        if data:
-            for barcode in filter(len, re.split(",|\n", data)):
-                barcode = barcode.strip()
-                if barcode in barcodes:
-                    raise ValidationError(
-                        _("There are duplicate barcodes in the field.")
-                    )
-                elif ' ' in barcode:
-                    raise ValidationError(
-                        _("Serial number can't contain white characters.")
-                    )
-                elif barcode:
-                    barcodes.append(barcode)
-            if not barcodes:
-                raise ValidationError(_("Barcode list could be empty or "
-                                        "must have the same number of "
-                                        "items as a SN list."))
-            is_unique, not_unique_bc = _check_barcodes_uniqueness(barcodes)
-            if not is_unique:
-                # ToDo: links to assets with duplicate barcodes
-                msg = "Following barcodes already exists in DB: %s" % (
-                    ", ".join(item[0] for item in not_unique_bc)
-                )
-                raise ValidationError(msg)
-        return barcodes
+        self.multival_fields = ['sn', 'barcode', 'imei']
 
     def clean(self):
+        """
+        These form requirements:
+            1. *barcode* OR *sn* is REQUIRED,
+            2. multivalue field value if provided MUST be the same length as
+            rest of multivalues.
+        """
         cleaned_data = super(AddDeviceForm, self).clean()
-        serial_numbers = cleaned_data.get("sn", [])
-        barcodes = cleaned_data.get("barcode", [])
-        if barcodes and len(serial_numbers) != len(barcodes):
-            self._errors["barcode"] = self.error_class([
-                _("Barcode list could be empty or must have the same number "
-                  "of items as a SN list.")
-            ])
+        if 'sn' in self.data or 'barcode' in self.data:
+            if self.different_multival_counters(cleaned_data):
+                for field in self.multival_fields:
+                    if field in cleaned_data:
+                        msg = "Fields: {} - require the same count".format(
+                            ', '.join(self.multival_fields)
+                        )
+                        self.errors.setdefault(field, []).append(msg)
+        else:
+            msg = _('SN or BARCODE field is required')
+            for field in ['sn', 'barcode']:
+                self.errors[field].append(msg) if field in self.errors else \
+                    [msg]
+            self.different_multival_counters(cleaned_data)
         return cleaned_data
+
+
+class BackOfficeAddDeviceForm(AddDeviceForm):
+
+    purpose = ChoiceField(
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
+        self.fields.keyOrder = move_after(
+            self.fields.keyOrder, 'warehouse', 'purpose'
+        )
+
+
+class DataCenterAddDeviceForm(AddDeviceForm):
+    pass
 
 
 class OfficeForm(ModelForm):
     class Meta:
         model = OfficeInfo
-        exclude = ('created', 'modified')
+        exclude = ('imei', 'purpose', 'created', 'modified')
         widgets = {
             'date_of_last_inventory': DateWidget(),
         }
@@ -682,6 +1171,12 @@ class EditPartForm(BaseEditAssetForm):
 
 
 class EditDeviceForm(BaseEditAssetForm):
+
+    def __init__(self, *args, **kwargs):
+        super(EditDeviceForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Assigned licenses info'] = ['licences']
+
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
         deleted = cleaned_data.get("deleted")
@@ -700,6 +1195,35 @@ class EditDeviceForm(BaseEditAssetForm):
                 _("If SN is empty - Barcode is required")
             )
         return cleaned_data
+
+
+class BackOfficeEditDeviceForm(EditDeviceForm):
+
+    purpose = ChoiceField(
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
+        for after, field in (
+            ('sn', 'imei'),
+            ('loan_end_date', 'purpose'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
+
+
+class DataCenterEditDeviceForm(EditDeviceForm):
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
+        for after, field in (
+            ('status', 'slots'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class SearchAssetForm(Form):
@@ -725,6 +1249,21 @@ class SearchAssetForm(Form):
         required=False, choices=[('', '----')] + AssetStatus(),
         label='Status'
     )
+    task_url = CharField(required=False, label='Task url')
+    owner = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
+    location = CharField(required=False, label='Location')
+    company = CharField(required=False, label='Company')
+    employee_id = CharField(required=False, label='Employee id')
+    cost_center = CharField(required=False, label='Cost center')
+    profit_center = CharField(required=False, label='Profit center')
+    department = CharField(required=False, label='Department')
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],
@@ -740,9 +1279,36 @@ class SearchAssetForm(Form):
         required=False,
         choices=[('', '----')] + AssetSource(),
     )
-    niw = CharField(required=False, label='Niw')
-    sn = CharField(required=False, label='SN')
-    barcode = CharField(required=False, label='Barcode')
+    niw = CharField(
+        required=False,
+        label='Inventory number',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+            },
+        )
+    )
+    sn = CharField(
+        required=False,
+        label='SN',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+            },
+        )
+    )
+    barcode = CharField(
+        required=False,
+        label='Barcode',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+              'title': _('separate ";" or "|" to search multiple value'),
+            },
+        )
+    )
     ralph_device_id = IntegerField(
         required=False,
         label='Ralph device id',
@@ -753,6 +1319,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Request date",
+        input_formats=RALPH_DATE_FORMAT_LIST,
     )
     request_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -760,13 +1327,16 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
     provider_order_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
             'data-collapsed': True,
         }),
         label="Provider order date",
+        input_formats=RALPH_DATE_FORMAT_LIST,
     )
     provider_order_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -774,13 +1344,16 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
     delivery_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': 'Start YYYY-MM-DD',
             'data-collapsed': True,
         }),
         label="Delivery date",
+        input_formats=RALPH_DATE_FORMAT_LIST,
     )
     delivery_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -788,7 +1361,9 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
     deprecation_rate = ChoiceField(
         required=False, choices=[('', '----'),
                                  ('null', 'None'),
@@ -806,6 +1381,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Invoice date",
+        input_formats=RALPH_DATE_FORMAT_LIST,
     )
     invoice_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -813,7 +1389,9 @@ class SearchAssetForm(Form):
             'placeholder': 'End YYYY-MM-DD',
             'data-collapsed': True,
         }),
-        label='')
+        label='',
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
 
     production_use_date_from = DateField(
         required=False, widget=DateWidget(attrs={
@@ -821,6 +1399,7 @@ class SearchAssetForm(Form):
             'data-collapsed': True,
         }),
         label="Production use date",
+        input_formats=RALPH_DATE_FORMAT_LIST,
     )
     production_use_date_to = DateField(
         required=False, widget=DateWidget(attrs={
@@ -831,6 +1410,29 @@ class SearchAssetForm(Form):
         label='')
     unlinked = BooleanField(required=False, label="Is unlinked")
     deleted = BooleanField(required=False, label="Include deleted")
+    loan_end_date_from = DateField(
+        required=False, widget=DateWidget(attrs={
+            'placeholder': _('Start YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label=_("Loan end date"),
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
+    loan_end_date_to = DateField(
+        required=False, widget=DateWidget(attrs={
+            'class': 'end-date-field ',
+            'placeholder': _('End YYYY-MM-DD'),
+            'data-collapsed': True,
+        }),
+        label='',
+        input_formats=RALPH_DATE_FORMAT_LIST,
+    )
+    service_name = ModelChoiceField(
+        queryset=Service.objects.all(), empty_label="----", required=False,
+    )
+    warehouse = AutoCompleteSelectField(
+        LOOKUPS['asset_warehouse'], required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -847,6 +1449,26 @@ class SearchAssetForm(Form):
             self.fields['category'].queryset = category.filter(
                 type=AssetCategoryType.back_office
             )
+
+
+class DataCenterSearchAssetForm(SearchAssetForm):
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_dc_fieldsets()
+
+
+class BackOfficeSearchAssetForm(SearchAssetForm):
+    imei = CharField(required=False, label='IMEI')
+    purpose = ChoiceField(
+        choices=[('', '----')] + models_assets.AssetPurpose(),
+        label='Purpose',
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeSearchAssetForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_search_back_office_fieldsets()
 
 
 class DeleteAssetConfirmForm(Form):
@@ -894,9 +1516,6 @@ class SplitDevice(ModelForm):
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
         self.fields['model_proposed'].widget = ReadOnlyWidget()
-        #self.fields['delete'].widget = ButtonWidget(
-        #    attrs={'class': 'btn-danger delete_row', 'value': '-'}
-        #)
 
     def clean(self):
         cleaned_data = super(SplitDevice, self).clean()
@@ -921,30 +1540,33 @@ class SplitDevice(ModelForm):
         return cleaned_data
 
 
-class AssetColumnChoiceField(ChoiceField):
-    def __init__(self, *args, **kwargs):
-        kwargs['choices'] = [
-            (field.name, unicode(field.verbose_name))
-            for field in Asset._meta.fields if field.name != 'id'
+class AttachmentForm(ModelForm):
+    class Meta:
+        model = models_assets.Attachment
+        fields = ['file']
+
+
+class UserRelationForm(Form):
+    """A form that allows licence assignment for a user."""
+
+    def __init__(self, user, *args, **kwargs):
+        initial = kwargs.setdefault('initial', {})
+        initial['licences'] = [
+            licence['pk']
+            for licence in user.licence_set.values('pk')
         ]
-        super(AssetColumnChoiceField, self).__init__(*args, **kwargs)
+        super(UserRelationForm, self).__init__(*args, **kwargs)
+
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
+    )
 
 
-class XlsUploadForm(Form):
-    """The first step for uploading the XLS file for asset bulk update."""
-    file = FileField()
+class SearchUserForm(Form):
+    """Form for left bar at the user_list view."""
 
-
-class XlsColumnChoiceForm(Form):
-    """The column choice. This form will be filled on the fly."""
-
-
-class XlsConfirmForm(Form):
-    """The confirmation of XLS submission. A form with a button only."""
-
-
-XLS_UPLOAD_FORMS = [
-    ('upload', XlsUploadForm),
-    ('column_choice', XlsColumnChoiceForm),
-    ('confirm', XlsConfirmForm),
-]
+    user = AutoCompleteSelectField(
+        LOOKUPS['asset_user'],
+        required=False,
+    )
