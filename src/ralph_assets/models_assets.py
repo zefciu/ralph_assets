@@ -462,8 +462,9 @@ class Asset(
                 pass
             if (device_cores_count is not None and
                asset_cores_count != device_cores_count):
-                logger.warning(('Cores count for <{}> different in ralph than '
-                                'in assets ({} vs {})').format(
+                logger.warning(
+                    ('Cores count for <{}> different in ralph than '
+                     'in assets ({} vs {})').format(
                         self,
                         device_cores_count,
                         asset_cores_count,
