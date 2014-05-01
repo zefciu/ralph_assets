@@ -14,7 +14,6 @@ class Migration(SchemaMigration):
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
             ('contract_id', self.gf('django.db.models.fields.CharField')(unique=True, max_length=50)),
             ('description', self.gf('django.db.models.fields.CharField')(max_length=100, blank=True)),
-            ('attachment', self.gf('django.db.models.fields.files.FileField')(max_length=100, blank=True)),
             ('cost', self.gf('django.db.models.fields.DecimalField')(default=0, max_digits=10, decimal_places=2)),
             ('date_from', self.gf('django.db.models.fields.DateField')()),
             ('date_to', self.gf('django.db.models.fields.DateField')()),
@@ -26,10 +25,32 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['SupportContract'])
 
+        # Adding M2M table for field attachments on 'SupportContract'
+        db.create_table('ralph_assets_supportcontract_attachments', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('supportcontract', models.ForeignKey(orm['ralph_assets.supportcontract'], null=False)),
+            ('attachment', models.ForeignKey(orm['ralph_assets.attachment'], null=False))
+        ))
+        db.create_unique('ralph_assets_supportcontract_attachments', ['supportcontract_id', 'attachment_id'])
+
+        # Adding M2M table for field assets on 'SupportContract'
+        db.create_table('ralph_assets_supportcontract_assets', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('supportcontract', models.ForeignKey(orm['ralph_assets.supportcontract'], null=False)),
+            ('asset', models.ForeignKey(orm['ralph_assets.asset'], null=False))
+        ))
+        db.create_unique('ralph_assets_supportcontract_assets', ['supportcontract_id', 'asset_id'])
+
 
     def backwards(self, orm):
         # Deleting model 'SupportContract'
         db.delete_table('ralph_assets_supportcontract')
+
+        # Removing M2M table for field attachments on 'SupportContract'
+        db.delete_table('ralph_assets_supportcontract_attachments')
+
+        # Removing M2M table for field assets on 'SupportContract'
+        db.delete_table('ralph_assets_supportcontract_assets')
 
 
     models = {
@@ -338,6 +359,23 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
+        'ralph_assets.supportcontract': {
+            'Meta': {'object_name': 'SupportContract'},
+            'additional_notes': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'assets': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Asset']", 'symmetrical': 'False'}),
+            'attachments': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['ralph_assets.Attachment']", 'null': 'True', 'blank': 'True'}),
+            'contract_id': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
+            'contract_terms': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'cost': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '10', 'decimal_places': '2'}),
+            'date_from': ('django.db.models.fields.DateField', [], {}),
+            'date_to': ('django.db.models.fields.DateField', [], {}),
+            'description': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
+            'escalation_path': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'sla_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
+        },
         'ralph_assets.transition': {
             'Meta': {'object_name': 'Transition'},
             'actions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Action']", 'symmetrical': 'False'}),
@@ -351,7 +389,7 @@ class Migration(SchemaMigration):
             'to_status': ('django.db.models.fields.PositiveSmallIntegerField', [], {})
         },
         'ralph_assets.transitionshistory': {
-            'Meta': {'object_name': 'TransitionsHistory'},
+            'Meta': {'ordering': "[u'-created']", 'object_name': 'TransitionsHistory'},
             'affected_user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'affected user'", 'to': "orm['auth.User']"}),
             'assets': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Asset']", 'symmetrical': 'False'}),
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),

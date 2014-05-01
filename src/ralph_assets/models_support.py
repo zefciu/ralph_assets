@@ -11,14 +11,18 @@ from django.db import models
 from lck.django.common.models import (
     Named,
 )
-from ralph_assets.models_assets import AssetType
+from ralph_assets import models_assets
+from ralph_assets.models_assets import (AssetType,
+    Asset,
+)
 
 
 class SupportContract(Named):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
-    attachment = models.FileField(
-        upload_to='SupportContract/%Y', blank=True)
+    attachments = models.ManyToManyField(
+        models_assets.Attachment, null=True, blank=True
+    )
     cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0)
     date_from = models.DateField(null=False, blank=False)
@@ -31,6 +35,7 @@ class SupportContract(Named):
     asset_type = models.PositiveSmallIntegerField(
         choices=AssetType()
     )
+    assets = models.ManyToManyField(Asset)
 
     @property
     def url(self):

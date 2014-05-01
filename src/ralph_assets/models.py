@@ -178,6 +178,40 @@ class LicenceLookup(LookupChannel):
         return self.model.objects
 
 
+class SupportLookup(LookupChannel):
+    model = SupportContract
+
+    def get_query(self, q, request):
+        query = Q(
+                Q(name__istartswith=q) |
+                Q(contract_id__istartswith=q)
+        )
+        return self.get_base_objects().filter(query).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        element = """
+            <span class='support-contract_id'>%s</span>
+            <span class='support-name'>%s</span>
+        """ % (
+            escape(obj.contract_id),
+            escape(obj.name),
+        )
+        return """
+            <li class='asset-container'>
+                %s
+            </li>
+            """ % (element,)
+
+    def get_base_objects(self):
+        return self.model.objects
+
+
 class RalphDeviceLookup(LookupChannel):
     model = Device
 

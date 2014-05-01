@@ -906,7 +906,7 @@ class AddDevice(AssetsBase):
                 if f_name not in {
                     "barcode", "company", "cost_center", "department",
                     "employee_id", "imei", "licences", "manager", "sn",
-                    "profit_center"
+                    "profit_center", "supports"
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -1141,6 +1141,11 @@ class EditDevice(AssetsBase):
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
+                self.asset.supportcontract_set.clear()
+                for support in self.asset_form.cleaned_data.get(
+                    'supports', []
+                ):
+                    self.asset.supportcontract_set.add(support)
 
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
@@ -1684,6 +1689,7 @@ class SupportContractFormView(AssetsBase):
             if request.FILES:
                 support.attachment = request.FILES['attachment']
             support.save()
+            self.form.save_m2m()
             return HttpResponseRedirect(support.url)
         except ValueError:
             return super(SupportContractFormView, self).get(
@@ -1754,7 +1760,7 @@ class AddAttachment(AssetsBase):
         if parent == 'license':
             parent = 'licence'
         parent = parent.title()
-        self.Parent = getattr(assets_models, parent)
+        self.Parent = getattr(assets_models, parlent)
         return super(AddAttachment, self).dispatch(
             request, mode, *args, **kwargs
         )

@@ -6,15 +6,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from ajax_select.fields import AutoCompleteSelectMultipleField
 from django import forms
 from django.forms.widgets import Textarea
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
+from ralph_assets.forms import LOOKUPS
 
 
 class SupportContractForm(forms.ModelForm):
     """SupportContract add/edit form for supports."""
+    
+    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
 
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
@@ -31,7 +35,6 @@ class SupportContractForm(forms.ModelForm):
             'contract_id',
             'name',
             'description',
-            'attachment',
             'cost',
             'date_from',
             'date_to',
