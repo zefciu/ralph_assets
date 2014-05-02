@@ -17,9 +17,6 @@ from ralph_assets.forms import LOOKUPS
 from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
     DateRangeSearchField,
-    ExactSearchField,
-    MultiSearchField,
-    RelatedSearchField,
     TextSearchField,
 )
 

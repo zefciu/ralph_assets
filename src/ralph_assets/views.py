@@ -56,15 +56,12 @@ from ralph_assets.models import (
     PartInfo,
     TransitionsHistory,
 )
-from ralph_assets.forms_support import SupportForm
-from ralph_assets.models_support import Support
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
     ASSET_TYPE2MODE,
 )
 from ralph_assets.models_history import AssetHistoryChange
-from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components

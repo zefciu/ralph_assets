@@ -8,9 +8,14 @@ from ralph_assets.models_support import Support
 from ralph_assets.views import (
     AssetsBase,
     GenericSearch,
+    _get_return_link,
 )
 from bob.data_table import DataTableColumn
-from ralph_assets.models_assets import MODE2ASSET_TYPE
+from ralph_assets.models_assets import (
+    MODE2ASSET_TYPE,
+    Asset,
+    ASSET_TYPE2MODE,
+)
 from django.utils.translation import ugettext_lazy as _
 from django.contrib import messages
 from django.http import HttpResponseRedirect
@@ -161,8 +166,6 @@ class EditSupportForm(SupportFormView):
     Form = SupportForm
 
     def get(self, request, support_id, *args, **kwargs):
-        #import sys; sys.path.append('/data/src/pydev')
-        #import pydevd; pydevd.settrace(host='localhost', port=5678)
         self.support = Support.objects.get(pk=support_id)
         self._get_form(instance=self.support)
         return super(EditSupportForm, self).get(request, *args, **kwargs)
