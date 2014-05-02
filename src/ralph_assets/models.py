@@ -38,7 +38,7 @@ from ralph_assets.models_sam import (
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
-from ralph_assets.models_support import SupportContract  # noqa
+from ralph_assets.models_support import Support  # noqa
 from ralph_assets.models_transition import (
     Action,
     Transition,
@@ -184,7 +184,7 @@ class LicenceLookup(LookupChannel):
 
 
 class SupportLookup(LookupChannel):
-    model = SupportContract
+    model = Support
 
     def get_query(self, q, request):
         query = Q(

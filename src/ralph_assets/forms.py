@@ -575,7 +575,7 @@ class DependencyAssetForm(DependencyForm):
             ]
             initial['supports'] = [
                 support['pk']
-                for support in kwargs['instance'].supportcontract_set.values('pk')
+                for support in kwargs['instance'].support_set.values('pk')
             ]
         super(DependencyAssetForm, self).__init__(*args, **kwargs)
 

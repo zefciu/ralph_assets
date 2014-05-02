@@ -56,8 +56,8 @@ from ralph_assets.models import (
     PartInfo,
     TransitionsHistory,
 )
-from ralph_assets.forms_support import SupportContractForm
-from ralph_assets.models_support import SupportContract
+from ralph_assets.forms_support import SupportForm
+from ralph_assets.models_support import Support
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
@@ -1148,11 +1148,11 @@ class EditDevice(AssetsBase):
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
-                self.asset.supportcontract_set.clear()
+                self.asset.support_set.clear()
                 for support in self.asset_form.cleaned_data.get(
                     'supports', []
                 ):
-                    self.asset.supportcontract_set.add(support)
+                    self.asset.support_set.add(support)
 
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
@@ -1684,19 +1684,19 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class SupportContractFormView(AssetsBase):
+class SupportFormView(AssetsBase):
     """Base view that displays support form."""
 
     template_name = 'assets/add_support.html'
     sidebar_selected = None
 
     def _get_form(self, data=None, **kwargs):
-        self.form = SupportContractForm(
+        self.form = SupportForm(
             mode=self.mode, data=data, **kwargs
         )
 
     def get_context_data(self, **kwargs):
-        ret = super(SupportContractFormView, self).get_context_data(**kwargs)
+        ret = super(SupportFormView, self).get_context_data(**kwargs)
         ret.update({
             'form': self.form,
             'form_id': 'add_support_form',
@@ -1716,11 +1716,11 @@ class SupportContractFormView(AssetsBase):
             self.form.save_m2m()
             return HttpResponseRedirect(support.url)
         except ValueError:
-            return super(SupportContractFormView, self).get(
+            return super(SupportFormView, self).get(
                 request, *args, **kwargs)
 
 
-class AddSupportContractForm(SupportContractFormView):
+class AddSupportForm(SupportFormView):
     """Add a new support"""
 
     caption = _('Add Support')
@@ -1728,7 +1728,7 @@ class AddSupportContractForm(SupportContractFormView):
 
     def get(self, request, *args, **kwargs):
         self._get_form()
-        return super(AddSupportContractForm, self).get(
+        return super(AddSupportForm, self).get(
             request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -1736,7 +1736,7 @@ class AddSupportContractForm(SupportContractFormView):
         return self._save(request, *args, **kwargs)
 
 
-class SupportContractList(AssetsBase):
+class SupportList(AssetsBase):
     """The support list."""
 
     template_name = "assets/support_list.html"
@@ -1744,31 +1744,31 @@ class SupportContractList(AssetsBase):
     mainmenu_selected = 'supports'
 
     def get_context_data(self, *args, **kwargs):
-        data = super(SupportContractList, self).get_context_data(
+        data = super(SupportList, self).get_context_data(
             *args, **kwargs
         )
         if self.mode:
-            data['supports'] = SupportContract.objects.filter(
+            data['supports'] = Support.objects.filter(
                 asset_type=MODE2ASSET_TYPE[self.mode],
             )
         else:
-            data['supports'] = SupportContract.objects.all()
+            data['supports'] = Support.objects.all()
         return data
 
 
-class EditSupportContractForm(SupportContractFormView):
+class EditSupportForm(SupportFormView):
     """Edit support"""
 
     caption = _('Edit Support')
 
     def get(self, request, support_id, *args, **kwargs):
-        support = SupportContract.objects.get(pk=support_id)
+        support = Support.objects.get(pk=support_id)
         self._get_form(instance=support)
-        return super(EditSupportContractForm, self).get(
+        return super(EditSupportForm, self).get(
             request, *args, **kwargs)
 
     def post(self, request, support_id, *args, **kwargs):
-        support = SupportContract.objects.get(pk=support_id)
+        support = Support.objects.get(pk=support_id)
         self._get_form(request.POST, instance=support)
         return self._save(request, *args, **kwargs)
 
@@ -1776,15 +1776,14 @@ class EditSupportContractForm(SupportContractFormView):
 class AddAttachment(AssetsBase):
     """
     Adding attachments to Parent.
-    Parent can be one of these models: License, Asset.
+    Parent can be one of these models: License, Asset, Support.
     """
     template_name = 'assets/add_attachment.html'
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
-            parent = 'licence'
-        parent = parent.title()
-        self.Parent = getattr(assets_models, parlent)
+            parent = 'Licence'
+        self.Parent = getattr(assets_models, parent.title())
         return super(AddAttachment, self).dispatch(
             request, mode, *args, **kwargs
         )
@@ -1842,11 +1841,12 @@ class DeleteAttachment(AssetsBase):
     parent2url_name = {
         'licence': 'edit_licence',
         'asset': 'device_edit',
+        'support': 'edit_support'
     }
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
-            parent = 'licence'
+            parent = 'Licence'
         self.Parent = getattr(assets_models, parent.title())
         self.parent_name = parent
         return super(DeleteAttachment, self).dispatch(

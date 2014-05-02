@@ -9,40 +9,39 @@ from __future__ import unicode_literals
 from ajax_select.fields import AutoCompleteSelectMultipleField
 from django import forms
 from django.forms.widgets import Textarea
+from collections import OrderedDict
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS
 
 
-class SupportContractForm(forms.ModelForm):
-    """SupportContract add/edit form for supports."""
+class SupportForm(forms.ModelForm):
+    """Support add/edit form for supports."""
     
     assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
 
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
-        super(SupportContractForm, self).__init__(*args, **kwargs)
+        super(SupportForm, self).__init__(*args, **kwargs)
 
     def clean(self, *args, **kwargs):
-        result = super(SupportContractForm, self).clean(*args, **kwargs)
+        result = super(SupportForm, self).clean(*args, **kwargs)
         return result
 
     class Meta:
-        model = models_support.SupportContract
-        fields = (
-            'asset_type',
-            'contract_id',
-            'name',
-            'description',
-            'cost',
-            'date_from',
-            'date_to',
-            'escalation_path',
-            'contract_terms',
-            'additional_notes',
-            'sla_type',
-        )
+        model = models_support.Support
+        
+        fieldset = OrderedDict([
+            ('Info', [
+                'asset_type', 'contract_id', 'name',
+                'description', 'cost', 'date_from',
+                'date_to', 'escalation_path',
+                'contract_terms', 'additional_notes',
+                'sla_type', 'assets'
+            ]),
+        ])
+        
         widgets = {
             'date_from': DateWidget,
             'date_to': DateWidget,

@@ -17,7 +17,7 @@ from ralph_assets.models_assets import (AssetType,
 )
 
 
-class SupportContract(Named):
+class Support(Named):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
     attachments = models.ManyToManyField(
