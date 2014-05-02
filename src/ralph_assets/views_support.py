@@ -64,7 +64,6 @@ class SupportFormView(AssetsBase):
             return super(SupportFormView, self).get(request, *args, **kwargs)
 
 
-
 class AddSupportForm(SupportFormView):
     """Add a new support"""
 
@@ -92,14 +91,13 @@ class AddSupportForm(SupportFormView):
             return super(AddSupportForm, self).get(request, *args, **kwargs)
 
 
-
 class SupportList(GenericSearch):
     """The support list."""
 
     mainmenu_selected = 'supports'
     Form = SupportSearchForm
     Model = Support
-    
+
     columns = [
         CheckBoxColumn(
             _('Dropdown'),
@@ -139,7 +137,7 @@ class SupportList(GenericSearch):
             bob_tag=True,
             field='cost',
             sort_expression='cost',
-        ),             
+        ),
     ]
 
     def get_context_data(self, *args, **kwargs):
@@ -173,7 +171,7 @@ class EditSupportForm(SupportFormView):
         self.support = Support.objects.get(pk=support_id)
         self._get_form(request.POST, instance=self.support)
         return self._save(request, *args, **kwargs)
-    
+
 
 class DeleteSupportForm(AssetsBase):
     """Delete a support."""

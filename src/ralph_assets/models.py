@@ -188,8 +188,8 @@ class SupportLookup(LookupChannel):
 
     def get_query(self, q, request):
         query = Q(
-                Q(name__istartswith=q) |
-                Q(contract_id__istartswith=q)
+            Q(name__istartswith=q) |
+            Q(contract_id__istartswith=q)
         )
         return self.get_base_objects().filter(query).order_by('name')[:10]
 

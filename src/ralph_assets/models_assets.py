@@ -55,12 +55,14 @@ class LicenseAndAsset(object):
         for attachment in attachments:
             yield attachment
 
+
 class SupportAndAsset(object):
 
     def latest_attachments(self):
         attachments = self.attachments.all().order_by('-created')
         for attachment in attachments:
             yield attachment
+
 
 class CreatableFromString(object):
     """Simple objects that can be created from string."""

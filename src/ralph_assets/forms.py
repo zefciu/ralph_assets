@@ -1021,12 +1021,11 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         max_length=1024,
         required=False,
     )
-    
     supports = AutoCompleteSelectMultipleField(
         LOOKUPS['support'],
         required=False,
     )
-    
+
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
         self.mode = kwargs.pop('mode', None)

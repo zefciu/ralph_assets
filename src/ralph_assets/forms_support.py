@@ -23,10 +23,12 @@ from django_search_forms.fields import (
     TextSearchField,
 )
 
+
 class SupportForm(forms.ModelForm):
     """Support add/edit form for supports."""
-    
-    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
+
+    assets = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset'], required=False)
 
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
@@ -38,7 +40,7 @@ class SupportForm(forms.ModelForm):
 
     class Meta:
         model = models_support.Support
-        
+
         fieldset = OrderedDict([
             ('Info', [
                 'asset_type', 'contract_id', 'name',
@@ -48,7 +50,7 @@ class SupportForm(forms.ModelForm):
                 'sla_type', 'assets'
             ]),
         ])
-        
+
         widgets = {
             'date_from': DateWidget,
             'date_to': DateWidget,
@@ -58,7 +60,7 @@ class SupportForm(forms.ModelForm):
             'additional_notes': Textarea(attrs={'rows': 5}),
             'sla_type': Textarea(attrs={'rows': 5}),
         }
-        
+
         fields = (
             'asset_type',
             'contract_id',
