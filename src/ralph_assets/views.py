@@ -1684,95 +1684,6 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class SupportFormView(AssetsBase):
-    """Base view that displays support form."""
-
-    template_name = 'assets/add_support.html'
-    sidebar_selected = None
-
-    def _get_form(self, data=None, **kwargs):
-        self.form = SupportForm(
-            mode=self.mode, data=data, **kwargs
-        )
-
-    def get_context_data(self, **kwargs):
-        ret = super(SupportFormView, self).get_context_data(**kwargs)
-        ret.update({
-            'form': self.form,
-            'form_id': 'add_support_form',
-            'edit_mode': False,
-            'caption': self.caption,
-        })
-        return ret
-
-    def _save(self, request, *args, **kwargs):
-        try:
-            support = self.form.save(commit=False)
-            if support.asset_type is None:
-                support.asset_type = MODE2ASSET_TYPE[self.mode]
-            if request.FILES:
-                support.attachment = request.FILES['attachment']
-            support.save()
-            self.form.save_m2m()
-            return HttpResponseRedirect(support.url)
-        except ValueError:
-            return super(SupportFormView, self).get(
-                request, *args, **kwargs)
-
-
-class AddSupportForm(SupportFormView):
-    """Add a new support"""
-
-    caption = _('Add Support')
-    mainmenu_selected = 'supports'
-
-    def get(self, request, *args, **kwargs):
-        self._get_form()
-        return super(AddSupportForm, self).get(
-            request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        self._get_form(request.POST)
-        return self._save(request, *args, **kwargs)
-
-
-class SupportList(AssetsBase):
-    """The support list."""
-
-    template_name = "assets/support_list.html"
-    sidebar_selected = None
-    mainmenu_selected = 'supports'
-
-    def get_context_data(self, *args, **kwargs):
-        data = super(SupportList, self).get_context_data(
-            *args, **kwargs
-        )
-        if self.mode:
-            data['supports'] = Support.objects.filter(
-                asset_type=MODE2ASSET_TYPE[self.mode],
-            )
-        else:
-            data['supports'] = Support.objects.all()
-        return data
-
-
-class EditSupportForm(SupportFormView):
-    """Edit support"""
-
-    caption = _('Edit Support')
-
-    def get(self, request, support_id, *args, **kwargs):
-        support = Support.objects.get(pk=support_id)
-        self._get_form(instance=support)
-        return super(EditSupportForm, self).get(
-            request, *args, **kwargs)
-
-    def post(self, request, support_id, *args, **kwargs):
-        support = Support.objects.get(pk=support_id)
-        self._get_form(request.POST, instance=support)
-        return self._save(request, *args, **kwargs)
-
-
 class AddAttachment(AssetsBase):
     """
     Adding attachments to Parent.
@@ -1782,7 +1693,7 @@ class AddAttachment(AssetsBase):
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
-            parent = 'Licence'
+            parent = 'licence'
         self.Parent = getattr(assets_models, parent.title())
         return super(AddAttachment, self).dispatch(
             request, mode, *args, **kwargs
@@ -1846,7 +1757,7 @@ class DeleteAttachment(AssetsBase):
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
-            parent = 'Licence'
+            parent = 'licence'
         self.Parent = getattr(assets_models, parent.title())
         self.parent_name = parent
         return super(DeleteAttachment, self).dispatch(

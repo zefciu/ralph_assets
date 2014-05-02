@@ -12,12 +12,17 @@ from lck.django.common.models import (
     Named,
 )
 from ralph_assets import models_assets
-from ralph_assets.models_assets import (AssetType,
+from ralph_assets.models_assets import (
+    AssetType,
     Asset,
+    ASSET_TYPE2MODE,
 )
 
 
-class Support(Named):
+class Support(
+    Named,
+    models_assets.SupportAndAsset,
+):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
     attachments = models.ManyToManyField(
@@ -41,8 +46,5 @@ class Support(Named):
     def url(self):
         return reverse('edit_support', kwargs={
             'support_id': self.id,
-            'mode': {
-                AssetType.data_center: 'dc',
-                AssetType.back_office: 'back_office',
-            }[self.asset_type],
+            'mode': ASSET_TYPE2MODE[self.asset_type],
         })

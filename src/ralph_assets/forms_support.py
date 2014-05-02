@@ -14,7 +14,14 @@ from collections import OrderedDict
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS
-
+from django_search_forms.form import SearchForm
+from django_search_forms.fields import (
+    DateRangeSearchField,
+    ExactSearchField,
+    MultiSearchField,
+    RelatedSearchField,
+    TextSearchField,
+)
 
 class SupportForm(forms.ModelForm):
     """Support add/edit form for supports."""
@@ -51,3 +58,28 @@ class SupportForm(forms.ModelForm):
             'additional_notes': Textarea(attrs={'rows': 5}),
             'sla_type': Textarea(attrs={'rows': 5}),
         }
+        
+        fields = (
+            'asset_type',
+            'contract_id',
+            'name',
+            'description',
+            'cost',
+            'date_from',
+            'date_to',
+            'escalation_path',
+            'contract_terms',
+            'additional_notes',
+            'sla_type',
+        )
+
+
+class SupportSearchForm(SearchForm):
+    class Meta(object):
+        Model = models_support.Support
+        fields = []
+    contract_id = TextSearchField()
+    name = TextSearchField()
+    description = TextSearchField()
+    date_from = DateRangeSearchField()
+    date_to = DateRangeSearchField()

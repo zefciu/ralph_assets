@@ -24,9 +24,6 @@ from ralph_assets.views import (
     EditPart,
     EditUser,
     HistoryAsset,
-    SupportList,
-    AddSupportForm,
-    EditSupportForm,
     SplitDeviceView,
     UserDetails,
     UserList,
@@ -38,6 +35,11 @@ from ralph_assets.views_sam import (
     HistoryLicence,
     LicenceList,
     SoftwareCategoryList,
+)
+from ralph_assets.views_support import (
+    SupportList,
+    AddSupportForm,
+    EditSupportForm,
 )
 from ralph_assets.views_invoice_report import (
     AssetInvoiceReport,
