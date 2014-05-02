@@ -96,7 +96,7 @@ class AssetsBase(Base):
         base_sidebar_caption = ''
         self.mainmenu_selected = self.mainmenu_selected or self.mode
         if self.mode == 'back_office':
-            base_sidebar_caption = _('lBack office actions')
+            base_sidebar_caption = _('Back office actions')
         elif self.mode == 'dc':
             base_sidebar_caption = _('Data center actions')
         ret.update({
