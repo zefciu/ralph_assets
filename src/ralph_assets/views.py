@@ -616,6 +616,9 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True),
             _('Order no.', field='order_no', sort_expression='order_no',
               bob_tag=True, export=True, show_conditions=show_dc),
+            _('Additional remarks', field='remarks',
+              sort_expression='remarks', bob_tag=True, export=True,
+              show_conditions=show_back_office),
             _('Price', field='price', sort_expression='price',
               bob_tag=True, export=True, show_conditions=show_dc),
             _('Venture', field='venture', sort_expression='venture',
@@ -984,6 +987,8 @@ def _update_office_info(user, asset, office_info_data):
 
 @transaction.commit_on_success
 def _update_device_info(user, asset, device_info_data):
+    if not asset.device_info:
+        asset.device_info = DeviceInfo()
     asset.device_info.__dict__.update(
         **device_info_data
     )

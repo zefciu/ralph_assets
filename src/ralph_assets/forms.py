@@ -1097,7 +1097,7 @@ class MoveAssetPartForm(Form):
     )
 
 
-class AddPartForm(BaseAddAssetForm):
+class AddPartForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new part for device
     '''
@@ -1112,6 +1112,7 @@ class AddPartForm(BaseAddAssetForm):
         super(AddPartForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Basic Info'].remove('barcode')
+        self.multival_fields = ['sn']
 
 
 class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
