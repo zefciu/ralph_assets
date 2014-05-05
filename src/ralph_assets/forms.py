@@ -18,11 +18,11 @@ from bob.forms import (
     AJAX_UPDATE,
     CLONE,
     Dependency,
+    dependency_conditions,
     DependencyForm,
     REQUIRE,
     SHOW,
 )
-from bob.forms import dependency_conditions
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.forms import (
@@ -41,6 +41,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
+
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -1041,6 +1042,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         return self.cleaned_data['imei'] or None
 
     def clean(self):
+        self.cleaned_data = super(BaseEditAssetForm, self).clean()
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         cleaned_data = super(BaseEditAssetForm, self).clean()
