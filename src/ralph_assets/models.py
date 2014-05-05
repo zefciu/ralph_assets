@@ -34,6 +34,7 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_sam import (
     Licence,
+    LicenceType,
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
@@ -425,10 +426,13 @@ __all__ = [
     'AssetType',
     'CoaOemOs',
     'DeviceInfo',
+    'Licence',
+    'LicenceType',
     'OfficeInfo',
     'PartInfo',
     'ReportOdtSource',
     'Service',
+    'SoftwareCategory',
     'Transition',
     'TransitionsHistory',
     'Warehouse',

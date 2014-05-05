@@ -18,11 +18,11 @@ from bob.forms import (
     AJAX_UPDATE,
     CLONE,
     Dependency,
+    dependency_conditions,
     DependencyForm,
     REQUIRE,
     SHOW,
 )
-from bob.forms import dependency_conditions
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.forms import (
@@ -41,6 +41,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
+
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -433,8 +434,8 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
         fields = (
             'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
             'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
-            'invoice_date', 'price', 'task_url', 'deprecation_rate',
-            'order_no',
+            'invoice_date', 'price', 'provider', 'task_url',
+            'deprecation_rate', 'order_no',
         )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
@@ -649,13 +650,6 @@ class DependencyAssetForm(DependencyForm):
                 'status',
                 dependency_conditions.Exact(AssetStatus.loan.id),
                 SHOW,
-            ),
-            Dependency(
-                'niw',
-                'barcode',
-                dependency_conditions.NotEmpty(),
-                CLONE,
-                page_load_update=False,
             ),
             Dependency(
                 'owner',
@@ -1045,6 +1039,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         return self.cleaned_data['imei'] or None
 
     def clean(self):
+        self.cleaned_data = super(BaseEditAssetForm, self).clean()
         if self.instance.deleted:
             raise ValidationError(_("Cannot edit deleted asset"))
         cleaned_data = super(BaseEditAssetForm, self).clean()

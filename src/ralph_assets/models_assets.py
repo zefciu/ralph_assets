@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import logging
 import os
 
 from dateutil.relativedelta import relativedelta
@@ -41,6 +42,8 @@ from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
 
+
+logger = logging.getLogger(__name__)
 
 SAVE_PRIORITY = 0
 
@@ -182,7 +185,17 @@ class AssetModel(
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
     power_consumption = models.IntegerField(
-        verbose_name="Power consumption",
+        verbose_name=_("Power consumption"),
+        blank=True,
+        default=0,
+    )
+    height_of_device = models.FloatField(
+        verbose_name=_("Height of device"),
+        blank=True,
+        default=0,
+    )
+    cores_count = models.IntegerField(
+        verbose_name=_("Cores count"),
         blank=True,
         default=0,
     )
@@ -436,15 +449,27 @@ class Asset(
     @property
     def cores_count(self):
         """Returns cores count assigned to device in Ralph"""
-        # TODO: get cores information from asset model
-        if not self.device_info or not self.device_info.ralph_device_id:
-            return 0
-        try:
-            return Device.objects.get(
-                pk=self.device_info.ralph_device_id,
-            ).get_core_count()
-        except Device.DoesNotExist:
-            return 0
+        asset_cores_count = self.model.cores_count if self.model else 0
+        if settings.SHOW_RALPH_CORES_DIFF:
+            device_cores_count = None
+            try:
+                if self.device_info and self.device_info.ralph_device_id:
+                    device_cores_count = Device.objects.get(
+                        pk=self.device_info.ralph_device_id,
+                    ).get_core_count()
+            except Device.DoesNotExist:
+                pass
+            if (device_cores_count is not None and
+               asset_cores_count != device_cores_count):
+                logger.warning(
+                    ('Cores count for <{}> different in ralph than '
+                     'in assets ({} vs {})').format(
+                        self,
+                        device_cores_count,
+                        asset_cores_count,
+                    )
+                )
+        return asset_cores_count
 
     @classmethod
     def create(cls, base_args, device_info_args=None, part_info_args=None):
