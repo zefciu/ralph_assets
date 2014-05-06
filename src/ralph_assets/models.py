@@ -87,7 +87,8 @@ class FreeLicenceLookup(LookupChannel):
 
     model = Licence
 
-    def get_query(self, q, _):
+    def get_query(self, query, request):
+        expression = '%{}%'.format(query)
         return self.model.objects.raw(
             """SELECT
                 ralph_assets_licence.*,
@@ -110,12 +111,15 @@ class FreeLicenceLookup(LookupChannel):
                 ralph_assets_licence.id =
                 ralph_assets_licence_users.licence_id
             )
-            WHERE ralph_assets_softwarecategory.name LIKE %s
+            WHERE
+                ralph_assets_softwarecategory.name LIKE %s
+            OR
+                ralph_assets_licence.niw LIKE %s
             GROUP BY ralph_assets_licence.id
             HAVING used < ralph_assets_licence.number_bought
             LIMIT 10;
             """,
-            ('%{}%'.format(q),)
+            (expression, expression)
         )
 
     def get_result(self, obj):
