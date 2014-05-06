@@ -891,9 +891,9 @@ class AddDevice(AssetsBase):
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
                 if f_name not in {
-                    "barcode", "company", "cost_center", "department",
-                    "employee_id", "imei", "licences", "manager", "sn",
-                    "profit_center"
+                    "barcode", "category", "company", "cost_center",
+                    "department", "employee_id", "imei", "licences", "manager",
+                    "sn", "profit_center",
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -1422,7 +1422,7 @@ class AddPart(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
             for f_name in {
-                "barcode", "company", "cost_center", "department",
+                "barcode", "category", "company", "cost_center", "department",
                 "employee_id", "imei", "licences", "manager", "profit_center"
             }:
                 if f_name in asset_data:

@@ -594,6 +594,14 @@ class DependencyAssetForm(DependencyForm):
                 SHOW,
             ),
             Dependency(
+                'slots',
+                'category',
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(is_blade=True).all()
+                ),
+                REQUIRE,
+            ),
+            Dependency(
                 'imei',
                 'category',
                 dependency_conditions.MemberOf(
@@ -702,7 +710,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         fields = (
             'niw',
             'type',
-            'category',
             'imei',
             'model',
             'status',
@@ -876,7 +883,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'niw',
             'sn',
             'type',
-            'category',
             'imei',
             'model',
             'status',
