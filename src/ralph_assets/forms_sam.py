@@ -26,8 +26,24 @@ from django_search_forms.fields_ajax import RelatedAjaxSearchField
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
-from ralph_assets.models_assets import MODE2ASSET_TYPE
+from ralph_assets.models_assets import AssetManufacturer, MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
+
+
+class ManufacturerWidget(AutoCompleteWidget):
+    """A widget for ManufacturerField."""
+
+    def render(self, name, value, attrs=None):
+        if isinstance(value, basestring):
+            manufact_name = value
+        else:
+            try:
+                manufact_name = AssetManufacturer.objects.get(pk=value).name
+            except AssetManufacturer.DoesNotExist:
+                manufact_name = ''
+        return super(ManufacturerWidget, self).render(
+            name, manufact_name, attrs
+        )
 
 
 class SoftwareCategoryWidget(AutoCompleteWidget):
@@ -46,6 +62,17 @@ class SoftwareCategoryWidget(AutoCompleteWidget):
         return super(
             SoftwareCategoryWidget, self
         ).render(name, sc_name, attrs)
+
+
+class ManufacturerField(AutoCompleteSelectField):
+    # TODO: docstring
+
+    def clean(self, value):
+        value = super(ManufacturerField, self).clean(value)
+        try:
+            return AssetManufacturer.objects.get(name=value)
+        except AssetManufacturer.DoesNotExist:
+            return AssetManufacturer(name=value)
 
 
 class SoftwareCategoryField(AutoCompleteSelectField):
@@ -82,6 +109,14 @@ class LicenceForm(forms.ModelForm):
         widget=SoftwareCategoryWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/softwarecategory/add/?name=',
+        )
+    )
+
+    manufacturer = ManufacturerField(
+        ('ralph_assets.models', 'AssetManufacturerLookup'),
+        widget=ManufacturerWidget,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmanufacturer/add/',
         )
     )
 
