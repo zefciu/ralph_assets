@@ -858,7 +858,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         try:
             category = AssetCategory.objects.get(pk=data)
         except AssetCategory.DoesNotExist:
-            raise ValidationError('"{}" is not proper category'.format(value))
+            raise ValidationError('"{}" is not proper category'.format(data))
         if not category.parent:
             raise ValidationError(
                 _("Category must be selected from the subcategory")
@@ -1031,7 +1031,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         try:
             category = AssetCategory.objects.get(pk=data)
         except AssetCategory.DoesNotExist:
-            raise ValidationError('"{}" is not proper category'.format(value))
+            raise ValidationError('"{}" is not proper category'.format(data))
         if not category.parent:
             raise ValidationError(
                 _("Category must be selected from the subcategory")

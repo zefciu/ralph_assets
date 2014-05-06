@@ -89,10 +89,10 @@ class TestExportRelations(TestCase):
         self.assertEqual(
             rows,
             [
-                u'id, niw, barcode, sn, model__category__name, model__manufacturer__n'
-                'ame, model__name, user__username, user__first_name, user__las'
-                't_name, owner__username, owner__first_name, owner__last_name,'
-                ' status, service_name, property_of,\n',
+                u'id, niw, barcode, sn, model__category__name, model__manufact'
+                'urer__name, model__name, user__username, user__first_name, us'
+                'er__last_name, owner__username, owner__first_name, owner__las'
+                't_name, status, service_name, property_of,\n',
                 u'1, niw=666, br-666, 1111-1111-1111-1111, Subcategory, Manufa'
                 'cturer1, Model1, user, Elmer, Stevens, owner, Eric, Brown, 1,'
                 ' None, None, \n',

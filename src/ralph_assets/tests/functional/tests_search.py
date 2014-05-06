@@ -9,7 +9,7 @@ from django.test import TestCase
 
 import datetime
 
-from ralph_assets.tests.util import create_asset, create_model, create_category
+from ralph_assets.tests.util import create_asset, create_model
 from ralph_assets.models_assets import AssetStatus
 from ralph.ui.tests.global_utils import login_as_su
 
