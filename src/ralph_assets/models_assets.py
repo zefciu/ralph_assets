@@ -184,6 +184,7 @@ class AssetModel(
     '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
+    category = models.ForeignKey('AssetCategory', null=True, blank=True)
     power_consumption = models.IntegerField(
         verbose_name=_("Power consumption"),
         blank=True,
@@ -391,7 +392,6 @@ class Asset(
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
-    category = models.ForeignKey('AssetCategory', null=True, blank=True)
     production_year = models.PositiveSmallIntegerField(null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots',
