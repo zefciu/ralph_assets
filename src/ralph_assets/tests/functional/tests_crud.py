@@ -105,7 +105,6 @@ class TestAdding(TestCase):
         data_in_add_form.update(
             model='Manufacturer1 Model1',
             warehouse='Warehouse',
-            category=self.category.name,
         )
         # Test comparison input data and output data
         for field in data_in_add_form:

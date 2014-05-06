@@ -779,6 +779,7 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
     )
     category = CharField(
         widget=HiddenInput(),
+        required=False,
     )
     source = ChoiceField(
         required=False,
@@ -855,6 +856,8 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_category(self):
         data = self.cleaned_data["category"]
+        if not data:
+            return data
         try:
             category = AssetCategory.objects.get(pk=data)
         except AssetCategory.DoesNotExist:
@@ -957,6 +960,7 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
     )
     category = CharField(
         widget=HiddenInput(),
+        required=False,
     )
     source = ChoiceField(
         required=False,
@@ -1028,6 +1032,8 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_category(self):
         data = self.cleaned_data["category"]
+        if not data:
+            return data
         try:
             category = AssetCategory.objects.get(pk=data)
         except AssetCategory.DoesNotExist:
