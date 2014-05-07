@@ -30,21 +30,6 @@ from ralph_assets.models_assets import AssetManufacturer, MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
 
 
-class ManufacturerWidget(AutoCompleteWidget):
-
-    def render(self, name, value, attrs=None):
-        if isinstance(value, basestring):
-            manufact_name = value
-        else:
-            try:
-                manufact_name = AssetManufacturer.objects.get(pk=value).name
-            except AssetManufacturer.DoesNotExist:
-                manufact_name = ''
-        return super(ManufacturerWidget, self).render(
-            name, manufact_name, attrs
-        )
-
-
 class SoftwareCategoryWidget(AutoCompleteWidget):
     """A widget for SoftwareCategoryField."""
 
@@ -102,7 +87,7 @@ class LicenceForm(forms.ModelForm):
 
     manufacturer = AutoCompleteSelectField(
         ('ralph_assets.models', 'ManufacturerLookup'),
-        widget=ManufacturerWidget,
+        widget=AutoCompleteWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmanufacturer/add/',
         )
