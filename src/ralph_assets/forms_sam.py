@@ -11,6 +11,7 @@ from ajax_select.fields import (
     AutoCompleteSelectMultipleField,
     AutoCompleteWidget,
 )
+from collections import OrderedDict
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django_search_forms.form import SearchForm
@@ -67,6 +68,18 @@ class SoftwareCategoryField(AutoCompleteSelectField):
 class LicenceForm(forms.ModelForm):
     """Base form for licences."""
 
+    class Meta:
+        fieldset = OrderedDict([
+            ('Basic info', [
+                'asset_type', 'manufacturer', 'licence_type', 'software_category',
+                'parent', 'niw', 'sn', 'property_of', 'valid_thru', 'assets'
+            ]),
+            ('Financial info', [
+                'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+                'number_bought', 'accounting_id'
+            ]),
+        ])
+
     parent = AutoCompleteSelectField(
         ('ralph_assets.models', 'LicenceLookup'),
         required=False,
@@ -93,7 +106,9 @@ class LicenceForm(forms.ModelForm):
         )
     )
 
-    assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
+    assets = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset'], required=False, label=_('Assigned Assets')
+    )
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
@@ -117,7 +132,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         super(AddLicenceForm, self).__init__(*args, **kwargs)
         self.multival_fields = ['sn', 'niw']
 
-    class Meta(object):
+    class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         widgets = {
             'invoice_date': DateWidget,
@@ -162,7 +177,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
 class EditLicenceForm(LicenceForm):
     """Form for licence edit."""
 
-    class Meta(object):
+    class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         widgets = {
             'invoice_date': DateWidget,
