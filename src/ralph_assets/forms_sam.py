@@ -26,7 +26,7 @@ from django_search_forms.fields_ajax import RelatedAjaxSearchField
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
-from ralph_assets.models_assets import AssetManufacturer, MODE2ASSET_TYPE
+from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
 
 
