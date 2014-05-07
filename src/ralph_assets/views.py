@@ -282,10 +282,10 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         return super(GenericSearch, self).get(request, *args, **kwargs)
 
     def handle_search_data(self, request):
-        q = self.form.get_query()
-        qry = self.Model.objects.filter(q)
-        self.items_count = qry.count()
-        return qry.all()
+        query = self.form.get_query()
+        query_set = self.Model.objects.filter(query)
+        self.items_count = query_set.count()
+        return query_set.all()
 
 
 class _AssetSearch(AssetsBase):
