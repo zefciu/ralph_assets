@@ -85,6 +85,14 @@ class LicenceForm(forms.ModelForm):
         )
     )
 
+    manufacturer = AutoCompleteSelectField(
+        ('ralph_assets.models', 'ManufacturerLookup'),
+        widget=AutoCompleteWidget,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/assetmanufacturer/add/',
+        )
+    )
+
     assets = AutoCompleteSelectMultipleField(LOOKUPS['asset'], required=False)
 
     def clean(self, *args, **kwargs):
