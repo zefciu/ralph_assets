@@ -31,7 +31,6 @@ from ralph_assets.models_sam import AssetOwner, LicenceType
 
 
 class ManufacturerWidget(AutoCompleteWidget):
-    """A widget for ManufacturerField."""
 
     def render(self, name, value, attrs=None):
         if isinstance(value, basestring):
@@ -62,17 +61,6 @@ class SoftwareCategoryWidget(AutoCompleteWidget):
         return super(
             SoftwareCategoryWidget, self
         ).render(name, sc_name, attrs)
-
-
-class ManufacturerField(AutoCompleteSelectField):
-    # TODO: docstring
-
-    def clean(self, value):
-        value = super(ManufacturerField, self).clean(value)
-        try:
-            return AssetManufacturer.objects.get(name=value)
-        except AssetManufacturer.DoesNotExist:
-            return AssetManufacturer(name=value)
 
 
 class SoftwareCategoryField(AutoCompleteSelectField):
@@ -112,8 +100,8 @@ class LicenceForm(forms.ModelForm):
         )
     )
 
-    manufacturer = ManufacturerField(
-        ('ralph_assets.models', 'AssetManufacturerLookup'),
+    manufacturer = AutoCompleteSelectField(
+        ('ralph_assets.models', 'ManufacturerLookup'),
         widget=ManufacturerWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmanufacturer/add/',
