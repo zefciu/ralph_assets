@@ -269,6 +269,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
             'sort': self.sort,
             'columns': self.columns,
             'form': self.form,
+            'items_count': self.items_count,
         })
         return ret
 
@@ -281,8 +282,10 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         return super(GenericSearch, self).get(request, *args, **kwargs)
 
     def handle_search_data(self, request):
-        q = self.form.get_query()
-        return self.Model.objects.filter(q).all()
+        query = self.form.get_query()
+        query_set = self.Model.objects.filter(query)
+        self.items_count = query_set.count()
+        return query_set.all()
 
 
 class _AssetSearch(AssetsBase):
