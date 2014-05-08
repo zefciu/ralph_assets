@@ -32,6 +32,7 @@ from ralph_assets.models_sam import AssetOwner, LicenceType
 
 SN_LABEL = _('Licence key')
 
+
 class SoftwareCategoryWidget(AutoCompleteWidget):
     """A widget for SoftwareCategoryField."""
 
@@ -72,8 +73,9 @@ class LicenceForm(forms.ModelForm):
     class Meta:
         fieldset = OrderedDict([
             ('Basic info', [
-                'asset_type', 'manufacturer', 'licence_type', 'software_category',
-                'parent', 'niw', 'sn', 'property_of', 'valid_thru', 'assets'
+                'asset_type', 'manufacturer', 'licence_type',
+                'software_category', 'parent', 'niw', 'sn', 'property_of',
+                'valid_thru', 'assets'
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
