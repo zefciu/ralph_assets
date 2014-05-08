@@ -70,6 +70,7 @@ from ralph.util.reports import Report, set_progress
 SAVE_PRIORITY = 200
 HISTORY_PAGE_SIZE = 25
 MAX_PAGE_SIZE = 65535
+MAX_BULK_EDIT_SIZE = 40
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 SEARCH_DELIMITERS = re.compile(r";|\|")
@@ -195,12 +196,19 @@ class AssetsBase(Base):
         ]
         return sidebar_menu
 
+    def set_asset_objects(self, mode):
+        if mode == 'dc':
+            self.asset_objects = Asset.objects_dc
+        elif mode == 'back_office':
+            self.asset_objects = Asset.objects_bo
+
     def set_mode(self, mode):
         self.mode = mode
 
     def dispatch(self, request, mode=None, *args, **kwargs):
         self.request = request
         self.set_mode(mode)
+        self.set_asset_objects(mode)
         return super(AssetsBase, self).dispatch(request, *args, **kwargs)
 
     def write_office_info2asset_form(self):
@@ -1257,13 +1265,13 @@ class EditPart(AssetsBase):
         })
 
 
-class BulkEdit(AssetsBase, Base):
+class BulkEdit(_AssetSearch):
     template_name = 'assets/bulk_edit.html'
 
     def dispatch(self, request, mode=None, *args, **kwargs):
         self.mode = mode
-        self.form = self.form_dispatcher('BulkEditAsset')
-        return super(AssetsBase, self).dispatch(request, mode, *args, **kwargs)
+        self.form_bulk = self.form_dispatcher('BulkEditAsset')
+        return super(BulkEdit, self).dispatch(request, mode, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ret = super(BulkEdit, self).get_context_data(**kwargs)
@@ -1273,20 +1281,37 @@ class BulkEdit(AssetsBase, Base):
         })
         return ret
 
+    def get_items_ids(self, *args, **kwargs):
+        items_ids = self.request.GET.getlist('select')
+        try:
+            int_ids = map(int, items_ids)
+        except ValueError:
+            int_ids = []
+        return int_ids
+
     def get(self, *args, **kwargs):
-        assets_count = Asset.objects.filter(
-            pk__in=self.request.GET.getlist('select')).exists()
-        if not assets_count:
-            messages.warning(self.request, _("Nothing to edit."))
+        if self.request.GET.get('from_query'):
+            query = super(
+                BulkEdit, self,
+            ).handle_search_data(*args, **kwargs)
+        else:
+            query = Q(pk__in=self.get_items_ids())
+        assets_count = self.asset_objects.filter(query).count()
+        if not (0 < assets_count <= MAX_BULK_EDIT_SIZE):
+            if assets_count > MAX_BULK_EDIT_SIZE:
+                messages.warning(
+                    self.request,
+                    _("You can edit max {} items".format(MAX_BULK_EDIT_SIZE)),
+                )
+            elif not assets_count:
+                messages.warning(self.request, _("Nothing to edit."))
             return HttpResponseRedirect(_get_return_link(self.mode))
         AssetFormSet = modelformset_factory(
             Asset,
-            form=self.form,
+            form=self.form_bulk,
             extra=0,
         )
-        assets = Asset.objects.filter(
-            pk__in=self.request.GET.getlist('select')
-        )
+        assets = self.asset_objects.filter(query)
         self.asset_formset = AssetFormSet(queryset=assets)
         for idx, asset in enumerate(assets):
             if asset.office_info:
@@ -1301,7 +1326,7 @@ class BulkEdit(AssetsBase, Base):
     def post(self, *args, **kwargs):
         AssetFormSet = modelformset_factory(
             Asset,
-            form=self.form,
+            form=self.form_bulk,
             extra=0,
         )
         self.asset_formset = AssetFormSet(self.request.POST)
