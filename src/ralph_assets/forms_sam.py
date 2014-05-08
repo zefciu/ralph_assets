@@ -106,7 +106,8 @@ class LicenceForm(forms.ModelForm):
         widget=AutoCompleteWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmanufacturer/add/',
-        )
+        ),
+        required=False,
     )
 
     assets = AutoCompleteSelectMultipleField(

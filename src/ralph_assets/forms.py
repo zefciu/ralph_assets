@@ -594,6 +594,14 @@ class DependencyAssetForm(DependencyForm):
                 SHOW,
             ),
             Dependency(
+                'slots',
+                'category',
+                dependency_conditions.MemberOf(
+                    AssetCategory.objects.filter(is_blade=True).all()
+                ),
+                REQUIRE,
+            ),
+            Dependency(
                 'imei',
                 'category',
                 dependency_conditions.MemberOf(
@@ -617,6 +625,13 @@ class DependencyAssetForm(DependencyForm):
                     ]).all()
                 ),
                 REQUIRE,
+            ),
+            Dependency(
+                'category',
+                'model',
+                dependency_conditions.Any(),
+                AJAX_UPDATE,
+                url=reverse('model_dependency_view'),
             ),
             Dependency(
                 'location',
@@ -695,7 +710,6 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
         fields = (
             'niw',
             'type',
-            'category',
             'imei',
             'model',
             'status',
@@ -763,10 +777,9 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
-    category = TreeNodeChoiceField(
-        queryset=AssetCategory.tree.all(),
-        level_indicator='|---',
-        empty_label="---",
+    category = CharField(
+        widget=HiddenInput(),
+        required=False,
     )
     source = ChoiceField(
         required=False,
@@ -818,25 +831,18 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
             del kwargs['mode']
         super(BaseAddAssetForm, self).__init__(*args, **kwargs)
 
-        category = self.fields['category'].queryset
         if mode == "dc":
             self.fields['model'].widget.plugin_options['add_link'] +=\
                 '&type=' + str(AssetType.data_center.id)
             self.fields['model'].widget.channel = LOOKUPS['asset_dcmodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.data_center
-            )
         elif mode == "back_office":
             self.fields['model'].widget.plugin_options['add_link'] +=\
                 '&type=' + str(AssetType.back_office.id)
             self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.back_office
-            )
 
         for readonly_field in (
             'company',
@@ -850,11 +856,17 @@ class BaseAddAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_category(self):
         data = self.cleaned_data["category"]
-        if not data.parent:
+        if not data:
+            return data
+        try:
+            category = AssetCategory.objects.get(pk=data)
+        except AssetCategory.DoesNotExist:
+            raise ValidationError('"{}" is not proper category'.format(data))
+        if not category.parent:
             raise ValidationError(
                 _("Category must be selected from the subcategory")
             )
-        return data
+        return category
 
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
@@ -874,7 +886,6 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             'niw',
             'sn',
             'type',
-            'category',
             'imei',
             'model',
             'status',
@@ -947,10 +958,9 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
             add_link='/admin/ralph_assets/warehouse/add/?name=',
         )
     )
-    category = TreeNodeChoiceField(
-        queryset=AssetCategory.tree.all(),
-        level_indicator='|---',
-        empty_label="---",
+    category = CharField(
+        widget=HiddenInput(),
+        required=False,
     )
     source = ChoiceField(
         required=False,
@@ -1000,19 +1010,12 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
         if mode:
             del kwargs['mode']
         super(BaseEditAssetForm, self).__init__(*args, **kwargs)
-        category = self.fields['category'].queryset
         if mode == "dc":
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.DC.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.data_center
-            )
         elif mode == "back_office":
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
-            self.fields['category'].queryset = category.filter(
-                type=AssetCategoryType.back_office
-            )
 
         for readonly_field in (
             'company',
@@ -1029,11 +1032,17 @@ class BaseEditAssetForm(DependencyAssetForm, ModelForm):
 
     def clean_category(self):
         data = self.cleaned_data["category"]
-        if not data.parent:
+        if not data:
+            return data
+        try:
+            category = AssetCategory.objects.get(pk=data)
+        except AssetCategory.DoesNotExist:
+            raise ValidationError('"{}" is not proper category'.format(data))
+        if not category.parent:
             raise ValidationError(
                 _("Category must be selected from the subcategory")
             )
-        return data
+        return category
 
     def clean_production_year(self):
         return validate_production_year(self)
