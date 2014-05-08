@@ -30,8 +30,6 @@ from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
 
-SN_LABEL = _('Licence key')
-
 
 class SoftwareCategoryWidget(AutoCompleteWidget):
     """A widget for SoftwareCategoryField."""
@@ -161,7 +159,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
 
     sn = MultilineField(
         db_field_path='sn',
-        label=_(SN_LABEL),
+        label=_('Licence key'),
         required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
     )
@@ -207,7 +205,7 @@ class EditLicenceForm(LicenceForm):
             'niw',
         )
 
-    sn = forms.CharField(widget=forms.Textarea, label=_(SN_LABEL))
+    sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
     niw = forms.CharField(label=_('Inventory number'))
 
 
