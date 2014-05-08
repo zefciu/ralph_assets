@@ -180,9 +180,12 @@
         });
 
         // set status as 'in progress' if user is selected
-        $("div.user_info #id_user").change(function() {
-            if($(this).val() !== "") {
-                $('#id_status option').filter(function () {
+        $("div.user_info #id_user").add('.bulk-table [id$="-user"]').change(function() {
+            var $this = $(this);
+            if($this.val() !== "") {
+                var prefix = $this.attr('id').slice(0, -"user".length);
+                var slave = $('#' + prefix + "status");
+                slave.children('option').filter(function () {
                     return $(this).text() == 'in progress';
                 }).prop('selected', true);
             }
