@@ -1281,7 +1281,7 @@ class BulkEdit(_AssetSearch):
     def get_items_ids(self, *args, **kwargs):
         items_ids = self.request.GET.getlist('select')
         try:
-            int_ids = map(int, item_ids)
+            int_ids = map(int, items_ids)
         except ValueError:
             int_ids = []
         return int_ids
