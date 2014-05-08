@@ -1281,7 +1281,7 @@ class BulkEdit(_AssetSearch):
     def get_items_ids(self, *args, **kwargs):
         items_ids = self.request.GET.getlist('select')
         try:
-            int_ids = [int(item_id) for item_id in items_ids]
+            int_ids = map(int, item_ids)
         except ValueError:
             int_ids = []
         return int_ids
@@ -1294,7 +1294,7 @@ class BulkEdit(_AssetSearch):
         else:
             query = Q(pk__in=self.get_items_ids())
         assets_count = self.asset_objects.filter(query).count()
-        if not (0 < assets_count < MAX_BULK_EDIT_SIZE + 1):
+        if not (0 < assets_count <= MAX_BULK_EDIT_SIZE):
             if assets_count > MAX_BULK_EDIT_SIZE:
                 messages.warning(
                     self.request,
