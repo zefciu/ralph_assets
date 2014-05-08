@@ -126,7 +126,7 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licences'),
                 fugue_icon='fugue-cheque',
-                name='licence_list',
+                name='licences',
                 href=reverse('licence_list'),
             ),
             MenuItem(
@@ -148,7 +148,7 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
-        if self.mainmenu_selected.startswith('devices'):
+        if self.mode in ('back_office', 'dc'):
             base_items = (
                 ('add_device', _('Add device'), 'fugue-block--plus', True),
                 ('add_part', _('Add part'), 'fugue-block--plus', True),
@@ -289,8 +289,6 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
 
 class _AssetSearch(AssetsBase):
-
-    mainmenu_selected = 'devices'
 
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
@@ -845,7 +843,6 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
 class AddDevice(AssetsBase):
     template_name = 'assets/add_device.html'
     sidebar_selected = 'add device'
-    mainmenu_selected = 'devices'
 
     def get_context_data(self, **kwargs):
         ret = super(AddDevice, self).get_context_data(**kwargs)
@@ -991,7 +988,6 @@ def _update_part_info(user, asset, part_info_data):
 class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
-    mainmenu_selected = 'devices'
 
     def initialize_vars(self):
         self.parts = []
