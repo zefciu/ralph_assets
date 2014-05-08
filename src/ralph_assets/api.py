@@ -6,24 +6,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Q
 from tastypie import fields
 from tastypie.authentication import ApiKeyAuthentication
-from tastypie.cache import SimpleCache
-from tastypie.constants import ALL, ALL_WITH_RELATIONS
-from tastypie.resources import ModelResource, Resource
+from tastypie.constants import ALL
+from tastypie.resources import ModelResource
 from tastypie.throttle import CacheThrottle
-from tastypie.bundle import Bundle
 
 from ralph_assets.models import Asset, Licence
 from ralph_assets.models_assets import (
     AssetType,
     AssetStatus,
-    LicenseType,
     AssetSource,
 )
 
