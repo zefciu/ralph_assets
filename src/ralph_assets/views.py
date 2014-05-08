@@ -319,7 +319,7 @@ class _AssetSearch(AssetsBase):
             category = AssetCategory.objects.get(slug=category_id)
             children = [x.slug for x in category.get_children()]
             categories = [category_id, ] + children
-            return Q(category_id__in=categories)
+            return Q(model__category_id__in=categories)
 
     def get_all_items(self, query):
         include_deleted = self.request.GET.get('deleted')
@@ -661,7 +661,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         processed = 0
         job = get_current_job()
         for asset in queryset:
-            row = ['part', ] if asset.part_info else ['device', ]
+            row = ['part'] if asset.part_info else ['device']
             for item in self.columns:
                 field = item.field
                 if field:
@@ -894,9 +894,9 @@ class AddDevice(AssetsBase):
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
                 if f_name not in {
-                    "barcode", "company", "cost_center", "department",
-                    "employee_id", "imei", "licences", "manager", "sn",
-                    "profit_center"
+                    "barcode", "category", "company", "cost_center",
+                    "department", "employee_id", "imei", "licences", "manager",
+                    "sn", "profit_center",
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -1425,7 +1425,7 @@ class AddPart(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
             for f_name in {
-                "barcode", "company", "cost_center", "department",
+                "barcode", "category", "company", "cost_center", "department",
                 "employee_id", "imei", "licences", "manager", "profit_center"
             }:
                 if f_name in asset_data:
@@ -1805,6 +1805,22 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class ModelDependencyView(DependencyView):
+    def get_values(self, value):
+        category = ''
+        if value != '':
+            try:
+                category = AssetModel.objects.get(pk=value).category_id
+            except (
+                AssetModel.DoesNotExist,
+                AssetModel.MultipleObjectsReturned,
+            ):
+                return HttpResponseBadRequest("Incorrect AssetModel pk")
+        return {
+            'category': category,
+        }
 
 
 class UserDetails(AssetsBase):

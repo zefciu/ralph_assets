@@ -26,25 +26,25 @@ class TestValidations(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.category = create_category()
+        self.model = create_model(category=self.category)
         self.first_asset = create_asset(
             sn='1234-1234-1234-1234',
-            category=self.category,
+            model=self.model,
         )
         self.second_asset = create_asset(
             sn='5678-5678-5678-5678',
-            category=self.category,
+            model=self.model,
         )
 
         self.asset_with_duplicated_sn = create_asset(
             sn='1111-1111-1111-1111',
-            category=self.category,
+            model=self.model,
         )
 
         # Prepare required fields (formset_name, field_name)
         self.required_fields = [
             ('asset_form', 'model'),
             ('asset_form', 'warehouse'),
-            ('asset_form', 'category'),
         ]
 
         self.model1 = create_model()
