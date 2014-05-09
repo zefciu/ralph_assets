@@ -63,7 +63,11 @@ def create_warehouse(name=DEFAULT_ASSET_DATA['warehouse']):
     return warehouse
 
 
-def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
+def create_model(
+    name=DEFAULT_ASSET_DATA['model'],
+    manufacturer=None,
+    category=DEFAULT_ASSET_DATA['category'],
+):
     """name = string, manufacturer = string"""
     if not manufacturer:
         manufacturer = create_manufacturer()
@@ -72,6 +76,15 @@ def create_model(name=DEFAULT_ASSET_DATA['model'], manufacturer=None):
     model, created = AssetModel.objects.get_or_create(name=name)
     if created:
         model.manufacturer = manufacturer
+        if not isinstance(category, AssetCategory):
+            try:
+                category = AssetCategory.objects.get(pk=category)
+            except AssetCategory.DoesNotExist:
+                pass
+            else:
+                model.category = category
+        else:
+            model.category = category
         model.save()
     return model
 

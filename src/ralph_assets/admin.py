@@ -68,7 +68,6 @@ class AssetAdmin(ModelAdmin):
     fields = (
         'sn',
         'type',
-        'category',
         'model',
         'status',
         'warehouse',

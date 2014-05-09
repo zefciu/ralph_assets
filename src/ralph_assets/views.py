@@ -127,7 +127,7 @@ class AssetsBase(Base):
             MenuItem(
                 label=_('Licences'),
                 fugue_icon='fugue-cheque',
-                name='licence_list',
+                name='licences',
                 href=reverse('licence_list'),
             ),
             MenuItem(
@@ -149,7 +149,7 @@ class AssetsBase(Base):
         return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
-        if self.mainmenu_selected.startswith('devices'):
+        if self.mode in ('back_office', 'dc'):
             base_items = (
                 ('add_device', _('Add device'), 'fugue-block--plus', True),
                 ('add_part', _('Add part'), 'fugue-block--plus', True),
@@ -277,6 +277,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
             'sort': self.sort,
             'columns': self.columns,
             'form': self.form,
+            'items_count': self.items_count,
         })
         return ret
 
@@ -289,13 +290,13 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         return super(GenericSearch, self).get(request, *args, **kwargs)
 
     def handle_search_data(self, request):
-        q = self.form.get_query()
-        return self.Model.objects.filter(q).all()
+        query = self.form.get_query()
+        query_set = self.Model.objects.filter(query)
+        self.items_count = query_set.count()
+        return query_set.all()
 
 
 class _AssetSearch(AssetsBase):
-
-    mainmenu_selected = 'devices'
 
     def set_mode(self, mode):
         self.header = 'Search {} Assets'.format(
@@ -324,7 +325,7 @@ class _AssetSearch(AssetsBase):
             category = AssetCategory.objects.get(slug=category_id)
             children = [x.slug for x in category.get_children()]
             categories = [category_id, ] + children
-            return Q(category_id__in=categories)
+            return Q(model__category_id__in=categories)
 
     def get_all_items(self, query):
         include_deleted = self.request.GET.get('deleted')
@@ -666,7 +667,7 @@ class _AssetSearchDataTable(_AssetSearch, DataTableMixin):
         processed = 0
         job = get_current_job()
         for asset in queryset:
-            row = ['part', ] if asset.part_info else ['device', ]
+            row = ['part'] if asset.part_info else ['device']
             for item in self.columns:
                 field = item.field
                 if field:
@@ -850,7 +851,6 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
 class AddDevice(AssetsBase):
     template_name = 'assets/add_device.html'
     sidebar_selected = 'add device'
-    mainmenu_selected = 'devices'
 
     def get_context_data(self, **kwargs):
         ret = super(AddDevice, self).get_context_data(**kwargs)
@@ -899,9 +899,9 @@ class AddDevice(AssetsBase):
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
                 if f_name not in {
-                    "barcode", "company", "cost_center", "department",
-                    "employee_id", "imei", "licences", "manager", "sn",
-                    "profit_center"
+                    "barcode", "category", "company", "cost_center",
+                    "department", "employee_id", "imei", "licences", "manager",
+                    "sn", "profit_center",
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -996,7 +996,6 @@ def _update_part_info(user, asset, part_info_data):
 class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
-    mainmenu_selected = 'devices'
 
     def initialize_vars(self):
         self.parts = []
@@ -1281,7 +1280,7 @@ class BulkEdit(_AssetSearch):
     def get_items_ids(self, *args, **kwargs):
         items_ids = self.request.GET.getlist('select')
         try:
-            int_ids = [int(item_id) for item_id in items_ids]
+            int_ids = map(int, items_ids)
         except ValueError:
             int_ids = []
         return int_ids
@@ -1294,7 +1293,7 @@ class BulkEdit(_AssetSearch):
         else:
             query = Q(pk__in=self.get_items_ids())
         assets_count = self.asset_objects.filter(query).count()
-        if not (0 < assets_count < MAX_BULK_EDIT_SIZE + 1):
+        if not (0 < assets_count <= MAX_BULK_EDIT_SIZE):
             if assets_count > MAX_BULK_EDIT_SIZE:
                 messages.warning(
                     self.request,
@@ -1447,7 +1446,7 @@ class AddPart(AssetsBase):
             creator_profile = self.request.user.get_profile()
             asset_data = self.asset_form.cleaned_data
             for f_name in {
-                "barcode", "company", "cost_center", "department",
+                "barcode", "category", "company", "cost_center", "department",
                 "employee_id", "imei", "licences", "manager", "profit_center"
             }:
                 if f_name in asset_data:
@@ -1827,6 +1826,22 @@ class CategoryDependencyView(DependencyView):
             )]
         )
         return values
+
+
+class ModelDependencyView(DependencyView):
+    def get_values(self, value):
+        category = ''
+        if value != '':
+            try:
+                category = AssetModel.objects.get(pk=value).category_id
+            except (
+                AssetModel.DoesNotExist,
+                AssetModel.MultipleObjectsReturned,
+            ):
+                return HttpResponseBadRequest("Incorrect AssetModel pk")
+        return {
+            'category': category,
+        }
 
 
 class UserDetails(AssetsBase):
