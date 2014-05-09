@@ -172,12 +172,10 @@ class Migration(SchemaMigration):
         ))
         db.create_unique('ralph_assets_licence_attachments', ['licence_id', 'attachment_id'])
 
-
         # Changing field 'Licence.niw'
-        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default=None, unique=True, max_length=50))
+        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default='N/A', unique=True, max_length=50))
         # Adding unique constraint on 'Licence', fields ['niw']
         db.create_unique('ralph_assets_licence', ['niw'])
-
 
         # Changing field 'Licence.price'
         db.alter_column('ralph_assets_licence', 'price', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=10, decimal_places=2))
