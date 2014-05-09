@@ -173,11 +173,20 @@ class Migration(SchemaMigration):
         db.create_unique('ralph_assets_licence_attachments', ['licence_id', 'attachment_id'])
 
 
+        # Changing field 'Licence.niw'
+        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default=None, unique=True, max_length=50))
+        # Adding unique constraint on 'Licence', fields ['niw']
+        db.create_unique('ralph_assets_licence', ['niw'])
+
+
         # Changing field 'Licence.price'
         db.alter_column('ralph_assets_licence', 'price', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=10, decimal_places=2))
 
         # Changing field 'Licence.sn'
         db.alter_column('ralph_assets_licence', 'sn', self.gf('django.db.models.fields.TextField')(null=True))
+        # Deleting field 'Asset.category'
+        db.delete_column('ralph_assets_asset', 'category_id')
+
         # Adding field 'Asset.location'
         db.add_column('ralph_assets_asset', 'location',
                       self.gf('django.db.models.fields.CharField')(max_length=128, null=True, blank=True),
@@ -261,6 +270,9 @@ class Migration(SchemaMigration):
         db.alter_column('ralph_assets_officeinfo', 'license_key', self.gf('django.db.models.fields.TextField')(null=True))
 
     def backwards(self, orm):
+        # Removing unique constraint on 'Licence', fields ['niw']
+        db.delete_unique('ralph_assets_licence', ['niw'])
+
         # Deleting model 'TransitionsHistory'
         db.delete_table('ralph_assets_transitionshistory')
 
@@ -301,7 +313,7 @@ class Migration(SchemaMigration):
 
         # Adding field 'Licence.used'
         db.add_column('ralph_assets_licence', 'used',
-                      self.gf('django.db.models.fields.IntegerField')(default=0),
+                      self.gf('django.db.models.fields.IntegerField')(default=None),
                       keep_default=False)
 
         # Deleting field 'Licence.invoice_date'
@@ -323,6 +335,9 @@ class Migration(SchemaMigration):
         db.delete_table('ralph_assets_licence_attachments')
 
 
+        # Changing field 'Licence.niw'
+        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(max_length=50, null=True))
+
         # Changing field 'Licence.price'
         db.alter_column('ralph_assets_licence', 'price', self.gf('django.db.models.fields.DecimalField')(max_digits=10, decimal_places=2))
 
@@ -330,6 +345,11 @@ class Migration(SchemaMigration):
         db.alter_column('ralph_assets_licence', 'sn', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200, null=True))
         # Adding unique constraint on 'Licence', fields ['sn']
         db.create_unique('ralph_assets_licence', ['sn'])
+
+        # Adding field 'Asset.category'
+        db.add_column('ralph_assets_asset', 'category',
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetCategory'], null=True, blank=True),
+                      keep_default=False)
 
         # Deleting field 'Asset.location'
         db.delete_column('ralph_assets_asset', 'location')
@@ -470,7 +490,6 @@ class Migration(SchemaMigration):
             'attachments': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['ralph_assets.Attachment']", 'null': 'True', 'blank': 'True'}),
             'barcode': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '200', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetCategory']", 'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
@@ -630,7 +649,7 @@ class Migration(SchemaMigration):
             'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'niw': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
+            'niw': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
             'number_bought': ('django.db.models.fields.IntegerField', [], {}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.Licence']"}),
@@ -638,7 +657,7 @@ class Migration(SchemaMigration):
             'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'sn': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'sn': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'software_category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.SoftwareCategory']", 'on_delete': 'models.PROTECT'}),
             'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'users': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.User']", 'symmetrical': 'False'}),
