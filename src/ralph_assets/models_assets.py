@@ -522,7 +522,9 @@ class Asset(
                 model_type=DeviceType.unknown,
                 priority=SAVE_PRIORITY,
                 venture=venture,
-                name='Unknown',
+                name=getattr(self.model, 'name', 'Unknown'),
+                remarks=self.order_no or '',
+                dc=getattr(self.warehouse, 'name', ''),
             )
             self.device_info.ralph_device_id = device.id
             self.device_info.save()
