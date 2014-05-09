@@ -311,7 +311,7 @@ class Migration(SchemaMigration):
 
         # Adding field 'Licence.used'
         db.add_column('ralph_assets_licence', 'used',
-                      self.gf('django.db.models.fields.IntegerField')(default=None),
+                      self.gf('django.db.models.fields.IntegerField')(default=0),
                       keep_default=False)
 
         # Deleting field 'Licence.invoice_date'
