@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from django.db.models import Q
+from django.db.models import Sum, Q
 from django.contrib import messages
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -25,6 +25,7 @@ from ralph_assets.models import (
     ReportOdtSource,
 )
 from ralph_assets.views import _get_return_link, GenericSearch
+from ralph_assets.views_sam import LicenseSelectedMixin
 
 
 logger = logging.getLogger(__name__)
@@ -147,6 +148,7 @@ class BaseInvoiceReport(GenericSearch):
                 "datetime": datetime.datetime.now(),
             },
             "items": self.items,
+            "sum_price": self.items.aggregate(Sum('price')).get('price__sum')
         }
         return data
 
@@ -174,7 +176,7 @@ class AssetInvoiceReport(BaseInvoiceReport):
         return url
 
 
-class LicenceInvoiceReport(BaseInvoiceReport):
+class LicenceInvoiceReport(LicenseSelectedMixin, BaseInvoiceReport):
 
     def get_all_items(self, *args, **kwargs):
         if self.request.GET.get('from_query'):

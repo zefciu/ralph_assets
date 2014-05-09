@@ -18,8 +18,8 @@ class TestMultivalueFields(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.warehouse = create_warehouse()
-        self.model = create_model()
         self.category = create_category()
+        self.model = create_model(category=self.category)
         self.addform = '/assets/dc/add/device/'
         self.common_test_data = dict(
             type=AssetType.data_center.id,
@@ -30,7 +30,6 @@ class TestMultivalueFields(TestCase):
             price='10',
             size=1,
             slots=1,
-            category=self.category.slug,
             ralph_device_id='',
             asset=True,
             source=1,

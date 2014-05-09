@@ -1,8 +1,25 @@
 Change Log
 ----------
 
+1.4.3
+~~~~~~~
+
+* Added warning logger with cores count from ralph and assets
+
+
+1.4.2
+~~~~~~~
+
+* Changed AssetModel schema. Now height_of_device is a float field
+
+* Added to AssetModel column named cores_count
+
+* Changed in api_pricing conditions for getting assets
+
+
 1.4.1
 ~~~~~~~
+
 * Added Warehouse column to template bulk_edit file
 
 
