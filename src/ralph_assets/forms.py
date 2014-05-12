@@ -172,8 +172,7 @@ class MultivalFieldForm(ModelForm):
                     msg = "Fields: {} - require the same count".format(
                         ', '.join(self.multival_fields)
                     )
-                    self.errors.setdefault(field, [])
-                    self.errors[field].append(msg)
+                    self.errors.setdefault(field, []).append(msg)
 
     def unique_multival_fields(self, data):
         for field_name in self.multival_fields:
@@ -1130,7 +1129,7 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
             rest of multivalues.
         """
         cleaned_data = super(AddDeviceForm, self).clean()
-        if 'sn' in self.data or 'barcode' in self.data:
+        if self.data['sn'] or self.data['barcode']:
             if self.different_multival_counters(cleaned_data):
                 for field in self.multival_fields:
                     if field in cleaned_data:
@@ -1141,8 +1140,7 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         else:
             msg = _('SN or BARCODE field is required')
             for field in ['sn', 'barcode']:
-                self.errors[field].append(msg) if field in self.errors else \
-                    [msg]
+                self.errors.setdefault(field, []).append(msg)
             self.different_multival_counters(cleaned_data)
         return cleaned_data
 
