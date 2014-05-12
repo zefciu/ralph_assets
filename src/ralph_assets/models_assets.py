@@ -555,8 +555,8 @@ class Asset(
         date = date or datetime.date.today()
         if self.force_deprecation or not self.invoice_date:
             return True
-        if self.deprecation_date:
-            deprecation_date = self.deprecation_date
+        if self.deprecation_end_date:
+            deprecation_date = self.deprecation_end_date
         else:
             deprecation_date = self.invoice_date + relativedelta(
                 months=self.get_deprecation_months(),

@@ -49,7 +49,7 @@ class TestModelAsset(TestCase):
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=50,
-            deprecation_date=datetime.date(2014, 12, 15),
+            deprecation_end_date=datetime.date(2014, 12, 15),
         )
         dev1 = Device.create(
             [('1', 'sda', 0)],
@@ -75,15 +75,19 @@ class TestModelAsset(TestCase):
 
     def test_is_deperecation(self):
         date = datetime.date(2014, 03, 29)
-        date2 = datetime.date(2014, 12, 10)
-        date3 = datetime.date(2014, 12, 20)
         self.assertEqual(self.asset.get_deprecation_months(), 12)
         self.assertEqual(self.asset2.get_deprecation_months(), 24)
         self.assertEqual(self.asset.is_deprecated(date), True)
         self.assertEqual(self.asset2.is_deprecated(date), False)
         self.assertEqual(self.asset3.is_deprecated(date), True)
-        self.assertEqual(self.asset_depr_date.is_deprecated(date2), False)
-        self.assertEqual(self.asset_depr_date.is_deprecated(date3), True)
+        self.assertEqual(
+            self.asset_depr_date.is_deprecated(datetime.date(2014, 12, 10)),
+            False,
+        )
+        self.assertEqual(
+            self.asset_depr_date.is_deprecated(datetime.date(2014, 12, 20)),
+            True,
+        )
 
 
 class TestApiAssets(TestCase):
