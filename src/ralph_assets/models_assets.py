@@ -392,6 +392,7 @@ class Asset(
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
+    deprecation_date = models.DateField(null=True, blank=True)
     production_year = models.PositiveSmallIntegerField(null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots',
@@ -554,9 +555,12 @@ class Asset(
         date = date or datetime.date.today()
         if self.force_deprecation or not self.invoice_date:
             return True
-        deprecation_date = self.invoice_date + relativedelta(
-            months=self.get_deprecation_months(),
-        )
+        if self.deprecation_date:
+            deprecation_date = self.deprecation_date
+        else:
+            deprecation_date = self.invoice_date + relativedelta(
+                months=self.get_deprecation_months(),
+            )
         return deprecation_date < date
 
     def delete_with_info(self, *args, **kwargs):
