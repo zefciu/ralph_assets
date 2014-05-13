@@ -38,14 +38,14 @@ class ChoicesField(fields.ApiField):
         super(ChoicesField, self).__init__(*args, **kwargs)
 
     def dehydrate(self, bundle, **kwargs):
-        field_name = self.field_name if self.field_name else self.instance_name
+        field_name = self.field_name or self.instance_name
         field_value = getattr(bundle.obj, field_name)
         return self.choices_class.from_id(field_value).name
 
 
 class AssetsField(fields.RelatedField):
     """A field representing a assigned assets to user.
-    Filtered by Asset.owner fiedl"""
+    Filtered by Asset.owner field"""
 
     is_m2m = True
 
@@ -63,7 +63,10 @@ class AssetsField(fields.RelatedField):
             result.append(self.dehydrate_related(
                 bundle, self.get_related_resource(asset)
             ))
-        return result
+        return [
+            self.dehydrate_related(bundle, self.get_related_resource(asset))
+            for asset in assets
+        ]
 
     def get_attribute_name(self):
         return 'assets'
@@ -71,6 +74,7 @@ class AssetsField(fields.RelatedField):
 
 class LicenceResource(ModelResource):
     asset_type = ChoicesField(AssetType)
+    software_category = fields.CharField(attribute="software_category")
 
     class Meta:
         queryset = Licence.objects.all()
