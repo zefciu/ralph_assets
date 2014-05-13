@@ -236,7 +236,11 @@ class AssetModelLookup(LookupChannel):
 
     def get_query(self, q, request):
         return self.model.objects.filter(
-            Q(name__icontains=q) & Q(type=getattr(self, 'type', None))
+            (
+                Q(manufacturer__name__icontains=q) |
+                Q(category__name__icontains=q) |
+                Q(name__icontains=q)
+            ) & Q(type=self.type)
         ).order_by('name')[:10]
 
     def get_result(self, obj):
@@ -247,12 +251,18 @@ class AssetModelLookup(LookupChannel):
 
     def format_item_display(self, obj):
         manufacturer = getattr(obj, 'manufacturer', None) or '-'
+        category = getattr(obj, 'category', None) or '-'
         return '''
         <li>
             <span>{model}</span>
             <span class='auto-complete-blue'>({manufacturer})</span>
+            <span class='asset-category'>({category})</span>
         </li>
-        '''.format(model=escape(obj.name), manufacturer=escape(manufacturer))
+        '''.format(
+            model=escape(obj.name),
+            manufacturer=escape(manufacturer),
+            category=escape(category),
+        )
 
 
 class DCAssetModelLookup(AssetModelLookup):

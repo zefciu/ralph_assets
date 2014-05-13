@@ -79,6 +79,13 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         mode=self.mode,
                         label=name,
                     )
+                    # set default value if name is the same as one of options
+                    options = filter(
+                        lambda x: x[1].lower().strip() == name.lower().strip(),
+                        form.fields[slugify(name)].choices
+                    )
+                    if options:
+                        form.fields[slugify(name)].initial = options[0][0]
         elif step == 'confirm':
             names_per_sheet, _, _ =\
                 self.get_cleaned_data_for_step('upload')['file']

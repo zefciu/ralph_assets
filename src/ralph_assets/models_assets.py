@@ -392,7 +392,6 @@ class Asset(
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
     ))
-    category = models.ForeignKey('AssetCategory', null=True, blank=True)
     production_year = models.PositiveSmallIntegerField(null=True, blank=True)
     slots = models.FloatField(
         verbose_name='Slots',
@@ -523,8 +522,11 @@ class Asset(
                 model_type=DeviceType.unknown,
                 priority=SAVE_PRIORITY,
                 venture=venture,
-                name='Unknown',
             )
+            device.name = getattr(self.model, 'name', 'Unknown')
+            device.remarks = self.order_no or ''
+            device.dc = getattr(self.warehouse, 'name', '')
+            device.save()
             self.device_info.ralph_device_id = device.id
             self.device_info.save()
 
