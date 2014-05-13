@@ -152,6 +152,12 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
             sort_expression='invoice_date',
         ),
         DataTableColumn(
+            _('Invoice no.'),
+            bob_tag=True,
+            field='invoice_no',
+            sort_expression='invoice_no',
+        ),
+        DataTableColumn(
             _('Valid thru'),
             bob_tag=True,
             field='valid_thru',
