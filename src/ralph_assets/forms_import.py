@@ -150,6 +150,10 @@ class ColumnChoiceField(forms.ChoiceField):
                 )
                 for field in AmdModel._meta.fields if field.name != 'id'
             ]
+            kwargs['choices'] += [
+                ('model.category', u'category'),
+                ('model.manufacturer', u'manufacturer'),
+            ]
         kwargs['choices'] = [('', '-----')] + sorted(
             kwargs['choices'],
             key=lambda option: option[1],
