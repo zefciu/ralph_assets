@@ -240,7 +240,7 @@ class AssetModelLookup(LookupChannel):
                 Q(manufacturer__name__icontains=q) |
                 Q(category__name__icontains=q) |
                 Q(name__icontains=q)
-            ) & Q(type=getattr(self, 'type', None))
+            ) & Q(type=self.type)
         ).order_by('name')[:10]
 
     def get_result(self, obj):
