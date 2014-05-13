@@ -162,7 +162,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 return []
             elif (
                 isinstance(field, (TextField, CharField)) and
-                not field_name in ('imei', 'sn')
+                field_name not in ('imei', 'sn')
             ):
                 return ''
             else:
