@@ -173,7 +173,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if isinstance(field, DateField):
             if ' ' in value:
                 # change "2012-5-30 13:23:54" to "2012-5-30"
-                value = value.split(' ')[0]
+                value = value.split()[0]
         if field.choices:
             value_lower = value.lower().strip()
             for k, v in field.choices:
