@@ -58,11 +58,6 @@ class AssetsField(fields.RelatedField):
 
     def dehydrate(self, bundle, **kwargs):
         assets = Asset.objects.filter(owner=bundle.obj)
-        result = []
-        for asset in assets:
-            result.append(self.dehydrate_related(
-                bundle, self.get_related_resource(asset)
-            ))
         return [
             self.dehydrate_related(bundle, self.get_related_resource(asset))
             for asset in assets
