@@ -166,7 +166,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
     niw = MultilineField(
         db_field_path='niw',
         label=_('Inventory number'),
-        required=False,
+        required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
     )
 

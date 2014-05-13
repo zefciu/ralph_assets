@@ -8,15 +8,19 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Deleting field 'Asset.category'
-        db.delete_column('ralph_assets_asset', 'category_id')
+        # Removing unique constraint on 'AssetModel', fields ['name']
+        db.delete_unique('ralph_assets_assetmodel', ['name'])
+
+        # Removing index on 'AssetModel', fields ['name']
+        db.delete_index('ralph_assets_assetmodel', ['name'])
 
 
     def backwards(self, orm):
-        # Adding field 'Asset.category'
-        db.add_column('ralph_assets_asset', 'category',
-                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetCategory'], null=True, blank=True),
-                      keep_default=False)
+        # Adding index on 'AssetModel', fields ['name']
+        db.create_index('ralph_assets_assetmodel', ['name'])
+
+        # Adding unique constraint on 'AssetModel', fields ['name']
+        db.create_unique('ralph_assets_assetmodel', ['name'])
 
 
     models = {
@@ -183,7 +187,7 @@ class Migration(SchemaMigration):
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '75'}),
             'power_consumption': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
             'type': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True'})
         },

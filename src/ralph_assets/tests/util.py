@@ -50,6 +50,7 @@ SCREEN_ERROR_MESSAGES = dict(
     count_sn_and_bc="Fields: sn, barcode, imei - require the same count",
     barcode_already_exist='Following items already exist: ',
     empty_items_disallowed="Empty items disallowed, remove it.",
+    any_required="SN or BARCODE field is required",
 )
 
 
