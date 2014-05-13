@@ -175,7 +175,7 @@ class AssetModel(
     CreatableFromString,
     TimeTrackable,
     EditorTrackable,
-    Named,
+    Named.NonUnique,
     WithConcurrentGetOrCreate
 ):
     '''
