@@ -314,7 +314,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             try:
                 category = AssetCategory.objects.get(
                     name=category,
-                    type=self.mode,
+                    type=kwargs['type'],
                 )
             except AssetCategory.DoesNotExist:
                 category = None
