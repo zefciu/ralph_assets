@@ -52,7 +52,7 @@ class ChoicesField(fields.ApiField):
 
 
 class AssetsField(fields.RelatedField):
-    """A field representing a assigned assets to user.
+    """A field representing an assigned assets to user.
     Filtered by Asset.owner field"""
 
     is_m2m = True
