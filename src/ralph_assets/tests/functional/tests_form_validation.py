@@ -199,5 +199,3 @@ class TestValidations(TestCase):
         self.assertEqual(
             send_post.context['asset_form'].errors['sn'][0], expected
         )
-
-
