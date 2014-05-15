@@ -325,16 +325,12 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 )
             except AssetCategory.DoesNotExist:
                 category = None
-            else:
-                kwargs['category'] = category
+        kwargs['category'] = category
         if manufacturer:
             try:
                 manufacturer = AssetManufacturer.objects.get(name=manufacturer)
             except AssetManufacturer.DoesNotExist:
                 manufacturer = None
-            else:
-                kwargs['manufacturer'] = manufacturer
-
+        kwargs['manufacturer'] = manufacturer
         data['Model'] = AssetModel.objects.get_or_create(**kwargs)[0]
         return data
-
