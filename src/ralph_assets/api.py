@@ -11,15 +11,23 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authentication import ApiKeyAuthentication
-from tastypie.constants import ALL
+from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.resources import ModelResource
 from tastypie.throttle import CacheThrottle
 
-from ralph_assets.models import Asset, Licence
-from ralph_assets.models_assets import (
-    AssetType,
-    AssetStatus,
+from ralph_assets.models import (
+    Asset,
+    AssetManufacturer,
+    AssetModel,
+    AssetOwner,
     AssetSource,
+    AssetStatus,
+    AssetType,
+    Licence,
+    LicenceType,
+    Service,
+    SoftwareCategory,
+    Warehouse,
 )
 
 THROTTLE_AT = settings.API_THROTTLING['throttle_at']
@@ -67,30 +75,195 @@ class AssetsField(fields.RelatedField):
         return 'assets'
 
 
+class AssetManufacturerResource(ModelResource):
+    class Meta:
+        queryset = AssetManufacturer.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class AssetModelResource(ModelResource):
+    class Meta:
+        queryset = AssetModel.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class AssetOwnerResource(ModelResource):
+    class Meta:
+        queryset = AssetOwner.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class LicenceTypeResource(ModelResource):
+    class Meta:
+        queryset = LicenceType.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class ServiceResource(ModelResource):
+    class Meta:
+        queryset = Service.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class SoftwareCategoryResource(ModelResource):
+    class Meta:
+        queryset = SoftwareCategory.objects.all()
+        authentication = ApiKeyAuthentication()
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
+
+
+class UserResource(ModelResource):
+    user_username = fields.CharField(attribute="username")
+
+    class Meta:
+        queryset = User.objects.all()
+        excludes = ['username', ]
+        list_allowed_methods = ['get']
+        filtering = {
+            'user_username': ALL,
+        }
+
+
+class WarehouseResource(ModelResource):
+    class Meta:
+        queryset = Warehouse.objects.all()
+        list_allowed_methods = ['get']
+        filtering = {
+            'user_username': ALL,
+        }
+
+
 class LicenceResource(ModelResource):
     asset_type = ChoicesField(AssetType)
-    software_category = fields.CharField(attribute="software_category")
+    licence_type = fields.ForeignKey(LicenceTypeResource, 'licence_type')
+    manufacturer = fields.ForeignKey(
+        AssetManufacturerResource, 'manufacturer', null=True,
+    )
+    property_of = fields.ForeignKey(
+        AssetOwnerResource, 'property_of', null=True,
+    )
+    software_category = fields.ForeignKey(
+        SoftwareCategoryResource, 'software_category',
+    )
 
     class Meta:
         queryset = Licence.objects.all()
         authentication = ApiKeyAuthentication()
+        filtering = {
+            'number_bought': ALL,
+            'sn': ALL,
+            'niw': ALL,
+            'invoice_date': ALL,
+            'valid_thru': ALL,
+            'order_no': ALL,
+            'price': ALL,
+            'accounting_id': ALL,
+            'asset_type': ALL,
+            'provider': ALL,
+            'invoice_no': ALL,
+            'manufacturer': ALL_WITH_RELATIONS,
+            'licence_type': ALL_WITH_RELATIONS,
+            'property_of': ALL_WITH_RELATIONS,
+            'software_category': ALL_WITH_RELATIONS,
+        }
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
 
 
 class AssetsResource(ModelResource):
-    licences = fields.ToManyField(
-        LicenceResource,
-        'licence_set',
-        full=True,
-    )
     asset_type = ChoicesField(AssetType, 'type')
-    status = ChoicesField(AssetStatus)
-    source = ChoicesField(AssetSource)
-    model = fields.CharField(attribute="model")
+    licences = fields.ToManyField(LicenceResource, 'licence_set', full=True)
     manufacturer = fields.CharField(attribute="model__manufacturer")
+    model = fields.ForeignKey(AssetModelResource, 'model')
+    owner = fields.ForeignKey(UserResource, 'owner', null=True)
+    service_name = fields.ForeignKey(
+        ServiceResource, 'service_name', null=True,
+    )
+    source = ChoicesField(AssetSource)
+    status = ChoicesField(AssetStatus)
+    user = fields.ForeignKey(UserResource, 'user', null=True)
+    warehouse = fields.ForeignKey(WarehouseResource, 'warehouse')
 
     class Meta:
         queryset = Asset.objects.all()
         authentication = ApiKeyAuthentication()
+        filtering = {
+            'model': ALL_WITH_RELATIONS,
+            'warehouse': ALL_WITH_RELATIONS,
+            'service_name': ALL_WITH_RELATIONS,
+            'owner': ALL_WITH_RELATIONS,
+            'user': ALL_WITH_RELATIONS,
+            'barcode': ALL,
+            'delivery_date': ALL,
+            'deprecation_rate': ALL,
+            'force_deprecation': ALL,
+            'invoice_date': ALL,
+            'invoice_no': ALL,
+            'location': ALL,
+            'niw': ALL,
+            'order_no': ALL,
+            'price': ALL,
+            'production_use_date': ALL,
+            'production_year': ALL,
+            'provider': ALL,
+            'provider_order_date': ALL,
+            'remarks': ALL,
+            'request_date': ALL,
+            'slots': ALL,
+            'sn': ALL,
+            'source': ALL,
+            'status': ALL,
+            'support_period': ALL,
+            'support_price': ALL,
+            'support_type': ALL,
+            'support_void_reporting': ALL,
+            'type': ALL,
+        }
+        list_allowed_methods = ['get']
+        throttle = CacheThrottle(
+            throttle_at=THROTTLE_AT,
+            timeframe=TIMEFRAME,
+            expiration=EXPIRATION,
+        )
 
 
 class UserAssignmentsResource(ModelResource):
