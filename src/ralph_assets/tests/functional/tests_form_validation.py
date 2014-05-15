@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
+from ralph_assets import models_assets
 from ralph_assets.tests.util import (
     create_asset,
     create_category,
@@ -192,9 +193,14 @@ class TestValidations(TestCase):
             required_part_data,
         )
         self.assertEqual(send_post.status_code, 200)
+        inserted_device = models_assets.Asset.objects.filter(
+            sn=required_part_data['sn']
+        ).get()
         expected = (
             'Following items already exist: <a href="'
-            '/assets/back_office/edit/device/4/">4</a>'
+            '/assets/back_office/edit/device/{id}/">{id}</a>'.format(
+                id=inserted_device.id
+            )
         )
         self.assertEqual(
             send_post.context['asset_form'].errors['sn'][0], expected
