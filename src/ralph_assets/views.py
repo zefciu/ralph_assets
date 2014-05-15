@@ -974,6 +974,8 @@ def _update_office_info(user, asset, office_info_data):
 
 @transaction.commit_on_success
 def _update_device_info(user, asset, device_info_data):
+    if not asset.device_info:
+        asset.device_info = DeviceInfo()
     asset.device_info.__dict__.update(
         **device_info_data
     )
