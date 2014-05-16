@@ -1,0 +1,32 @@
+{% extends 'assets/base.html' %}
+{% load bob %}
+{% load i18n %}
+
+{% block content %}
+<div>
+  <h3>{% block form_title %}Supports list{% endblock %}</h3>
+</div>
+<table id='suports_table' class="table table-bordered table-striped">
+{% table_header columns url_query sort fugue_icons=1 sort_variable_name=sort_variable_name %}
+	<tbody>
+        <tr>
+            <th>{% trans "Contract_id" %}</th>
+			<th>{% trans "Name" %}</th>
+			<th>{% trans "Date from" %}</th>
+			<th>{% trans "Date to" %}</th>
+			<th>{% trans "Cost" %}</th>
+			<th>{% trans "Edit" %}</th>
+		</tr>
+	    {% for support in supports %}
+	    <tr>
+	        <td>{{ support.contract_id }}</td>
+	        <td>{{ support.name }}</td>
+	        <td>{{ support.date_from }}</td>
+	        <td>{{ support.date_to }}</td>
+	        <td>{{ support.cost }}</td>
+	        <td><a href="{{ support.url }}">{% trans "Edit" %}</a></td>
+	    </tr>
+	    {% endfor %}
+    </tbody>
+ </table>
+{% endblock %}

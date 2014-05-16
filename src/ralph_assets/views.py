@@ -56,12 +56,15 @@ from ralph_assets.models import (
     PartInfo,
     TransitionsHistory,
 )
+from ralph_assets.forms_support import SupportContractForm
+from ralph_assets.models_support import SupportContract
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
     ASSET_TYPE2MODE,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph.business.models import Venture
 from ralph.ui.views.common import Base
 from ralph.util.api_assets import get_device_components
@@ -96,7 +99,7 @@ class AssetsBase(Base):
         base_sidebar_caption = ''
         self.mainmenu_selected = self.mainmenu_selected or self.mode
         if self.mode == 'back_office':
-            base_sidebar_caption = _('Back office actions')
+            base_sidebar_caption = _('lBack office actions')
         elif self.mode == 'dc':
             base_sidebar_caption = _('Data center actions')
         ret.update({
@@ -136,6 +139,12 @@ class AssetsBase(Base):
                 name='user list',
                 href=reverse('user_list'),
             ),
+            MenuItem(
+                label='Supports',
+                fugue_icon='fugue-cheque',
+                name=_('support_list'),
+                href=reverse('support_list'),
+            ),
         ]
         if 'ralph_pricing' in settings.INSTALLED_APPS:
             mainmenu.append(
@@ -158,6 +167,10 @@ class AssetsBase(Base):
         elif self.mainmenu_selected.startswith('licences'):
             base_items = (
                 ('add_licence', _('Add licence'), 'fugue-cheque--plus', False),
+            )
+        elif self.mainmenu_selected.startswith('supports'):
+            base_items = (
+                ('add_support', _('Add Support'), 'fugue-cheque--plus', False),
             )
         else:
             base_items = ()
@@ -1669,6 +1682,94 @@ class SplitDeviceView(AssetsBase):
         except LookupError:
             components = []
         return components
+
+
+class SupportContractFormView(AssetsBase):
+    """Base view that displays support form."""
+
+    template_name = 'assets/add_support.html'
+    sidebar_selected = None
+
+    def _get_form(self, data=None, **kwargs):
+        self.form = SupportContractForm(
+            mode=self.mode, data=data, **kwargs
+        )
+
+    def get_context_data(self, **kwargs):
+        ret = super(SupportContractFormView, self).get_context_data(**kwargs)
+        ret.update({
+            'form': self.form,
+            'form_id': 'add_support_form',
+            'edit_mode': False,
+            'caption': self.caption,
+        })
+        return ret
+
+    def _save(self, request, *args, **kwargs):
+        try:
+            support = self.form.save(commit=False)
+            if support.asset_type is None:
+                support.asset_type = MODE2ASSET_TYPE[self.mode]
+            if request.FILES:
+                support.attachment = request.FILES['attachment']
+            support.save()
+            return HttpResponseRedirect(support.url)
+        except ValueError:
+            return super(SupportContractFormView, self).get(
+                request, *args, **kwargs)
+
+
+class AddSupportContractForm(SupportContractFormView):
+    """Add a new support"""
+
+    caption = _('Add Support')
+    mainmenu_selected = 'supports'
+
+    def get(self, request, *args, **kwargs):
+        self._get_form()
+        return super(AddSupportContractForm, self).get(
+            request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self._get_form(request.POST)
+        return self._save(request, *args, **kwargs)
+
+
+class SupportContractList(AssetsBase):
+    """The support list."""
+
+    template_name = "assets/support_list.html"
+    sidebar_selected = None
+    mainmenu_selected = 'supports'
+
+    def get_context_data(self, *args, **kwargs):
+        data = super(SupportContractList, self).get_context_data(
+            *args, **kwargs
+        )
+        if self.mode:
+            data['supports'] = SupportContract.objects.filter(
+                asset_type=MODE2ASSET_TYPE[self.mode],
+            )
+        else:
+            data['supports'] = SupportContract.objects.all()
+        return data
+
+
+class EditSupportContractForm(SupportContractFormView):
+    """Edit support"""
+
+    caption = _('Edit Support')
+
+    def get(self, request, support_id, *args, **kwargs):
+        support = SupportContract.objects.get(pk=support_id)
+        self._get_form(instance=support)
+        return super(EditSupportContractForm, self).get(
+            request, *args, **kwargs)
+
+    def post(self, request, support_id, *args, **kwargs):
+        support = SupportContract.objects.get(pk=support_id)
+        self._get_form(request.POST, instance=support)
+        return self._save(request, *args, **kwargs)
 
 
 class AddAttachment(AssetsBase):
