@@ -412,7 +412,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
             'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
             'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
-            'deprecation_rate', 'order_no',
+            'deprecation_rate', 'order_no', 'source',
         )
 
     model = AutoCompleteSelectField(
@@ -440,7 +440,7 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
         fields = (
             'status', 'barcode', 'model', 'user', 'owner', 'warehouse', 'sn',
             'property_of', 'service_name', 'invoice_no', 'invoice_date',
-            'price', 'task_url', 'deprecation_rate', 'order_no',
+            'price', 'task_url', 'deprecation_rate', 'order_no', 'source'
         )
 
     model = AutoCompleteSelectField(
