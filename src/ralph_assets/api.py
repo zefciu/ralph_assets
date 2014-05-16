@@ -48,7 +48,10 @@ class ChoicesField(fields.ApiField):
     def dehydrate(self, bundle, **kwargs):
         field_name = self.field_name or self.instance_name
         field_value = getattr(bundle.obj, field_name)
-        return self.choices_class.from_id(field_value).name
+        if field_value:
+            return self.choices_class.from_id(field_value).name
+        else:
+            return None
 
 
 class AssetsField(fields.RelatedField):
@@ -212,7 +215,9 @@ class LicenceResource(ModelResource):
 class AssetsResource(ModelResource):
     asset_type = ChoicesField(AssetType, 'type')
     licences = fields.ToManyField(LicenceResource, 'licence_set', full=True)
-    manufacturer = fields.CharField(attribute="model__manufacturer")
+    manufacturer = fields.ForeignKey(
+        AssetManufacturerResource, 'manufacturer', null=True,
+    )
     model = fields.ForeignKey(AssetModelResource, 'model')
     owner = fields.ForeignKey(UserResource, 'owner', null=True)
     service_name = fields.ForeignKey(
