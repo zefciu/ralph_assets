@@ -6,7 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import random
+import uuid
 
 from django.test import TestCase
 
@@ -76,10 +76,6 @@ class DeviceEditViewTest(TestCase):
         self.model = create_model()
         self.warehouse = create_warehouse()
 
-    def _create_unique_sn(self):
-        chars = 'ABCDEFGHIJKLMNOPRSUWXYZ123456789'
-        return ''.join(random.sample(chars, 10))
-
     def _create_part(self, asset, model, warehouse):
         url = '/assets/dc/add/part/?device={}'.format(asset.id)
 
@@ -89,7 +85,7 @@ class DeviceEditViewTest(TestCase):
             'warehouse': warehouse.id,
             'device': asset.id,
             'type': '1',
-            'sn': self._create_unique_sn(),
+            'sn': str(uuid.uuid1()),
             'deprecation_rate': '25',
         }
         return self.client.post(url, post_data, follow=True)
