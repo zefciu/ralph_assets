@@ -9,6 +9,7 @@ import datetime
 import uuid
 
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 
 from ralph_assets.models_assets import (AssetStatus, AssetType)
 from ralph_assets.tests.util import (
@@ -77,7 +78,9 @@ class DeviceEditViewTest(TestCase):
         self.warehouse = create_warehouse()
 
     def _create_part(self, asset, model, warehouse):
-        url = '/assets/dc/add/part/?device={}'.format(asset.id)
+        url_kwargs = {'mode': 'dc'}
+        url = reverse('add_part', kwargs=url_kwargs)
+        url += '?device={}'.format(asset.id)
 
         post_data = {
             'asset': '1',  # submit button
@@ -91,7 +94,8 @@ class DeviceEditViewTest(TestCase):
         return self.client.post(url, post_data, follow=True)
 
     def _move_part(self, asset_src, post_data):
-        url = '/assets/back_office/edit/device/{}/'.format(asset_src.id)
+        url_kwargs = {'mode': 'back_office', 'asset_id': asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
         return self.client.post(url, post_data, follow=True)
 
     def test_create_part(self):
@@ -113,7 +117,8 @@ class DeviceEditViewTest(TestCase):
             self.asset_src, self.model, self.warehouse
         ).context['asset']
 
-        url = '/assets/back_office/edit/device/{}/'.format(self.asset_src.id)
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
         response = self.client.get(url)
         self.assertContains(response, part)
 
@@ -126,7 +131,8 @@ class DeviceEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, part)
 
-        url = '/assets/back_office/edit/device/{}/'.format(self.asset_dest.id)
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_dest.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, part)
@@ -145,7 +151,8 @@ class DeviceEditViewTest(TestCase):
             ).context['asset']
             parts.append(part)
 
-        url = '/assets/back_office/edit/device/{}/'.format(self.asset_src.id)
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
         response = self.client.get(url)
         for part in parts:
             self.assertContains(response, part)
@@ -160,7 +167,8 @@ class DeviceEditViewTest(TestCase):
         for part in parts:
             self.assertNotContains(response, part)
 
-        url = '/assets/back_office/edit/device/{}/'.format(self.asset_dest.id)
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_dest.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, part)
