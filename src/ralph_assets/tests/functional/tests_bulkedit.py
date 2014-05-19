@@ -136,35 +136,43 @@ class TestBulkEdit(TestCase):
                 )
             counter += 1
 
+    def _test_showing_form_data(self, mode, asset_id, asset_data):
+        """
+        Common code for tests:
+        - test_showing_dc_form_data
+        - test_showing_bo_form_data
+        """
+        url = ''.join([
+            reverse('bulkedit', kwargs={'mode': mode}),
+            '?select={}'.format(asset_id),
+        ])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        for field_name, value in asset_data.items():
+            form_val = unicode(
+                response.context['formset'].forms[0][field_name].value()
+            )
+            try:
+                expected = value.id
+            except AttributeError:
+                expected = value
+            msg = 'Bulkedit field "{}" got "{}" instead of "{}"'.format(
+                field_name, form_val, expected
+            )
+            self.assertEqual(form_val, unicode(expected), msg)
+
     def test_showing_dc_form_data(self):
         """
         1. add DC asset,
         2. open asset in bulk mode,
         3. check if all fields are set like the added asset.
         """
-        asset_data = self.common_asset_data
-        asset_data.update({'sn': 'dc-sn-number'})
-        asset = create_asset(**asset_data)
-
-        url = ''.join([
-            reverse('bulkedit', kwargs={'mode': 'dc'}),
-            '?select={}'.format(asset.id),
-        ])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-
-        for field_name, value in asset_data.items():
-            form_val = unicode(
-                response.context['formset'].forms[0][field_name].value()
-            )
-            try:
-                expected = asset_data[field_name].id
-            except AttributeError:
-                expected = asset_data[field_name]
-            msg = 'Bulkedit field "{}" got "{}" instead of "{}"'.format(
-                field_name, form_val, expected
-            )
-            self.assertEqual(form_val, unicode(expected), msg)
+        dc_asset_data = self.common_asset_data
+        dc_asset_data.update({'sn': 'dc-sn-number'})
+        dc_asset = create_asset(**dc_asset_data)
+        self._test_showing_form_data(
+            'dc', dc_asset.id, dc_asset_data
+        )
 
     def test_showing_bo_form_data(self):
         """
@@ -180,22 +188,7 @@ class TestBulkEdit(TestCase):
             'provider': 'provider',
         })
         bo_asset = utils.create_bo_asset(**bo_asset_data)
+        self._test_showing_form_data(
+            'back_office', bo_asset.id, bo_asset_data
+        )
 
-        url = ''.join([
-            reverse('bulkedit', kwargs={'mode': 'back_office'}),
-            '?select={}'.format(bo_asset.id),
-        ])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        for field_name, value in bo_asset_data.items():
-            form_val = unicode(
-                response.context['formset'].forms[0][field_name].value()
-            )
-            try:
-                expected = bo_asset_data[field_name].id
-            except AttributeError:
-                expected = bo_asset_data[field_name]
-            msg = 'Bulkedit field "{}" got "{}" instead of "{}"'.format(
-                field_name, form_val, expected
-            )
-            self.assertEqual(form_val, unicode(expected), msg)
