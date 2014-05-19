@@ -191,4 +191,3 @@ class TestBulkEdit(TestCase):
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )
-
