@@ -200,11 +200,6 @@ class AssetModel(
         blank=True,
         default=0,
     )
-    height_of_device = models.FloatField(
-        verbose_name="Height of device",
-        blank=True,
-        default=0,
-    )
     type = models.PositiveIntegerField(choices=AssetType(), null=True)
 
     def __unicode__(self):
