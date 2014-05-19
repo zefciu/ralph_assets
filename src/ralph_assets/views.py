@@ -1109,10 +1109,14 @@ class EditDevice(AssetsBase):
                         info_part = PartInfo.objects.get(asset=part_id)
                         info_part.device_id = destination_asset
                         info_part.save()
-                    messages.success(self.request, _("Selected parts was moved."))
+                    messages.success(
+                        self.request, _("Selected parts was moved.")
+                    )
                     self.part_form = MoveAssetPartForm()
                 else:
-                    messages.error(self.request, _("Please select one or more parts."))
+                    messages.error(
+                        self.request, _("Please select one or more parts.")
+                    )
         elif 'asset' in post_data.keys():
             if all((
                 self.asset_form.is_valid(),
