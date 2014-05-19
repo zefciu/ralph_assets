@@ -38,6 +38,13 @@ DEFAULT_ASSET_DATA = dict(
     service_name='ServiceName',
 )
 
+DEFAULT_BO_VALUE = {
+    'license_key': 'bo-license-key',
+    'coa_number': 'bo-coa-number',
+    'imei': '1'*15,
+    'purpose': models_assets.AssetPurpose.others,
+}
+
 SCREEN_ERROR_MESSAGES = dict(
     duplicated_sn_or_bc=cgi.escape((
         "Please correct errors and check both"
@@ -116,6 +123,24 @@ def create_asset(sn, **kwargs):
     db_object, created = models_assets.Asset.objects.get_or_create(
         sn=sn, defaults=kwargs
     )
+    return db_object
+
+
+def create_bo_asset(sn, **kwargs):
+    """
+    Creates asset with office_info data included in kwargs or with defaults
+    """
+    bo_data = {}
+    for bo_field in 'license_key coa_number imei purpose'.split():
+        if bo_field in kwargs:
+            bo_value = kwargs.pop(bo_field)
+        else:
+            bo_value = DEFAULT_BO_VALUE[bo_field]
+        bo_data[bo_field] = bo_value
+    bo_info = models_assets.OfficeInfo(**bo_data)
+    bo_info.save()
+    kwargs['office_info'] = bo_info
+    db_object = create_asset(sn, **kwargs)
     return db_object
 
 
@@ -218,7 +243,7 @@ def create_user(username='user', defaults=None):
             'last_name': 'Stevens',
         }
     db_object, created = models_assets.User.objects.get_or_create(
-        username=username, defaults=defaults
+        username=username, defaults=defaults,
     )
     return db_object
 
