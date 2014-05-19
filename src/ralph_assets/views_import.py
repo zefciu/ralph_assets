@@ -226,9 +226,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         def get_or_create_asset_model(asset_data, asset=None):
             if model == 'ralph_assets.asset':
                 category_key = [
-                    k for k,v in mappings.iteritems() if v == 'model.category'
+                    k for k, v in mappings.iteritems() if v == 'model.category'
                 ]
-                import pdb; pdb.set_trace()
                 if category_key:
                     category_name = [
                         v for k, v in asset_data.iteritems()
