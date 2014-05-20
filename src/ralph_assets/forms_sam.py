@@ -139,6 +139,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         widgets = {
             'invoice_date': DateWidget,
             'valid_thru': DateWidget,
+            'remarks': forms.Textarea(attrs={'rows': 3}),
         }
         fields = (
             'asset_type',
@@ -184,6 +185,7 @@ class EditLicenceForm(LicenceForm):
         widgets = {
             'invoice_date': DateWidget,
             'valid_thru': DateWidget,
+            'remarks': forms.Textarea(attrs={'rows': 3}),
         }
         fields = (
             'asset_type',
