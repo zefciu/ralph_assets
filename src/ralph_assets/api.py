@@ -91,6 +91,9 @@ class AssetManufacturerResource(ModelResource):
 
 
 class AssetModelResource(ModelResource):
+    category = fields.CharField(attribute='category')
+    manufacturer = fields.CharField(attribute='manufacturer')
+
     class Meta:
         queryset = AssetModel.objects.all()
         authentication = ApiKeyAuthentication()
@@ -218,7 +221,7 @@ class AssetsResource(ModelResource):
     manufacturer = fields.ForeignKey(
         AssetManufacturerResource, 'manufacturer', null=True,
     )
-    model = fields.ForeignKey(AssetModelResource, 'model')
+    model = fields.ForeignKey(AssetModelResource, 'model', full=True)
     owner = fields.ForeignKey(UserResource, 'owner', null=True)
     service_name = fields.ForeignKey(
         ServiceResource, 'service_name', null=True,
