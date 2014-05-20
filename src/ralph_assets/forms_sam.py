@@ -73,7 +73,7 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets'
+                'valid_thru', 'assets', 'remarks', 'service_name',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -203,6 +203,8 @@ class EditLicenceForm(LicenceForm):
             'invoice_no',
             'sn',
             'niw',
+            'remarks',
+            'service_name',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
