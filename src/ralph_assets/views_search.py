@@ -9,6 +9,8 @@ import re
 
 from django.db.models import Q
 
+from ralph_assets.models import Asset
+
 
 QUOTATION_MARKS = re.compile(r"^\".+\"$")
 SEARCH_DELIMITERS = re.compile(r";|\|")
@@ -215,4 +217,5 @@ class AssetsSearchQueryableMixin(object):
                 all_q &= Q(**{date + '__gte': start})
             if end:
                 all_q &= Q(**{date + '__lte': end})
+        self.items_count = Asset.objects.filter(all_q).count()
         return all_q
