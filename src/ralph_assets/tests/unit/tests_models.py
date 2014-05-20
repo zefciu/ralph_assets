@@ -17,6 +17,10 @@ from ralph_assets.tests.util import (
     create_category,
     create_model,
 )
+from ralph_assets.tests.utils.assets import ServiceFactory
+from ralph_assets.tests.utils.sam import (
+    LicenceFactory,
+)
 
 
 class TestModelAsset(TestCase):
@@ -73,6 +77,25 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset.is_deprecated(date), True)
         self.assertEqual(self.asset2.is_deprecated(date), False)
         self.assertEqual(self.asset3.is_deprecated(date), True)
+
+
+class TestModelLicences(TestCase):
+    def setUp(self):
+        self.licence = LicenceFactory()
+
+    def test_remarks(self):
+        """Remarks field is in model?"""
+        self.licence.remarks = 'a' * 512
+        self.licence.save()
+
+        self.assertEqual(self.licence.remarks, 'a' * 512)
+
+    def test_service_name(self):
+        old_service = self.licence.service_name
+        self.licence.service_name = ServiceFactory()
+        self.licence.save()
+
+        self.assertNotEqual(old_service, self.licence.service_name)
 
 
 class TestApiAssets(TestCase):
