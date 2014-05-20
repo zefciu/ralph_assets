@@ -1,6 +1,16 @@
 Change Log
 ----------
 
+2.0.0-rc1
+~~~~~~~~~
+
+* Preparing to release a stable version
+* New Licence module
+* Improvement in asset fields
+* Simple transitions
+* Bug fixes
+
+
 1.4.3
 ~~~~~~~
 
@@ -49,7 +59,7 @@ Change Log
 
 1.3.0
 ~~~~~~~
- 
+
 * Fix bulk edit autocomplete
 
 * Added 25 as default value of deprecation_rate

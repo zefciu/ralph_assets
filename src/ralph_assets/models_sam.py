@@ -88,6 +88,7 @@ class Licence(
     sn = models.TextField(
         verbose_name=_('SN / Key'),
         null=True,
+        blank=True,
     )
     parent = TreeForeignKey(
         'self',
@@ -98,9 +99,9 @@ class Licence(
     )
     niw = models.CharField(
         max_length=50,
-        null=True,
-        blank=True,
         verbose_name=_('Inventory number'),
+        null=False,
+        unique=True,
     )
     invoice_date = models.DateField(
         verbose_name=_('Invoice date'),

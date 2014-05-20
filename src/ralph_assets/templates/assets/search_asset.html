@@ -6,17 +6,6 @@
 
 {% block extra_headers %}
 {{ block.super }}
-<style type="text/css">
-input[type=submit] {
-    padding: 0px;
-}
-div#sidebar_search input, div#sidebar_search select{
-    width: 90%;
-}
-form.form-inline {
-    display: inline;
-}
-</style>
 {% endblock %}
 
 {% block scripts %}
@@ -88,6 +77,9 @@ form.form-inline {
                                 <i class="fugue-icon fugue-cross-octagon"></i>
                             {% endif %}
                         </td>
+                    {% endif %}
+                    {% if mode == 'back_office' %}
+                        <td>{{row.remarks|default:'-' }}</td>
                     {% endif %}
                     {% if not asset_hide_action_search %}
                     <td>
