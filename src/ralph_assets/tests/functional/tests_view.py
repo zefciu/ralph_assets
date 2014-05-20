@@ -114,7 +114,7 @@ class DeviceEditViewTest(TestCase):
          - move part from actual device to another device.
         """
         part = self._create_part(
-            self.asset_src, self.model, self.warehouse
+            self.asset_src, self.model, self.warehouse,
         ).context['asset']
 
         url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_src.id}
@@ -147,7 +147,7 @@ class DeviceEditViewTest(TestCase):
         parts = []
         for i in range(5):
             part = self._create_part(
-                self.asset_src, self.model, self.warehouse
+                self.asset_src, self.model, self.warehouse,
             ).context['asset']
             parts.append(part)
 
@@ -183,7 +183,7 @@ class DeviceEditViewTest(TestCase):
         """
         msg_error = 'Source device asset does not exist'
         part = self._create_part(
-            self.asset_src, self.model, self.warehouse
+            self.asset_src, self.model, self.warehouse,
         ).context['asset']
 
         post_data = {
@@ -205,7 +205,7 @@ class DeviceEditViewTest(TestCase):
         """
         msg_error = 'Please select one or more parts'
         part = self._create_part(
-            self.asset_src, self.model, self.warehouse
+            self.asset_src, self.model, self.warehouse,
         ).context['asset']
 
         post_data = {

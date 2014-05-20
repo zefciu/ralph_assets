@@ -1000,14 +1000,14 @@ class EditDevice(AssetsBase):
     def initialize_vars(self, *args, **kwargs):
         self.asset = get_object_or_404(
             Asset.admin_objects,
-            id=kwargs.get('asset_id')
+            id=kwargs.get('asset_id'),
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
             self.request.POST or None,
             instance=self.asset,
-            mode=self.mode
+            mode=self.mode,
         )
         self.part_form = MoveAssetPartForm(self.request.POST or None)
         self._set_additional_info_form()
@@ -1110,12 +1110,12 @@ class EditDevice(AssetsBase):
                         info_part.device_id = destination_asset
                         info_part.save()
                     messages.success(
-                        self.request, _("Selected parts was moved.")
+                        self.request, _("Selected parts was moved."),
                     )
                     self.part_form = MoveAssetPartForm()
                 else:
                     messages.error(
-                        self.request, _("Please select one or more parts.")
+                        self.request, _("Please select one or more parts."),
                     )
         elif 'asset' in post_data.keys():
             if all((
