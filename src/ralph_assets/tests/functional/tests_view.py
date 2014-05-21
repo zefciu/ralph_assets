@@ -10,7 +10,6 @@ import datetime
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 
-from ralph_assets.models_assets import (AssetStatus, AssetType)
 from ralph_assets.tests.utils.assets import AssetFactory
 from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
