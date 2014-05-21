@@ -101,7 +101,7 @@ class DeviceEditViewTest(TestCase):
     def test_create_part(self):
         """Create part in add part view."""
         response = self._create_part(
-            self.asset_src, self.model, self.warehouse
+            self.asset_src, self.model, self.warehouse,
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['asset'].pk)
