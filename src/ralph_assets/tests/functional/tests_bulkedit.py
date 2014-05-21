@@ -8,12 +8,12 @@ from __future__ import unicode_literals
 from django.test import TestCase
 
 from ralph_assets.models_assets import AssetStatus
-from ralph_assets.tests.util import (
-    create_asset,
-    create_model,
-    create_category,
-    get_bulk_edit_post_data,
+from ralph_assets.tests.utils.assets import (
+    AssetFactory,
+    AssetCategoryFactory,
+    AssetModelFactory
 )
+from ralph_assets.tests.util import get_bulk_edit_post_data
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -27,15 +27,11 @@ class TestBulkEdit(TestCase):
 
     def setUp(self):
         self.client = login_as_su()
-        self.category = create_category()
-        self.asset = create_asset(
-            sn='1111-1111-1111-1111',
-        )
-        self.asset1 = create_asset(
-            sn='2222-2222-2222-2222',
-        )
-        self.model = create_model(category=self.category)  # u'Model1'
-        self.model1 = create_model(name='Model2', category=self.category)
+        self.category = AssetCategoryFactory()
+        self.asset = AssetFactory()
+        self.asset1 = AssetFactory()
+        self.model = AssetModelFactory(category=self.category)
+        self.model1 = AssetModelFactory(category=self.category)
 
     def test_edit_via_bulkedit_form(self):
         url = '/assets/dc/bulkedit/?select=%s&select=%s' % (

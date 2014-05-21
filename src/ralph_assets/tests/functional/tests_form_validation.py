@@ -8,6 +8,12 @@ from __future__ import unicode_literals
 from django.test import TestCase
 
 from ralph_assets import models_assets
+from ralph_assets.tests.utils.assets import (
+    AssetFactory,
+    AssetCategoryFactory,
+    AssetModelFactory,
+    WarehouseFactory,
+)
 from ralph_assets.tests.util import (
     create_asset,
     create_category,
@@ -27,20 +33,17 @@ class TestValidations(TestCase):
 
     def setUp(self):
         self.client = login_as_su()
-        self.category = create_category()
-        self.model = create_model(category=self.category)
-        self.warehouse = create_warehouse()
-        self.first_asset = create_asset(
-            sn='1234-1234-1234-1234',
+        self.category = AssetCategoryFactory()
+        self.model = AssetModelFactory(category=self.category)
+        self.warehouse = WarehouseFactory()
+        self.first_asset = AssetFactory(
             model=self.model,
         )
-        self.second_asset = create_asset(
-            sn='5678-5678-5678-5678',
+        self.second_asset = AssetFactory(
             model=self.model,
         )
 
-        self.asset_with_duplicated_sn = create_asset(
-            sn='1111-1111-1111-1111',
+        self.asset_with_duplicated_sn = AssetFactory(
             model=self.model,
         )
 
@@ -107,7 +110,7 @@ class TestValidations(TestCase):
         post_data = get_bulk_edit_post_data(
             {
                 'invoice_date': 'wrong_field_data',
-                'sn': '1111-1111-1111-1111',
+                'sn': self.asset_with_duplicated_sn.sn,
             },
             {
                 'invoice_date': '',
