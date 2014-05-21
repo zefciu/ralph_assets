@@ -578,10 +578,14 @@ class Asset(
             if self.part_info.device:
                 return self.part_info.device.is_discovered()
             return False
-        dev = self.device_info.get_ralph_device()
-        if not dev or not dev.model:
+        try:
+            dev = self.device_info.get_ralph_device()
+        except AttributeError:
             return False
-        return dev.model.type != DeviceType.unknown.id
+        else:
+            if not dev or not dev.model:
+                return False
+            return dev.model.type != DeviceType.unknown.id
 
     @property
     def url(self):
