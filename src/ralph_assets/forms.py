@@ -71,7 +71,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
         'deprecation_rate', 'source', 'request_date', 'provider_order_date',
-        'delivery_date',
+        'delivery_date', 'deprecation_end_date',
     ]),
     ('User Info', [
         'user', 'owner', 'employee_id', 'company', 'department', 'manager',
@@ -329,6 +329,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
+            'deprecation_end_date': DateWidget(),
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
@@ -412,7 +413,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
             'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
             'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
-            'deprecation_rate', 'order_no', 'source',
+            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -441,7 +442,7 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
             'status', 'barcode', 'model', 'user', 'owner', 'warehouse', 'sn',
             'property_of', 'service_name', 'invoice_no', 'invoice_date',
             'price', 'provider', 'task_url', 'deprecation_rate', 'order_no',
-            'source',
+            'source', 'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -773,10 +774,12 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'manager',
             'loan_end_date',
             'note',
+            'deprecation_end_date',
         )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
+            'deprecation_end_date': DateWidget(),
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
@@ -936,10 +939,12 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'manager',
             'loan_end_date',
             'note',
+            'deprecation_end_date',
         )
         widgets = {
             'request_date': DateWidget(),
             'delivery_date': DateWidget(),
+            'deprecation_end_date': DateWidget(),
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
