@@ -19,3 +19,11 @@ ASSETS_TRANSITIONS = {
 }
 
 ASSET_HIDE_ACTION_SEARCH = False
+
+# force locale during pdf raport genration
+GENERATED_DOCS_LOCALE = 'pl-PL'
+FORMAT_MODULE_PATH = "ralph_assets.formats"
+
+# skip invoking raport generation (which requires configured environment
+# including libreoffcie)
+SKIP_PDF_RAPORT_GENERATING = False

@@ -14,7 +14,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
+from ralph_assets.utils import switch_language
 
 from django.http import HttpResponse, HttpResponseRedirect
 
@@ -28,8 +28,25 @@ from ralph_assets.views import _get_return_link, GenericSearch
 from ralph_assets.views_sam import LicenseSelectedMixin
 from ralph_assets.views_search import AssetsSearchQueryableMixin
 
+from inkpy.api import generate_pdf
 
 logger = logging.getLogger(__name__)
+
+
+def generate_localized_pdf(template_path, output_path, data):
+    if getattr(settings, 'SKIP_PDF_RAPORT_GENERATING', None):
+        def generate_pdf_mock(a, b, c):
+            from django.template import Context, Template
+            import datetime
+            t = Template("{{ now }}")
+            c = Context({"now": datetime.datetime.now()})
+            print(t.render(c))
+        generate_pdf_fn = generate_pdf_mock
+    else:
+        generate_pdf_fn = generate_pdf
+    with switch_language(settings.GENERATED_DOCS_LOCALE):
+        result = generate_pdf_fn(template_path, output_path, data)
+    return result
 
 
 def generate_pdf_response(pdf_data, file_name):
@@ -120,7 +137,7 @@ class BaseInvoiceReport(GenericSearch):
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,
         )
-        generate_pdf(
+        generate_localized_pdf(
             self.template_file.template.path, output_path, data,
         )
         try:
