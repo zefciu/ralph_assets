@@ -91,8 +91,8 @@ class AssetManufacturerResource(ModelResource):
 
 
 class AssetModelResource(ModelResource):
-    category = fields.CharField(attribute='category')
-    manufacturer = fields.CharField(attribute='manufacturer')
+    category = fields.CharField(attribute='category', null=True)
+    manufacturer = fields.CharField(attribute='manufacturer', null=True)
 
     class Meta:
         queryset = AssetModel.objects.all()
