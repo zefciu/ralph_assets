@@ -10,9 +10,6 @@ from factory.django import DjangoModelFactory as Factory
 from random import randint
 from uuid import uuid1
 
-# TODO: ralph DeviceFactory
-# from ralph.discovery.models_device import Device, DeviceType
-
 from django.template.defaultfilters import slugify
 
 from ralph_assets.models_assets import (
@@ -34,19 +31,19 @@ from ralph_assets.models_assets import (
 class ServiceFactory(Factory):
     FACTORY_FOR = Service
 
-    name = Sequence(lambda n: 'service #%s' % n)
+    name = Sequence(lambda n: 'Service #%s' % n)
 
 
 class AssetOwnerFactory(Factory):
     FACTORY_FOR = AssetOwner
 
-    name = Sequence(lambda n: 'asset owner #%s' % n)
+    name = Sequence(lambda n: 'Asset owner #%s' % n)
 
 
 class AssetCategoryFactory(Factory):
     FACTORY_FOR = AssetCategory
 
-    name = Sequence(lambda n: 'asset category #%s' % n)
+    name = Sequence(lambda n: 'Asset category #%s' % n)
     type = AssetCategoryType.back_office
 
     @lazy_attribute
@@ -81,7 +78,6 @@ class WarehouseFactory(Factory):
 class DeviceInfoFactory(Factory):
     FACTORY_FOR = DeviceInfo
 
-    ralph_device_id = Sequence(lambda n: n)
     u_level = randint(0, 100)
     u_height = randint(0, 100)
     rack = Sequence(lambda n: 'Rack #%s' % n)

@@ -29,13 +29,13 @@ from ralph_assets.tests.utils.assets import ServiceFactory
 class LicenceTypeFactory(Factory):
     FACTORY_FOR = LicenceType
 
-    name = Sequence(lambda n: 'licence type #%s' % n)
+    name = Sequence(lambda n: 'Licence type #%s' % n)
 
 
 class SoftwareCategoryFactory(Factory):
     FACTORY_FOR = SoftwareCategory
 
-    name = Sequence(lambda n: 'software category #%s' % n)
+    name = Sequence(lambda n: 'Software category #%s' % n)
     asset_type = AssetType.BO
 
 

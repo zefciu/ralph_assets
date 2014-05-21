@@ -11,15 +11,11 @@ from django.test import TestCase
 from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
-from ralph_assets.models_assets import PartInfo, AssetModel
+from ralph_assets.models_assets import PartInfo
 from ralph_assets.tests.utils.assets import (
     AssetSubCategoryFactory,
     AssetModelFactory,
     AssetFactory,
-)
-from ralph_assets.tests.util import (
-    create_category,
-    create_model,
 )
 from ralph_assets.tests.utils.assets import ServiceFactory
 from ralph_assets.tests.utils.sam import (
@@ -111,8 +107,6 @@ class TestApiAssets(TestCase):
             deprecation_rate=100,
             model=self.model,
         )
-        # self.asset.model = self.model
-        # self.asset.save()
 
         part_info = PartInfo(device=self.asset)
         part_info.save()
@@ -141,7 +135,7 @@ class TestApiAssets(TestCase):
             )
             self.assertEqual(item['sn'], self.asset.sn)
             self.assertEqual(item['barcode'], self.asset.barcode)
-            # self.assertEqual(item['venture_id'], self.asset.venture.id)
+            self.assertEqual(item['venture_id'], self.asset.venture.id)
             self.assertEqual(item['is_blade'], self.category.is_blade)
             self.assertEqual(item['cores_count'], self.asset.cores_count)
 
