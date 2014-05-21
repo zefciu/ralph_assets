@@ -184,7 +184,7 @@ class LicenceResource(ModelResource):
         AssetOwnerResource, 'property_of', null=True,
     )
     software_category = fields.ForeignKey(
-        SoftwareCategoryResource, 'software_category',
+        SoftwareCategoryResource, 'software_category', full=True,
     )
 
     class Meta:
