@@ -74,7 +74,7 @@ def get_licences_rows(filter_type='all'):
         base_row = row
         row = "{}{}{}\n".format(row, fill_empty_assets, fill_empty_licences)
         yield row
-        if licence.number_bought > 0:
+        if licence.number_bought > 0 and licence.price:
             single_licence_cost = licence.price / licence.number_bought
         else:
             single_licence_cost = ''
