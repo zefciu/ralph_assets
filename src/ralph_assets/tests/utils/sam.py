@@ -8,15 +8,13 @@ from __future__ import unicode_literals
 from factory import (
     SubFactory,
     Sequence,
-    post_generation
+    post_generation,
 )
 from factory.django import DjangoModelFactory as Factory
 from random import randint
 from uuid import uuid1
 
-from ralph_assets.models_assets import (
-    AssetType,
-)
+from ralph_assets.models_assets import AssetType
 from ralph_assets.models_sam import (
     Licence,
     LicenceType,

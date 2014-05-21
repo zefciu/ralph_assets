@@ -18,9 +18,7 @@ from ralph_assets.tests.util import (
     create_model,
 )
 from ralph_assets.tests.utils.assets import ServiceFactory
-from ralph_assets.tests.utils.sam import (
-    LicenceFactory,
-)
+from ralph_assets.tests.utils.sam import LicenceFactory
 
 
 class TestModelAsset(TestCase):

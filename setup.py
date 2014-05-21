@@ -36,7 +36,7 @@ setup(
         'xlrd==0.9.2',
         'inkpy==0.0.2-alpha',
         'django-search-forms[ajax]==0.3',
-        'factory-boy>=2.3.1, <2.5.0',
+        'factory-boy==2.3.1',
     ],
     entry_points={
         'django.pluggable_app': [
