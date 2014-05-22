@@ -115,9 +115,9 @@ class AssetModelAdmin(ModelAdmin):
     def queryset(self, request):
         return AssetModel.objects.annotate(assets_count=Count('asset'))
 
-    def show_assets_count(self, inst):
-        return inst.assets_count
-    show_assets_count.short_description = 'Assets count'
+    def show_assets_count(self, instance):
+        return instance.assets_count
+    show_assets_count.short_description = _('Assets count')
     show_assets_count.admin_order_field = 'assets_count'
 
 
