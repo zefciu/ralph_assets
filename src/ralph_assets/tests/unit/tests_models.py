@@ -46,6 +46,13 @@ class TestModelAsset(TestCase):
             deprecation_rate=50,
             force_deprecation=True,
         )
+        self.asset_depr_date = create_asset(
+            sn='1111-1111-1111-1114',
+            invoice_date=datetime.date(2012, 11, 28),
+            support_period=120,
+            deprecation_rate=50,
+            deprecation_end_date=datetime.date(2014, 12, 15),
+        )
         dev1 = Device.create(
             [('1', 'sda', 0)],
             model_name='xxx',
@@ -75,6 +82,14 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset.is_deprecated(date), True)
         self.assertEqual(self.asset2.is_deprecated(date), False)
         self.assertEqual(self.asset3.is_deprecated(date), True)
+        self.assertEqual(
+            self.asset_depr_date.is_deprecated(datetime.date(2014, 12, 10)),
+            False,
+        )
+        self.assertEqual(
+            self.asset_depr_date.is_deprecated(datetime.date(2014, 12, 20)),
+            True,
+        )
 
 
 class TestModelLicences(TestCase):
