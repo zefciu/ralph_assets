@@ -6,9 +6,9 @@
 <div class="row-fluid">
   <h3>{% trans "Support list" %}</h3>
 </div>
-<table class="table tree table-bordered">
+<table class="table table-bordered">
 {% for support in supports %}
-            <tr class="treegrid-parent-{{ forloop.parentloop.counter }}">
+            <tr>
                 <td><a href="{{ support.url }}">{{ support }}</a></td>
                 <td></td>
                 <td>
@@ -21,7 +21,7 @@
                             <li>
                                 <form class='form-inline' method="POST" action="delete/">
                                     {% csrf_token %}
-                                    <input type='hidden' name='record_id' value='{{ licence.id }}'>
+                                    <input type='hidden' name='record_id' value='{{ support.id }}'>
                                     <input class='btn btn-link del-asset-btn' value='Delete' type='submit'>
                                 </form>
                             </li>

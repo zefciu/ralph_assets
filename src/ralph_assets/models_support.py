@@ -8,9 +8,7 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.db import models
-from lck.django.common.models import (
-    Named,
-)
+from lck.django.common.models import Named
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     AssetType,

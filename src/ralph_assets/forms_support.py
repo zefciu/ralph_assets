@@ -7,18 +7,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from ajax_select.fields import AutoCompleteSelectMultipleField
-from django import forms
-from django.forms.widgets import Textarea
 from collections import OrderedDict
-
-from ralph.ui.widgets import DateWidget
-from ralph_assets import models_support
-from ralph_assets.forms import LOOKUPS
-from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
     DateRangeSearchField,
     TextSearchField,
 )
+from django import forms
+from django.forms.widgets import Textarea
+from django_search_forms.form import SearchForm
+
+from ralph.ui.widgets import DateWidget
+from ralph_assets import models_support
+from ralph_assets.forms import LOOKUPS
 
 
 class SupportForm(forms.ModelForm):
@@ -27,17 +27,8 @@ class SupportForm(forms.ModelForm):
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset'], required=False)
 
-    def __init__(self, mode, *args, **kwargs):
-        self.mode = mode
-        super(SupportForm, self).__init__(*args, **kwargs)
-
-    def clean(self, *args, **kwargs):
-        result = super(SupportForm, self).clean(*args, **kwargs)
-        return result
-
     class Meta:
         model = models_support.Support
-
         fieldset = OrderedDict([
             ('Info', [
                 'asset_type', 'contract_id', 'name',
@@ -47,7 +38,6 @@ class SupportForm(forms.ModelForm):
                 'sla_type', 'assets'
             ]),
         ])
-
         widgets = {
             'date_from': DateWidget,
             'date_to': DateWidget,
@@ -57,7 +47,6 @@ class SupportForm(forms.ModelForm):
             'additional_notes': Textarea(attrs={'rows': 5}),
             'sla_type': Textarea(attrs={'rows': 5}),
         }
-
         fields = (
             'asset_type',
             'contract_id',
@@ -71,6 +60,14 @@ class SupportForm(forms.ModelForm):
             'additional_notes',
             'sla_type',
         )
+
+    def __init__(self, mode, *args, **kwargs):
+        self.mode = mode
+        super(SupportForm, self).__init__(*args, **kwargs)
+
+    def clean(self, *args, **kwargs):
+        result = super(SupportForm, self).clean(*args, **kwargs)
+        return result
 
 
 class SupportSearchForm(SearchForm):
