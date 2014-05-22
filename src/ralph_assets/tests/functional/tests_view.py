@@ -12,8 +12,9 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 
 from ralph_assets.models_assets import (AssetStatus, AssetType)
+from ralph_assets.tests.util import create_asset
+from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph_assets.tests.util import (
-    create_asset,
     create_model,
     create_warehouse,
 )
@@ -65,6 +66,32 @@ class TestDataDisplay(TestCase):
                 'Warehouse',
             ]
         )
+
+
+class TestLicencesView(TestCase):
+    """This test case concern all licences views."""
+    def setUp(self):
+        self.client = login_as_su()
+        self.licence = LicenceFactory()
+        self.modes = ['dc', 'back_office']
+
+    def _field_in_edit_form(self, field, modes=None):
+        if not modes:
+            modes = self.modes
+
+        for mode in modes:
+            url = reverse('edit_licence', args=(mode, self.licence.pk))
+            response = self.client.get(url)
+            self.assertContains(
+                response, 'id_{}'.format(field),
+                msg_prefix="Error in {} mode".format(mode),
+            )
+
+    def test_edit_form_contains_remarks_field(self):
+        self._field_in_edit_form('remarks')
+
+    def test_edit_form_contains_service_name_field(self):
+        self._field_in_edit_form('service_name')
 
 
 class DeviceEditViewTest(TestCase):
