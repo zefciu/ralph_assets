@@ -126,7 +126,10 @@ class TransitionDispatcher(object):
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
             self.file_name,
         )
-        generate_pdf(self.template_file.template.path, output_path, data)
+        generate_pdf(
+            self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
+        )
         self.report_file_patch = output_path
 
     def _action_release_report(self):

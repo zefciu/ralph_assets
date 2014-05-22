@@ -120,7 +120,10 @@ class BaseInvoiceReport(GenericSearch):
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,
         )
-        generate_pdf(self.template_file.template.path, output_path, data)
+        generate_pdf(
+            self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
+        )
         try:
             with open(output_path, 'rb') as f:
                 content = f.read()
