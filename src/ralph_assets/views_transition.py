@@ -20,11 +20,10 @@ from lck.django.common import nested_commit_on_success
 
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.views import _AssetSearch, _get_return_link
-from ralph_assets.views_invoice_report import (
-    generate_localized_pdf,
-    generate_pdf_response,
-)
+from ralph_assets.views_invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
+
+from inkpy.api import generate_pdf
 
 
 logger = logging.getLogger(__name__)
@@ -128,11 +127,7 @@ class TransitionDispatcher(object):
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'],
             self.file_name,
         )
-        generate_localized_pdf(
-            self.template_file.template.path,
-            output_path,
-            data,
-        )
+        generate_pdf(self.template_file.template.path, output_path, data)
         self.report_file_patch = output_path
 
     def _action_release_report(self):

@@ -33,22 +33,6 @@ from inkpy.api import generate_pdf
 logger = logging.getLogger(__name__)
 
 
-def generate_localized_pdf(template_path, output_path, data):
-    if getattr(settings, 'SKIP_PDF_RAPORT_GENERATING', None):
-        def generate_pdf_mock(a, b, c):
-            from django.template import Context, Template
-            import datetime
-            t = Template("{{ now }}")
-            c = Context({"now": datetime.datetime.now()})
-            print(t.render(c))
-        generate_pdf_fn = generate_pdf_mock
-    else:
-        generate_pdf_fn = generate_pdf
-    with switch_language(settings.GENERATED_DOCS_LOCALE):
-        result = generate_pdf_fn(template_path, output_path, data)
-    return result
-
-
 def generate_pdf_response(pdf_data, file_name):
     response = HttpResponse(
         content=pdf_data, content_type='application/pdf',
@@ -137,9 +121,7 @@ class BaseInvoiceReport(GenericSearch):
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,
         )
-        generate_localized_pdf(
-            self.template_file.template.path, output_path, data,
-        )
+        generate_pdf(self.template_file.template.path, output_path, data)
         try:
             with open(output_path, 'rb') as f:
                 content = f.read()
