@@ -15,10 +15,6 @@ from ralph_assets.tests.utils.assets import (
     WarehouseFactory,
 )
 from ralph_assets.tests.util import (
-    create_asset,
-    create_category,
-    create_model,
-    create_warehouse,
     SCREEN_ERROR_MESSAGES,
     get_bulk_edit_post_data,
 )
@@ -53,7 +49,7 @@ class TestValidations(TestCase):
             ('asset_form', 'warehouse'),
         ]
 
-        self.model1 = create_model()
+        self.model1 = AssetModelFactory()
 
     def test_try_send_empty_add_form(self):
         send_post = self.client.post(
