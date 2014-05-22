@@ -6,11 +6,17 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import uuid
 
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 
 from ralph_assets.models_assets import (AssetStatus, AssetType)
-from ralph_assets.tests.util import create_asset
+from ralph_assets.tests.util import (
+    create_asset,
+    create_model,
+    create_warehouse,
+)
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -59,3 +65,154 @@ class TestDataDisplay(TestCase):
                 'Warehouse',
             ]
         )
+
+
+class DeviceEditViewTest(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+        self.asset_src = create_asset('123-456-789')
+        self.asset_dest = create_asset('987-832-668')
+
+        self.model = create_model()
+        self.warehouse = create_warehouse()
+
+    def _create_part(self, asset, model, warehouse):
+        url_kwargs = {'mode': 'dc'}
+        url = reverse('add_part', kwargs=url_kwargs)
+        url += '?device={}'.format(asset.id)
+
+        post_data = {
+            'asset': '1',  # submit button
+            'model': model.id,
+            'warehouse': warehouse.id,
+            'device': asset.id,
+            'type': '1',
+            'sn': str(uuid.uuid1()),
+            'deprecation_rate': '25',
+        }
+        return self.client.post(url, post_data, follow=True)
+
+    def _move_part(self, asset_src, post_data):
+        url_kwargs = {'mode': 'back_office', 'asset_id': asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
+        return self.client.post(url, post_data, follow=True)
+
+    def test_create_part(self):
+        """Create part in add part view."""
+        response = self._create_part(
+            self.asset_src, self.model, self.warehouse,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['asset'].pk)
+
+    def test_move_part(self):
+        """Move part in edit device view.
+        Scenario:
+         - add part to specified device,
+         - go to edit device view,
+         - move part from actual device to another device.
+        """
+        part = self._create_part(
+            self.asset_src, self.model, self.warehouse,
+        ).context['asset']
+
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
+        response = self.client.get(url)
+        self.assertContains(response, part)
+
+        post_data = {
+            'move_parts': '1',  # submit form
+            'new_asset': self.asset_dest.id,
+            'part_ids': [part.id],
+        }
+        response = self._move_part(self.asset_src, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, part)
+
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_dest.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, part)
+
+    def test_move_few_part(self):
+        """Move part in edit device view.
+        Scenario:
+         - add part to specified device,
+         - go to edit device view,
+         - move few parts from actual device to another.
+        """
+        parts = []
+        for i in range(5):
+            part = self._create_part(
+                self.asset_src, self.model, self.warehouse,
+            ).context['asset']
+            parts.append(part)
+
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_src.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
+        response = self.client.get(url)
+        for part in parts:
+            self.assertContains(response, part)
+
+        post_data = {
+            'move_parts': '1',  # submit form
+            'new_asset': self.asset_dest.id,
+            'part_ids': [part.id for part in parts],
+        }
+        response = self._move_part(self.asset_src, post_data)
+        self.assertEqual(response.status_code, 200)
+        for part in parts:
+            self.assertNotContains(response, part)
+
+        url_kwargs = {'mode': 'back_office', 'asset_id': self.asset_dest.id}
+        url = reverse('device_edit', kwargs=url_kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, part)
+
+    def test_move_part_error_new_asset(self):
+        """Move part in edit device view.
+        Scenario:
+         - add part to specified device,
+         - go to edit device view,
+         - user fill all required field except new_asset,
+         - user see a message: 'Source device asset does not exist'
+        """
+        msg_error = 'Source device asset does not exist'
+        part = self._create_part(
+            self.asset_src, self.model, self.warehouse,
+        ).context['asset']
+
+        post_data = {
+            'move_parts': '1',
+            'part_ids': [part.id],
+        }
+        response = self._move_part(self.asset_src, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, msg_error)
+        self.assertContains(response, part)
+
+    def test_move_part_error_part_ids(self):
+        """Move part in edit device view.
+        Scenario:
+         - add part to specified device,
+         - go to edit device view,
+         - user fill all required field but doesn't select any part,
+         - user see a message: 'Please select one or more parts'
+        """
+        msg_error = 'Please select one or more parts'
+        part = self._create_part(
+            self.asset_src, self.model, self.warehouse,
+        ).context['asset']
+
+        post_data = {
+            'move_parts': '1',
+            'new_asset': self.asset_dest.id,
+        }
+        response = self._move_part(self.asset_src, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, msg_error)
+        self.assertContains(response, part)

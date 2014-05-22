@@ -790,9 +790,20 @@ class EditDevice(AssetsBase):
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 
-    def initialize_vars(self):
-        self.parts = []
-        self.asset = None
+    def initialize_vars(self, *args, **kwargs):
+        self.asset = get_object_or_404(
+            Asset.admin_objects,
+            id=kwargs.get('asset_id'),
+        )
+        self.parts = Asset.objects.filter(part_info__device=self.asset)
+        device_form_class = self.form_dispatcher('EditDevice')
+        self.asset_form = device_form_class(
+            self.request.POST or None,
+            instance=self.asset,
+            mode=self.mode,
+        )
+        self.part_form = MoveAssetPartForm(self.request.POST or None)
+        self._set_additional_info_form()
 
     def get_context_data(self, **kwargs):
         ret = super(EditDevice, self).get_context_data(**kwargs)
@@ -802,7 +813,7 @@ class EditDevice(AssetsBase):
         ret.update({
             'asset_form': self.asset_form,
             'additional_info': self.additional_info,
-            'part_form': MoveAssetPartForm(),
+            'part_form': self.part_form,
             'form_id': 'edit_device_asset_form',
             'edit_mode': True,
             'status_history': status_history,
@@ -864,34 +875,13 @@ class EditDevice(AssetsBase):
                         )
 
     def get(self, *args, **kwargs):
-        self.initialize_vars()
-        self.asset = get_object_or_404(
-            Asset.admin_objects,
-            id=kwargs.get('asset_id')
-        )
-        device_form_class = self.form_dispatcher('EditDevice')
-        self.asset_form = device_form_class(
-            instance=self.asset, mode=self.mode
-        )
-        self._set_additional_info_form()
-        self.parts = Asset.objects.filter(part_info__device=self.asset)
+        self.initialize_vars(*args, **kwargs)
         return super(EditDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        self.initialize_vars()
         post_data = self.request.POST
-        self.asset = get_object_or_404(
-            Asset.admin_objects,
-            id=kwargs.get('asset_id')
-        )
-        device_form_class = self.form_dispatcher('EditDevice')
-        self.asset_form = device_form_class(
-            post_data,
-            instance=self.asset,
-            mode=self.mode,
-        )
-        self._set_additional_info_form()
-        self.part_form = MoveAssetPartForm(post_data)
+        self.initialize_vars(*args, **kwargs)
+        self.part_form = MoveAssetPartForm(post_data or None)
         if 'move_parts' in post_data.keys():
             destination_asset = post_data.get('new_asset')
             if not destination_asset or not Asset.objects.filter(
@@ -907,11 +897,19 @@ class EditDevice(AssetsBase):
                     _("You can't move parts to the same device"),
                 )
             else:
-                for part_id in post_data.get('part_ids'):
-                    info_part = PartInfo.objects.get(asset=part_id)
-                    info_part.device_id = destination_asset
-                    info_part.save()
-                messages.success(self.request, _("Selected parts was moved."))
+                if post_data.getlist('part_ids'):
+                    for part_id in post_data.getlist('part_ids'):
+                        info_part = PartInfo.objects.get(asset=part_id)
+                        info_part.device_id = destination_asset
+                        info_part.save()
+                    messages.success(
+                        self.request, _("Selected parts was moved."),
+                    )
+                    self.part_form = MoveAssetPartForm()
+                else:
+                    messages.error(
+                        self.request, _("Please select one or more parts."),
+                    )
         elif 'asset' in post_data.keys():
             if all((
                 self.asset_form.is_valid(),
