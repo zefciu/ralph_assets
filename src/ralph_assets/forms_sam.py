@@ -73,13 +73,18 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets'
+                'valid_thru', 'assets', 'remarks', 'service_name',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
                 'number_bought', 'accounting_id'
             ]),
         ])
+        widgets = {
+            'invoice_date': DateWidget,
+            'valid_thru': DateWidget,
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+        }
 
     parent = AutoCompleteSelectField(
         ('ralph_assets.models', 'LicenceLookup'),
@@ -136,10 +141,6 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
 
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
-        widgets = {
-            'invoice_date': DateWidget,
-            'valid_thru': DateWidget,
-        }
         fields = (
             'asset_type',
             'manufacturer',
@@ -181,10 +182,6 @@ class EditLicenceForm(LicenceForm):
 
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
-        widgets = {
-            'invoice_date': DateWidget,
-            'valid_thru': DateWidget,
-        }
         fields = (
             'asset_type',
             'manufacturer',
@@ -203,6 +200,8 @@ class EditLicenceForm(LicenceForm):
             'invoice_no',
             'sn',
             'niw',
+            'remarks',
+            'service_name',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))

@@ -28,6 +28,7 @@ from ralph_assets.models_assets import (
     AssetType,
     ASSET_TYPE2MODE,
     CreatableFromString,
+    Service,
 )
 from ralph_assets.models_util import WithForm
 from ralph.discovery.models_util import SavingUser
@@ -142,6 +143,13 @@ class Licence(
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True
     )
+    remarks = models.CharField(
+        verbose_name=_('Additional remarks'),
+        max_length=1024,
+        blank=True,
+    )
+    service_name = models.ForeignKey(Service, null=True, blank=True)
+
     _used = None
 
     def __unicode__(self):
