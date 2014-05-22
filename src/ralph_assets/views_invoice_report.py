@@ -14,10 +14,10 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from ralph_assets.utils import switch_language
 
 from django.http import HttpResponse, HttpResponseRedirect
 
+from inkpy.api import generate_pdf
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (
     Asset,
@@ -28,7 +28,6 @@ from ralph_assets.views import _get_return_link, GenericSearch
 from ralph_assets.views_sam import LicenseSelectedMixin
 from ralph_assets.views_search import AssetsSearchQueryableMixin
 
-from inkpy.api import generate_pdf
 
 logger = logging.getLogger(__name__)
 

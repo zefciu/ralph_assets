@@ -18,12 +18,11 @@ from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from lck.django.common import nested_commit_on_success
 
+from inkpy.api import generate_pdf
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.views import _AssetSearch, _get_return_link
 from ralph_assets.views_invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
-
-from inkpy.api import generate_pdf
 
 
 logger = logging.getLogger(__name__)
