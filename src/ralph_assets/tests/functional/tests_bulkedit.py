@@ -21,7 +21,8 @@ from ralph_assets.tests.utils.assets import (
     ServiceFactory,
     WarehouseFactory,
 )
-from ralph_assets.tests.util import get_bulk_edit_post_data
+from ralph_assets.tests.util import get_bulk_edit_post_data, create_bo_asset
+
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -148,7 +149,6 @@ class TestBulkEdit(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         for field_name, value in asset_data.items():
-            print(field_name)
             form_val = unicode(
                 response.context['formset'].forms[0][field_name].value(),
             )
@@ -181,16 +181,15 @@ class TestBulkEdit(TestCase):
         3. check if all fields are set like the added asset.
         """
         bo_asset_data = self.common_asset_data.copy()
-        office_info = OfficeInfoFactory(
-            purpose=models_assets.AssetPurpose.others
-        )
         bo_asset_data.update({
             'sn': 'bo-sn-number',
             'type': models_assets.AssetType.back_office,
-            'office_info': office_info,
+            'office_info': OfficeInfoFactory(),
             'provider': 'provider',
         })
+
         bo_asset = AssetBOFactory(**bo_asset_data)
+
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )

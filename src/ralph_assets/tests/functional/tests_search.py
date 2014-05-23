@@ -10,12 +10,7 @@ from django.test import TestCase
 import datetime
 
 from ralph_assets.tests.util import create_model
-from ralph_assets.tests.utils.assets import (
-    AssetFactory,
-    # AssetCategoryFactory,
-    # AssetModelFactory,
-    # WarehouseFactory,
-)
+from ralph_assets.tests.utils.assets import AssetFactory
 from ralph_assets.models_assets import AssetStatus
 from ralph.ui.tests.global_utils import login_as_su
 

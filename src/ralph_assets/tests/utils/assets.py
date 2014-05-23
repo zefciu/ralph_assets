@@ -5,9 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from factory import Sequence, SubFactory, lazy_attribute, post_generation
+from factory import Sequence, SubFactory, lazy_attribute
 from factory.django import DjangoModelFactory as Factory
-from random import randint
+import random
 from uuid import uuid1
 
 from django.template.defaultfilters import slugify
@@ -19,6 +19,7 @@ from ralph_assets.models_assets import (
     AssetManufacturer,
     AssetModel,
     AssetOwner,
+    AssetPurpose,
     AssetStatus,
     AssetSource,
     AssetType,
@@ -29,11 +30,32 @@ from ralph_assets.models_assets import (
 )
 
 
+def generate_imei(n):
+    """Random IMEI generator. This function return random but not unique
+    IMEI number. Based on code from http://stackoverflow.com/a/20733310
+    """
+    def luhn_residue(digits):
+        """Luhn algorithm"""
+        return sum(sum(divmod(int(d) * (1 + i % 2), 10))
+                   for i, d in enumerate(digits[::-1])) % 10
+
+    part = ''.join(str(random.randrange(0, 9)) for _ in range(n - 1))
+    res = luhn_residue('{}{}'.format(part, 0))
+    return '{}{}'.format(part, -res % 10)
+
+
 class OfficeInfoFactory(Factory):
     FACTORY_FOR = OfficeInfo
 
+    imei = generate_imei(15)
+    purpose = AssetPurpose.others
+
     @lazy_attribute
     def license_key(self):
+        return str(uuid1())
+
+    @lazy_attribute
+    def coa_number(self):
         return str(uuid1())
 
 
@@ -91,8 +113,8 @@ class WarehouseFactory(Factory):
 class DeviceInfoFactory(Factory):
     FACTORY_FOR = DeviceInfo
 
-    u_level = randint(0, 100)
-    u_height = randint(0, 100)
+    u_level = random.randint(0, 100)
+    u_height = random.randint(0, 100)
     rack = Sequence(lambda n: 'Rack #%s' % n)
 
 
@@ -106,6 +128,7 @@ class AssetFactory(Factory):
     model = SubFactory(AssetModelFactory)
     warehouse = SubFactory(WarehouseFactory)
     device_info = SubFactory(DeviceInfoFactory)
+    provider = Sequence(lambda n: 'Provider #%s' % n)
     support_period = 24
     support_type = 'standard'
 
@@ -116,9 +139,4 @@ class AssetFactory(Factory):
 
 class AssetBOFactory(AssetFactory):
     type = AssetType.back_office
-
-    @post_generation
-    def office_info(self, created, extracted, **kwargs):
-        if created:
-            return None
-        return OfficeInfoFactory()
+    office_info = SubFactory(OfficeInfoFactory)
