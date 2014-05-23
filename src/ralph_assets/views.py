@@ -329,7 +329,6 @@ class _AssetSearch(AssetsSearchQueryableMixin, AssetsBase):
             if not value:
                 continue
             for field in fields:
-                print(field)
                 q |= Q(**{field: value})
         return q
 
