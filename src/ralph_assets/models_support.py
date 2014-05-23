@@ -68,7 +68,9 @@ class Support(
     supplier = models.CharField(max_length=100, blank=True)
     serial_no = models.CharField(max_length=100, blank=True)
     invoice_no = models.CharField(max_length=100, blank=True, db_index=True)
-    invoice_date = models.DateField(null=True, blank=True, verbose_name=_('Invoice date'))
+    invoice_date = models.DateField(
+        null=True, blank=True, verbose_name=_('Invoice date'),
+    )
     period_in_months = models.IntegerField(null=True, blank=True)
     property_of = models.ForeignKey(
         AssetOwner,
