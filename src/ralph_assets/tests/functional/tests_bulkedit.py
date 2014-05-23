@@ -10,13 +10,19 @@ from django.test import TestCase
 
 from ralph_assets import models_assets
 from ralph_assets.models_assets import AssetStatus
-from ralph_assets.tests import util as utils
-from ralph_assets.tests.util import (
-    create_asset,
-    create_model,
-    create_category,
-    get_bulk_edit_post_data,
+from ralph_assets.tests.utils import UserFactory
+from ralph_assets.tests.utils.assets import (
+    AssetFactory,
+    AssetBOFactory,
+    AssetCategoryFactory,
+    AssetModelFactory,
+    AssetOwnerFactory,
+    OfficeInfoFactory,
+    ServiceFactory,
+    WarehouseFactory,
 )
+from ralph_assets.tests.util import get_bulk_edit_post_data
+
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -30,21 +36,15 @@ class TestBulkEdit(TestCase):
 
     def setUp(self):
         self.client = login_as_su()
-        self.category = create_category()
-        self.asset = create_asset(
-            sn='1111-1111-1111-1111',
-        )
-        self.asset1 = create_asset(
-            sn='2222-2222-2222-2222',
-        )
-        self.user = utils.create_user()
-        self.owner = self.user
-        self.model = create_model(category=self.category)  # u'Model1'
-        self.model1 = create_model(name='Model2', category=self.category)
-        self.warehouse = utils.create_warehouse()
-        self.assetOwner = utils.create_asset_owner()
-        self.asset_service = utils.create_service()
-
+        self.category = AssetCategoryFactory()
+        self.asset = AssetFactory()
+        self.asset1 = AssetFactory()
+        self.model = AssetModelFactory(category=self.category)
+        self.model1 = AssetModelFactory(category=self.category)
+        self.user = UserFactory()
+        self.warehouse = WarehouseFactory()
+        self.assetOwner = AssetOwnerFactory()
+        self.asset_service = ServiceFactory()
         self.common_asset_data = {  # DC & BO common data
             'status': models_assets.AssetStatus.in_progress,
             'barcode': 'barcode',
@@ -156,10 +156,10 @@ class TestBulkEdit(TestCase):
                 expected = value.id
             except AttributeError:
                 expected = value
-            msg = 'Bulkedit field "{}" got "{}" instead of "{}"'.format(
-                field_name, form_val, expected,
-            )
-            self.assertEqual(form_val, unicode(expected), msg)
+            msg = 'Bulkedit field "{}" got "{}" instead of "{}" in {} mode.'
+            self.assertEqual(form_val, unicode(expected), msg.format(
+                field_name, form_val, expected, mode,
+            ))
 
     def test_showing_dc_form_data(self):
         """
@@ -169,7 +169,7 @@ class TestBulkEdit(TestCase):
         """
         dc_asset_data = self.common_asset_data.copy()
         dc_asset_data.update({'sn': 'dc-sn-number'})
-        dc_asset = create_asset(**dc_asset_data)
+        dc_asset = AssetFactory(**dc_asset_data)
         self._test_showing_form_data(
             'dc', dc_asset.id, dc_asset_data
         )
@@ -184,10 +184,12 @@ class TestBulkEdit(TestCase):
         bo_asset_data.update({
             'sn': 'bo-sn-number',
             'type': models_assets.AssetType.back_office,
-            'purpose': models_assets.AssetPurpose.others,
+            'office_info': OfficeInfoFactory(),
             'provider': 'provider',
         })
-        bo_asset = utils.create_bo_asset(**bo_asset_data)
+
+        bo_asset = AssetBOFactory(**bo_asset_data)
+
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )

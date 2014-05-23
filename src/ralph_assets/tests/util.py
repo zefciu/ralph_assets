@@ -23,6 +23,13 @@ from ralph_assets.models_assets import (
 )
 
 import cgi
+import warnings
+
+
+with warnings.catch_warnings():
+    warnings.simplefilter('default', DeprecationWarning)
+    warnings.warn('Please use factories from tests.utils.', DeprecationWarning)
+
 
 DEFAULT_ASSET_DATA = dict(
     manufacturer='Manufacturer1',
