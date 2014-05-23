@@ -85,7 +85,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
-            'service_name', 'location',
+            'service_name', 'location', 'remarks',
         ],
     }),
     ('User data', {
@@ -411,9 +411,10 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
             'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
-            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
-            'invoice_date', 'price', 'provider', 'task_url',
-            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
+            'sn', 'property_of', 'purpose', 'remarks', 'service_name',
+            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
+            'office_info', 'deprecation_rate', 'order_no', 'source',
+            'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -1478,6 +1479,15 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label='Purpose',
         required=False,
+    )
+    remarks = CharField(
+        required=False,
+        label='Additional remarks',
+        widget=TextInput(
+            attrs={
+              'class': 'span12',
+            },
+        )
     )
 
     def __init__(self, *args, **kwargs):

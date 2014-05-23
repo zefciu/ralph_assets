@@ -57,6 +57,7 @@ class AssetsSearchQueryableMixin(object):
         all_q = Q()
         for field in search_fields:
             field_value = self.request.GET.get(field)
+            print(field_value)
             if field_value:
                 exact = False
                 multi = False
