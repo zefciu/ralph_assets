@@ -17,10 +17,6 @@ from ralph_assets.tests.utils.assets import (
     WarehouseFactory,
 )
 from ralph_assets.tests.utils.sam import LicenceFactory
-from ralph_assets.tests.util import (
-    create_model,
-    create_warehouse,
-)
 from ralph.ui.tests.global_utils import login_as_su
 
 
