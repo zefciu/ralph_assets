@@ -32,10 +32,12 @@ class SupportForm(forms.ModelForm):
         fieldset = OrderedDict([
             ('Info', [
                 'asset_type', 'contract_id', 'name',
-                'description', 'cost', 'date_from',
+                'description', 'price', 'date_from',
                 'date_to', 'escalation_path',
                 'contract_terms', 'additional_notes',
-                'sla_type', 'assets'
+                'sla_type', 'producer', 'supplier',
+                'serial_no', 'invoice_no', 'invoice_date',
+                'period_in_months', 'property_of', 'assets',
             ]),
         ])
         widgets = {
@@ -46,19 +48,27 @@ class SupportForm(forms.ModelForm):
             'contract_terms': Textarea(attrs={'rows': 5}),
             'additional_notes': Textarea(attrs={'rows': 5}),
             'sla_type': Textarea(attrs={'rows': 5}),
+            'invoice_date': DateWidget,
         }
         fields = (
             'asset_type',
             'contract_id',
             'name',
             'description',
-            'cost',
+            'price',
             'date_from',
             'date_to',
             'escalation_path',
             'contract_terms',
             'additional_notes',
             'sla_type',
+            'producer',
+            'supplier',
+            'serial_no',
+            'invoice_no',
+            'invoice_date',
+            'period_in_months',
+            'property_of',
         )
 
     def __init__(self, mode, *args, **kwargs):

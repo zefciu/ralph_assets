@@ -138,10 +138,10 @@ class SupportList(GenericSearch):
             sort_expression='date_to',
         ),
         DataTableColumn(
-            _('Cost'),
+            _('Price'),
             bob_tag=True,
-            field='cost',
-            sort_expression='cost',
+            field='price',
+            sort_expression='price',
         ),
     ]
 

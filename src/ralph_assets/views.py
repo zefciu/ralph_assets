@@ -1042,6 +1042,11 @@ class EditPart(AssetsBase):
                 self.part_info_form.cleaned_data
             )
             self.asset.save(user=self.request.user)
+            self.asset.support_set.clear()
+            for support in self.asset_form.cleaned_data.get(
+                'supports', []
+            ):
+                self.asset.support_set.add(support)
             messages.success(self.request, _("Part of asset was edited."))
             cat = self.request.path.split('/')[2]
             return HttpResponseRedirect(
@@ -1253,7 +1258,8 @@ class AddPart(AssetsBase):
             asset_data = self.asset_form.cleaned_data
             for f_name in {
                 "barcode", "category", "company", "cost_center", "department",
-                "employee_id", "imei", "licences", "manager", "profit_center"
+                "employee_id", "imei", "licences", "manager", "profit_center",
+                "supports"
             }:
                 if f_name in asset_data:
                     del asset_data[f_name]

@@ -1188,7 +1188,10 @@ class OfficeForm(ModelForm):
 
 
 class EditPartForm(BaseEditAssetForm):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(EditPartForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Assigned supports info'] = ['supports']
 
 
 class EditDeviceForm(BaseEditAssetForm):
