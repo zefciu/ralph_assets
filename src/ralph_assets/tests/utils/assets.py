@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from factory import Sequence, SubFactory, lazy_attribute
+from factory import Sequence, SubFactory, lazy_attribute, post_generation
 from factory.django import DjangoModelFactory as Factory
 from random import randint
 from uuid import uuid1
@@ -22,10 +22,19 @@ from ralph_assets.models_assets import (
     AssetStatus,
     AssetSource,
     AssetType,
-    Service,
     DeviceInfo,
+    OfficeInfo,
+    Service,
     Warehouse,
 )
+
+
+class OfficeInfoFactory(Factory):
+    FACTORY_FOR = OfficeInfo
+
+    @lazy_attribute
+    def license_key(self):
+        return str(uuid1())
 
 
 class ServiceFactory(Factory):
@@ -99,3 +108,13 @@ class AssetFactory(Factory):
     @lazy_attribute
     def sn(self):
         return str(uuid1())
+
+
+class AssetBOFactory(AssetFactory):
+    type = AssetType.back_office
+
+    @post_generation
+    def office_info(self, created, extracted, **kwargs):
+        if created:
+            return None
+        return OfficeInfoFactory()

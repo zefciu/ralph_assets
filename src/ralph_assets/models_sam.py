@@ -144,7 +144,7 @@ class Licence(
         max_length=128, db_index=True, null=True, blank=True
     )
     remarks = models.CharField(
-        verbose_name='Additional remarks',
+        verbose_name=_('Additional remarks'),
         max_length=1024,
         blank=True,
     )
