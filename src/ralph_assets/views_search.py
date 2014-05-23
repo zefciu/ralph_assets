@@ -52,12 +52,12 @@ class AssetsSearchQueryableMixin(object):
             'purpose',
             'service_name',
             'warehouse',
+            'remarks',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
         for field in search_fields:
             field_value = self.request.GET.get(field)
-            print(field_value)
             if field_value:
                 exact = False
                 multi = False
@@ -155,6 +155,8 @@ class AssetsSearchQueryableMixin(object):
                     all_q &= Q(
                         owner__profile__department__icontains=field_value
                     )
+                elif field == 'remarks':
+                    all_q &= Q(remarks__icontains=field_value)
                 elif field == 'user':
                     all_q &= Q(user__id=field_value)
                 elif field == 'guardian':
