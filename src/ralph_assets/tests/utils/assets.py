@@ -63,6 +63,10 @@ class AssetCategoryFactory(Factory):
 class AssetSubCategoryFactory(AssetCategoryFactory):
     parent = SubFactory(AssetCategoryFactory)
 
+    @lazy_attribute
+    def slug(self):
+        return slugify(str(self.type) + self.name + self.parent.name)
+
 
 class AssetManufacturerFactory(Factory):
     FACTORY_FOR = AssetManufacturer
