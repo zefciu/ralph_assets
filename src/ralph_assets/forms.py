@@ -1282,7 +1282,6 @@ class SearchAssetForm(Form):
         label='Inventory number',
         widget=TextInput(
             attrs={
-              'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
             },
         )
@@ -1292,7 +1291,6 @@ class SearchAssetForm(Form):
         label='SN',
         widget=TextInput(
             attrs={
-              'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
             },
         )
@@ -1302,7 +1300,6 @@ class SearchAssetForm(Form):
         label='Barcode',
         widget=TextInput(
             attrs={
-              'class': 'span12',
               'title': _('separate ";" or "|" to search multiple value'),
             },
         )
@@ -1483,11 +1480,6 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
     remarks = CharField(
         required=False,
         label='Additional remarks',
-        widget=TextInput(
-            attrs={
-              'class': 'span12',
-            },
-        )
     )
 
     def __init__(self, *args, **kwargs):
