@@ -5,9 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import random
 from factory import Sequence, SubFactory, lazy_attribute
 from factory.django import DjangoModelFactory as Factory
-import random
 from uuid import uuid1
 
 from django.template.defaultfilters import slugify

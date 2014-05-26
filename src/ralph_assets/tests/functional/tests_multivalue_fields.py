@@ -11,8 +11,6 @@ from ralph_assets.models_assets import Asset, AssetType, AssetStatus
 from ralph_assets.tests.util import SCREEN_ERROR_MESSAGES
 from ralph_assets.tests.utils.assets import (
     AssetCategoryFactory,
-    # AssetManufacturerFactory,
-    # AssetOwnerFactory,
     AssetModelFactory,
     WarehouseFactory,
 )
