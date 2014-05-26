@@ -146,7 +146,9 @@ class Licence(
     remarks = models.CharField(
         verbose_name=_('Additional remarks'),
         max_length=1024,
+        null=True,
         blank=True,
+        default=None,
     )
     service_name = models.ForeignKey(Service, null=True, blank=True)
 
