@@ -16,6 +16,10 @@ Assets module for Ralph
     :target: https://travis-ci.org/allegro/ralph_assets
 
 
+.. image:: https://coveralls.io/repos/allegro/ralph_assets/badge.png?branch=coveralls
+  :target: https://coveralls.io/r/allegro/ralph_assets?branch=coveralls
+
+
 .. image:: https://pypip.in/license/ralph_assets/badge.svg
     :target: https://crate.io/packages/ralph_assets/
 
