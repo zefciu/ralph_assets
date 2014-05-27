@@ -12,9 +12,8 @@ Assets module for Ralph
     :alt: Number of PyPI downloads
 
 
-.. image:: https://api.travis-ci.org/allegro/ralph_assets.png?branch=develop
-    :alt: Build Status
-    :target: http://api.travis-ci.org/allegro/ralph_assets
+.. image:: https://travis-ci.org/allegro/ralph_assets.svg?branch=develop
+    :target: https://travis-ci.org/allegro/ralph_assets
 
 
 Assets module brings Offline Stock management functionality to the Ralph.
