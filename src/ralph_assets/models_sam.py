@@ -103,6 +103,7 @@ class Licence(
         verbose_name=_('Inventory number'),
         null=False,
         unique=True,
+        default='N/A',
     )
     invoice_date = models.DateField(
         verbose_name=_('Invoice date'),
