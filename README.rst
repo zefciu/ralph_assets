@@ -7,13 +7,17 @@ Assets module for Ralph
     :alt: Latest PyPI version
 
 
-.. image:: https://pypip.in/d/ralph_assets/badge.png
+.. image:: https://pypip.in/d/ralph_assets/badge.svg
     :target: https://crate.io/packages/ralph_assets/
     :alt: Number of PyPI downloads
 
 
 .. image:: https://travis-ci.org/allegro/ralph_assets.svg?branch=develop
     :target: https://travis-ci.org/allegro/ralph_assets
+
+
+.. image:: https://pypip.in/license/ralph_assets/badge.svg
+    :target: https://crate.io/packages/ralph_assets/
 
 
 Assets module brings Offline Stock management functionality to the Ralph.
