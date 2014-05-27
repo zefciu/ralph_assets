@@ -12,6 +12,6 @@ install:
 before_script:
   make flake
 script:
-  DJANGO_SETTINGS_PROFILE=test-assets coverage run ralph test ralph_assets
+  DJANGO_SETTINGS_PROFILE=test-assets coverage run "$VIRTUAL_ENV/bin/ralph" test ralph_assets
 after_success:
   coveralls
