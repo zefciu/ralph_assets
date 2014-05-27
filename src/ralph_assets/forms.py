@@ -1429,6 +1429,10 @@ class SearchAssetForm(Form):
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'], required=False,
     )
+    remarks = CharField(
+        required=False,
+        label=_('Additional remarks'),
+    )
 
     def __init__(self, *args, **kwargs):
         # Ajax sources are different for DC/BO, use mode for distinguish
@@ -1477,10 +1481,6 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
         required=False,
-    )
-    remarks = CharField(
-        required=False,
-        label=_('Additional remarks'),
     )
 
     def __init__(self, *args, **kwargs):
