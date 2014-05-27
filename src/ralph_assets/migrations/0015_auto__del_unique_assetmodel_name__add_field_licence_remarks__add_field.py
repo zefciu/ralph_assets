@@ -27,14 +27,9 @@ class Migration(SchemaMigration):
 
         # Changing field 'Licence.niw'
         db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default='N/A', unique=True, max_length=200))
-        # Adding unique constraint on 'Licence', fields ['niw']
-        db.create_unique('ralph_assets_licence', ['niw'])
 
 
     def backwards(self, orm):
-        # Removing unique constraint on 'Licence', fields ['niw']
-        db.delete_unique('ralph_assets_licence', ['niw'])
-
         # Adding index on 'AssetModel', fields ['name']
         db.create_index('ralph_assets_assetmodel', ['name'])
 
