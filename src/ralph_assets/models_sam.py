@@ -99,10 +99,11 @@ class Licence(
         verbose_name=_('Parent licence'),
     )
     niw = models.CharField(
-        max_length=50,
+        max_length=200,
         verbose_name=_('Inventory number'),
         null=False,
         unique=True,
+        default='N/A',
     )
     invoice_date = models.DateField(
         verbose_name=_('Invoice date'),
@@ -146,7 +147,9 @@ class Licence(
     remarks = models.CharField(
         verbose_name=_('Additional remarks'),
         max_length=1024,
+        null=True,
         blank=True,
+        default=None,
     )
     service_name = models.ForeignKey(Service, null=True, blank=True)
 
