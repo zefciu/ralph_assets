@@ -99,7 +99,7 @@ class Licence(
         verbose_name=_('Parent licence'),
     )
     niw = models.CharField(
-        max_length=50,
+        max_length=200,
         verbose_name=_('Inventory number'),
         null=False,
         unique=True,
