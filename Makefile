@@ -7,7 +7,7 @@ test-with-coveralls:
 coverage:
 	make test-with-coveralls
 	coverage html
-	xdg-open htmlcov/index.html
+	coverage report
 
 flake:
 	flake8 --exclude="migrations" --statistics src/ralph_assets
