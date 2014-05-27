@@ -2,6 +2,21 @@
 Assets module for Ralph
 =====
 
+.. image:: https://pypip.in/v/ralph_assets/badge.png
+    :target: https://crate.io/packages/ralph_assets/
+    :alt: Latest PyPI version
+
+
+.. image:: https://pypip.in/d/ralph_assets/badge.png
+    :target: https://crate.io/packages/ralph_assets/
+    :alt: Number of PyPI downloads
+
+
+.. image:: https://api.travis-ci.org/allegro/ralph_assets.png?branch=develop
+    :alt: Build Status
+    :target: http://api.travis-ci.org/allegro/ralph_assets
+
+
 Assets module brings Offline Stock management functionality to the Ralph.
 It maintains ordering, purchasing and releasing the device to the user.
 It is not limited to datacenter. You can maintain processes for backoffice assets 
