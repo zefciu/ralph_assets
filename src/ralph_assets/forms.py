@@ -115,7 +115,8 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
-            'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
+            'loan_end_date_to', 'part_info', 'niw', 'service_name',
+            'location', 'remarks',
         ],
     }),
     ('User data', {
