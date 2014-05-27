@@ -3,7 +3,11 @@ quicktest:
 
 test-with-coveralls:
 	DJANGO_SETTINGS_PROFILE=test-assets coverage run --source=ralph_assets --omit='*migrations*,*tests*,*__init__*' '$(VIRTUAL_ENV)/bin/ralph' test ralph_assets
+
+coverage:
+	make test-with-coveralls
 	coverage html
+	xdg-open htmlcov/index.html
 
 flake:
 	flake8 --exclude="migrations" --statistics src/ralph_assets
