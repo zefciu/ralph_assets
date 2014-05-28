@@ -11,11 +11,11 @@ from django.test import TestCase
 from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
-from ralph_assets.models_assets import PartInfo, AssetModel
-from ralph_assets.tests.util import (
-    create_asset,
-    create_category,
-    create_model,
+from ralph_assets.models_assets import PartInfo
+from ralph_assets.tests.utils.assets import (
+    AssetSubCategoryFactory,
+    AssetModelFactory,
+    AssetFactory,
 )
 from ralph_assets.tests.utils.assets import ServiceFactory
 from ralph_assets.tests.utils.sam import LicenceFactory
@@ -23,30 +23,27 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 
 class TestModelAsset(TestCase):
     def setUp(self):
-        self.asset = create_asset(
-            sn='1111-1111-1111-1111',
+        self.asset = AssetFactory(
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             deprecation_rate=100,
         )
         self.asset.device_info.ralph_device_id = 666
         self.asset.device_info.save()
-        self.asset2 = create_asset(
-            sn='1111-1111-1111-1112',
+        self.asset2 = AssetFactory(
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=50,
         )
         self.asset2.device_info.ralph_device_id = 667
         self.asset2.device_info.save()
-        self.asset3 = create_asset(
-            sn='1111-1111-1111-1113',
+        self.asset3 = AssetFactory(
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
             deprecation_rate=50,
             force_deprecation=True,
         )
-        self.asset_depr_date = create_asset(
+        self.asset_depr_date = AssetFactory(
             sn='1111-1111-1111-1114',
             invoice_date=datetime.date(2012, 11, 28),
             support_period=120,
@@ -113,13 +110,9 @@ class TestModelLicences(TestCase):
 
 class TestApiAssets(TestCase):
     def setUp(self):
-        self.category = create_category()
-        self.category.is_blade = True
-        self.category.save()
-        self.model = create_model(category=self.category)
-        self.model.save()
-        self.asset = create_asset(
-            sn='1111-1111-1111-1111',
+        self.category = AssetSubCategoryFactory(is_blade=True)
+        self.model = AssetModelFactory(category=self.category)
+        self.asset = AssetFactory(
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
@@ -130,8 +123,7 @@ class TestApiAssets(TestCase):
 
         part_info = PartInfo(device=self.asset)
         part_info.save()
-        self.asset2 = create_asset(
-            sn='1111-1111-1111-11132',
+        self.asset2 = AssetFactory(
             invoice_date=datetime.date(2012, 11, 28),
             support_period=1,
             slots=12.0,
@@ -164,7 +156,7 @@ class TestApiAssets(TestCase):
         for item in get_asset_parts():
             self.assertEqual(item['price'], 100)
             # self.assertEqual(item['is_deprecated'], False)
-            model = AssetModel.objects.get(name="Model1")
+            model = self.model
             self.assertEqual(item['model'], model.name)
             self.assertEqual(item['asset_id'], self.asset2.id)
             self.assertEqual(item['sn'], self.asset.sn)

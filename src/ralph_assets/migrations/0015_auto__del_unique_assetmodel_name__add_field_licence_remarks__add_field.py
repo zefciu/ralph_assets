@@ -8,9 +8,15 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Removing unique constraint on 'AssetModel', fields ['name']
+        db.delete_unique('ralph_assets_assetmodel', ['name'])
+
+        # Removing index on 'AssetModel', fields ['name']
+        db.delete_index('ralph_assets_assetmodel', ['name'])
+
         # Adding field 'Licence.remarks'
         db.add_column('ralph_assets_licence', 'remarks',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=1024, blank=True),
+                      self.gf('django.db.models.fields.CharField')(default=None, max_length=1024, null=True, blank=True),
                       keep_default=False)
 
         # Adding field 'Licence.service_name'
@@ -20,14 +26,15 @@ class Migration(SchemaMigration):
 
 
         # Changing field 'Licence.niw'
-        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default=None, unique=True, max_length=50))
-        # Adding unique constraint on 'Licence', fields ['niw']
-        db.create_unique('ralph_assets_licence', ['niw'])
+        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default='N/A', unique=True, max_length=200))
 
 
     def backwards(self, orm):
-        # Removing unique constraint on 'Licence', fields ['niw']
-        db.delete_unique('ralph_assets_licence', ['niw'])
+        # Adding index on 'AssetModel', fields ['name']
+        db.create_index('ralph_assets_assetmodel', ['name'])
+
+        # Adding unique constraint on 'AssetModel', fields ['name']
+        db.create_unique('ralph_assets_assetmodel', ['name'])
 
         # Deleting field 'Licence.remarks'
         db.delete_column('ralph_assets_licence', 'remarks')
@@ -111,6 +118,7 @@ class Migration(SchemaMigration):
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'delivery_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
+            'deprecation_end_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -266,14 +274,14 @@ class Migration(SchemaMigration):
             'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'niw': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
+            'niw': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
             'number_bought': ('django.db.models.fields.IntegerField', [], {}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.Licence']"}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
+            'remarks': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '1024', 'null': 'True', 'blank': 'True'}),
             'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'service_name': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Service']", 'null': 'True', 'blank': 'True'}),
             'sn': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
