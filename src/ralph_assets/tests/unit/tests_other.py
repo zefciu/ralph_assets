@@ -125,3 +125,28 @@ class TestExportRelations(TestCase):
                 ' , , , , , , owner, Eric, Brown, 100, \n',
             ]
         )
+
+    def test_licences_rows_only_assigned(self):
+        self.licence1.assets.add(self.asset)
+        self.licence1.users.add(self.user)
+        self.licence1.users.add(self.owner)
+        rows = []
+        for row in get_licences_rows(only_assigned=True):
+            rows.append(row)
+
+        self.assertEqual(
+            rows,
+            [
+                u'niw, software_category, number_bought, price, invoice_date, '
+                'invoice_no, id, barcode, niw, user__username, user__first_nam'
+                'e, user__last_name, owner__username, owner__first_name, owner'
+                '__last_name, username, first_name, last_name,single_cost, \n',
+                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, 1, br'
+                '-666, niw=666, user, Elmer, Stevens, owner, Eric, Brown, , , '
+                ', 100, \n',
+                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
+                ' , , , , , , user, Elmer, Stevens, 100, \n',
+                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
+                ' , , , , , , owner, Eric, Brown, 100, \n',
+            ]
+        )
