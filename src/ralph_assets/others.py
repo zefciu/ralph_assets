@@ -53,7 +53,7 @@ LICENCES_USERS_COLUMNS = [
 ]
 
 
-def get_licences_rows(filter_type='all'):
+def get_licences_rows(filter_type='all', only_assigned=False):
     if filter_type == 'all':
         queryset = Licence.objects.all()
     else:
@@ -73,7 +73,11 @@ def get_licences_rows(filter_type='all'):
             row += "{}, ".format(getattr(licence, column))
         base_row = row
         row = "{}{}{}\n".format(row, fill_empty_assets, fill_empty_licences)
-        yield row
+        if only_assigned:
+            if not(licence.assets.exists() or licence.users.exists()):
+                yield row
+        else:
+            yield row
         if licence.number_bought > 0 and licence.price:
             single_licence_cost = licence.price / licence.number_bought
         else:
