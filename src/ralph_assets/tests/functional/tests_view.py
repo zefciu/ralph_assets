@@ -10,6 +10,7 @@ import uuid
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.test.client import Client
 
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
@@ -218,3 +219,27 @@ class DeviceEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, msg_error)
         self.assertContains(response, part)
+
+
+class LookupsTest(TestCase):
+
+    def test_unlogged_user_lookup_permission(self):
+        """
+        - send request
+        - check for 403
+        """
+        url = "/admin/lookups/ajax_lookup/KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4=?term=test"
+        client = Client()
+        response = client.post(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_logged_user_lookup_permission(self):
+        """
+        - sign in
+        - send request
+        - check for 200
+        """
+        self.client = login_as_su()
+        url = "/admin/lookups/ajax_lookup/KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4=?term=test"
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
