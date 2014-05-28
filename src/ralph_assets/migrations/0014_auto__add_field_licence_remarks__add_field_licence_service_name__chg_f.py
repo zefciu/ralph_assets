@@ -20,7 +20,7 @@ class Migration(SchemaMigration):
 
 
         # Changing field 'Licence.niw'
-        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200))
+        db.alter_column('ralph_assets_licence', 'niw', self.gf('django.db.models.fields.CharField')(default='N/A', unique=True, max_length=200))
 
         # Adding field 'Asset.deprecation_end_date'
         db.add_column('ralph_assets_asset', 'deprecation_end_date',
