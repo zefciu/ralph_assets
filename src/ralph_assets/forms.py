@@ -1263,7 +1263,7 @@ class SearchAssetForm(Form):
         LOOKUPS['asset_user'],
         required=False,
     )
-    location = CharField(required=False, label=_(_('Location')))
+    location = CharField(required=False, label=_('Location'))
     company = CharField(required=False, label=_('Company'))
     employee_id = CharField(required=False, label=_('Employee id'))
     cost_center = CharField(required=False, label=_('Cost center'))
