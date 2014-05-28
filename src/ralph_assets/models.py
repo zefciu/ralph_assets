@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import difflib
 
-from ajax_select import LookupChannel
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
@@ -43,14 +42,17 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
-from ralph_assets.models_util import WithForm
+from ralph_assets.models_util import (
+    RestrictedLookupChannel,
+    WithForm,
+)
 from ralph.discovery.models import Device, DeviceType
 
 
 RALPH_DATE_FORMAT = '%Y-%m-%d'
 
 
-class DeviceLookup(LookupChannel):
+class DeviceLookup(RestrictedLookupChannel):
     model = Asset
 
     def get_query(self, q, request):
@@ -82,7 +84,7 @@ class DeviceLookup(LookupChannel):
         return self.model.objects
 
 
-class FreeLicenceLookup(LookupChannel):
+class FreeLicenceLookup(RestrictedLookupChannel):
     """Lookup the licences that have any specimen left."""
 
     model = Licence
@@ -142,7 +144,7 @@ class FreeLicenceLookup(LookupChannel):
         )
 
 
-class LicenceLookup(LookupChannel):
+class LicenceLookup(RestrictedLookupChannel):
     model = Licence
 
     def get_query(self, q, request):
@@ -182,7 +184,7 @@ class LicenceLookup(LookupChannel):
         return self.model.objects
 
 
-class RalphDeviceLookup(LookupChannel):
+class RalphDeviceLookup(RestrictedLookupChannel):
     model = Device
 
     def get_query(self, q, request):
@@ -212,7 +214,7 @@ class RalphDeviceLookup(LookupChannel):
         """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
 
 
-class AssetLookup(LookupChannel):
+class AssetLookup(RestrictedLookupChannel):
     model = Asset
 
     def get_query(self, q, request):
@@ -231,7 +233,7 @@ class AssetLookup(LookupChannel):
         return '{}'.format(escape(unicode(obj)))
 
 
-class AssetModelLookup(LookupChannel):
+class AssetModelLookup(RestrictedLookupChannel):
     model = AssetModel
 
     def get_query(self, q, request):
@@ -273,7 +275,7 @@ class BOAssetModelLookup(AssetModelLookup):
     type = AssetType.back_office
 
 
-class AssetManufacturerLookup(LookupChannel):
+class AssetManufacturerLookup(RestrictedLookupChannel):
     model = AssetModel
 
     def get_query(self, q, request):
@@ -291,7 +293,7 @@ class AssetManufacturerLookup(LookupChannel):
         return '{}'.format(escape(obj.manufacturer.name))
 
 
-class ManufacturerLookup(LookupChannel):
+class ManufacturerLookup(RestrictedLookupChannel):
     model = AssetManufacturer
 
     def get_query(self, q, request):
@@ -303,7 +305,7 @@ class ManufacturerLookup(LookupChannel):
         return obj.name
 
 
-class SoftwareCategoryLookup(LookupChannel):
+class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
 
     def get_query(self, q, request):
@@ -315,7 +317,7 @@ class SoftwareCategoryLookup(LookupChannel):
         return obj.name
 
 
-class WarehouseLookup(LookupChannel):
+class WarehouseLookup(RestrictedLookupChannel):
     model = Warehouse
 
     def get_query(self, q, request):
@@ -382,7 +384,7 @@ class AssetLookupFuzzy(AssetLookup):
         return ret
 
 
-class UserLookup(LookupChannel):
+class UserLookup(RestrictedLookupChannel):
     model = User
 
     def get_query(self, q, request):
