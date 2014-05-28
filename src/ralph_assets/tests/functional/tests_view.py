@@ -228,9 +228,13 @@ class LookupsTest(TestCase):
         - send request
         - check for 403
         """
-        url = "/admin/lookups/ajax_lookup/KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4=?term=test"
+        url = (
+            "/admin/lookups/ajax_lookup/"
+            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
+            "?term=test"
+        )
         client = Client()
-        response = client.post(url)
+        response = client.get(url)
         self.assertEqual(response.status_code, 403)
 
     def test_logged_user_lookup_permission(self):
@@ -240,6 +244,10 @@ class LookupsTest(TestCase):
         - check for 200
         """
         self.client = login_as_su()
-        url = "/admin/lookups/ajax_lookup/KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4=?term=test"
-        response = self.client.post(url)
+        url = (
+            "/admin/lookups/ajax_lookup/"
+            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
+            "?term=test"
+        )
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
