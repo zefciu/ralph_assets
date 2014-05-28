@@ -218,8 +218,9 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
-    niw = MultiSearchField()
-    sn = TextSearchField()
+    niw = MultiSearchField(label=_('NIW'))
+    sn = TextSearchField(label=_('SN'))
+    remarks = TextSearchField(label=_('Additional remarks'))
     software_category = RelatedAjaxSearchField(
         LOOKUPS['softwarecategory'],
     )

@@ -1,6 +1,6 @@
-=====
+=======================
 Assets module for Ralph
-=====
+=======================
 
 .. image:: https://pypip.in/v/ralph_assets/badge.png
     :target: https://crate.io/packages/ralph_assets/
