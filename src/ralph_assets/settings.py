@@ -21,4 +21,4 @@ ASSETS_TRANSITIONS = {
 ASSET_HIDE_ACTION_SEARCH = False
 
 # force locale during pdf raport genration
-GENERATED_DOCS_LOCALE = 'pl'
+GENERATED_DOCS_LOCALE = None
