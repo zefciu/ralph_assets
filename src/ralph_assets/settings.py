@@ -22,4 +22,3 @@ ASSET_HIDE_ACTION_SEARCH = False
 
 # force locale during pdf raport genration
 GENERATED_DOCS_LOCALE = 'pl'
-FORMAT_MODULE_PATH = "ralph_assets.formats"
