@@ -26,7 +26,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.views import _get_return_link, GenericSearch
 from ralph_assets.views_sam import LicenseSelectedMixin
-from ralph_assets.views_search import AssetsSearchQueryableMixin
+from ralph_assets.views.search import AssetsSearchQueryableMixin
 
 
 logger = logging.getLogger(__name__)

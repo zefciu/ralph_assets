@@ -19,8 +19,9 @@ from django.views.generic import TemplateView
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
+from ralph_assets.views.base import get_return_link
+from ralph_assets.views.search import AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
-from ralph_assets.views import _AssetSearch, _get_return_link
 from ralph_assets.views_invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
@@ -188,7 +189,7 @@ class TransitionDispatcher(object):
         self._save_history()
 
 
-class TransitionView(_AssetSearch):
+class TransitionView(AssetSearch):
     template_name = 'assets/transitions.html'
     report_file_path = None
     transition_history = None
@@ -196,11 +197,11 @@ class TransitionView(_AssetSearch):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(self.ids),
+                get_return_link(self.mode), ",".join(self.ids),
             )
         else:
             url = "{}search?{}".format(
-                _get_return_link(self.mode), self.request.GET.urlencode(),
+                get_return_link(self.mode), self.request.GET.urlencode(),
             )
         return url
 
