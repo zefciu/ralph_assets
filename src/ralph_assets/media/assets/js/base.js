@@ -1,3 +1,4 @@
+/*jshint multistr: true */
 (function(){
     "use strict";
 
@@ -93,7 +94,7 @@
             $('#assets_table .dropdown .dropdown-menu'  ).prepend(new_item);
             new_item.show();
         }
-    }
+    };
 
     Bulk.prototype.select_all_pages = function() {
         var selected_box = $('.selected-assets-info-box');
@@ -123,7 +124,7 @@
         });
 
         $('.bob-select-all, .bob-select-toggle, .bob-select-none').click(function() {
-            $('.selected-assets-info-box').hide()
+            $('.selected-assets-info-box').hide();
             $('.selected-assets-info-box').data('selected', false);
         });
 
