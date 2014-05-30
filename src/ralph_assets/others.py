@@ -61,21 +61,18 @@ def get_licences_rows(filter_type='all', only_assigned=False):
         queryset = Licence.objects.filter(
             asset_type=MODE2ASSET_TYPE[filter_type]
         )
-    yield [
-        column for column in (
-            LICENCES_COLUMNS +
-            LICENCES_ASSETS_COLUMNS +
-            LICENCES_USERS_COLUMNS +
-            ['single_cost']
-        )
-    ]
+    yield (
+        LICENCES_COLUMNS +
+        LICENCES_ASSETS_COLUMNS +
+        LICENCES_USERS_COLUMNS +
+        ['single_cost']
+    )
 
     fill_empty_assets = [''] * len(LICENCES_ASSETS_COLUMNS)
     fill_empty_licences = [''] * len(LICENCES_USERS_COLUMNS)
     for licence in queryset:
         row = []
-        for column in LICENCES_COLUMNS:
-            row.append(str(getattr(licence, column)))
+        row = [str(getattr(licence, column)) for column in LICENCES_COLUMNS]
         base_row = row
 
         row = row + fill_empty_assets + fill_empty_licences
@@ -90,13 +87,13 @@ def get_licences_rows(filter_type='all', only_assigned=False):
             single_licence_cost = ''
         for asset in licence.assets.all().values(*LICENCES_ASSETS_COLUMNS):
             row = []
-            for column in LICENCES_ASSETS_COLUMNS:
-                row.append(str(asset.get(column)))
+            row = [
+                str(asset.get(column)) for column in LICENCES_ASSETS_COLUMNS
+            ]
             yield base_row + row + fill_empty_assets + fill_empty_licences
         for user in licence.users.all().values(*LICENCES_USERS_COLUMNS):
             row = []
-            for column in LICENCES_USERS_COLUMNS:
-                row.append(str(user.get(column)))
+            row = [str(user.get(column)) for column in LICENCES_USERS_COLUMNS]
             yield base_row + fill_empty_assets + row + [single_licence_cost]
 
 
@@ -110,6 +107,5 @@ def get_assets_rows(filter_type='all'):
     yield ASSETS_COLUMNS
     for asset in queryset:
         row = []
-        for column in ASSETS_COLUMNS:
-            row.append(asset.get(column))
+        row = [asset.get(column) for column in ASSETS_COLUMNS]
         yield row
