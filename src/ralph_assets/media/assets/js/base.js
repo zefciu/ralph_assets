@@ -36,33 +36,27 @@
             }
         );
         return ids;
-    }
+    };
 
-    Bulk.prototype.edit_selected = function() {
+    Bulk.prototype.action_selected = function(action) {
         var ids = this.get_ids();
         var selected_all_pages = $('.selected-assets-info-box').data('selected');
         if (selected_all_pages) {
             var search = window.location.search;
             search += search ? "&" : "?";
-            window.location.href = 'bulkedit' + search + 'from_query=1';
+            window.location.href = action + search + 'from_query=1';
         } else if (ids.length) {
-            window.location.href = 'bulkedit?select=' + ids.join('&select=');
+            window.location.href = action + '?select=' + ids.join('&select=');
         }
         return false;
     };
 
-    Bulk.prototype.invoice_report_selected = function() {
-        var ids = this.get_ids();
-        if (ids.length){
-            window.location.href = 'invoice_report?select=' + ids.join('&select=');
-        }
+    Bulk.prototype.edit_selected = function() {
+        return this.action_selected('bulkedit');
     };
 
-    Bulk.prototype.invoice_report_search_query = function () {
-        var params = window.location.search;
-        if (params.length){
-            window.location.href = 'invoice_report' + params + '&from_query=1';
-        }
+    Bulk.prototype.invoice_report_selected = function() {
+        return this.action_selected('invoice_report');
     };
 
     Bulk.prototype.addAttachment = function(type) {

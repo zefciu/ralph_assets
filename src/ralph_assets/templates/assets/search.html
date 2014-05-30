@@ -44,19 +44,9 @@
             </a>
         <ul class="dropdown-menu">
             {% if asset_reports_enable %}
-                <li class="disabled section-title">
-                    <a href="#" style="">
-                        {% trans "Create invoice report" %}
-                    </a>
-                </li>
-                <li class="dropdown-menu-indended">
+                <li>
                     <a href="#" id='post_invoice_report_selected'>
-                        {% trans "from selected assets" %}
-                    </a>
-                </li>
-                <li class="dropdown-menu-indended">
-                    <a href="#" id='post_invoice_report_search_query'>
-                        {% trans "from search query" %}
+                        {% trans "Invoice report from selected" %}
                     </a>
                 </li>
                 <li class="divider"></li>
