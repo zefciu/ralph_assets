@@ -5,12 +5,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from django.test import TestCase
-
 import datetime
+import urllib
+
+from django.test import TestCase
+from django.core.urlresolvers import reverse
+
 
 from ralph_assets.tests.util import create_model
-from ralph_assets.tests.utils.assets import AssetFactory
+from ralph_assets.tests.utils.assets import (
+    AssetFactory,
+    AssetBOFactory,
+    AssetManufacturerFactory,
+)
 from ralph_assets.models_assets import AssetStatus
 from ralph.ui.tests.global_utils import login_as_su
 
@@ -550,3 +557,126 @@ class TestSearchProductionUseDateFields(TestCase):
 
         rows_from_table = content.context_data['bob_page'].object_list
         self.assertEqual(len(rows_from_table), 3)
+
+
+class TestSearchEngine(TestCase):
+    """General tests for search engine."""
+    def setUp(self):
+        self.client = login_as_su()
+        self.testing_urls = {
+            'dc': reverse('asset_search', args=('dc',)),
+            'bo': reverse('asset_search', args=('back_office',)),
+        }
+        self.assets_dc = [AssetFactory() for _ in range(5)]
+        self.assets_bo = [AssetBOFactory() for _ in range(5)]
+        for name in ['iPad 5 16 GB', 'ProLiant BL2x2d', 'WS-CBS312']:
+            AssetFactory(model__name=name)
+            AssetBOFactory(model__name=name)
+
+        for manufacturer in ['Apple', 'Sony', 'Nikon', 'Sony Ericsson']:
+            manu = AssetManufacturerFactory(name=manufacturer)
+            AssetFactory(model__manufacturer=manu)
+            AssetBOFactory(model__manufacturer=manu)
+
+        for unique in ['123456', '456123']:
+            AssetFactory(barcode=unique, sn=unique, niw=unique)
+        for unique in ['654321', '321654']:
+            AssetBOFactory(barcode=unique, sn=unique, niw=unique)
+
+        self.msg_error = 'Error in {}, request has return {} but expected {}.'
+
+    def _search_results(self, url, field_name, value):
+        url = '{}?{}={}'.format(url, field_name, value)
+        response = self.client.get(url)
+        return response.context['bob_page'].object_list
+
+    def _check_results_length(self, url, field_name, value, expected):
+        results = self._search_results(url, field_name, urllib.quote(value))
+        self.assertEqual(
+            len(results), expected,
+            self.msg_error.format(url, len(results), expected),
+        )
+
+    def _field_exact(self, field_name):
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '"123456"', 1
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '"12345"', 0
+        )
+
+        self._check_results_length(
+            self.testing_urls['bo'], field_name, '"654321"', 1
+        )
+        self._check_results_length(
+            self.testing_urls['bo'], field_name, '"654320"', 0
+        )
+
+    def _field_multi(self, field_name):
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '123456;456123', 2
+        )
+        self._check_results_length(
+            self.testing_urls['bo'], field_name, '654321;321654', 2
+        )
+
+    def _field_icontains(self, field_name):
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '456', 2
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '2345', 1
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], field_name, '9875', 0
+        )
+        self._check_results_length(
+            self.testing_urls['bo'], field_name, '321', 2
+        )
+
+    def test_model_exact(self):
+        field_name = 'model'
+        for _, url in self.testing_urls.items():
+            self._check_results_length(url, field_name, '"iPad 5 16 GB"', 1)
+            self._check_results_length(url, field_name, '"iPad 5 "', 0)
+
+    def test_model_icontains(self):
+        field_name = 'model'
+        for _, url in self.testing_urls.items():
+            self._check_results_length(url, field_name, 'model', 11)
+            self._check_results_length(url, field_name, 'gb', 1)
+            self._check_results_length(url, field_name, 'P', 2)
+            self._check_results_length(url, field_name, '404', 0)
+
+    def test_manufacturer_exact(self):
+        field_name = 'manufacturer'
+        for _, url in self.testing_urls.items():
+            self._check_results_length(url, field_name, '"Sony"', 1)
+            self._check_results_length(url, field_name, '"Apple"', 1)
+            self._check_results_length(url, field_name, '"Sony Ericsson"', 1)
+            self._check_results_length(url, field_name, '"Manu 404"', 0)
+
+    def test_manufacturer_icontains(self):
+        field_name = 'manufacturer'
+        for _, url in self.testing_urls.items():
+            self._check_results_length(url, field_name, 'Sony', 2)
+            self._check_results_length(url, field_name, 'pp', 1)
+            self._check_results_length(url, field_name, 'o', 3)
+
+    def test_barcode(self):
+        field_name = 'barcode'
+        self._field_exact(field_name)
+        self._field_multi(field_name)
+        self._field_icontains(field_name)
+
+    def test_sn(self):
+        field_name = 'sn'
+        self._field_exact(field_name)
+        self._field_multi(field_name)
+        self._field_icontains(field_name)
+
+    def test_niw(self):
+        field_name = 'niw'
+        self._field_exact(field_name)
+        self._field_multi(field_name)
+        self._field_icontains(field_name)

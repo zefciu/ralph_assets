@@ -47,8 +47,11 @@ def generate_imei(n):
 class OfficeInfoFactory(Factory):
     FACTORY_FOR = OfficeInfo
 
-    imei = generate_imei(15)
     purpose = AssetPurpose.others
+
+    @lazy_attribute
+    def imei(self):
+        return generate_imei(15)
 
     @lazy_attribute
     def license_key(self):
