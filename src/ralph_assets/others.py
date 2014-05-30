@@ -63,9 +63,9 @@ def get_licences_rows(filter_type='all', only_assigned=False):
         )
     yield [
         column for column in (
-            LICENCES_COLUMNS+
-            LICENCES_ASSETS_COLUMNS+
-            LICENCES_USERS_COLUMNS+
+            LICENCES_COLUMNS +
+            LICENCES_ASSETS_COLUMNS +
+            LICENCES_USERS_COLUMNS +
             ['single_cost']
         )
     ]
@@ -78,26 +78,26 @@ def get_licences_rows(filter_type='all', only_assigned=False):
             row.append(str(getattr(licence, column)))
         base_row = row
 
-        row = row+fill_empty_assets+fill_empty_licences
+        row = row + fill_empty_assets + fill_empty_licences
         if only_assigned:
             if not(licence.assets.exists() or licence.users.exists()):
                 yield row
         else:
             yield row
         if licence.number_bought > 0 and licence.price:
-            single_licence_cost = licence.price / licence.number_bought
+            single_licence_cost = str(licence.price / licence.number_bought)
         else:
             single_licence_cost = ''
         for asset in licence.assets.all().values(*LICENCES_ASSETS_COLUMNS):
             row = []
             for column in LICENCES_ASSETS_COLUMNS:
                 row.append(str(asset.get(column)))
-            yield base_row+row+fill_empty_assets+fill_empty_licences
+            yield base_row + row + fill_empty_assets + fill_empty_licences
         for user in licence.users.all().values(*LICENCES_USERS_COLUMNS):
             row = []
             for column in LICENCES_USERS_COLUMNS:
                 row.append(str(user.get(column)))
-            yield base_row+fill_empty_assets+row+[str(single_licence_cost)]
+            yield base_row + fill_empty_assets + row + [single_licence_cost]
 
 
 def get_assets_rows(filter_type='all'):

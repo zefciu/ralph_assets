@@ -72,7 +72,6 @@ class Command(BaseCommand):
         elif only_licences and not only_assets:
             for row in get_licences_rows(filter_type, only_assigned_licences):
                 writer.writerow(
-                    [unicode(item).encode("utf-8") for item in row ]
+                    [unicode(item).encode("utf-8") for item in row]
                 )
             self.stdout.write(output.getvalue())
-

@@ -94,9 +94,9 @@ class TestExportRelations(TestCase):
                     'id', 'niw', 'barcode', 'sn', 'model__category__name',
                     'model__manufacturer__name', 'model__name',
                     'user__username', 'user__first_name', 'user__last_name',
-                     'owner__username', 'owner__first_name',
-                     'owner__last_name', 'status', 'service_name__name',
-                     'property_of', 'warehouse__name',
+                    'owner__username', 'owner__first_name',
+                    'owner__last_name', 'status', 'service_name__name',
+                    'property_of', 'warehouse__name',
                 ],
                 [
                     1, 'niw=666', 'br-666', '1111-1111-1111-1111',
@@ -129,7 +129,7 @@ class TestExportRelations(TestCase):
                 [
                     'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
                     '666-999-666', '', '', '', '', '', '', '', '', '', '', '',
-                     '',
+                    '',
                 ],
                 [
                     'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
@@ -140,7 +140,7 @@ class TestExportRelations(TestCase):
                 [
                     'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
                     '666-999-666', '', '', '', '', '', '', '', '', '', 'user',
-                     'Elmer', 'Stevens', '100',
+                    'Elmer', 'Stevens', '100',
                 ],
                 [
                     'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
