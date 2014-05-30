@@ -86,16 +86,24 @@ class TestExportRelations(TestCase):
         rows = []
         for row in get_assets_rows():
             rows.append(row)
+
         self.assertEqual(
             rows,
             [
-                u'id, niw, barcode, sn, model__category__name, model__manufact'
-                'urer__name, model__name, user__username, user__first_name, us'
-                'er__last_name, owner__username, owner__first_name, owner__las'
-                't_name, status, service_name, property_of,\n',
-                u'1, niw=666, br-666, 1111-1111-1111-1111, Subcategory, Manufa'
-                'cturer1, Model1, user, Elmer, Stevens, owner, Eric, Brown, 1,'
-                ' None, None, \n',
+                [
+                    'id', 'niw', 'barcode', 'sn', 'model__category__name',
+                    'model__manufacturer__name', 'model__name',
+                    'user__username', 'user__first_name', 'user__last_name',
+                     'owner__username', 'owner__first_name',
+                     'owner__last_name', 'status', 'service_name__name',
+                     'property_of', 'warehouse__name',
+                ],
+                [
+                    1, 'niw=666', 'br-666', '1111-1111-1111-1111',
+                    'Subcategory', 'Manufacturer1', 'Model1', 'user',
+                    'Elmer', 'Stevens', 'owner', 'Eric', 'Brown', 1, None,
+                    None, 'Warehouse',
+                ],
             ]
         )
 
@@ -110,19 +118,35 @@ class TestExportRelations(TestCase):
         self.assertEqual(
             rows,
             [
-                u'niw, software_category, number_bought, price, invoice_date, '
-                'invoice_no, id, barcode, niw, user__username, user__first_nam'
-                'e, user__last_name, owner__username, owner__first_name, owner'
-                '__last_name, username, first_name, last_name,single_cost, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
-                ' , , , , , , , , , \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, 1, br'
-                '-666, niw=666, user, Elmer, Stevens, owner, Eric, Brown, , , '
-                ', 100, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
-                ' , , , , , , user, Elmer, Stevens, 100, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
-                ' , , , , , , owner, Eric, Brown, 100, \n',
+                [
+                    'niw', 'software_category', 'number_bought', 'price',
+                    'invoice_date', 'invoice_no', 'id', 'barcode', 'niw',
+                    'user__username', 'user__first_name', 'user__last_name',
+                    'owner__username', 'owner__first_name',
+                    'owner__last_name', 'username', 'first_name',
+                    'last_name', 'single_cost',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '', '', '', '', '', '', '', '', '', '', '',
+                     '',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '1', 'br-666', 'niw=666', 'user', 'Elmer',
+                    'Stevens', 'owner', 'Eric', 'Brown', '', '', '', '', '',
+                    '', '', '', '', '', '', '',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '', '', '', '', '', '', '', '', '', 'user',
+                     'Elmer', 'Stevens', '100',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '', '', '', '', '', '', '', '', '', 'owner',
+                    'Eric', 'Brown', '100',
+                ],
             ]
         )
 
@@ -137,16 +161,29 @@ class TestExportRelations(TestCase):
         self.assertEqual(
             rows,
             [
-                u'niw, software_category, number_bought, price, invoice_date, '
-                'invoice_no, id, barcode, niw, user__username, user__first_nam'
-                'e, user__last_name, owner__username, owner__first_name, owner'
-                '__last_name, username, first_name, last_name,single_cost, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, 1, br'
-                '-666, niw=666, user, Elmer, Stevens, owner, Eric, Brown, , , '
-                ', 100, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
-                ' , , , , , , user, Elmer, Stevens, 100, \n',
-                u'niw-666, soft-cat1, 10, 1000, 2014-04-28, 666-999-666, , , ,'
-                ' , , , , , , owner, Eric, Brown, 100, \n',
+                [
+                    'niw', 'software_category', 'number_bought', 'price',
+                    'invoice_date', 'invoice_no', 'id', 'barcode', 'niw',
+                    'user__username', 'user__first_name', 'user__last_name',
+                    'owner__username', 'owner__first_name',
+                    'owner__last_name', 'username', 'first_name',
+                    'last_name', 'single_cost',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '1', 'br-666', 'niw=666', 'user', 'Elmer',
+                    'Stevens', 'owner', 'Eric', 'Brown', '', '', '', '', '',
+                    '', '', '', '', '', '', '',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '', '', '', '', '', '', '', '', '',
+                    'user', 'Elmer', 'Stevens', '100',
+                ],
+                [
+                    'niw-666', 'soft-cat1', '10', '1000', '2014-04-28',
+                    '666-999-666', '', '', '', '', '', '', '', '', '',
+                    'owner', 'Eric', 'Brown', '100',
+                ],
             ]
         )

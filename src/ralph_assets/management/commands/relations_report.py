@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import csv
+import cStringIO
 import textwrap
 
 from django.core.management.base import BaseCommand
@@ -59,9 +61,18 @@ class Command(BaseCommand):
             self.stdout.write(
                 'Arguments required, type --help for more informations\n',
             )
+        output = cStringIO.StringIO()
+        writer = csv.writer(output)
         if only_assets and not only_licences:
             for row in get_assets_rows(filter_type):
-                self.stdout.write(row.encode('ascii', 'ignore'))
+                writer.writerow(
+                    [unicode(item).encode("utf-8") for item in row if item]
+                )
+            self.stdout.write(output.getvalue())
         elif only_licences and not only_assets:
             for row in get_licences_rows(filter_type, only_assigned_licences):
-                self.stdout.write(row.encode('ascii', 'ignore'))
+                writer.writerow(
+                    [unicode(item).encode("utf-8") for item in row ]
+                )
+            self.stdout.write(output.getvalue())
+

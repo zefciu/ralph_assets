@@ -24,8 +24,9 @@ ASSETS_COLUMNS = [
     'owner__first_name',
     'owner__last_name',
     'status',
-    'service_name',
+    'service_name__name',
     'property_of',
+    'warehouse__name',
 ]
 LICENCES_COLUMNS = [
     'niw',
@@ -60,19 +61,24 @@ def get_licences_rows(filter_type='all', only_assigned=False):
         queryset = Licence.objects.filter(
             asset_type=MODE2ASSET_TYPE[filter_type]
         )
-    yield "{}, {}, {},single_cost, \n".format(
-        ", ".join(LICENCES_COLUMNS),
-        ", ".join(LICENCES_ASSETS_COLUMNS),
-        ", ".join(LICENCES_USERS_COLUMNS),
-    )
-    fill_empty_assets = ", " * len(LICENCES_ASSETS_COLUMNS)
-    fill_empty_licences = ", " * len(LICENCES_USERS_COLUMNS)
+    yield [
+        column for column in (
+            LICENCES_COLUMNS+
+            LICENCES_ASSETS_COLUMNS+
+            LICENCES_USERS_COLUMNS+
+            ['single_cost']
+        )
+    ]
+
+    fill_empty_assets = [''] * len(LICENCES_ASSETS_COLUMNS)
+    fill_empty_licences = [''] * len(LICENCES_USERS_COLUMNS)
     for licence in queryset:
-        row = ""
+        row = []
         for column in LICENCES_COLUMNS:
-            row += "{}, ".format(getattr(licence, column))
+            row.append(str(getattr(licence, column)))
         base_row = row
-        row = "{}{}{}\n".format(row, fill_empty_assets, fill_empty_licences)
+
+        row = row+fill_empty_assets+fill_empty_licences
         if only_assigned:
             if not(licence.assets.exists() or licence.users.exists()):
                 yield row
@@ -83,19 +89,15 @@ def get_licences_rows(filter_type='all', only_assigned=False):
         else:
             single_licence_cost = ''
         for asset in licence.assets.all().values(*LICENCES_ASSETS_COLUMNS):
-            row = ""
+            row = []
             for column in LICENCES_ASSETS_COLUMNS:
-                row += "{}, ".format(asset.get(column))
-            yield "{}{}{}{}, \n".format(
-                base_row, row, fill_empty_licences, single_licence_cost,
-            )
+                row.append(str(asset.get(column)))
+            yield base_row+row+fill_empty_assets+fill_empty_licences
         for user in licence.users.all().values(*LICENCES_USERS_COLUMNS):
-            row = ""
+            row = []
             for column in LICENCES_USERS_COLUMNS:
-                row += "{}, ".format(user.get(column))
-            yield "{}{}{}{}, \n".format(
-                base_row, fill_empty_assets, row, single_licence_cost,
-            )
+                row.append(str(user.get(column)))
+            yield base_row+fill_empty_assets+row+[str(single_licence_cost)]
 
 
 def get_assets_rows(filter_type='all'):
@@ -105,10 +107,9 @@ def get_assets_rows(filter_type='all'):
         queryset = Asset.objects.filter(
             type=MODE2ASSET_TYPE[filter_type]
         ).values(*ASSETS_COLUMNS)
-    yield "{},\n".format(", ".join(ASSETS_COLUMNS))
+    yield ASSETS_COLUMNS
     for asset in queryset:
-        row = ""
+        row = []
         for column in ASSETS_COLUMNS:
-            row += "{}, ".format(asset.get(column))
-        row = "{}\n".format(row)
+            row.append(asset.get(column))
         yield row
