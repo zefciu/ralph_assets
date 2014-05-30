@@ -559,8 +559,8 @@ class TestSearchProductionUseDateFields(TestCase):
         self.assertEqual(len(rows_from_table), 3)
 
 
-class TestFullTextSearch(TestCase):
-
+class TestSearchEngine(TestCase):
+    """General tests for search engine."""
     def setUp(self):
         self.client = login_as_su()
         self.testing_urls = {
