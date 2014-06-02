@@ -42,20 +42,20 @@ from ralph_assets.views import (
     UserDetails,
     UserList,
 )
-from ralph_assets.views_import import XlsUploadView
-from ralph_assets.views_sam import (
+from ralph_assets.views.xls_import import XlsUploadView
+from ralph_assets.views.sam import (
     AddLicence,
     EditLicence,
     HistoryLicence,
     LicenceList,
     SoftwareCategoryList,
 )
-from ralph_assets.views_invoice_report import (
+from ralph_assets.views.invoice_report import (
     AssetInvoiceReport,
     LicenceInvoiceReport,
 )
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
-from ralph_assets.views_transition import (
+from ralph_assets.views.transition import (
     TransitionView,
     TransitionHistoryFileHandler,
 )

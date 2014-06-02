@@ -22,7 +22,7 @@ from lck.django.common import nested_commit_on_success
 from ralph_assets.views.base import get_return_link
 from ralph_assets.views.search import AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
-from ralph_assets.views_invoice_report import generate_pdf_response
+from ralph_assets.views.invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
 

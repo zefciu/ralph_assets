@@ -24,8 +24,8 @@ from ralph_assets.models import (
     Licence,
     ReportOdtSource,
 )
-from ralph_assets.views import _get_return_link, GenericSearch
-from ralph_assets.views_sam import LicenseSelectedMixin
+from ralph_assets.views import get_return_link as _get_return_link, GenericSearch
+from ralph_assets.views.sam import LicenseSelectedMixin
 from ralph_assets.views.search import AssetsSearchQueryableMixin
 
 

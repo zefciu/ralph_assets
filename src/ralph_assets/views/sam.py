@@ -27,12 +27,14 @@ from ralph_assets.forms_sam import (
     AddLicenceForm,
     EditLicenceForm,
 )
-from ralph_assets.views import (
-    AssetsBase,
-    GenericSearch,
+from ralph_assets.models_assets import ASSET_TYPE2MODE
+from ralph_assets.views.asset import (
+    Asset,
     HISTORY_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
+from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.search import GenericSearch
 
 
 LICENCE_PAGE_SIZE = 10
@@ -250,6 +252,24 @@ class EditLicence(LicenceFormView):
         self.licence = Licence.objects.get(pk=licence_id)
         self._get_form(request.POST, instance=self.licence)
         return self._save(request, *args, **kwargs)
+
+
+class DeleteLicence(AssetsBase):
+    """Delete a licence."""
+
+    def post(self, *args, **kwargs):
+        record_id = self.request.POST.get('record_id')
+        try:
+            licence = Licence.objects.get(pk=record_id)
+        except Asset.DoesNotExist:
+            messages.error(self.request, _("Selected asset doesn't exists."))
+            return HttpResponseRedirect(get_return_link(self.mode))
+        self.back_to = reverse(
+            'licence_list',
+            kwargs={'mode': ASSET_TYPE2MODE[licence.asset_type]},
+        )
+        licence.delete()
+        return HttpResponseRedirect(self.back_to)
 
 
 class HistoryLicence(AssetsBase):
