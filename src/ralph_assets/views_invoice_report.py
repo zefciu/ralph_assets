@@ -8,15 +8,14 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from django.db.models import Sum, Q
-from django.contrib import messages
 from django.conf import settings
+from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.db.models import Sum, Q
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from inkpy.api import generate_pdf
-
-from django.http import HttpResponse, HttpResponseRedirect
 
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (
@@ -122,6 +121,7 @@ class BaseInvoiceReport(GenericSearch):
         )
         generate_pdf(
             self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
         )
         try:
             with open(output_path, 'rb') as f:
