@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import csv
+import cStringIO
 import textwrap
 
 from django.core.management.base import BaseCommand
@@ -33,6 +35,14 @@ class Command(BaseCommand):
             help="Run command to get Licences relations with assets and users",
         ),
         make_option(
+            '--only-assigned-licences',
+            action='store_true',
+            dest='only_assigned_licences',
+            default=False,
+            help="Licences list show assigned items without base when only an "
+            "item has assigned, in other case, shows same licence info",
+        ),
+        make_option(
             '--filter',
             type="choice",
             dest='filter_type',
@@ -46,13 +56,22 @@ class Command(BaseCommand):
         only_licences = options['only_licences']
         only_assets = options['only_assets']
         filter_type = options['filter_type']
+        only_assigned_licences = options['only_assigned_licences']
         if not any((only_licences, only_assets)):
             self.stdout.write(
                 'Arguments required, type --help for more informations\n',
             )
+        output = cStringIO.StringIO()
+        writer = csv.writer(output)
         if only_assets and not only_licences:
             for row in get_assets_rows(filter_type):
-                self.stdout.write(row.encode('ascii', 'ignore'))
+                writer.writerow(
+                    [unicode(item).encode("utf-8") for item in row if item]
+                )
+            self.stdout.write(output.getvalue())
         elif only_licences and not only_assets:
-            for row in get_licences_rows(filter_type):
-                self.stdout.write(row.encode('ascii', 'ignore'))
+            for row in get_licences_rows(filter_type, only_assigned_licences):
+                writer.writerow(
+                    [unicode(item).encode("utf-8") for item in row]
+                )
+            self.stdout.write(output.getvalue())
