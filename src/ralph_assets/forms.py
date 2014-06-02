@@ -442,9 +442,9 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
             'status', 'barcode', 'model', 'user', 'owner', 'warehouse', 'sn',
-            'property_of', 'service_name', 'invoice_no', 'invoice_date',
-            'price', 'provider', 'task_url', 'deprecation_rate', 'order_no',
-            'source', 'deprecation_end_date',
+            'property_of', 'remarks', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'provider', 'task_url',
+            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
