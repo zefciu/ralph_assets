@@ -5,10 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from bob.views import DependencyView
+
 from django.contrib.auth.models import User
 from django.http import HttpResponseBadRequest
-
-from bob.views import DependencyView
 
 from ralph_assets.models_assets import AssetModel
 

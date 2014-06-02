@@ -9,23 +9,24 @@ import itertools as it
 import urllib
 
 from bob.data_table import DataTableColumn
+
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from ralph_assets.models_assets import MODE2ASSET_TYPE
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 
-from ralph_assets.models_history import LicenceHistoryChange
-from ralph_assets.models_sam import (
-    Licence,
-    SoftwareCategory,
-)
 from ralph_assets.forms_sam import (
     SoftwareCategorySearchForm,
     LicenceSearchForm,
     AddLicenceForm,
     EditLicenceForm,
+)
+from ralph_assets.models_assets import MODE2ASSET_TYPE
+from ralph_assets.models_history import LicenceHistoryChange
+from ralph_assets.models_sam import (
+    Licence,
+    SoftwareCategory,
 )
 from ralph_assets.models_assets import ASSET_TYPE2MODE
 from ralph_assets.views.asset import (

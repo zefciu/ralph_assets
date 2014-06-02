@@ -7,54 +7,28 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.db.models import Q
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.forms.models import modelformset_factory
-from django.db import transaction
 
 from ralph_assets.models import Asset, OfficeInfo
-
-from ralph_assets.views.base import AssetsBase, get_return_link
-from ralph_assets.views.search import AssetSearch
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
+from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.search import AssetSearch
+from ralph_assets.views.utils import _move_data, _update_office_info
 
 MAX_PAGE_SIZE = 65535
 HISTORY_PAGE_SIZE = 25
-
 MAX_BULK_EDIT_SIZE = 40
 
+
 logger = logging.getLogger(__name__)
-
-
-def _move_data(src, dst, fields):
-    for field in fields:
-        if field in src:
-            value = src.pop(field)
-            dst[field] = value
-    return src, dst
-
-
-@transaction.commit_on_success
-def _update_office_info(user, asset, office_info_data):
-    if not asset.office_info:
-        office_info = OfficeInfo()
-    else:
-        office_info = asset.office_info
-    if 'attachment' in office_info_data:
-        if office_info_data['attachment'] is None:
-            del office_info_data['attachment']
-        elif office_info_data['attachment'] is False:
-            office_info_data['attachment'] = None
-    office_info.__dict__.update(**office_info_data)
-    office_info.save(user=user)
-    asset.office_info = office_info
-    asset.save(user=user)
-    return asset
 
 
 class DeleteAsset(AssetsBase):

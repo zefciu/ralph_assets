@@ -8,15 +8,15 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
+from inkpy.api import generate_pdf
+
 from django.db.models import Sum, Q
 from django.contrib import messages
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
-
-from django.http import HttpResponse, HttpResponseRedirect
 
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (

@@ -9,23 +9,21 @@ import logging
 import re
 
 from rq import get_current_job
+from bob.data_table import DataTableMixin
 
 from django.conf import settings
 from django.db.models import Q
 from django.contrib import messages
 from django.utils.translation import ugettext_lazy as _
 
-
-from bob.data_table import DataTableMixin
-
+from ralph.util.reports import Report, set_progress
+from ralph.business.models import Venture
 from ralph_assets.forms import (
     BackOfficeSearchAssetForm,
     DataCenterSearchAssetForm,
 )
 from ralph_assets.models import Asset, AssetCategory, PartInfo, OfficeInfo
 from ralph_assets.views.base import AssetsBase, DataTableColumnAssets
-from ralph.util.reports import Report, set_progress
-from ralph.business.models import Venture
 
 
 logger = logging.getLogger(__name__)

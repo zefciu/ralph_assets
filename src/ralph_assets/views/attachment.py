@@ -7,12 +7,11 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.core.urlresolvers import reverse
 from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.forms.models import formset_factory
 from django.utils.translation import ugettext_lazy as _
 from django.http import HttpResponseRedirect
-
 
 from ralph_assets import models as assets_models
 from ralph_assets.forms import AttachmentForm

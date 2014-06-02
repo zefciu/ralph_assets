@@ -8,17 +8,15 @@ from __future__ import unicode_literals
 import logging
 from collections import Counter
 
-
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db import transaction
+from django.forms.models import formset_factory
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import get_object_or_404
-from django.forms.models import formset_factory
 
-
-from ralph_assets.models import Asset, AssetModel, PartInfo
+from ralph.util.api_assets import get_device_components
 from ralph_assets.forms import (
     AddDeviceForm,
     DeviceForm,
@@ -26,6 +24,9 @@ from ralph_assets.forms import (
     OfficeForm,
     SplitDevice,
 )
+from ralph_assets.models import Asset, AssetModel, PartInfo
+from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import AssetsBase
 from ralph_assets.views.utils import (
     _create_device,
@@ -34,9 +35,6 @@ from ralph_assets.views.utils import (
     _update_asset,
     _update_device_info,
 )
-from ralph_assets.models_history import AssetHistoryChange
-from ralph_assets.models_assets import AssetType
-from ralph.util.api_assets import get_device_components
 
 
 logger = logging.getLogger(__name__)

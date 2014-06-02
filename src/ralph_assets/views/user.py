@@ -7,8 +7,9 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.db.models import Q
 from bob.data_table import DataTableMixin
+
+from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse

@@ -9,13 +9,11 @@ import logging
 
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.utils.translation import ugettext_lazy as _
 from django.db import transaction
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.translation import ugettext_lazy as _
 
-
-from ralph_assets.views.base import AssetsBase, get_return_link
 from ralph_assets.forms import (
     AddPartForm,
     BasePartForm,
@@ -24,6 +22,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.models import Asset, PartInfo, OfficeInfo
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.views.base import AssetsBase, get_return_link
 
 
 logger = logging.getLogger(__name__)
