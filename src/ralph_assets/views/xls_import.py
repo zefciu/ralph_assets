@@ -35,7 +35,7 @@ from ralph_assets.models_assets import (
     AssetType,
 )
 from ralph_assets.models_util import add_problem, ProblemSeverity
-from ralph_assets.views import AssetsBase
+from ralph_assets.views.asset import AssetsBase
 from ralph_assets.models import (
     Asset,
     AssetCategory,

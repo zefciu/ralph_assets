@@ -23,28 +23,21 @@ from ralph_assets.api import (
     UserResource,
     WarehouseResource,
 )
-from ralph_assets.views import (
-    AddAttachment,
-    AddDevice,
-    AddPart,
+from ralph_assets.views.attachment import AddAttachment, DeleteAttachment
+from ralph_assets.views.device import AddDevice, EditDevice, SplitDeviceView
+from ralph_assets.views.user import EditUser, UserDetails, UserList
+from ralph_assets.views.part import AddPart, EditPart
+from ralph_assets.views.asset import (
     AssetSearch,
     BulkEdit,
-    CategoryDependencyView,
-    ModelDependencyView,
     DeleteAsset,
-    DeleteAttachment,
-    DeleteLicence,
-    EditDevice,
-    EditPart,
-    EditUser,
     HistoryAsset,
-    SplitDeviceView,
-    UserDetails,
-    UserList,
 )
+from ralph_assets.views.ajax import CategoryDependencyView, ModelDependencyView
 from ralph_assets.views.xls_import import XlsUploadView
 from ralph_assets.views.sam import (
     AddLicence,
+    DeleteLicence,
     EditLicence,
     HistoryLicence,
     LicenceList,
