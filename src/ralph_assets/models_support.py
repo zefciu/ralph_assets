@@ -68,8 +68,8 @@ class Support(
         default=SupportStatus.new.id,
         verbose_name=_("status"),
         choices=SupportStatus(),
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
     )
     producer = models.CharField(max_length=100, blank=True)
     supplier = models.CharField(max_length=100, blank=True)

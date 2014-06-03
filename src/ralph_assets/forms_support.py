@@ -33,8 +33,8 @@ class SupportForm(forms.ModelForm):
         model = models_support.Support
         fieldset = OrderedDict([
             ('Info', [
-                'asset_type', 'support_type', 'contract_id', 'name',
-                'description', 'price', 'date_from',
+                'asset_type', 'support_type', 'status', 'contract_id',
+                'name', 'description', 'price', 'date_from',
                 'date_to', 'escalation_path',
                 'contract_terms', 'additional_notes',
                 'sla_type', 'producer', 'supplier',
@@ -55,6 +55,7 @@ class SupportForm(forms.ModelForm):
         fields = (
             'asset_type',
             'support_type',
+            'status',
             'contract_id',
             'name',
             'description',
