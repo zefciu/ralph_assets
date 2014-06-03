@@ -9,20 +9,21 @@ import datetime
 import logging
 import uuid
 
+from inkpy.api import generate_pdf
+from lck.django.common import nested_commit_on_success
+
 from django.conf import settings
 from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from django.http import Http404, HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
-
-from inkpy.api import generate_pdf
-from lck.django.common import nested_commit_on_success
 
 from ralph_assets.views.base import get_return_link
 from ralph_assets.views.search import AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
+
 from ralph_assets.views.invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
@@ -129,9 +130,8 @@ class TransitionDispatcher(object):
             self.file_name,
         )
         generate_pdf(
-            self.template_file.template.path,
-            output_path,
-            data,
+            self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
         )
         self.report_file_patch = output_path
 

@@ -122,6 +122,7 @@ class BaseInvoiceReport(GenericSearch):
         )
         generate_pdf(
             self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
         )
         try:
             with open(output_path, 'rb') as f:
