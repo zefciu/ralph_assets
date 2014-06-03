@@ -16,7 +16,7 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.forms.models import modelformset_factory
 
-from ralph_assets.models import Asset, OfficeInfo
+from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import AssetsBase, get_return_link
