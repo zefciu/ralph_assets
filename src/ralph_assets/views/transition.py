@@ -21,7 +21,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
 
 from ralph_assets.views.base import get_return_link
-from ralph_assets.views.search import AssetSearch
+from ralph_assets.views.asset import AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
 
 from ralph_assets.views.invoice_report import generate_pdf_response

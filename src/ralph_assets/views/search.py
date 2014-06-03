@@ -274,6 +274,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         return super(GenericSearch, self).get(request, *args, **kwargs)
 
     def handle_search_data(self, request):
+        import pdb; pdb.set_trace()
         query = self.form.get_query()
         query_set = self.Model.objects.filter(query)
         self.items_count = query_set.count()
@@ -601,7 +602,3 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
                 ),
 
             ]
-
-
-class AssetSearch(Report, AssetSearchDataTable):
-    """The main-screen search form for all type of assets."""

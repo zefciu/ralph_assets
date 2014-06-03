@@ -12,19 +12,19 @@
 <div class="row"><h3>Bulk edit</h3></div>
 <form method="POST" class="form form-inline" {% dependency_data formset.forms.0 %}>
   {% csrf_token %}
-  {{ formset.management_form }}
+  {{ params.formset.management_form }}
   <div class="row overflow-x">
       <table class="table table-striped table-bordered table-condensed
         scrollable-table bulk-table"
       >
       <thead><tr>
         <th></th>
-      {% for field in formset.forms.0.visible_fields %}
+      {% for field in params.formset.forms.0.visible_fields %}
         <th>{{field.label}}</th>
       {% endfor %}
 
       </tr></thead>
-      <tbody>{% for form in formset %}
+      <tbody>{% for form in params.formset %}
         <tr>
           <td>
             {{ forloop.counter }}
