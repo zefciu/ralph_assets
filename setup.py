@@ -34,8 +34,9 @@ setup(
         'ralph>=2.0.0-rc7',
         'django-mptt==0.5.5',
         'xlrd==0.9.2',
-        'inkpy==0.0.2-alpha',
+        'inkpy==0.1.0-alpha',
         'django-search-forms[ajax]==0.3',
+        'factory-boy==2.3.1',
     ],
     entry_points={
         'django.pluggable_app': [

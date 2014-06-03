@@ -42,7 +42,7 @@ Actions available in transitions:
 Reports
 -------
 
-To generate reports files, report template should be uploaded into 'Report odt source' model. Created model's slug should be specified. lub Created model should have specified slug.
+To generate reports files, report template should be uploaded into 'Report odt source' model. Created model's slug should be specified. or Created model should have specified slug.
 And configure `INKPY <https://pypi.python.org/pypi/inkpy>`_  module.
 
 Slug definition per report may be overridden in settings file eg.::
@@ -55,3 +55,14 @@ You can use predefined slugs:
     * ``loan-asset`` - for loan asset transition
     * ``return-asset`` - for return asset transition
 
+
+Reports locale
+^^^^^^^^^^^^^^
+
+Reports generation uses Django's *LANGUAGE_CODE* setting, however there is an
+option to changed that. You can force locale only for reports by setting
+*GENERATED_DOCS_LOCALE* in django's *settings*, eg:
+
+    GENERATED_DOCS_LOCALE = 'pl'
+
+If so, all generated reports will have polish locale.

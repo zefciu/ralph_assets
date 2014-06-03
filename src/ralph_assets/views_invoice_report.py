@@ -8,15 +8,14 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from django.db.models import Sum, Q
-from django.contrib import messages
 from django.conf import settings
+from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.db.models import Sum, Q
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from inkpy.api import generate_pdf
-
-from django.http import HttpResponse, HttpResponseRedirect
 
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (
@@ -26,6 +25,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.views import _get_return_link, GenericSearch
 from ralph_assets.views_sam import LicenseSelectedMixin
+from ralph_assets.views_search import AssetsSearchQueryableMixin
 
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ class BaseInvoiceReport(GenericSearch):
         )
         generate_pdf(
             self.template_file.template.path, output_path, data,
+            settings.GENERATED_DOCS_LOCALE,
         )
         try:
             with open(output_path, 'rb') as f:
@@ -153,7 +154,7 @@ class BaseInvoiceReport(GenericSearch):
         return data
 
 
-class AssetInvoiceReport(BaseInvoiceReport):
+class AssetInvoiceReport(AssetsSearchQueryableMixin, BaseInvoiceReport):
 
     def get_all_items(self, *args, **kwargs):
         if self.request.GET.get('from_query'):
