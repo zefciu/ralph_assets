@@ -185,7 +185,7 @@ class LicenceLookup(RestrictedLookupChannel):
         return self.model.objects
 
 
-class SupportLookup(LookupChannel):
+class SupportLookup(RestrictedLookupChannel):
     model = Support
 
     def get_query(self, q, request):
