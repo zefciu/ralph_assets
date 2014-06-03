@@ -65,6 +65,15 @@ class WarehouseAdmin(ModelAdmin):
 admin.site.register(Warehouse, WarehouseAdmin)
 
 
+class BudgetInfoAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = ('name',)
+    search_fields = ('name',)
+
+
+admin.site.register(models_sam.BudgetInfo, BudgetInfoAdmin)
+
+
 class AssetAdmin(ModelAdmin):
     fields = (
         'sn',

@@ -12,6 +12,7 @@ from django.db import models
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
+    EditorTrackable,
     Named,
     TimeTrackable,
     WithConcurrentGetOrCreate,
@@ -35,6 +36,11 @@ from ralph_assets.models_util import (
 )
 from ralph.discovery.models_util import SavingUser
 
+SAM_LOOKUPS = {
+    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
+    'software_category': ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
+}
+
 
 class LicenceType(Named):
     """The type of a licence"""
@@ -55,6 +61,24 @@ class SoftwareCategory(Named, CreatableFromString):
         """Iterate over licences."""
         for licence in self.licence_set.all():
             yield licence
+
+
+class BudgetInfo(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
+    """
+    Info pointing source of money (budget) for license.
+    """
+    def __unicode__(self):
+        return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 class Licence(
@@ -154,6 +178,13 @@ class Licence(
         default=None,
     )
     service_name = models.ForeignKey(Service, null=True, blank=True)
+    budget_info = models.ForeignKey(
+        BudgetInfo,
+        blank=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT
+    )
 
     _used = None
 
@@ -180,6 +211,24 @@ class Licence(
     @used.setter
     def used(self, value):
         self._used = value
+
+
+class BudgetInfoLookup(RestrictedLookupChannel):
+    model = BudgetInfo
+
+    def get_query(self, q, request):
+        return BudgetInfo.objects.filter(
+            name__icontains=q,
+        ).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return escape(obj.name)
 
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
