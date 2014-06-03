@@ -148,6 +148,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'invoice_no',
             'licence_type',
             'manufacturer',
+            'niw',
             'number_bought',
             'order_no',
             'parent',
@@ -156,6 +157,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'provider',
             'remarks',
             'service_name',
+            'sn',
             'software_category',
             'valid_thru',
         )
@@ -192,6 +194,7 @@ class EditLicenceForm(LicenceForm):
             'invoice_no',
             'licence_type',
             'manufacturer',
+            'niw',
             'number_bought',
             'order_no',
             'parent',
@@ -200,12 +203,10 @@ class EditLicenceForm(LicenceForm):
             'provider',
             'remarks',
             'service_name',
+            'sn',
             'software_category',
             'valid_thru',
-            # unique fields to edit view
             'assets',
-            'niw',
-            'sn',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
