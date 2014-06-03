@@ -193,3 +193,13 @@ class TestBulkEdit(TestCase):
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )
+
+
+class TestBulkEditAsset(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+
+    def test_edit_form(self):
+        url = reverse('bulkedit', args=('dc',))
+        self.client.get(url)
