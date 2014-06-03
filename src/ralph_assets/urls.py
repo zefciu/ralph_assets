@@ -55,6 +55,7 @@ from ralph_assets.views_support import (
     AddSupportForm,
     EditSupportForm,
     DeleteSupportForm,
+    HistorySupport,
 )
 from ralph_assets.views_invoice_report import (
     AssetInvoiceReport,
@@ -196,6 +197,11 @@ urlpatterns = patterns(
         r'(?P<support_id>[0-9]+)$',
         login_required(EditSupportForm.as_view()),
         name='edit_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/history/support/(?P<support_id>[0-9]+)/$',
+        login_required(HistorySupport.as_view()),
+        name='support_history',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sup/delete/$',

@@ -8,10 +8,23 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'SupportType'
+        db.create_table('ralph_assets_supporttype', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+        ))
+        db.send_create_signal('ralph_assets', ['SupportType'])
+
         # Adding model 'Support'
         db.create_table('ralph_assets_support', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=75, db_index=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=75)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('cache_version', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
+            ('created_by', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'+', on_delete=models.SET_NULL, default=None, to=orm['account.Profile'], blank=True, null=True)),
+            ('modified_by', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'+', on_delete=models.SET_NULL, default=None, to=orm['account.Profile'], blank=True, null=True)),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
             ('contract_id', self.gf('django.db.models.fields.CharField')(unique=True, max_length=50)),
             ('description', self.gf('django.db.models.fields.CharField')(max_length=100, blank=True)),
             ('price', self.gf('django.db.models.fields.DecimalField')(default=0, null=True, max_digits=10, decimal_places=2, blank=True)),
@@ -30,6 +43,7 @@ class Migration(SchemaMigration):
             ('invoice_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
             ('period_in_months', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('property_of', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.AssetOwner'], null=True, on_delete=models.PROTECT, blank=True)),
+            ('support_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.SupportType'], on_delete=models.PROTECT)),
         ))
         db.send_create_signal('ralph_assets', ['Support'])
 
@@ -49,13 +63,23 @@ class Migration(SchemaMigration):
         ))
         db.create_unique('ralph_assets_support_assets', ['support_id', 'asset_id'])
 
-        # Adding field 'Asset.deprecation_end_date'
-        db.add_column('ralph_assets_asset', 'deprecation_end_date',
-                      self.gf('django.db.models.fields.DateField')(null=True, blank=True),
-                      keep_default=False)
+        # Adding model 'SupportHistoryChange'
+        db.create_table('ralph_assets_supporthistorychange', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
+            ('support', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.Support'], null=True, on_delete=models.SET_NULL, blank=True)),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['auth.User'], null=True, on_delete=models.SET_NULL, blank=True)),
+            ('field_name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=64)),
+            ('old_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
+            ('new_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
+        ))
+        db.send_create_signal('ralph_assets', ['SupportHistoryChange'])
 
 
     def backwards(self, orm):
+        # Deleting model 'SupportType'
+        db.delete_table('ralph_assets_supporttype')
+
         # Deleting model 'Support'
         db.delete_table('ralph_assets_support')
 
@@ -65,8 +89,8 @@ class Migration(SchemaMigration):
         # Removing M2M table for field assets on 'Support'
         db.delete_table('ralph_assets_support_assets')
 
-        # Deleting field 'Asset.deprecation_end_date'
-        db.delete_column('ralph_assets_asset', 'deprecation_end_date')
+        # Deleting model 'SupportHistoryChange'
+        db.delete_table('ralph_assets_supporthistorychange')
 
 
     models = {
@@ -297,14 +321,14 @@ class Migration(SchemaMigration):
             'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'niw': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
+            'niw': ('django.db.models.fields.CharField', [], {'default': "u'N/A'", 'unique': 'True', 'max_length': '200'}),
             'number_bought': ('django.db.models.fields.IntegerField', [], {}),
             'order_no': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "u'children'", 'null': 'True', 'to': "orm['ralph_assets.Licence']"}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'property_of': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetOwner']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'remarks': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
+            'remarks': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '1024', 'null': 'True', 'blank': 'True'}),
             'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'service_name': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.Service']", 'null': 'True', 'blank': 'True'}),
             'sn': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -384,16 +408,22 @@ class Migration(SchemaMigration):
             'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
             'assets': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Asset']", 'symmetrical': 'False'}),
             'attachments': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['ralph_assets.Attachment']", 'null': 'True', 'blank': 'True'}),
+            'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'contract_id': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
             'contract_terms': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'date_from': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'date_to': ('django.db.models.fields.DateField', [], {}),
+            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'description': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'escalation_path': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'invoice_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'invoice_no': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '100', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '75'}),
             'period_in_months': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'price': ('django.db.models.fields.DecimalField', [], {'default': '0', 'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
             'producer': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
@@ -401,7 +431,23 @@ class Migration(SchemaMigration):
             'serial_no': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
             'sla_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
             'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '1', 'null': 'True', 'blank': 'True'}),
-            'supplier': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'})
+            'supplier': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
+            'support_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.SupportType']", 'on_delete': 'models.PROTECT'})
+        },
+        'ralph_assets.supporthistorychange': {
+            'Meta': {'object_name': 'SupportHistoryChange'},
+            'date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
+            'field_name': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '64'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'new_value': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
+            'old_value': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
+            'support': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['ralph_assets.Support']", 'null': 'True', 'on_delete': 'models.SET_NULL', 'blank': 'True'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['auth.User']", 'null': 'True', 'on_delete': 'models.SET_NULL', 'blank': 'True'})
+        },
+        'ralph_assets.supporttype': {
+            'Meta': {'object_name': 'SupportType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
         },
         'ralph_assets.transition': {
             'Meta': {'object_name': 'Transition'},

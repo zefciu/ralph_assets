@@ -10,6 +10,7 @@ from ajax_select.fields import AutoCompleteSelectMultipleField
 from collections import OrderedDict
 from django_search_forms.fields import (
     DateRangeSearchField,
+    RelatedSearchField,
     TextSearchField,
 )
 from django import forms
@@ -19,6 +20,7 @@ from django_search_forms.form import SearchForm
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS
+from ralph_assets.models_support import SupportType
 
 
 class SupportForm(forms.ModelForm):
@@ -31,7 +33,7 @@ class SupportForm(forms.ModelForm):
         model = models_support.Support
         fieldset = OrderedDict([
             ('Info', [
-                'asset_type', 'contract_id', 'name',
+                'asset_type', 'support_type', 'contract_id', 'name',
                 'description', 'price', 'date_from',
                 'date_to', 'escalation_path',
                 'contract_terms', 'additional_notes',
@@ -52,6 +54,7 @@ class SupportForm(forms.ModelForm):
         }
         fields = (
             'asset_type',
+            'support_type',
             'contract_id',
             'name',
             'description',
@@ -84,6 +87,7 @@ class SupportSearchForm(SearchForm):
     class Meta(object):
         Model = models_support.Support
         fields = []
+    support_type = RelatedSearchField(SupportType)
     contract_id = TextSearchField()
     name = TextSearchField()
     description = TextSearchField()

@@ -9,6 +9,8 @@ from ralph_assets.views import (
     AssetsBase,
     GenericSearch,
     _get_return_link,
+    HISTORY_PAGE_SIZE,
+    MAX_PAGE_SIZE,
 )
 from bob.data_table import DataTableColumn
 from ralph_assets.models_assets import (
@@ -19,8 +21,10 @@ from ralph_assets.models_assets import (
 from django.utils.translation import ugettext_lazy as _
 from django.contrib import messages
 from django.http import HttpResponseRedirect
+from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from ralph_assets.views_sam import CheckBoxColumn
+from ralph_assets.models_history import SupportHistoryChange
 
 
 class SupportLinkColumn(DataTableColumn):
@@ -61,7 +65,7 @@ class SupportFormView(AssetsBase):
             support = self.form.save(commit=False)
             if support.asset_type is None:
                 support.asset_type = MODE2ASSET_TYPE[self.mode]
-            support.save()
+            support.save(user=self.request.user)
             self.form.save_m2m()
             messages.success(self.request, self.message)
             return HttpResponseRedirect(support.url)
@@ -89,7 +93,7 @@ class AddSupportForm(SupportFormView):
             support = self.form.save(commit=False)
             if support.asset_type is None:
                 support.asset_type = MODE2ASSET_TYPE[self.mode]
-            support.save()
+            support.save(user=self.request.user)
             messages.success(self.request, self.message)
             return HttpResponseRedirect(reverse('support_list'))
         else:
@@ -190,5 +194,44 @@ class DeleteSupportForm(AssetsBase):
             'support_list',
             kwargs={'mode': ASSET_TYPE2MODE[support.asset_type]},
         )
-        support.delete()
+        support.delete(user=self.request.user)
         return HttpResponseRedirect(self.back_to)
+
+
+class HistorySupport(AssetsBase):
+    template_name = 'assets/history.html'
+
+    def get_context_data(self, **kwargs):
+        query_variable_name = 'history_page'
+        ret = super(HistorySupport, self).get_context_data(**kwargs)
+        support_id = kwargs.get('support_id')
+        support = Support.objects.get(id=support_id)
+        history = SupportHistoryChange.objects.filter(
+            support=support,
+        ).order_by('-date')
+        try:
+            page = int(self.request.GET.get(query_variable_name, 1))
+        except ValueError:
+            page = 1
+        if page == 0:
+            page = 1
+            page_size = MAX_PAGE_SIZE
+        else:
+            page_size = HISTORY_PAGE_SIZE
+        history_page = Paginator(history, page_size).page(page)
+        ret.update({
+            'history': history,
+            'history_page': history_page,
+            'show_status_button': False,
+            'query_variable_name': query_variable_name,
+            'object': support,
+            'object_url': reverse(
+                'edit_support',
+                kwargs={
+                    'support_id': support.id,
+                    'mode': self.mode,
+                }
+            ),
+            'title': _('History support'),
+        })
+        return ret

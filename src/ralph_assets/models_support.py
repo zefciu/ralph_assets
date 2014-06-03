@@ -10,7 +10,14 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from lck.django.choices import Choices
-from lck.django.common.models import Named
+from lck.django.common.models import (
+    EditorTrackable,
+    Named,
+    SoftDeletable,
+    TimeTrackable,
+    WithConcurrentGetOrCreate,
+)
+from ralph.discovery.models_util import SavingUser
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     AssetType,
@@ -20,25 +27,25 @@ from ralph_assets.models_assets import (
 )
 
 
+class SupportType(Named):
+    """The type of a support"""
+
+
 class SupportStatus(Choices):
     _ = Choices.Choice
 
     SUPPORT = Choices.Group(0)
     new = _("new")
-    in_progress = _("in progress")
-    waiting_for_release = _("waiting for release")
-    used = _("used")
-    loan = _("loan")
-    damaged = _("damaged")
-    liquidated = _("liquidated")
-    in_service = _("in service")
-    in_repair = _("in repair")
-    ok = _("ok")
 
 
 class Support(
-    Named,
+    EditorTrackable,
+    Named.NonUnique,
     models_assets.SupportAndAsset,
+    SoftDeletable,
+    SavingUser,
+    TimeTrackable,
+    WithConcurrentGetOrCreate,
 ):
     contract_id = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=100, blank=True)
@@ -78,8 +85,15 @@ class Support(
         null=True,
         blank=True,
     )
-    # TODO type
+    support_type = models.ForeignKey(
+        SupportType,
+        on_delete=models.PROTECT,
+    )
     assets = models.ManyToManyField(Asset)
+
+    def __init__(self, *args, **kwargs):
+        self.saving_user = None
+        super(Support, self).__init__(*args, **kwargs)
 
     @property
     def url(self):
