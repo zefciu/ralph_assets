@@ -6,7 +6,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ajax_select import LookupChannel
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -30,7 +29,10 @@ from ralph_assets.models_assets import (
     CreatableFromString,
     Service,
 )
-from ralph_assets.models_util import WithForm
+from ralph_assets.models_util import (
+    RestrictedLookupChannel,
+    WithForm,
+)
 from ralph.discovery.models_util import SavingUser
 
 
@@ -180,7 +182,7 @@ class Licence(
         self._used = value
 
 
-class SoftwareCategoryLookup(LookupChannel):
+class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
 
     def get_query(self, q, request):

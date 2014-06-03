@@ -142,20 +142,24 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            'asset_type',
-            'manufacturer',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
             'accounting_id',
-            'provider',
+            'asset_type',
+            'invoice_date',
             'invoice_no',
+            'licence_type',
+            'manufacturer',
+            'niw',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
+            'remarks',
+            'service_name',
+            'sn',
+            'software_category',
+            'valid_thru',
         )
 
     sn = MultilineField(
@@ -183,25 +187,26 @@ class EditLicenceForm(LicenceForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            'asset_type',
-            'manufacturer',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
+            # common fields with add view
             'accounting_id',
-            'assets',
-            'provider',
+            'asset_type',
+            'invoice_date',
             'invoice_no',
-            'sn',
+            'licence_type',
+            'manufacturer',
             'niw',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
             'remarks',
             'service_name',
+            'sn',
+            'software_category',
+            'valid_thru',
+            'assets',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
@@ -218,8 +223,9 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
-    niw = MultiSearchField()
-    sn = TextSearchField()
+    niw = MultiSearchField(label=_('NIW'))
+    sn = TextSearchField(label=_('SN'))
+    remarks = TextSearchField(label=_('Additional remarks'))
     software_category = RelatedAjaxSearchField(
         LOOKUPS['softwarecategory'],
     )

@@ -85,7 +85,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
-            'service_name', 'location',
+            'service_name', 'location', 'remarks',
         ],
     }),
     ('User data', {
@@ -115,7 +115,8 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
-            'loan_end_date_to', 'part_info', 'niw', 'service_name', 'location',
+            'loan_end_date_to', 'part_info', 'niw', 'service_name',
+            'location', 'remarks',
         ],
     }),
     ('User data', {
@@ -412,9 +413,10 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
             'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
-            'sn', 'property_of', 'purpose', 'service_name', 'invoice_no',
-            'invoice_date', 'price', 'provider', 'task_url', 'office_info',
-            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
+            'sn', 'property_of', 'purpose', 'remarks', 'service_name',
+            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
+            'office_info', 'deprecation_rate', 'order_no', 'source',
+            'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -426,7 +428,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose',
+        label=_('Purpose'),
         required=False,
     )
     type = ChoiceField(
@@ -441,9 +443,9 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
             'status', 'barcode', 'model', 'user', 'owner', 'warehouse', 'sn',
-            'property_of', 'service_name', 'invoice_no', 'invoice_date',
-            'price', 'provider', 'task_url', 'deprecation_rate', 'order_no',
-            'source', 'deprecation_end_date',
+            'property_of', 'remarks', 'service_name', 'invoice_no',
+            'invoice_date', 'price', 'provider', 'task_url',
+            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -463,10 +465,10 @@ class DeviceForm(ModelForm):
             'u_height',
             'ralph_device_id',
         )
-    force_unlink = BooleanField(required=False, label="Force unlink")
+    force_unlink = BooleanField(required=False, label=_('Force unlink'))
     create_stock = BooleanField(
         required=False,
-        label="Create stock device",
+        label=_('Create stock device'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -476,7 +478,7 @@ class DeviceForm(ModelForm):
         self.fields['ralph_device_id'] = AutoCompleteSelectField(
             LOOKUPS['ralph_device'],
             required=False,
-            help_text='Enter ralph id, barcode, sn, or model.',
+            help_text=_('Enter ralph id, barcode, sn, or model.'),
         )
         if exclude == 'create_stock':
             del self.fields['create_stock']
@@ -546,12 +548,12 @@ class BasePartForm(ModelForm):
         self.fields['device'] = AutoCompleteSelectField(
             LOOKUPS[channel],
             required=False,
-            help_text='Enter barcode, sn, or model.',
+            help_text=_('Enter barcode, sn, or model.'),
         )
         self.fields['source_device'] = AutoCompleteSelectField(
             LOOKUPS[channel],
             required=False,
-            help_text='Enter barcode, sn, or model.',
+            help_text=_('Enter barcode, sn, or model.'),
         )
         if self.instance.source_device:
             self.fields[
@@ -821,7 +823,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
-        label=_("IMEI"), required=False,
+        label=_('IMEI'), required=False,
     )
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
@@ -992,7 +994,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     )
     imei = CharField(
         min_length=15, max_length=18, validators=[validate_imei],
-        label=_("IMEI"), required=False,
+        label=_('IMEI'), required=False,
     )
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
@@ -1108,7 +1110,7 @@ class AddPartForm(BaseAddAssetForm, MultivalFieldForm):
     '''
 
     sn = MultilineField(
-        db_field_path='sn', label=_("SN/SNs"), required=True,
+        db_field_path='sn', label=_('SN/SNs'), required=True,
         widget=Textarea(attrs={'rows': 25}),
         validators=[validate_snbcs],
     )
@@ -1125,16 +1127,16 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         Add new device form
     '''
     sn = MultilineField(
-        db_field_path='sn', label=_("SN/SNs"), required=False,
+        db_field_path='sn', label=_('SN/SNs'), required=False,
         widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
     )
     barcode = MultilineField(
-        db_field_path='barcode', label=_("Barcode/Barcodes"), required=False,
+        db_field_path='barcode', label=_('Barcode/Barcodes'), required=False,
         widget=Textarea(attrs={'rows': 25}),
         validators=[validate_snbcs],
     )
     imei = MultilineField(
-        db_field_path='office_info__imei', label=_("IMEI"), required=False,
+        db_field_path='office_info__imei', label=_('IMEI'), required=False,
         widget=Textarea(attrs={'rows': 25}),
         validators=[validate_imeis],
     )
@@ -1163,7 +1165,7 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
 
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose',
+        label=_('Purpose'),
         required=False,
     )
 
@@ -1226,7 +1228,7 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose',
+        label=_('Purpose'),
         required=False,
     )
 
@@ -1264,12 +1266,12 @@ class SearchAssetForm(Form):
     )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
-    provider = CharField(required=False, label='Provider')
+    provider = CharField(required=False, label=_('Provider'))
     status = ChoiceField(
         required=False, choices=[('', '----')] + AssetStatus(),
-        label='Status'
+        label=_('Status'),
     )
-    task_url = CharField(required=False, label='Task url')
+    task_url = CharField(required=False, label=_('Task url'))
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
@@ -1278,16 +1280,16 @@ class SearchAssetForm(Form):
         LOOKUPS['asset_user'],
         required=False,
     )
-    location = CharField(required=False, label='Location')
-    company = CharField(required=False, label='Company')
-    employee_id = CharField(required=False, label='Employee id')
-    cost_center = CharField(required=False, label='Cost center')
-    profit_center = CharField(required=False, label='Profit center')
-    department = CharField(required=False, label='Department')
+    location = CharField(required=False, label=_('Location'))
+    company = CharField(required=False, label=_('Company'))
+    employee_id = CharField(required=False, label=_('Employee id'))
+    cost_center = CharField(required=False, label=_('Cost center'))
+    profit_center = CharField(required=False, label=_('Profit center'))
+    department = CharField(required=False, label=_('Department'))
     part_info = ChoiceField(
         required=False,
         choices=[('', '----'), ('device', 'Device'), ('part', 'Part')],
-        label='Asset type'
+        label=_('Asset type'),
     )
     source = ChoiceField(
         required=False,
@@ -1295,50 +1297,47 @@ class SearchAssetForm(Form):
     )
     niw = CharField(
         required=False,
-        label='Inventory number',
+        label=_('Inventory number'),
         widget=TextInput(
             attrs={
-              'class': 'span12',
-              'title': _('separate ";" or "|" to search multiple value'),
+                'title': _('separate ";" or "|" to search multiple value'),
             },
         )
     )
     sn = CharField(
         required=False,
-        label='SN',
+        label=_('SN'),
         widget=TextInput(
             attrs={
-              'class': 'span12',
-              'title': _('separate ";" or "|" to search multiple value'),
+                'title': _('separate ";" or "|" to search multiple value'),
             },
         )
     )
     barcode = CharField(
         required=False,
-        label='Barcode',
+        label=_('Barcode'),
         widget=TextInput(
             attrs={
-              'class': 'span12',
-              'title': _('separate ";" or "|" to search multiple value'),
+                'title': _('separate ";" or "|" to search multiple value'),
             },
         )
     )
     ralph_device_id = IntegerField(
         required=False,
-        label='Ralph device id',
+        label=_('Ralph device id'),
     )
     request_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Request date",
+        label=_('Request date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     request_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
         label='',
@@ -1346,16 +1345,16 @@ class SearchAssetForm(Form):
     )
     provider_order_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Provider order date",
+        label=_('Provider order date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     provider_order_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
         label='',
@@ -1363,16 +1362,16 @@ class SearchAssetForm(Form):
     )
     delivery_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Delivery date",
+        label=_('Delivery date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     delivery_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
         label='',
@@ -1387,20 +1386,20 @@ class SearchAssetForm(Form):
                                  ('12', '6 < * <= 12'),
                                  ('6', '* <= 6'),
                                  ('deprecated', 'Deprecated'), ],
-        label='Deprecation'
+        label=_('Deprecation')
     )
     invoice_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Invoice date",
+        label=_('Invoice date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     invoice_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
         label='',
@@ -1409,27 +1408,27 @@ class SearchAssetForm(Form):
 
     production_use_date_from = DateField(
         required=False, widget=DateWidget(attrs={
-            'placeholder': 'Start YYYY-MM-DD',
+            'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label="Production use date",
+        label=_('Production use date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     production_use_date_to = DateField(
         required=False, widget=DateWidget(attrs={
             'class': 'end-date-field ',
-            'placeholder': 'End YYYY-MM-DD',
+            'placeholder': _('End YYYY-MM-DD'),
             'data-collapsed': True,
         }),
         label='')
-    unlinked = BooleanField(required=False, label="Is unlinked")
-    deleted = BooleanField(required=False, label="Include deleted")
+    unlinked = BooleanField(required=False, label=_('Is unlinked'))
+    deleted = BooleanField(required=False, label=_('Include deleted'))
     loan_end_date_from = DateField(
         required=False, widget=DateWidget(attrs={
             'placeholder': _('Start YYYY-MM-DD'),
             'data-collapsed': True,
         }),
-        label=_("Loan end date"),
+        label=_('Loan end date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     loan_end_date_to = DateField(
@@ -1442,10 +1441,14 @@ class SearchAssetForm(Form):
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
     service_name = ModelChoiceField(
-        queryset=Service.objects.all(), empty_label="----", required=False,
+        queryset=Service.objects.all(), empty_label='----', required=False,
     )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'], required=False,
+    )
+    remarks = CharField(
+        required=False,
+        label=_('Additional remarks'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1466,7 +1469,7 @@ class DataCenterSearchAssetForm(SearchAssetForm):
             type=AssetCategoryType.data_center
         ).all(),
         level_indicator='|---',
-        empty_label="---",
+        empty_label='---',
     )
     model = AutoCompleteField(
         LOOKUPS['asset_dcmodel'],
@@ -1482,10 +1485,10 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
             type=AssetCategoryType.back_office
         ).all(),
         level_indicator='|---',
-        empty_label="---",
+        empty_label='---',
     )
 
-    imei = CharField(required=False, label='IMEI')
+    imei = CharField(required=False, label=_('IMEI'))
     model = AutoCompleteField(
         LOOKUPS['asset_bomodel'],
         required=False,
@@ -1493,7 +1496,7 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
     )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
-        label='Purpose',
+        label=_('Purpose'),
         required=False,
     )
 
