@@ -142,20 +142,22 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            'asset_type',
-            'manufacturer',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
             'accounting_id',
-            'provider',
+            'asset_type',
+            'invoice_date',
             'invoice_no',
+            'licence_type',
+            'manufacturer',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
+            'remarks',
+            'service_name',
+            'software_category',
+            'valid_thru',
         )
 
     sn = MultilineField(
@@ -183,25 +185,27 @@ class EditLicenceForm(LicenceForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            'asset_type',
-            'manufacturer',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
+            # common fields with add view
             'accounting_id',
-            'assets',
-            'provider',
+            'asset_type',
+            'invoice_date',
             'invoice_no',
-            'sn',
-            'niw',
+            'licence_type',
+            'manufacturer',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
             'remarks',
             'service_name',
+            'software_category',
+            'valid_thru',
+            # unique fields to edit view
+            'assets',
+            'niw',
+            'sn',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
