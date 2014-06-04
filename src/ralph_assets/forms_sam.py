@@ -80,33 +80,12 @@ class LicenceForm(forms.ModelForm):
                 'number_bought', 'accounting_id', 'budget_info'
             ]),
         ])
-        fields = (
-            'asset_type',
-            'manufacturer',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
-            'accounting_id',
-            'assets',
-            'provider',
-            'invoice_no',
-            'sn',
-            'niw',
-            'service_name',
-            'budget_info',
-        )
-
         widgets = {
             'invoice_date': DateWidget,
             'valid_thru': DateWidget,
             'remarks': forms.Textarea(attrs={'rows': 3}),
         }
+
     parent = AutoCompleteSelectField(
         ('ralph_assets.models', 'LicenceLookup'),
         required=False,
@@ -250,6 +229,7 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
+
     niw = MultiSearchField(label=_('NIW'))
     sn = TextSearchField(label=_('SN'))
     remarks = TextSearchField(label=_('Additional remarks'))
@@ -265,7 +245,6 @@ class LicenceSearchForm(SearchForm):
     invoice_no = ExactSearchField()
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
-    order_date = DateRangeSearchField()
     order_date = DateRangeSearchField()
     budget_info = RelatedAjaxSearchField(
         models_sam.SAM_LOOKUPS['budget_info'], required=False,
