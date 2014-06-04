@@ -107,7 +107,7 @@ class LicenceForm(forms.ModelForm):
         required=False,
     )
     budget_info = AutoCompleteSelectField(
-        models_sam.SAM_LOOKUPS['budget_info'],
+        LOOKUPS['budget_info'],
         required=False,
         plugin_options=dict(
             add_link='/admin/ralph_assets/budgetinfo/add/',
@@ -247,6 +247,6 @@ class LicenceSearchForm(SearchForm):
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
     budget_info = RelatedAjaxSearchField(
-        models_sam.SAM_LOOKUPS['budget_info'], required=False,
+        LOOKUPS['budget_info'], required=False,
     )
     id = MultiSearchField(widget=forms.HiddenInput())
