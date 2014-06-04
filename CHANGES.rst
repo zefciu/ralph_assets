@@ -1,6 +1,22 @@
 Change Log
 ----------
 
+
+2.0.0-rc2
+~~~~~~~~~
+
+Released on July 3, 2014
+
+* Bugfixes in API,
+* Bugfixes in MANIFEST.in,
+* Minor improvements in admin - Assets count column in model,
+* Minor improvement in API - full model resource,
+* Minor changes in model fields,
+* Minor field changes in forms,
+* Minor JS fixes,
+* Unittests improvements - use ``factory_boy``
+
+
 2.0.0-rc1
 ~~~~~~~~~
 
