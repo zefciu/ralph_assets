@@ -9,9 +9,11 @@ import logging
 
 from bob.menu import MenuItem, MenuHeader
 from bob.data_table import DataTableColumn
+from bob.views.bulk_edit import BulkEditBase as BobBulkEditBase
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets import forms as assets_forms
@@ -187,3 +189,22 @@ class DataTableColumnAssets(DataTableColumn):
     def __init__(self, header_name, foreign_field_name=None, **kwargs):
         super(DataTableColumnAssets, self).__init__(header_name, **kwargs)
         self.foreign_field_name = foreign_field_name
+
+
+class BulkEditBase(BobBulkEditBase):
+    template_name = 'assets/bulk_edit.html'
+
+    def get_form_bulk(self):
+        if not self.form_bulk:
+            return self.form_dispatcher('BulkEditAsset')
+        else:
+            return self.form_bulk
+
+    def get_query_from_request(self, *args, **kwargs):
+        if self.request.GET.get('from_query'):
+            query = super(
+                BulkEditBase, self,
+            ).handle_search_data(self.args, self.kwargs)
+        else:
+            query = Q(pk__in=self.get_items_ids())
+        return query

@@ -7,8 +7,6 @@ from __future__ import unicode_literals
 
 import logging
 
-from bob.views.bulk_edit import BulkEditBase
-
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -16,13 +14,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.forms.models import modelformset_factory
 
-from ralph_assets.forms import SearchAssetForm
 from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import AssetsBase, BulkEditBase, get_return_link
 from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
 from ralph_assets.views.utils import _move_data, _update_office_info
 from ralph.util.reports import Report
@@ -124,31 +120,19 @@ class AssetSearch(Report, AssetSearchDataTable):
     """The main-screen search form for all type of assets."""
 
 
-class BulkEdit(BulkEditBase, _AssetSearch):
-    template_name = 'assets/bulk_edit.html'
+class AssetBulkEdit(BulkEditBase, _AssetSearch):
     model = Asset
     commit_on_valid = False
-    search_form = SearchAssetForm
 
-    def get_form_bulk(self):
-        return self.form_dispatcher('BulkEditAsset')
-
-    def get_items_ids(self, *args, **kwargs):
-        items_ids = self.request.GET.getlist('select')
-        try:
-            int_ids = map(int, items_ids)
-        except ValueError:
-            int_ids = []
-        return int_ids
-
-    def get_queryset(self, *args, **kwargs):
-        if self.request.GET.get('from_query'):
-            query = super(
-                BulkEdit, self,
-            ).handle_search_data(self.args, self.kwargs)
-        else:
-            query = Q(pk__in=self.get_items_ids())
-        return Asset.objects.filter(query)
+    def initial_forms(self, formset, queryset):
+        for idx, asset in enumerate(queryset):
+            if asset.office_info:
+                for field in ['purpose']:
+                    if field not in formset.forms[idx].fields:
+                        continue
+                    formset.forms[idx].fields[field].initial = (
+                        getattr(asset.office_info, field, None)
+                    )
 
     def save_formset(self, instances, formset):
         with transaction.commit_on_success():
@@ -164,3 +148,10 @@ class BulkEdit(BulkEditBase, _AssetSearch):
                     self.request.user, instance,
                     office_info_data,
                 )
+
+    def handle_formset_error(self, formset_error):
+        messages.error(
+            self.request,
+            _(('Please correct errors and check both "serial numbers" and '
+               '"barcodes" for duplicates'))
+        )

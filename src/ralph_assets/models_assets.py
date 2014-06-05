@@ -102,12 +102,16 @@ class AssetType(Choices):
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
     'back_office': AssetType.back_office,
+    'administration': AssetType.administration,
+    'other': AssetType.other,
 }
 
 
 ASSET_TYPE2MODE = {
     AssetType.data_center: 'dc',
     AssetType.back_office: 'back_office',
+    AssetType.administration: 'administration',
+    AssetType.other: 'other',
 }
 
 

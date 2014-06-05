@@ -21,6 +21,7 @@ from ralph_assets.forms_sam import (
     LicenceSearchForm,
     AddLicenceForm,
     EditLicenceForm,
+    BulkEditLicenceForm,
 )
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_history import LicenceHistoryChange
@@ -34,8 +35,9 @@ from ralph_assets.views.asset import (
     HISTORY_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import AssetsBase, get_return_link, BulkEditBase
 from ralph_assets.views.search import GenericSearch
+from ralph.ui.views.common import Base
 
 
 LICENCE_PAGE_SIZE = 10
@@ -43,6 +45,10 @@ LICENCE_PAGE_SIZE = 10
 
 class LicenseSelectedMixin(object):
     mainmenu_selected = 'licences'
+
+
+class LicenceBaseView(LicenseSelectedMixin, AssetsBase):
+    mode = 'back_office'
 
 
 class SoftwareCategoryNameColumn(DataTableColumn):
@@ -171,7 +177,7 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
     ]
 
 
-class LicenceFormView(LicenseSelectedMixin, AssetsBase):
+class LicenceFormView(LicenceBaseView):
     """Base view that displays licence form."""
 
     template_name = 'assets/add_licence.html'
@@ -253,6 +259,12 @@ class EditLicence(LicenceFormView):
         self.licence = Licence.objects.get(pk=licence_id)
         self._get_form(request.POST, instance=self.licence)
         return self._save(request, *args, **kwargs)
+
+
+class LicenceBulkEdit(LicenceList, BulkEditBase):
+    model = Licence
+    template_name = 'assets/bulk_edit.html'
+    form_bulk = BulkEditLicenceForm
 
 
 class DeleteLicence(AssetsBase):

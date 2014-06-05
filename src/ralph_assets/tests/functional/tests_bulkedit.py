@@ -128,13 +128,15 @@ class TestBulkEdit(TestCase):
                 barcode='bc-4444-4444-4444-4444',
             )
         ]
-        counter = 0
-        for data in correct_data:
+        for counter, data in enumerate(correct_data):
+            # print(counter, data)
             for key in data.keys():
                 self.assertEqual(
-                    unicode(getattr(fields[counter], key)), unicode(data[key])
+                    unicode(getattr(fields[counter], key)), unicode(data[key]),
+                    'returned {} expected {} for field {}'.format(
+                        getattr(fields[counter], key), data[key], key
+                    )
                 )
-            counter += 1
 
     def _test_showing_form_data(self, mode, asset_id, asset_data):
         """
