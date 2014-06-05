@@ -22,7 +22,10 @@ from django_search_forms.fields import (
     RelatedSearchField,
     TextSearchField,
 )
-from django_search_forms.fields_ajax import RelatedAjaxSearchField
+from django_search_forms.fields_ajax import (
+    RelatedAjaxSearchField,
+    AjaxTextSearch,
+)
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
@@ -246,7 +249,7 @@ class LicenceSearchForm(SearchForm):
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
-    budget_info = RelatedAjaxSearchField(
-        LOOKUPS['budget_info'], required=False,
+    budget_info = AjaxTextSearch(
+        '__name', LOOKUPS['budget_info'], required=False
     )
     id = MultiSearchField(widget=forms.HiddenInput())
