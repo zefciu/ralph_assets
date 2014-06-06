@@ -601,7 +601,3 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
                 ),
 
             ]
-
-
-class AssetSearch(Report, AssetSearchDataTable):
-    """The main-screen search form for all type of assets."""

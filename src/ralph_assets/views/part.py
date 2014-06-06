@@ -9,7 +9,6 @@ import logging
 
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.db import transaction
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
@@ -20,79 +19,19 @@ from ralph_assets.forms import (
     EditPartForm,
     OfficeForm,
 )
-from ralph_assets.models import Asset, PartInfo, OfficeInfo
+from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.utils import (
+    _create_part,
+    _update_asset,
+    _update_office_info,
+    _move_data,
+    _update_part_info,
+)
 
 
 logger = logging.getLogger(__name__)
-
-
-def _move_data(src, dst, fields):
-    for field in fields:
-        if field in src:
-            value = src.pop(field)
-            dst[field] = value
-    return src, dst
-
-
-@transaction.commit_on_success
-def _update_office_info(user, asset, office_info_data):
-    if not asset.office_info:
-        office_info = OfficeInfo()
-    else:
-        office_info = asset.office_info
-    if 'attachment' in office_info_data:
-        if office_info_data['attachment'] is None:
-            del office_info_data['attachment']
-        elif office_info_data['attachment'] is False:
-            office_info_data['attachment'] = None
-    office_info.__dict__.update(**office_info_data)
-    office_info.save(user=user)
-    asset.office_info = office_info
-    asset.save(user=user)
-    return asset
-
-
-@transaction.commit_on_success
-def _update_part_info(user, asset, part_info_data):
-    if not asset.part_info:
-        part_info = PartInfo()
-    else:
-        part_info = asset.part_info
-    part_info.device = part_info_data.get('device')
-    part_info.source_device = part_info_data.get('source_device')
-    part_info.barcode_salvaged = part_info_data.get('barcode_salvaged')
-    part_info.save(user=user)
-    asset.part_info = part_info
-    asset.part_info.save(user=user)
-    return asset
-
-
-@transaction.commit_on_success
-def _update_asset(modifier_profile, asset, asset_updated_data):
-    if (
-        'barcode' not in asset_updated_data or
-        not asset_updated_data['barcode']
-    ):
-        asset_updated_data['barcode'] = None
-    asset_updated_data.update({'modified_by': modifier_profile})
-    asset.__dict__.update(**asset_updated_data)
-    return asset
-
-
-@transaction.commit_on_success
-def _create_part(creator_profile, asset_data, part_info_data, sn):
-    part_info = PartInfo(**part_info_data)
-    part_info.save(user=creator_profile.user)
-    asset = Asset(
-        part_info=part_info,
-        sn=sn.strip(),
-        created_by=creator_profile,
-        **asset_data
-    )
-    asset.save(user=creator_profile.user)
-    return asset.id
 
 
 class AddPart(AssetsBase):

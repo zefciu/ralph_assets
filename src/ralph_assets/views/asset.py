@@ -20,8 +20,9 @@ from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import AssetsBase, get_return_link
-from ralph_assets.views.search import AssetSearch
+from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
 from ralph_assets.views.utils import _move_data, _update_office_info
+from ralph.util.reports import Report
 
 MAX_PAGE_SIZE = 65535
 HISTORY_PAGE_SIZE = 25
@@ -29,6 +30,10 @@ MAX_BULK_EDIT_SIZE = 40
 
 
 logger = logging.getLogger(__name__)
+
+
+class AssetSearch(Report, AssetSearchDataTable):
+    """The main-screen search form for all type of assets."""
 
 
 class DeleteAsset(AssetsBase):
@@ -117,7 +122,7 @@ class HistoryAsset(AssetsBase):
         return ret
 
 
-class BulkEdit(AssetSearch):
+class BulkEdit(_AssetSearch):
     template_name = 'assets/bulk_edit.html'
 
     def dispatch(self, request, mode=None, *args, **kwargs):
