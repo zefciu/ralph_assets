@@ -208,7 +208,13 @@ admin.site.register(Service, ServiceAdmin)
 
 
 class LicenceAdmin(ModelAdmin):
-    raw_id_fields = ('manufacturer', 'property_of', 'parent', 'assets',
-                     'software_category', 'users')
+    raw_id_fields = (
+        'manufacturer',
+        'property_of',
+        'parent',
+        'assets',
+        'software_category',
+        'users'
+    )
 
 admin.site.register(Licence)
