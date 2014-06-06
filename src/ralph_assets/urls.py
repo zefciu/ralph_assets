@@ -34,7 +34,7 @@ from ralph_assets.views.asset import (
     HistoryAsset,
 )
 from ralph_assets.views.ajax import CategoryDependencyView, ModelDependencyView
-from ralph_assets.views.xls_import import XlsUploadView
+from ralph_assets.views.data_import import XlsUploadView
 from ralph_assets.views.sam import (
     AddLicence,
     DeleteLicence,
