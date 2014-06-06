@@ -20,7 +20,7 @@ from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import AssetsBase, get_return_link
-from ralph_assets.views.search import AssetSearch
+from ralph_assets.views.search import _AssetSearch
 from ralph_assets.views.utils import _move_data, _update_office_info
 
 MAX_PAGE_SIZE = 65535
@@ -117,7 +117,7 @@ class HistoryAsset(AssetsBase):
         return ret
 
 
-class BulkEdit(AssetSearch):
+class BulkEdit(_AssetSearch):
     template_name = 'assets/bulk_edit.html'
 
     def dispatch(self, request, mode=None, *args, **kwargs):
