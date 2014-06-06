@@ -49,25 +49,52 @@ class TestLicencesView(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.licence = LicenceFactory()
-        self.modes = ['dc', 'back_office']
 
     def _field_in_edit_form(self, field, modes=None):
-        if not modes:
-            modes = self.modes
-
-        for mode in modes:
-            url = reverse('edit_licence', args=(mode, self.licence.pk))
-            response = self.client.get(url)
-            self.assertContains(
-                response, 'id_{}'.format(field),
-                msg_prefix="Error in {} mode".format(mode),
-            )
+        url = reverse('edit_licence', args=(self.licence.pk,))
+        response = self.client.get(url)
+        self.assertContains(
+            response, 'id_{}'.format(field),
+        )
 
     def test_edit_form_contains_remarks_field(self):
         self._field_in_edit_form('remarks')
 
     def test_edit_form_contains_service_name_field(self):
         self._field_in_edit_form('service_name')
+
+    def test_bulk_edit(self):
+        num_of_licences = 10
+        fields = [
+            'asset_type',
+            'licence_type',
+            'property_of',
+            'software_category',
+            'number_bought',
+            'parent',
+            'invoice_date',
+            'valid_thru',
+            'order_no',
+            'price',
+            'accounting_id',
+            'assets',
+            'provider',
+            'invoice_no',
+            'sn',
+            'niw',
+            'remarks',
+            'service_name',
+        ]
+        licences = [LicenceFactory() for _ in range(num_of_licences)]
+        url = reverse('licence_bulkedit')
+        url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
+        response = self.client.get(url, follow=True)
+
+        for i in range(num_of_licences):
+            for key in fields:
+                self.assertIn(
+                    key, response.context['formset'][i].fields.keys()
+                )
 
 
 class DeviceEditViewTest(TestCase):

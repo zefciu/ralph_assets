@@ -261,7 +261,7 @@ class EditLicence(LicenceFormView):
         return self._save(request, *args, **kwargs)
 
 
-class LicenceBulkEdit(LicenceList, BulkEditBase):
+class LicenceBulkEdit(BulkEditBase, LicenceBaseView):
     model = Licence
     template_name = 'assets/bulk_edit.html'
     form_bulk = BulkEditLicenceForm

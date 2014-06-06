@@ -168,7 +168,6 @@ class Licence(
     def url(self):
         return reverse('edit_licence', kwargs={
             'licence_id': self.id,
-            'mode': ASSET_TYPE2MODE[self.asset_type],
         })
 
     @property

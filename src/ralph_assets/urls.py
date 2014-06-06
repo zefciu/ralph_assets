@@ -135,7 +135,12 @@ urlpatterns = patterns(
         name='transition',
     ),
     url(
-        r'(?P<mode>(back_office|dc|administration|other))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        login_required(AddAttachment.as_view()),
+        name='add_attachment'
+    ),
+    url(
+        r'add_attachment/(?P<parent>(asset|license))/$',  # noqa
         login_required(AddAttachment.as_view()),
         name='add_attachment'
     ),
@@ -155,7 +160,7 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
-        r'/sam/licences/bulkedit/',
+        r'sam/licences/bulkedit/',
         login_required(LicenceBulkEdit.as_view()),
         name='licence_bulkedit',
     ),
@@ -165,7 +170,7 @@ urlpatterns = patterns(
         name='add_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc|administration|other))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
+        r'sam/edit_licence/(?P<licence_id>[0-9]+)$',
         login_required(EditLicence.as_view()),
         name='edit_licence',
     ),
@@ -195,7 +200,7 @@ urlpatterns = patterns(
         name='user_view',
     ),
     url(
-        r'(?P<mode>(back_office|dc|administration|other))/history/licence/(?P<licence_id>[0-9]+)/$',
+        r'history/licence/(?P<licence_id>[0-9]+)/$',
         login_required(HistoryLicence.as_view()),
         name='licence_history',
     ),

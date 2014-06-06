@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from factory import (
     SubFactory,
     Sequence,
+    lazy_attribute,
     post_generation,
 )
 from factory.django import DjangoModelFactory as Factory
@@ -39,11 +40,8 @@ class SoftwareCategoryFactory(Factory):
 
 class LicenceFactory(Factory):
     FACTORY_FOR = Licence
-
     number_bought = randint(0, 150)
-    sn = str(uuid1())
     parent = None
-    niw = str(uuid1())
     invoice_date = None
     invoice_no = Sequence(lambda n: 'INVOICE-NUMBER-%s' % n)
     valid_thru = None
@@ -62,3 +60,11 @@ class LicenceFactory(Factory):
         if not create:
             return None
         return [UserFactory() for i in range(randint(1, 8))]
+
+    @lazy_attribute
+    def niw(self):
+        return str(uuid1())
+
+    @lazy_attribute
+    def sn(self):
+        return str(uuid1())
