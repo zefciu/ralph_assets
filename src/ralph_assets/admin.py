@@ -36,7 +36,6 @@ from ralph_assets import models_sam
 
 
 admin.site.register(AssetOwner)
-admin.site.register(Licence)
 admin.site.register(models_sam.LicenceType)
 admin.site.register(models_sam.SoftwareCategory)
 
@@ -216,3 +215,16 @@ class ServiceAdmin(ModelAdmin):
 
 
 admin.site.register(Service, ServiceAdmin)
+
+
+class LicenceAdmin(ModelAdmin):
+    raw_id_fields = (
+        'manufacturer',
+        'property_of',
+        'parent',
+        'assets',
+        'software_category',
+        'users'
+    )
+
+admin.site.register(Licence)
