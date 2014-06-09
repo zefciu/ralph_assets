@@ -154,6 +154,13 @@ class Licence(
         default=None,
     )
     service_name = models.ForeignKey(Service, null=True, blank=True)
+    budget_info = models.ForeignKey(
+        models_assets.BudgetInfo,
+        blank=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
 
     _used = None
 
@@ -180,6 +187,24 @@ class Licence(
     @used.setter
     def used(self, value):
         self._used = value
+
+
+class BudgetInfoLookup(RestrictedLookupChannel):
+    model = models_assets.BudgetInfo
+
+    def get_query(self, q, request):
+        return models_assets.BudgetInfo.objects.filter(
+            name__icontains=q,
+        ).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return escape(obj.name)
 
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):

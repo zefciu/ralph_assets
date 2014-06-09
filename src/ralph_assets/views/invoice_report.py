@@ -8,14 +8,15 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from django.conf import settings
-from django.contrib import messages
-from django.core.urlresolvers import reverse
+from inkpy.api import generate_pdf
+
 from django.db.models import Sum, Q
+from django.contrib import messages
+from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
-from inkpy.api import generate_pdf
 
 from ralph_assets.forms_sam import LicenceSearchForm
 from ralph_assets.models import (
@@ -23,9 +24,9 @@ from ralph_assets.models import (
     Licence,
     ReportOdtSource,
 )
-from ralph_assets.views import _get_return_link, GenericSearch
-from ralph_assets.views_sam import LicenseSelectedMixin
-from ralph_assets.views_search import AssetsSearchQueryableMixin
+from ralph_assets.views.base import get_return_link
+from ralph_assets.views.sam import LicenseSelectedMixin
+from ralph_assets.views.search import AssetsSearchQueryableMixin, GenericSearch
 
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,7 @@ class BaseInvoiceReport(GenericSearch):
     def get(self, *args, **kwargs):
         if not settings.ASSETS_REPORTS['ENABLE']:
             messages.error(self.request, _("Assets reports is disabled"))
-            return HttpResponseRedirect(_get_return_link(self.mode))
+            return HttpResponseRedirect(get_return_link(self.mode))
         if self.valid():
             return HttpResponseRedirect(self.get_return_link())
         # generate invoice report
@@ -168,11 +169,11 @@ class AssetInvoiceReport(AssetsSearchQueryableMixin, BaseInvoiceReport):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(self.ids),
+                get_return_link(self.mode), ",".join(self.ids),
             )
         else:
             url = "{}search?{}".format(
-                _get_return_link(self.mode), self.request.GET.urlencode(),
+                get_return_link(self.mode), self.request.GET.urlencode(),
             )
         return url
 
