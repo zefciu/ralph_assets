@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import logging
+
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
@@ -20,6 +22,7 @@ from django.db.models.fields import (
 from django.db.models.fields.related import RelatedField, ManyToManyField
 from django.shortcuts import render
 from django.template.defaultfilters import slugify
+
 from lck.django.common.models import Named
 
 from ralph_assets.forms_import import (
@@ -35,7 +38,7 @@ from ralph_assets.models_assets import (
     AssetType,
 )
 from ralph_assets.models_util import add_problem, ProblemSeverity
-from ralph_assets.views import AssetsBase
+from ralph_assets.views.asset import AssetsBase
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -49,6 +52,8 @@ MODE2ASSET_CATEGORY_TYPE = {
     'dc': AssetCategoryType.data_center,
     'back_office': AssetCategoryType.back_office,
 }
+
+logger = logging.getLogger(__name__)
 
 
 class XlsUploadView(SessionWizardView, AssetsBase):
