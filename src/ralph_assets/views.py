@@ -55,8 +55,6 @@ from ralph_assets.models import (
     PartInfo,
     TransitionsHistory,
 )
-from ralph_assets.forms_support import SupportContractForm
-from ralph_assets.models_support import SupportContract
 from ralph_assets.models_assets import (
     Attachment,
     AssetType,
@@ -97,7 +95,7 @@ class AssetsBase(Base):
         base_sidebar_caption = ''
         self.mainmenu_selected = self.mainmenu_selected or self.mode
         if self.mode == 'back_office':
-            base_sidebar_caption = _('lBack office actions')
+            base_sidebar_caption = _('Back office actions')
         elif self.mode == 'dc':
             base_sidebar_caption = _('Data center actions')
         ret.update({
@@ -705,7 +703,7 @@ class AddDevice(AssetsBase):
                 if f_name not in {
                     "barcode", "category", "company", "cost_center",
                     "department", "employee_id", "imei", "licences", "manager",
-                    "sn", "profit_center",
+                    "sn", "profit_center", "supports"
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -939,6 +937,11 @@ class EditDevice(AssetsBase):
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
+                self.asset.support_set.clear()
+                for support in self.asset_form.cleaned_data.get(
+                    'supports', []
+                ):
+                    self.asset.support_set.add(support)
 
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
@@ -1040,6 +1043,11 @@ class EditPart(AssetsBase):
                 self.part_info_form.cleaned_data
             )
             self.asset.save(user=self.request.user)
+            self.asset.support_set.clear()
+            for support in self.asset_form.cleaned_data.get(
+                'supports', []
+            ):
+                self.asset.support_set.add(support)
             messages.success(self.request, _("Part of asset was edited."))
             cat = self.request.path.split('/')[2]
             return HttpResponseRedirect(
@@ -1251,7 +1259,8 @@ class AddPart(AssetsBase):
             asset_data = self.asset_form.cleaned_data
             for f_name in {
                 "barcode", "category", "company", "cost_center", "department",
-                "employee_id", "imei", "licences", "manager", "profit_center"
+                "employee_id", "imei", "licences", "manager", "profit_center",
+                "supports"
             }:
                 if f_name in asset_data:
                     del asset_data[f_name]
@@ -1470,106 +1479,17 @@ class SplitDeviceView(AssetsBase):
         return components
 
 
-class SupportContractFormView(AssetsBase):
-    """Base view that displays support form."""
-
-    template_name = 'assets/add_support.html'
-    sidebar_selected = None
-
-    def _get_form(self, data=None, **kwargs):
-        self.form = SupportContractForm(
-            mode=self.mode, data=data, **kwargs
-        )
-
-    def get_context_data(self, **kwargs):
-        ret = super(SupportContractFormView, self).get_context_data(**kwargs)
-        ret.update({
-            'form': self.form,
-            'form_id': 'add_support_form',
-            'edit_mode': False,
-            'caption': self.caption,
-        })
-        return ret
-
-    def _save(self, request, *args, **kwargs):
-        try:
-            support = self.form.save(commit=False)
-            if support.asset_type is None:
-                support.asset_type = MODE2ASSET_TYPE[self.mode]
-            if request.FILES:
-                support.attachment = request.FILES['attachment']
-            support.save()
-            return HttpResponseRedirect(support.url)
-        except ValueError:
-            return super(SupportContractFormView, self).get(
-                request, *args, **kwargs)
-
-
-class AddSupportContractForm(SupportContractFormView):
-    """Add a new support"""
-
-    caption = _('Add Support')
-    mainmenu_selected = 'supports'
-
-    def get(self, request, *args, **kwargs):
-        self._get_form()
-        return super(AddSupportContractForm, self).get(
-            request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        self._get_form(request.POST)
-        return self._save(request, *args, **kwargs)
-
-
-class SupportContractList(AssetsBase):
-    """The support list."""
-
-    template_name = "assets/support_list.html"
-    sidebar_selected = None
-    mainmenu_selected = 'supports'
-
-    def get_context_data(self, *args, **kwargs):
-        data = super(SupportContractList, self).get_context_data(
-            *args, **kwargs
-        )
-        if self.mode:
-            data['supports'] = SupportContract.objects.filter(
-                asset_type=MODE2ASSET_TYPE[self.mode],
-            )
-        else:
-            data['supports'] = SupportContract.objects.all()
-        return data
-
-
-class EditSupportContractForm(SupportContractFormView):
-    """Edit support"""
-
-    caption = _('Edit Support')
-
-    def get(self, request, support_id, *args, **kwargs):
-        support = SupportContract.objects.get(pk=support_id)
-        self._get_form(instance=support)
-        return super(EditSupportContractForm, self).get(
-            request, *args, **kwargs)
-
-    def post(self, request, support_id, *args, **kwargs):
-        support = SupportContract.objects.get(pk=support_id)
-        self._get_form(request.POST, instance=support)
-        return self._save(request, *args, **kwargs)
-
-
 class AddAttachment(AssetsBase):
     """
     Adding attachments to Parent.
-    Parent can be one of these models: License, Asset.
+    Parent can be one of these models: License, Asset, Support.
     """
     template_name = 'assets/add_attachment.html'
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
         if parent == 'license':
             parent = 'licence'
-        parent = parent.title()
-        self.Parent = getattr(assets_models, parent)
+        self.Parent = getattr(assets_models, parent.title())
         return super(AddAttachment, self).dispatch(
             request, mode, *args, **kwargs
         )
@@ -1627,6 +1547,7 @@ class DeleteAttachment(AssetsBase):
     parent2url_name = {
         'licence': 'edit_licence',
         'asset': 'device_edit',
+        'support': 'edit_support'
     }
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
