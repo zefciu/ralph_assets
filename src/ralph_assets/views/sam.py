@@ -37,7 +37,6 @@ from ralph_assets.views.asset import (
 )
 from ralph_assets.views.base import AssetsBase, get_return_link, BulkEditBase
 from ralph_assets.views.search import GenericSearch
-from ralph.ui.views.common import Base
 
 
 LICENCE_PAGE_SIZE = 10
@@ -48,7 +47,7 @@ class LicenseSelectedMixin(object):
 
 
 class LicenceBaseView(LicenseSelectedMixin, AssetsBase):
-    mode = 'back_office'
+    pass
 
 
 class SoftwareCategoryNameColumn(DataTableColumn):
@@ -195,7 +194,7 @@ class LicenceFormView(LicenceBaseView):
             'edit_mode': False,
             'caption': self.caption,
             'licence': getattr(self, 'licence', None),
-            'mode': self.mode,
+            'mode': 'back_office',  # -1 to technical debt
         })
         return ret
 

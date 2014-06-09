@@ -23,6 +23,7 @@ from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
 from ralph_assets.views.utils import _move_data, _update_office_info
 from ralph.util.reports import Report
 
+
 MAX_PAGE_SIZE = 65535
 HISTORY_PAGE_SIZE = 25
 

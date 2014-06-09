@@ -19,14 +19,14 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
     AssetManufacturer,
     AssetOwner,
     AssetType,
-    ASSET_TYPE2MODE,
+    Attachment,
     CreatableFromString,
+    LicenseAndAsset,
     Service,
 )
 from ralph_assets.models_util import (
@@ -58,7 +58,7 @@ class SoftwareCategory(Named, CreatableFromString):
 
 
 class Licence(
-    models_assets.LicenseAndAsset,
+    LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
     WithConcurrentGetOrCreate,
@@ -139,9 +139,7 @@ class Licence(
         verbose_name=_('Assigned Assets'),
     )
     users = models.ManyToManyField(User)
-    attachments = models.ManyToManyField(
-        models_assets.Attachment, null=True, blank=True
-    )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True

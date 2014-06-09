@@ -90,11 +90,10 @@ class TestLicencesView(TestCase):
         url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
         response = self.client.get(url, follow=True)
 
-        for i in range(num_of_licences):
-            for key in fields:
-                self.assertIn(
-                    key, response.context['formset'][i].fields.keys()
-                )
+        for key in fields:
+            self.assertIn(
+                key, response.context['formset'][0].fields.keys()
+            )
 
 
 class DeviceEditViewTest(TestCase):

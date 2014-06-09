@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 from ajax_select.fields import (
     AutoCompleteSelectField,
-    AutoCompleteField,
     AutoCompleteSelectMultipleField,
     AutoCompleteWidget,
 )
@@ -259,16 +258,16 @@ class BulkEditLicenceForm(LicenceForm):
             'assets',
             'provider',
             'invoice_no',
-            'sn',
             'niw',
-            'remarks',
             'service_name',
+            'sn',
+            'remarks',
         )
 
     def __init__(self, *args, **kwargs):
         super(BulkEditLicenceForm, self).__init__(None, *args, **kwargs)
         classes = "span12 fillable"
-        banned_fillables = set(['sn', 'barcode', 'imei'])
+        banned_fillables = set(['sn', 'niw', 'barcode', 'imei'])
         for field_name in self.fields:
             if field_name in banned_fillables:
                 classes = "span12"
