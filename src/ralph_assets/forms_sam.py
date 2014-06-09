@@ -73,7 +73,7 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets', 'remarks', 'service_name',
+                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -115,6 +115,9 @@ class LicenceForm(forms.ModelForm):
 
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset'], required=False, label=_('Assigned Assets')
+    )
+    users = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset_user'], required=False, label=_('Assigned Users')
     )
 
     def clean(self, *args, **kwargs):
@@ -207,6 +210,7 @@ class EditLicenceForm(LicenceForm):
             'software_category',
             'valid_thru',
             'assets',
+            'users',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
