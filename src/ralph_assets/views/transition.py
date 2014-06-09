@@ -9,24 +9,23 @@ import datetime
 import logging
 import uuid
 
-from django.conf import settings
-from django.contrib import messages
-from django.db.models import Q, Count
-from django.http import Http404, HttpResponseRedirect
-from django.core.urlresolvers import reverse
-from django.views.generic import TemplateView
-from django.utils.translation import ugettext_lazy as _
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
+from django.conf import settings
+from django.contrib import messages
+from django.core.urlresolvers import reverse
+from django.db.models import Q, Count
+from django.http import Http404, HttpResponseRedirect
+from django.utils.translation import ugettext_lazy as _
+from django.views.generic import TemplateView
+
+from ralph_assets.views.base import get_return_link
+from ralph_assets.views.search import _AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
-from ralph_assets.models import (
-    ReportOdtSource,
-    Transition,
-    TransitionsHistory,
-)
-from ralph_assets.views import _AssetSearch, _get_return_link
-from ralph_assets.views_invoice_report import generate_pdf_response
+
+from ralph_assets.views.invoice_report import generate_pdf_response
+from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
 
 logger = logging.getLogger(__name__)
@@ -199,11 +198,11 @@ class TransitionView(_AssetSearch):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}search?id={}".format(
-                _get_return_link(self.mode), ",".join(self.ids),
+                get_return_link(self.mode), ",".join(self.ids),
             )
         else:
             url = "{}search?{}".format(
-                _get_return_link(self.mode), self.request.GET.urlencode(),
+                get_return_link(self.mode), self.request.GET.urlencode(),
             )
         return url
 
