@@ -159,7 +159,7 @@ class Licence(
         blank=True,
         default=None,
         null=True,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
     )
 
     _used = None

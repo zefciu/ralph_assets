@@ -80,7 +80,7 @@ class LicenceForm(forms.ModelForm):
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
-                'number_bought', 'accounting_id', 'budget_info'
+                'number_bought', 'accounting_id', 'budget_info',
             ]),
         ])
         widgets = {
@@ -250,6 +250,6 @@ class LicenceSearchForm(SearchForm):
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
     budget_info = AjaxTextSearch(
-        '__name', LOOKUPS['budget_info'], required=False
+        '__name', LOOKUPS['budget_info'], required=False,
     )
     id = MultiSearchField(widget=forms.HiddenInput())

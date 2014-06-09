@@ -320,8 +320,8 @@ class BudgetInfo(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string):
+        return cls(name=string)
 
 
 class Asset(
@@ -450,7 +450,7 @@ class Asset(
         blank=True,
         default=None,
         null=True,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
     )
 
     def __unicode__(self):
