@@ -38,9 +38,6 @@ from ralph_assets.views import (
     EditPart,
     EditUser,
     HistoryAsset,
-    SupportContractList,
-    AddSupportContractForm,
-    EditSupportContractForm,
     SplitDeviceView,
     UserDetails,
     UserList,
@@ -52,6 +49,13 @@ from ralph_assets.views_sam import (
     HistoryLicence,
     LicenceList,
     SoftwareCategoryList,
+)
+from ralph_assets.views_support import (
+    SupportList,
+    AddSupportForm,
+    EditSupportForm,
+    DeleteSupportForm,
+    HistorySupport,
 )
 from ralph_assets.views_invoice_report import (
     AssetInvoiceReport,
@@ -144,7 +148,7 @@ urlpatterns = patterns(
         name='transition',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license|support))/$',  # noqa
         login_required(AddAttachment.as_view()),
         name='add_attachment'
     ),
@@ -180,19 +184,29 @@ urlpatterns = patterns(
     ),
     url(
         r'sup/supports/$',
-        login_required(SupportContractList.as_view()),
+        login_required(SupportList.as_view()),
         name='support_list',
     ),
     url(
         r'sup/add_support/$',
-        login_required(AddSupportContractForm.as_view()),
+        login_required(AddSupportForm.as_view()),
         name='add_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sup/edit_support/'
         r'(?P<support_id>[0-9]+)$',
-        login_required(EditSupportContractForm.as_view()),
+        login_required(EditSupportForm.as_view()),
         name='edit_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/history/support/(?P<support_id>[0-9]+)/$',
+        login_required(HistorySupport.as_view()),
+        name='support_history',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sup/delete/$',
+        login_required(DeleteSupportForm.as_view()),
+        name='delete_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/delete/$',
@@ -200,7 +214,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
+        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license|support))/attachment/$',  # noqa
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),

@@ -25,6 +25,7 @@ from ralph_assets.models import (
     Licence,
     ReportOdtSource,
     Service,
+    Support,
     Transition,
     TransitionsHistory,
     get_edit_url,
@@ -32,12 +33,15 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_util import ImportProblem
 from ralph_assets import models_sam
+from ralph_assets import models_support
 
 
 admin.site.register(AssetOwner)
 admin.site.register(Licence)
+admin.site.register(Support)
 admin.site.register(models_sam.LicenceType)
 admin.site.register(models_sam.SoftwareCategory)
+admin.site.register(models_support.SupportType)
 
 
 class ImportProblemAdmin(ModelAdmin):

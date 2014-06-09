@@ -153,6 +153,7 @@ LOOKUPS = {
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
+    'support': ('ralph_assets.models', 'SupportLookup'),
 }
 
 
@@ -576,6 +577,10 @@ class DependencyAssetForm(DependencyForm):
                 licence['pk']
                 for licence in kwargs['instance'].licence_set.values('pk')
             ]
+            initial['supports'] = [
+                support['pk']
+                for support in kwargs['instance'].support_set.values('pk')
+            ]
         super(DependencyAssetForm, self).__init__(*args, **kwargs)
 
     @property
@@ -853,6 +858,10 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
+    supports = AutoCompleteSelectMultipleField(
+        LOOKUPS['support'],
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
@@ -1020,6 +1029,10 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         max_length=1024,
         required=False,
     )
+    supports = AutoCompleteSelectMultipleField(
+        LOOKUPS['support'],
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
@@ -1177,7 +1190,10 @@ class OfficeForm(ModelForm):
 
 
 class EditPartForm(BaseEditAssetForm):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(EditPartForm, self).__init__(*args, **kwargs)
+        self.fieldsets = asset_fieldset()
+        self.fieldsets['Assigned supports info'] = ['supports']
 
 
 class EditDeviceForm(BaseEditAssetForm):
@@ -1186,6 +1202,7 @@ class EditDeviceForm(BaseEditAssetForm):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
+        self.fieldsets['Assigned supports info'] = ['supports']
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
