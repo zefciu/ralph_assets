@@ -154,11 +154,6 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
-        r'sam/licences/$',
-        login_required(LicenceList.as_view()),
-        name='licence_list',
-    ),
-    url(
         r'sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',

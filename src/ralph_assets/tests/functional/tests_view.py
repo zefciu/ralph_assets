@@ -7,18 +7,60 @@ from __future__ import unicode_literals
 
 import datetime
 import uuid
+from decimal import Decimal
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 
+from ralph_assets import models_assets
+from ralph_assets import models_sam
+from ralph_assets.tests.utils import assets as assets_utils
+from ralph_assets.tests.utils import sam as sam_utils
 from ralph_assets.tests.utils.assets import (
+    AssetBOFactory,
     AssetFactory,
     AssetModelFactory,
+    DCAssetFactory,
     WarehouseFactory,
 )
 from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
+
+
+def factory2post_data(_object, fields):
+    result = {}
+    for field in fields:
+        value = getattr(_object, field)
+        try:
+            value = value.id
+        except AttributeError:
+            pass
+        result[field] = value
+    return result
+
+
+def check_fields(testcase, correct_data, object_to_check):
+    """
+    Checks if *object_to_check* has the same data as *correct_data*
+
+    :param tc: testcase object
+    :param correct_data: list with of tuples: (property_name, expected_value)
+    :param object_to_check: dict with requried data
+    """
+    for prop_name, expected in correct_data:
+        object_value = getattr(object_to_check, prop_name)
+        try:
+            object_value = object_value.id
+        except AttributeError:
+            pass
+        object_value, expected = (
+            unicode(object_value), unicode(expected)
+        )
+        msg = 'Object prop. "{}" is "{}" instead of "{}"'.format(
+            prop_name, repr(object_value), repr(expected)
+        )
+        testcase.assertEqual(object_value, expected, msg)
 
 
 class TestDataDisplay(TestCase):
@@ -44,10 +86,247 @@ class TestDataDisplay(TestCase):
         self.assertEqual(self.asset, first_table_row)
 
 
+class TestDataCenterDevicesView(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+        self.mode = 'dc'
+
+    def test_add_device(self):
+        """
+        Add device with all fields filled.
+
+        - send the full asset's data with post request
+        - get saved asset from db
+        - asserts all db asset's fields with request's data
+        """
+        asset = DCAssetFactory()
+        fields = DCAssetFactory.attributes().keys()
+        asset_as_dict = factory2post_data(asset, fields=fields)
+        asset_as_dict['sn'] += str(uuid.uuid1())
+        device_info_as_dict = factory2post_data(asset.device_info, fields=[
+            'u_level', 'u_height', 'ralph_device_id',
+        ])
+        device_info_as_dict['ralph_device_id'] = ''
+
+        request_data = {}
+        request_data.update(asset_as_dict)
+        request_data.update(device_info_as_dict)
+        url = reverse('add_device', kwargs={'mode': self.mode})
+        existing_assets = models_assets.Asset.objects.reverse()
+        asset_id = existing_assets[0].id + 1 if existing_assets else 1
+        response = self.client.post(url, request_data)
+        self.assertRedirects(
+            response,
+            reverse('device_edit', kwargs={
+                'mode': self.mode, 'asset_id': asset_id
+            }),
+            status_code=302,
+            target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
+        asset_as_dict['device_info'] += 1
+        check_fields(self, asset_as_dict.items(), asset)
+        device_info_as_dict['ralph_device_id'] = asset_id
+        check_fields(self, device_info_as_dict.items(), asset.device_info)
+
+    def test_edit_device(self):
+        """
+        Add device with all fields filled.
+
+        - generate asset data d1
+        - create asset a1
+        - send data d1 via edit request to a1
+        - get a1 from db
+        - assert a1's data is the same as d1 data
+        """
+        new_asset_data = {
+            'asset': '',  # required if asset (instead of *part*) is edited
+            'barcode': 'barcode1',
+            'budget_info': assets_utils.BudgetInfoFactory().id,
+            'delivery_date': datetime.date(2013, 1, 7),
+            'deprecation_end_date': datetime.date(2013, 7, 25),
+            'deprecation_rate': 77,
+            'invoice_date': datetime.date(2009, 2, 23),
+            'invoice_no': 'Invoice no #3',
+            'loan_end_date': datetime.date(2013, 12, 29),
+            'location': 'location #3',
+            'model': assets_utils.AssetModelFactory().id,
+            'niw': 'Inventory number #3',
+            'order_no': 'Order no #3',
+            'owner': assets_utils.UserFactory().id,
+            'price': Decimal('43.45'),
+            'property_of': assets_utils.AssetOwnerFactory().id,
+            'provider': 'Provider #3',
+            'provider_order_date': datetime.date(2014, 3, 17),
+            'remarks': 'Remarks #3',
+            'request_date': datetime.date(2014, 6, 9),
+            'service_name': assets_utils.ServiceFactory().id,
+            'source': models_assets.AssetSource.shipment.id,
+            'status': models_assets.AssetStatus.new.id,
+            'task_url': 'http://www.url-3.com/',
+            'type': models_assets.AssetType.data_center.id,
+            'user': assets_utils.UserFactory().id,
+            'warehouse': assets_utils.WarehouseFactory().id,
+        }
+        new_device_data = {
+            'ralph_device_id': '',
+            'u_height': 14,
+            'u_level': 21,
+        }
+        asset = DCAssetFactory()
+        edited_data = {}
+        edited_data.update(new_asset_data)
+        edited_data.update(new_device_data)
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.post(url, edited_data)
+        self.assertRedirects(
+            response, url, status_code=302, target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.get(pk=asset.id)
+        del new_asset_data['asset']
+        check_fields(self, new_asset_data.items(), asset)
+        new_device_data['ralph_device_id'] = None
+        check_fields(self, new_device_data.items(), asset.device_info)
+
+
+class TestBackOfficeDevicesView(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+        self.mode = 'back_office'
+
+    def test_add_device(self):
+        """
+        Add device with all fields filled.
+
+        - send the full asset's data with post request
+        - get saved asset from db
+        - asserts all db asset's fields with request's data
+        """
+        asset = AssetBOFactory()
+        fields = AssetBOFactory.attributes().keys()
+        asset_as_dict = factory2post_data(asset, fields=fields)
+        asset_as_dict['sn'] += str(uuid.uuid1())
+        office_info_as_dict = factory2post_data(asset.office_info, fields=[
+            'license_key', 'coa_number', 'coa_oem_os', 'purpose',
+        ])
+
+        request_data = {}
+        request_data.update(asset_as_dict)
+        request_data.update(office_info_as_dict)
+        url = reverse('add_device', kwargs={'mode': self.mode})
+        existing_assets = models_assets.Asset.objects.reverse()
+        asset_id = existing_assets[0].id + 1 if existing_assets else 1
+        response = self.client.post(url, request_data)
+        self.assertRedirects(
+            response,
+            reverse('device_edit', kwargs={
+                'mode': self.mode, 'asset_id': asset_id
+            }),
+            status_code=302,
+            target_status_code=200,
+        )
+
+        asset_as_dict['office_info'] += 1
+        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
+        check_fields(self, asset_as_dict.items(), asset)
+        check_fields(self, office_info_as_dict.items(), asset.office_info)
+
+    def test_edit_device(self):
+        """
+        Add device with all fields filled.
+
+        - generate asset data d1
+        - create asset a1
+        - send data d1 via edit request to a1
+        - get a1 from db
+        - assert a1's data is the same as d1 data
+        """
+        new_asset_data = {
+            'asset': '',  # required if asset (instead of *part*) is edited
+            'barcode': 'barcode1',
+            'budget_info': assets_utils.BudgetInfoFactory().id,
+            'delivery_date': datetime.date(2013, 1, 7),
+            'deprecation_end_date': datetime.date(2013, 7, 25),
+            'deprecation_rate': 77,
+            'invoice_date': datetime.date(2009, 2, 23),
+            'invoice_no': 'Invoice no #3',
+            'loan_end_date': datetime.date(2013, 12, 29),
+            'location': 'location #3',
+            'model': assets_utils.AssetModelFactory().id,
+            'niw': 'Inventory number #3',
+            'order_no': 'Order no #3',
+            'owner': assets_utils.UserFactory().id,
+            'price': Decimal('43.45'),
+            'property_of': assets_utils.AssetOwnerFactory().id,
+            'provider': 'Provider #3',
+            'provider_order_date': datetime.date(2014, 3, 17),
+            'remarks': 'Remarks #3',
+            'request_date': datetime.date(2014, 6, 9),
+            'service_name': assets_utils.ServiceFactory().id,
+            'source': models_assets.AssetSource.shipment.id,
+            'status': models_assets.AssetStatus.new.id,
+            'task_url': 'http://www.url-3.com/',
+            'type': models_assets.AssetType.back_office.id,
+            'user': assets_utils.UserFactory().id,
+            'warehouse': assets_utils.WarehouseFactory().id,
+        }
+        new_office_data = {
+            'coa_oem_os': assets_utils.CoaOemOsFactory().id,
+            'purpose': models_assets.AssetPurpose.others.id,
+            'license_key': str(uuid.uuid1()),
+            'imei': assets_utils.generate_imei(15),
+            'coa_number': str(uuid.uuid1()),
+        }
+        asset = AssetBOFactory()
+        edited_data = {}
+        edited_data.update(new_asset_data)
+        edited_data.update(new_office_data)
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.post(url, edited_data)
+        self.assertRedirects(
+            response, url, status_code=302, target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.get(pk=asset.id)
+        del new_asset_data['asset']
+        check_fields(self, new_asset_data.items(), asset)
+        check_fields(self, new_office_data.items(), asset.office_info)
+
+
 class TestLicencesView(TestCase):
     """This test case concern all licences views."""
     def setUp(self):
         self.client = login_as_su()
+        self.license_data = {
+            'accounting_id': '1',
+            'asset_type': models_assets.AssetType.back_office.id,
+            # TODO: this field is not saving 'assets': '|{}|'.format(asset.id),
+            'budget_info': assets_utils.BudgetInfoFactory().id,
+            'invoice_date': datetime.date(2014, 06, 11),
+            'invoice_no': 'Invoice no',
+            'licence_type': sam_utils.LicenceTypeFactory().id,
+            'manufacturer': assets_utils.AssetManufacturerFactory().id,
+            'niw': 'Inventory number',
+            'number_bought': '99',
+            'order_no': 'Order no',
+            # TODO:: whats this 'parent': ''
+            'price': Decimal('100.99'),
+            'property_of': assets_utils.AssetOwnerFactory().id,
+            'provider': 'Provider',
+            'remarks': 'Additional remarks',
+            'service_name': assets_utils.ServiceFactory().id,
+            'sn': 'Licence key',
+            'software_category': sam_utils.SoftwareCategoryFactory().id,
+            'valid_thru': datetime.date(2014, 06, 10),
+        }
+
         self.licence = LicenceFactory()
         self.modes = ['dc', 'back_office']
 
@@ -62,6 +341,47 @@ class TestLicencesView(TestCase):
                 response, 'id_{}'.format(field),
                 msg_prefix="Error in {} mode".format(mode),
             )
+
+    def test_add_license(self):
+        """
+        Add license with all fields filled.
+
+        - send the full license's data with post request
+        - get saved license from db
+        - asserts all db license's fields with request's data
+        """
+        license = LicenceFactory()
+        request_data = self.license_data.copy()
+        response = self.client.post(reverse('add_licence'), request_data)
+        self.assertRedirects(
+            response, reverse('licence_list'), status_code=302,
+            target_status_code=200,
+        )
+        license = models_sam.Licence.objects.reverse()[0]
+        check_fields(self, request_data.items(), license)
+
+    def test_edit_license(self):
+        """
+        Edit license with all fields filled.
+        - generate license data d1
+        - create license l1
+        - send data d1 via edit request to l1
+        - get l1 from db
+        - assert l1's data is the same as d1 data
+        """
+        self.mode = 'back_office'  # TODO:: dc either?
+        new_license_data = self.license_data.copy()
+        license = LicenceFactory()
+        url = reverse('edit_licence', kwargs={
+            'mode': self.mode,
+            'licence_id': license.id,
+        })
+        response = self.client.post(url, new_license_data)
+        self.assertRedirects(
+            response, url, status_code=302, target_status_code=200,
+        )
+        license = models_sam.Licence.objects.get(pk=license.id)
+        check_fields(self, new_license_data.items(), license)
 
     def test_edit_form_contains_remarks_field(self):
         self._field_in_edit_form('remarks')
