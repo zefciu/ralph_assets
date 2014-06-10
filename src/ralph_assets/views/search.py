@@ -354,7 +354,7 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
         show_dc = (self.column_visible, 'dc')
         self.columns = [
             _('Dropdown', selectable=True, bob_tag=True),
-
+            _('Asset id', field='pk', export=True),
             _('Type', bob_tag=True),
             _('Status', field='status', sort_expression='status',
               bob_tag=True, export=True),
