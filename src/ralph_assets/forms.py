@@ -71,7 +71,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
         'deprecation_rate', 'source', 'request_date', 'provider_order_date',
-        'delivery_date', 'deprecation_end_date',
+        'delivery_date', 'deprecation_end_date', 'budget_info',
     ]),
     ('User Info', [
         'user', 'owner', 'employee_id', 'company', 'department', 'manager',
@@ -98,6 +98,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Financial data', {
         'noncollapsed': [
             'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+            'budget_info',
         ],
         'collapsed': [
             'provider', 'source', 'ralph_device_id', 'request_date_from',
@@ -129,6 +130,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Financial data', {
         'noncollapsed': [
             'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
+            'budget_info',
         ],
         'collapsed': [
             'provider', 'source', 'ralph_device_id', 'request_date_from',
@@ -153,6 +155,7 @@ LOOKUPS = {
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
+    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
 }
 
 
@@ -777,6 +780,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'loan_end_date',
             'note',
             'deprecation_end_date',
+            'budget_info',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -852,6 +856,13 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
+    )
+    budget_info = AutoCompleteSelectField(
+        LOOKUPS['budget_info'],
+        required=False,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/budgetinfo/add/',
+        )
     )
 
     def __init__(self, *args, **kwargs):
@@ -942,6 +953,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'loan_end_date',
             'note',
             'deprecation_end_date',
+            'budget_info',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -1019,6 +1031,13 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     manager = CharField(
         max_length=1024,
         required=False,
+    )
+    budget_info = AutoCompleteSelectField(
+        LOOKUPS['budget_info'],
+        required=False,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/budgetinfo/add/',
+        )
     )
 
     def __init__(self, *args, **kwargs):
@@ -1444,6 +1463,9 @@ class SearchAssetForm(Form):
     remarks = CharField(
         required=False,
         label=_('Additional remarks'),
+    )
+    budget_info = AutoCompleteField(
+        LOOKUPS['budget_info'], required=False,
     )
 
     def __init__(self, *args, **kwargs):
