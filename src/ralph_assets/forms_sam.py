@@ -77,6 +77,7 @@ class LicenceForm(forms.ModelForm):
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
                 'valid_thru', 'assets', 'users', 'remarks', 'service_name',
+                'license_details',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -85,8 +86,9 @@ class LicenceForm(forms.ModelForm):
         ])
         widgets = {
             'invoice_date': DateWidget,
-            'valid_thru': DateWidget,
+            'license_details': forms.Textarea(attrs={'rows': 3}),
             'remarks': forms.Textarea(attrs={'rows': 3}),
+            'valid_thru': DateWidget,
         }
 
     parent = AutoCompleteSelectField(
@@ -154,9 +156,11 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         fields = (
             'accounting_id',
             'asset_type',
+            'budget_info',
             'invoice_date',
             'invoice_no',
             'licence_type',
+            'license_details',
             'manufacturer',
             'niw',
             'number_bought',
@@ -170,7 +174,6 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'sn',
             'software_category',
             'valid_thru',
-            'budget_info',
         )
 
     sn = MultilineField(
@@ -198,12 +201,14 @@ class EditLicenceForm(LicenceForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            # common fields with add view
             'accounting_id',
             'asset_type',
+            'assets',
+            'budget_info',
             'invoice_date',
             'invoice_no',
             'licence_type',
+            'license_details',
             'manufacturer',
             'niw',
             'number_bought',
@@ -216,10 +221,8 @@ class EditLicenceForm(LicenceForm):
             'service_name',
             'sn',
             'software_category',
-            'valid_thru',
-            'assets',
             'users',
-            'budget_info',
+            'valid_thru',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))

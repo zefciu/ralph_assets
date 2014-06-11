@@ -296,6 +296,7 @@ class TestLicencesView(TestCase):
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
             'licence_type': sam_utils.LicenceTypeFactory().id,
+            'license_details': 'licence_details',
             'manufacturer': assets_utils.AssetManufacturerFactory().id,
             'niw': 'Inventory number',
             'number_bought': '99',
