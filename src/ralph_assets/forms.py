@@ -1272,6 +1272,7 @@ class SearchAssetForm(Form):
         LOOKUPS['asset_manufacturer'],
         required=False,
         help_text=None,
+        plugin_options={'disable_confirm': True}
     )
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
@@ -1284,10 +1285,12 @@ class SearchAssetForm(Form):
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
+        plugin_options={'disable_confirm': True}
     )
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
+        plugin_options={'disable_confirm': True}
     )
     location = CharField(required=False, label=_('Location'))
     company = CharField(required=False, label=_('Company'))
@@ -1453,7 +1456,9 @@ class SearchAssetForm(Form):
         queryset=Service.objects.all(), empty_label='----', required=False,
     )
     warehouse = AutoCompleteSelectField(
-        LOOKUPS['asset_warehouse'], required=False,
+        LOOKUPS['asset_warehouse'],
+        required=False,
+        plugin_options={'disable_confirm': True}
     )
     remarks = CharField(
         required=False,
@@ -1487,6 +1492,7 @@ class DataCenterSearchAssetForm(SearchAssetForm):
         LOOKUPS['asset_dcmodel'],
         required=False,
         help_text=None,
+        plugin_options={'disable_confirm': True}
     )
 
 
@@ -1505,6 +1511,7 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         LOOKUPS['asset_bomodel'],
         required=False,
         help_text=None,
+        plugin_options={'disable_confirm': True}
     )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
