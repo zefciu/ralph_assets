@@ -28,18 +28,6 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
 
-def factory2post_data(_object, fields):
-    result = {}
-    for field in fields:
-        value = getattr(_object, field)
-        try:
-            value = value.id
-        except AttributeError:
-            pass
-        result[field] = value
-    return result
-
-
 def check_fields(testcase, correct_data, object_to_check):
     """
     Checks if *object_to_check* has the same data as *correct_data*
@@ -303,7 +291,7 @@ class TestLicencesView(TestCase):
         self.license_data = {
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
-            # TODO:: this field is not saving 'assets': '|{}|'.format(asset.id),
+            # TODO: this field is not saving 'assets':'|{}|'.format(asset.id),
             'budget_info': assets_utils.BudgetInfoFactory().id,
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
