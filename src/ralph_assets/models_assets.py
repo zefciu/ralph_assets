@@ -314,6 +314,24 @@ class Service(Named, TimeTrackable):
     cost_center = models.CharField(max_length=1024, blank=True)
 
 
+class BudgetInfo(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
+    """
+    Info pointing source of money (budget) for *assets* and *licenses*.
+    """
+    def __unicode__(self):
+        return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
+
+
 class Asset(
     LicenseAndAsset,
     TimeTrackable,
@@ -434,6 +452,13 @@ class Asset(
         verbose_name=_('Note'),
         max_length=1024,
         blank=True,
+    )
+    budget_info = models.ForeignKey(
+        BudgetInfo,
+        blank=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT
     )
 
     def __unicode__(self):

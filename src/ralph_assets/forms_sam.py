@@ -22,7 +22,10 @@ from django_search_forms.fields import (
     RelatedSearchField,
     TextSearchField,
 )
-from django_search_forms.fields_ajax import RelatedAjaxSearchField
+from django_search_forms.fields_ajax import (
+    RelatedAjaxSearchField,
+    AjaxTextSearch,
+)
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
@@ -73,11 +76,11 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets', 'remarks', 'service_name',
+                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
-                'number_bought', 'accounting_id'
+                'number_bought', 'accounting_id', 'budget_info'
             ]),
         ])
         widgets = {
@@ -91,11 +94,6 @@ class LicenceForm(forms.ModelForm):
         required=False,
         label=_('Parent licence'),
     )
-
-    def __init__(self, mode, *args, **kwargs):
-        self.mode = mode
-        super(LicenceForm, self).__init__(*args, **kwargs)
-
     software_category = SoftwareCategoryField(
         ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
         widget=SoftwareCategoryWidget,
@@ -103,7 +101,6 @@ class LicenceForm(forms.ModelForm):
             add_link='/admin/ralph_assets/softwarecategory/add/?name=',
         )
     )
-
     manufacturer = AutoCompleteSelectField(
         ('ralph_assets.models', 'ManufacturerLookup'),
         widget=AutoCompleteWidget,
@@ -112,10 +109,23 @@ class LicenceForm(forms.ModelForm):
         ),
         required=False,
     )
-
+    budget_info = AutoCompleteSelectField(
+        LOOKUPS['budget_info'],
+        required=False,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/budgetinfo/add/',
+        )
+    )
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset'], required=False, label=_('Assigned Assets')
     )
+    users = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset_user'], required=False, label=_('Assigned Users')
+    )
+
+    def __init__(self, mode, *args, **kwargs):
+        self.mode = mode
+        super(LicenceForm, self).__init__(*args, **kwargs)
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
@@ -160,6 +170,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'sn',
             'software_category',
             'valid_thru',
+            'budget_info',
         )
 
     sn = MultilineField(
@@ -207,6 +218,8 @@ class EditLicenceForm(LicenceForm):
             'software_category',
             'valid_thru',
             'assets',
+            'users',
+            'budget_info',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
@@ -223,6 +236,7 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
+
     niw = MultiSearchField(label=_('NIW'))
     sn = TextSearchField(label=_('SN'))
     remarks = TextSearchField(label=_('Additional remarks'))
@@ -239,4 +253,7 @@ class LicenceSearchForm(SearchForm):
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
+    budget_info = AjaxTextSearch(
+        '__name', LOOKUPS['budget_info'], required=False
+    )
     id = MultiSearchField(widget=forms.HiddenInput())
