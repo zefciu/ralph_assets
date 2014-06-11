@@ -175,11 +175,7 @@ class LicenceLookup(RestrictedLookupChannel):
             escape(obj.software_category.name or ''),
             escape(obj.niw),
         )
-        return """
-            <li class='asset-container'>
-                %s
-            </li>
-            """ % (element,)
+        return element
 
     def get_base_objects(self):
         return self.model.objects
