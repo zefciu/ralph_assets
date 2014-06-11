@@ -33,7 +33,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_util import ImportProblem
 from ralph_assets.models_sam import LicenceType, SoftwareCategory
-from ralph_assets. models_support import Support, SupportType
+from ralph_assets.models_support import Support, SupportType
 
 
 admin.site.register(AssetOwner)
