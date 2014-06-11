@@ -98,7 +98,7 @@ class LicenceForm(forms.ModelForm):
         super(LicenceForm, self).__init__(*args, **kwargs)
 
     software_category = SoftwareCategoryField(
-        ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
+        ('ralph_assets.models', 'SoftwareCategoryLookup'),
         widget=SoftwareCategoryWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/softwarecategory/add/?name=',
@@ -255,7 +255,6 @@ class BulkEditLicenceForm(LicenceForm):
             'order_no',
             'price',
             'accounting_id',
-            'assets',
             'provider',
             'invoice_no',
             'niw',

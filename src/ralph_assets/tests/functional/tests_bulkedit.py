@@ -132,7 +132,6 @@ class TestBulkEdit(TestCase):
             )
         ]
         for counter, data in enumerate(correct_data):
-            # print(counter, data)
             for key in data.keys():
                 self.assertEqual(
                     unicode(getattr(fields[counter], key)), unicode(data[key]),
