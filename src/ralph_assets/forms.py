@@ -865,6 +865,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     supports = AutoCompleteSelectMultipleField(
         LOOKUPS['support'],
         required=False,
+    )
     budget_info = AutoCompleteSelectField(
         LOOKUPS['budget_info'],
         required=False,
@@ -1043,6 +1044,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     supports = AutoCompleteSelectMultipleField(
         LOOKUPS['support'],
         required=False,
+    )
     budget_info = AutoCompleteSelectField(
         LOOKUPS['budget_info'],
         required=False,
