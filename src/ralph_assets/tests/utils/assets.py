@@ -173,7 +173,6 @@ class BaseAssetFactory(Factory):
     FACTORY_FOR = Asset
 
     budget_info = SubFactory(BudgetInfoFactory)
-    # TODO: category = SubFactory(AssetCategoryFactory)
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)
@@ -195,8 +194,6 @@ class BaseAssetFactory(Factory):
     source = AssetSource.shipment
     status = AssetStatus.new
     task_url = Sequence(lambda n: 'http://www.url-{}.com/'.format(n))
-    # TODO: rm it? support_period = 24
-    # TODO: rm it? support_type = 'standard'
     user = SubFactory(UserFactory)
     warehouse = SubFactory(WarehouseFactory)
 
@@ -211,6 +208,6 @@ class DCAssetFactory(BaseAssetFactory):
 
 
 class AssetBOFactory(BaseAssetFactory):
-    # TODO: change to BOAssetFactory
+    # TODO: change to BOAssetFactory?
     type = AssetType.back_office
     office_info = SubFactory(OfficeInfoFactory)

@@ -91,56 +91,7 @@ class TestDataCenterDevicesView(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.mode = 'dc'
-
-    def test_add_device(self):
-        """
-        Add device with all fields filled.
-
-        - send the full asset's data with post request
-        - get saved asset from db
-        - asserts all db asset's fields with request's data
-        """
-        asset = DCAssetFactory()
-        fields = DCAssetFactory.attributes().keys()
-        asset_as_dict = factory2post_data(asset, fields=fields)
-        asset_as_dict['sn'] += str(uuid.uuid1())
-        device_info_as_dict = factory2post_data(asset.device_info, fields=[
-            'u_level', 'u_height', 'ralph_device_id',
-        ])
-        device_info_as_dict['ralph_device_id'] = ''
-
-        request_data = {}
-        request_data.update(asset_as_dict)
-        request_data.update(device_info_as_dict)
-        url = reverse('add_device', kwargs={'mode': self.mode})
-        existing_assets = models_assets.Asset.objects.reverse()
-        asset_id = existing_assets[0].id + 1 if existing_assets else 1
-        response = self.client.post(url, request_data)
-        self.assertRedirects(
-            response,
-            reverse('device_edit', kwargs={
-                'mode': self.mode, 'asset_id': asset_id
-            }),
-            status_code=302,
-            target_status_code=200,
-        )
-        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
-        asset_as_dict['device_info'] += 1
-        check_fields(self, asset_as_dict.items(), asset)
-        device_info_as_dict['ralph_device_id'] = asset_id
-        check_fields(self, device_info_as_dict.items(), asset.device_info)
-
-    def test_edit_device(self):
-        """
-        Add device with all fields filled.
-
-        - generate asset data d1
-        - create asset a1
-        - send data d1 via edit request to a1
-        - get a1 from db
-        - assert a1's data is the same as d1 data
-        """
-        new_asset_data = {
+        self.asset_data = {
             'asset': '',  # required if asset (instead of *part*) is edited
             'barcode': 'barcode1',
             'budget_info': assets_utils.BudgetInfoFactory().id,
@@ -169,11 +120,58 @@ class TestDataCenterDevicesView(TestCase):
             'user': assets_utils.UserFactory().id,
             'warehouse': assets_utils.WarehouseFactory().id,
         }
-        new_device_data = {
+        self.device_data = {
             'ralph_device_id': '',
             'u_height': 14,
             'u_level': 21,
         }
+
+    def test_add_device(self):
+        """
+        Add device with all fields filled.
+
+        - send the full asset's data with post request
+        - get saved asset from db
+        - asserts all db asset's fields with request's data
+        """
+        asset_data = self.asset_data.copy()
+        asset_data.update({
+            'sn': str(uuid.uuid1()),
+        })
+        device_data = self.device_data.copy()
+        request_data = {}
+        request_data.update(asset_data)
+        request_data.update(device_data)
+        url = reverse('add_device', kwargs={'mode': self.mode})
+        existing_assets = models_assets.Asset.objects.reverse()
+        asset_id = existing_assets[0].id + 1 if existing_assets else 1
+        response = self.client.post(url, request_data)
+        self.assertRedirects(
+            response,
+            reverse('device_edit', kwargs={
+                'mode': self.mode, 'asset_id': asset_id
+            }),
+            status_code=302,
+            target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
+        del asset_data['asset']
+        check_fields(self, asset_data.items(), asset)
+        device_data['ralph_device_id'] = asset_id
+        check_fields(self, device_data.items(), asset.device_info)
+
+    def test_edit_device(self):
+        """
+        Add device with all fields filled.
+
+        - generate asset data d1
+        - create asset a1
+        - send data d1 via edit request to a1
+        - get a1 from db
+        - assert a1's data is the same as d1 data
+        """
+        new_asset_data = self.asset_data.copy()
+        new_device_data = self.device_data.copy()
         asset = DCAssetFactory()
         edited_data = {}
         edited_data.update(new_asset_data)
@@ -198,55 +196,7 @@ class TestBackOfficeDevicesView(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.mode = 'back_office'
-
-    def test_add_device(self):
-        """
-        Add device with all fields filled.
-
-        - send the full asset's data with post request
-        - get saved asset from db
-        - asserts all db asset's fields with request's data
-        """
-        asset = AssetBOFactory()
-        fields = AssetBOFactory.attributes().keys()
-        asset_as_dict = factory2post_data(asset, fields=fields)
-        asset_as_dict['sn'] += str(uuid.uuid1())
-        office_info_as_dict = factory2post_data(asset.office_info, fields=[
-            'license_key', 'coa_number', 'coa_oem_os', 'purpose',
-        ])
-
-        request_data = {}
-        request_data.update(asset_as_dict)
-        request_data.update(office_info_as_dict)
-        url = reverse('add_device', kwargs={'mode': self.mode})
-        existing_assets = models_assets.Asset.objects.reverse()
-        asset_id = existing_assets[0].id + 1 if existing_assets else 1
-        response = self.client.post(url, request_data)
-        self.assertRedirects(
-            response,
-            reverse('device_edit', kwargs={
-                'mode': self.mode, 'asset_id': asset_id
-            }),
-            status_code=302,
-            target_status_code=200,
-        )
-
-        asset_as_dict['office_info'] += 1
-        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
-        check_fields(self, asset_as_dict.items(), asset)
-        check_fields(self, office_info_as_dict.items(), asset.office_info)
-
-    def test_edit_device(self):
-        """
-        Add device with all fields filled.
-
-        - generate asset data d1
-        - create asset a1
-        - send data d1 via edit request to a1
-        - get a1 from db
-        - assert a1's data is the same as d1 data
-        """
-        new_asset_data = {
+        self.asset_data = {
             'asset': '',  # required if asset (instead of *part*) is edited
             'barcode': 'barcode1',
             'budget_info': assets_utils.BudgetInfoFactory().id,
@@ -275,13 +225,59 @@ class TestBackOfficeDevicesView(TestCase):
             'user': assets_utils.UserFactory().id,
             'warehouse': assets_utils.WarehouseFactory().id,
         }
-        new_office_data = {
+        self.office_data = {
             'coa_oem_os': assets_utils.CoaOemOsFactory().id,
             'purpose': models_assets.AssetPurpose.others.id,
             'license_key': str(uuid.uuid1()),
             'imei': assets_utils.generate_imei(15),
             'coa_number': str(uuid.uuid1()),
         }
+
+    def test_add_device(self):
+        """
+        Add device with all fields filled.
+
+        - send the full asset's data with post request
+        - get saved asset from db
+        - asserts all db asset's fields with request's data
+        """
+        asset_data = self.asset_data.copy()
+        asset_data.update({
+            'sn': str(uuid.uuid1()),
+        })
+        office_data = self.office_data.copy()
+        request_data = {}
+        request_data.update(asset_data)
+        request_data.update(office_data)
+        url = reverse('add_device', kwargs={'mode': self.mode})
+        existing_assets = models_assets.Asset.objects.reverse()
+        asset_id = existing_assets[0].id + 1 if existing_assets else 1
+        response = self.client.post(url, request_data)
+        self.assertRedirects(
+            response,
+            reverse('device_edit', kwargs={
+                'mode': self.mode, 'asset_id': asset_id
+            }),
+            status_code=302,
+            target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.filter(pk=asset_id).get()
+        del asset_data['asset']
+        check_fields(self, asset_data.items(), asset)
+        check_fields(self, office_data.items(), asset.office_info)
+
+    def test_edit_device(self):
+        """
+        Add device with all fields filled.
+
+        - generate asset data d1
+        - create asset a1
+        - send data d1 via edit request to a1
+        - get a1 from db
+        - assert a1's data is the same as d1 data
+        """
+        new_asset_data = self.asset_data.copy()
+        new_office_data = self.office_data.copy()
         asset = AssetBOFactory()
         edited_data = {}
         edited_data.update(new_asset_data)
@@ -307,7 +303,7 @@ class TestLicencesView(TestCase):
         self.license_data = {
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
-            # TODO: this field is not saving 'assets': '|{}|'.format(asset.id),
+            # TODO:: this field is not saving 'assets': '|{}|'.format(asset.id),
             'budget_info': assets_utils.BudgetInfoFactory().id,
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
@@ -316,7 +312,6 @@ class TestLicencesView(TestCase):
             'niw': 'Inventory number',
             'number_bought': '99',
             'order_no': 'Order no',
-            # TODO:: whats this 'parent': ''
             'price': Decimal('100.99'),
             'property_of': assets_utils.AssetOwnerFactory().id,
             'provider': 'Provider',
@@ -369,7 +364,7 @@ class TestLicencesView(TestCase):
         - get l1 from db
         - assert l1's data is the same as d1 data
         """
-        self.mode = 'back_office'  # TODO:: dc either?
+        self.mode = 'back_office'
         new_license_data = self.license_data.copy()
         license = LicenceFactory()
         url = reverse('edit_licence', kwargs={
