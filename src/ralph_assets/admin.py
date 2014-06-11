@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
+from ralph_assets import models_assets
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -62,6 +63,15 @@ class WarehouseAdmin(ModelAdmin):
 
 
 admin.site.register(Warehouse, WarehouseAdmin)
+
+
+class BudgetInfoAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = ('name',)
+    search_fields = ('name',)
+
+
+admin.site.register(models_assets.BudgetInfo, BudgetInfoAdmin)
 
 
 class AssetAdmin(ModelAdmin):
@@ -208,6 +218,13 @@ admin.site.register(Service, ServiceAdmin)
 
 
 class LicenceAdmin(ModelAdmin):
-    raw_id_fields = ('manufacturer', 'property_of', 'parent', 'assets',
-                     'software_category', 'users')
-admin.site.register(Licence, LicenceAdmin)
+    raw_id_fields = (
+        'manufacturer',
+        'property_of',
+        'parent',
+        'assets',
+        'software_category',
+        'users'
+    )
+
+admin.site.register(Licence)
