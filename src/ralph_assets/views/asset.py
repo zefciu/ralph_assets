@@ -31,10 +31,6 @@ HISTORY_PAGE_SIZE = 25
 logger = logging.getLogger(__name__)
 
 
-class AssetSearch(Report, AssetSearchDataTable):
-    """The main-screen search form for all type of assets."""
-
-
 class DeleteAsset(AssetsBase):
 
     def post(self, *args, **kwargs):
