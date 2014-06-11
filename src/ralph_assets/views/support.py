@@ -5,9 +5,8 @@ from ralph_assets.forms_support import (
     SupportSearchForm,
 )
 from ralph_assets.models_support import Support
-from ralph_assets.views.base import AssetsBase
+from ralph_assets.views.base import AssetsBase, get_return_link
 from ralph_assets.views.search import GenericSearch
-    # _get_return_link,
 from ralph_assets.views.asset import HISTORY_PAGE_SIZE, MAX_PAGE_SIZE
 from bob.data_table import DataTableColumn
 from ralph_assets.models_assets import (
@@ -74,7 +73,7 @@ class AddSupportForm(SupportFormView):
     """Add a new support"""
 
     caption = _('Add Support')
-    mainmenu_selected = 'support_list'
+    mainmenu_selected = 'supports'
     message = _('Support added')
     Form = SupportForm
 
@@ -186,8 +185,7 @@ class DeleteSupportForm(AssetsBase):
             support = Support.objects.get(pk=record_id)
         except Asset.DoesNotExist:
             messages.error(self.request, _("Selected asset doesn't exists."))
-            # SPRAWDZIC
-            return HttpResponseRedirect(_get_return_link(self.mode))
+            return HttpResponseRedirect(get_return_link(self.mode))
         self.back_to = reverse(
             'support_list',
             kwargs={'mode': ASSET_TYPE2MODE[support.asset_type]},

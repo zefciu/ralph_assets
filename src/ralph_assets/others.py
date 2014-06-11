@@ -63,11 +63,6 @@ def get_licences_rows(filter_type='all', only_assigned=False):
         queryset = Licence.objects.filter(
             asset_type=MODE2ASSET_TYPE[filter_type]
         )
-    print(len(LICENCES_COLUMNS +
-        LICENCES_ASSETS_COLUMNS +
-        LICENCES_USERS_COLUMNS +
-        ['single_cost']
-    ), "header")
     yield (
         LICENCES_COLUMNS +
         LICENCES_ASSETS_COLUMNS +
@@ -77,21 +72,19 @@ def get_licences_rows(filter_type='all', only_assigned=False):
 
     fill_empty_assets = [''] * len(LICENCES_ASSETS_COLUMNS)
     fill_empty_licences = [''] * len(LICENCES_USERS_COLUMNS)
-    for licence in queryset[0:15]:
+    for licence in queryset:
         row = []
-        row = [smart_str(getattr(licence, column)) for column in LICENCES_COLUMNS]
+        row = [str(getattr(licence, column)) for column in LICENCES_COLUMNS]
         base_row = row
 
         row = row + fill_empty_assets + fill_empty_licences
         if only_assigned:
             if not(licence.assets.exists() or licence.users.exists()):
-                print(len(row), "assigned")
                 yield row
         else:
-            print(len(row), "only licence")
             yield row
         if licence.number_bought > 0 and licence.price:
-            single_licence_cost = smart_str(licence.price / licence.number_bought)
+            single_licence_cost = str(licence.price / licence.number_bought)
         else:
             single_licence_cost = ''
         for asset in licence.assets.all().values(*LICENCES_ASSETS_COLUMNS):
@@ -101,7 +94,6 @@ def get_licences_rows(filter_type='all', only_assigned=False):
                     asset.get(column),
                 ) for column in LICENCES_ASSETS_COLUMNS
             ]
-            print(len(base_row + row + fill_empty_assets + fill_empty_licences), "assets")
             yield base_row + row + fill_empty_assets + fill_empty_licences
         for user in licence.users.all().values(*LICENCES_USERS_COLUMNS):
             row = []
@@ -123,5 +115,5 @@ def get_assets_rows(filter_type='all'):
     yield ASSETS_COLUMNS
     for asset in queryset:
         row = []
-        row = [smart_str(asset.get(column)) for column in ASSETS_COLUMNS]
+        row = [asset.get(column) for column in ASSETS_COLUMNS]
         yield row
