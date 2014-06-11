@@ -1177,7 +1177,14 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(DataCenterAddDeviceForm, self).__init__(*args, **kwargs)
+        for after, field in (
+            ('status', 'slots'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class OfficeForm(ModelForm):
