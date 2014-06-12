@@ -150,7 +150,7 @@ class OwnerFactory(Factory):
 
 
 class AssetFactory(Factory):
-    # XXX: DEPRECATED, use: DCAssetFactory, AssetBOFactory
+    # XXX: DEPRECATED, use: DCAssetFactory, BOAssetFactory
     FACTORY_FOR = Asset
 
     type = AssetType.data_center
@@ -207,7 +207,6 @@ class DCAssetFactory(BaseAssetFactory):
     device_info = SubFactory(DeviceInfoFactory)
 
 
-class AssetBOFactory(BaseAssetFactory):
-    # TODO: change to BOAssetFactory?
+class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
     office_info = SubFactory(OfficeInfoFactory)
