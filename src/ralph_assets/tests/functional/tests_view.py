@@ -564,7 +564,7 @@ class ACLInheritanceTest(TestCase):
         - get all views v from url.py except these urls:
             - api (until it clarifies)
             - redirections
-        - assert if each view (from v) has ACLClass in omr
+        - assert if each view (from v) has ACLClass in mro
         """
         from ralph_assets import urls
         from ralph_assets.views.base import ACLGateway
