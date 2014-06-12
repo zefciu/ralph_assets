@@ -23,7 +23,7 @@ from django.views.generic import TemplateView
 from ralph_assets.views.base import get_return_link
 from ralph_assets.views.search import _AssetSearch
 from ralph_assets.forms_transitions import TransitionForm
-
+from ralph_assets.views.base import ACLGateway
 from ralph_assets.views.invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 
@@ -372,7 +372,7 @@ class TransitionView(_AssetSearch):
         return ret
 
 
-class TransitionHistoryFileHandler(TemplateView):
+class TransitionHistoryFileHandler(ACLGateway, TemplateView):
     def get_context_data(self, **kwargs):
         # we don't need data from TemplateView...
         return {}

@@ -555,3 +555,32 @@ class LookupsTest(TestCase):
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+
+class ACLInheritanceTest(TestCase):
+
+    def test_all_views_inherits_acls(self):
+        """
+        - get all views v from url.py except these urls:
+            - api (until it clarifies)
+            - redirections
+        - assert if each view (from v) has ACLClass in omr
+        """
+        from ralph_assets import urls
+        from ralph_assets.views.base import ACLGateway
+        excluded_urls_by_regexp = [
+            '^api/'  # skip it until api authen./author. is resolved
+        ]
+        for urlpattern in urls.urlpatterns:
+            if urlpattern._regex in excluded_urls_by_regexp:
+                continue
+            elif urlpattern.callback.func_name == 'RedirectView':
+                continue
+            module_name = urlpattern._callback.__module__
+            class_name = urlpattern._callback.__name__
+            imported_module = __import__(module_name, fromlist=[class_name])
+            found_class = getattr(imported_module, class_name)
+            msg = "View '{}' doesn't inherit from acl class".format(
+                '.'.join([module_name, class_name])
+            )
+            self.assertIn(ACLGateway, found_class.__mro__, msg)

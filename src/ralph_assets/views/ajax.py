@@ -11,9 +11,10 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseBadRequest
 
 from ralph_assets.models_assets import AssetModel
+from ralph_assets.views.base import ACLGateway
 
 
-class CategoryDependencyView(DependencyView):
+class CategoryDependencyView(DependencyView, ACLGateway):
     def get_values(self, value):
         try:
             profile = User.objects.get(pk=value).profile
@@ -33,7 +34,7 @@ class CategoryDependencyView(DependencyView):
         return values
 
 
-class ModelDependencyView(DependencyView):
+class ModelDependencyView(DependencyView, ACLGateway):
     def get_values(self, value):
         category = ''
         if value != '':
