@@ -107,7 +107,7 @@ MODE2ASSET_TYPE = {
 }
 
 
-ASSET_TYPE2MODE = {v:k for k,v in MODE2ASSET_TYPE.items()}
+ASSET_TYPE2MODE = {v: k for k, v in MODE2ASSET_TYPE.items()}
 
 
 class AssetPurpose(Choices):
