@@ -166,7 +166,7 @@ class TestValidations(TestCase):
 
         # if sn was duplicated, the message should be shown on the screen
         msg = SCREEN_ERROR_MESSAGES['duplicated_sn_or_bc']
-        self.assertTrue(send_post_with_empty_fields.content.find(msg))
+        self.assertTrue(msg in send_post_with_empty_fields.content)
 
     def test_add_part(self):
         """

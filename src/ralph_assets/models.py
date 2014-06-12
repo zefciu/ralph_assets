@@ -73,9 +73,9 @@ class DeviceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <span class=\"asset-model\">{model}</span>
-        <span class=\"asset-barcode\">{barcode}</span>
-        <span class=\"asset-sn\">{sn}</span>
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
         """.format(
             model=escape(obj.model),
             barcode=escape(obj.barcode or ''),
@@ -136,7 +136,7 @@ class FreeLicenceLookup(RestrictedLookupChannel):
         free = str(obj.number_bought - obj.assets.count() - obj.users.count())
         return """
         <span>{name}</span>
-        <span class=\"licence-niw\">{niw}</span>
+        <span class="licence-niw">{niw}</span>
         <span>({free} free)</span>
         """.format(
             name=escape(str(obj)),
@@ -167,9 +167,9 @@ class LicenceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-            <span class=\"licence-bought\">{bought}</span>
-            <span class=\"licence-name\">{name}</span>
-            <span class=\"licence-niw\">({niw})</span>
+            <span class="licence-bought">{bought}</span>
+            <span class="licence-name">{name}</span>
+            <span class="licence-niw">({niw})</span>
         """.format(
             bought=escape(obj.number_bought),
             name=escape(obj.software_category.name or ''),
@@ -202,9 +202,9 @@ class RalphDeviceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <span class=\"asset-model\">{model}</span>
-        <span class=\"asset-barcode\">{barcode}</span>
-        <span class=\"asset-sn\">{sn}</span>
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
         """.format(
             model=escape(obj.model),
             barcode=escape(obj.barcode or ''),
@@ -254,8 +254,8 @@ class AssetModelLookup(RestrictedLookupChannel):
         category = getattr(obj, 'category', None) or '-'
         return """
         <span>{model}</span>
-        <span class=\"auto-complete-blue\">({manufacturer})</span>
-        <span class=\"asset-category\">({category})</span>
+        <span class="auto-complete-blue">({manufacturer})</span>
+        <span class="asset-category">({category})</span>
         """.format(
             model=escape(obj.name),
             manufacturer=escape(manufacturer),
@@ -301,9 +301,7 @@ class ManufacturerLookup(RestrictedLookupChannel):
         return obj.name
 
     def format_item_display(self, obj):
-        return "<span>{name}</span>".format(
-            name=obj.name,
-        )
+        return "<span>{name}</span>".format(name=obj.name)
 
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
@@ -321,9 +319,7 @@ class SoftwareCategoryLookup(RestrictedLookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return "<span>{name}</span>".format(
-            name=obj.name,
-        )
+        return "<span>{name}</span>".format(name=obj.name)
 
 
 class WarehouseLookup(RestrictedLookupChannel):
@@ -421,7 +417,7 @@ class UserLookup(RestrictedLookupChannel):
     def format_item_display(self, obj):
         return """
         <span>{first_name} {last_name}</span>
-        <span class=\"asset-user-department\">{department}</span>
+        <span class="asset-user-department">{department}</span>
          """.format(
             first_name=obj.first_name,
             last_name=obj.last_name,

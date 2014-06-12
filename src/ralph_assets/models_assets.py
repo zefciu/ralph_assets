@@ -107,12 +107,7 @@ MODE2ASSET_TYPE = {
 }
 
 
-ASSET_TYPE2MODE = {
-    AssetType.data_center: 'dc',
-    AssetType.back_office: 'back_office',
-    AssetType.administration: 'administration',
-    AssetType.other: 'other',
-}
+ASSET_TYPE2MODE = {v:k for k,v in MODE2ASSET_TYPE.items()}
 
 
 class AssetPurpose(Choices):

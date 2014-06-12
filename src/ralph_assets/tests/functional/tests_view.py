@@ -53,9 +53,7 @@ class TestLicencesView(TestCase):
     def _field_in_edit_form(self, field, modes=None):
         url = reverse('edit_licence', args=(self.licence.pk,))
         response = self.client.get(url)
-        self.assertContains(
-            response, 'id_{}'.format(field),
-        )
+        self.assertContains(response, 'id_{}'.format(field))
 
     def test_edit_form_contains_remarks_field(self):
         self._field_in_edit_form('remarks')
