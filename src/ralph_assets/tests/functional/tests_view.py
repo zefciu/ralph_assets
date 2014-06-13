@@ -344,11 +344,9 @@ class TestLicencesView(TestCase):
         - get l1 from db
         - assert l1's data is the same as d1 data
         """
-        self.mode = 'back_office'
         new_license_data = self.license_data.copy()
         license = LicenceFactory()
         url = reverse('edit_licence', kwargs={
-            'mode': self.mode,
             'licence_id': license.id,
         })
         response = self.client.post(url, new_license_data)
