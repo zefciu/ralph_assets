@@ -35,6 +35,7 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
         asset = Asset(created_by=creator_profile, **asset_data)
         office_info = OfficeInfo()
         office_info.__dict__.update(**cleaned_additional_info)
+        office_info.coa_oem_os = cleaned_additional_info['coa_oem_os']
         office_info.save(user=creator_profile.user)
         asset.office_info = office_info
     asset.save(user=creator_profile.user)

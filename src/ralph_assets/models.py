@@ -37,6 +37,7 @@ from ralph_assets.models_sam import (
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.models_support import Support  # noqa
 from ralph_assets.models_transition import (
     Action,
     Transition,
@@ -174,6 +175,35 @@ class LicenceLookup(RestrictedLookupChannel):
             bought=escape(obj.number_bought),
             name=escape(obj.software_category.name or ''),
             niw=escape(obj.niw),
+        )
+
+    def get_base_objects(self):
+        return self.model.objects
+
+
+class SupportLookup(RestrictedLookupChannel):
+    model = Support
+
+    def get_query(self, q, request):
+        query = Q(
+            Q(name__istartswith=q) |
+            Q(contract_id__istartswith=q)
+        )
+        return self.get_base_objects().filter(query).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+            <span class='support-contract_id'>{contract_id}</span>
+            <span class='support-name'>{name}</span>
+        """.format(
+            escape(contract_id=obj.contract_id),
+            escape(name=obj.name),
         )
 
     def get_base_objects(self):
