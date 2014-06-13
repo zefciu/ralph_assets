@@ -334,7 +334,6 @@ class TestLicencesView(TestCase):
         - get saved license from db
         - asserts all db license's fields with request's data
         """
-        license = LicenceFactory()
         request_data = self.license_data.copy()
         response = self.client.post(reverse('add_licence'), request_data)
         self.assertRedirects(
