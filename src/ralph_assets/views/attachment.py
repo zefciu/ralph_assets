@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class AddAttachment(AssetsBase):
     """
     Adding attachments to Parent.
-    Parent can be one of these models: License, Asset.
+    Parent can be one of these models: License, Asset, Support.
     """
     template_name = 'assets/add_attachment.html'
 
@@ -33,7 +33,7 @@ class AddAttachment(AssetsBase):
         if parent == 'license':
             parent = 'licence'
         parent = parent.title()
-        self.Parent = getattr(assets_models, parent)
+        self.Parent = getattr(assets_models, parent.title())
         return super(AddAttachment, self).dispatch(
             request, mode, *args, **kwargs
         )
@@ -91,6 +91,7 @@ class DeleteAttachment(AssetsBase):
     parent2url_name = {
         'licence': 'edit_licence',
         'asset': 'device_edit',
+        'support': 'edit_support',
     }
 
     def dispatch(self, request, mode=None, parent=None, *args, **kwargs):
