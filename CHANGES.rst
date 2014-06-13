@@ -1,6 +1,12 @@
 Change Log
 ----------
 
+2.0.1-rc2
+~~~~~~~~~
+Released on June 13, 2014
+
+* Added asset id column to asset report
+
 
 2.0.1-rc2
 ~~~~~~~~~
