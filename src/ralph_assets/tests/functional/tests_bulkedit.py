@@ -13,7 +13,7 @@ from ralph_assets.models_assets import AssetStatus
 from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
-    AssetBOFactory,
+    BOAssetFactory,
     AssetCategoryFactory,
     AssetModelFactory,
     AssetOwnerFactory,
@@ -188,7 +188,7 @@ class TestBulkEdit(TestCase):
             'provider': 'provider',
         })
 
-        bo_asset = AssetBOFactory(**bo_asset_data)
+        bo_asset = BOAssetFactory(**bo_asset_data)
 
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
