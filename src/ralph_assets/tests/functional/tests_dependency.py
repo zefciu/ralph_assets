@@ -24,7 +24,7 @@ class TestDependency(TestCase):
     """Test adding/edit single asset with Dependency"""
 
     def setUp(self):
-        self.client = login_as_su(is_superuser=False)
+        self.client = login_as_su(is_superuser=True)
         self.category_blade = AssetCategory.objects.get(name='Server Blade')
         self.category_non_blade = AssetCategory.objects.get(name='Server Rack')
         self.model_blade = AssetModelFactory(category=self.category_blade)

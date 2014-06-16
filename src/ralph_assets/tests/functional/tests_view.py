@@ -560,10 +560,10 @@ class ACLInheritanceTest(TestCase):
 
     def test_all_views_inherits_acls(self):
         """
-        - get all views v from url.py except these urls:
+        - get all views from url.py except these urls:
             - api (until it clarifies)
             - redirections
-        - assert if each view (from v) has ACLClass in omr
+        - assert if each view has ACLClass in mro
         """
         from ralph_assets import urls
         from ralph_assets.views.base import ACLGateway
