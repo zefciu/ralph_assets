@@ -296,6 +296,7 @@ class TestLicencesView(TestCase):
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
             'licence_type': sam_utils.LicenceTypeFactory().id,
+            'license_details': 'licence_details',
             'manufacturer': assets_utils.AssetManufacturerFactory().id,
             'niw': 'Inventory number',
             'number_bought': '99',
@@ -333,7 +334,6 @@ class TestLicencesView(TestCase):
         - get saved license from db
         - asserts all db license's fields with request's data
         """
-        license = LicenceFactory()
         request_data = self.license_data.copy()
         response = self.client.post(reverse('add_licence'), request_data)
         self.assertRedirects(
