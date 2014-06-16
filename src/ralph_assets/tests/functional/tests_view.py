@@ -18,7 +18,7 @@ from ralph_assets import models_sam
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
 from ralph_assets.tests.utils.assets import (
-    AssetBOFactory,
+    BOAssetFactory,
     AssetFactory,
     AssetModelFactory,
     DCAssetFactory,
@@ -266,7 +266,7 @@ class TestBackOfficeDevicesView(TestCase):
         """
         new_asset_data = self.asset_data.copy()
         new_office_data = self.office_data.copy()
-        asset = AssetBOFactory()
+        asset = BOAssetFactory()
         edited_data = {}
         edited_data.update(new_asset_data)
         edited_data.update(new_office_data)
@@ -334,7 +334,6 @@ class TestLicencesView(TestCase):
         - get saved license from db
         - asserts all db license's fields with request's data
         """
-        license = LicenceFactory()
         request_data = self.license_data.copy()
         response = self.client.post(reverse('add_licence'), request_data)
         self.assertRedirects(

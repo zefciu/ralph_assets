@@ -42,11 +42,15 @@ def get_asset(device_id):
     manufacturer_name = ''
     if asset.model.manufacturer:
         manufacturer_name = asset.model.manufacturer.name
+    try:
+        asset_source = AssetSource.from_id(asset.source).raw
+    except ValueError:
+        asset_source = None
     return {
         'asset_id': asset.id,
         'model': asset.model.name,
         'manufacturer': manufacturer_name,
-        'source': AssetSource.from_id(asset.source).raw,
+        'source': asset_source,
         'invoice_no': asset.invoice_no,
         'order_no': asset.order_no,
         'invoice_date': asset.invoice_date,

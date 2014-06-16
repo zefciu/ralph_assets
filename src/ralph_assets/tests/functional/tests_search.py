@@ -15,7 +15,7 @@ from django.core.urlresolvers import reverse
 from ralph_assets.tests.util import create_model
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
-    AssetBOFactory,
+    BOAssetFactory,
     AssetManufacturerFactory,
 )
 from ralph_assets.models_assets import AssetStatus
@@ -568,20 +568,20 @@ class TestSearchEngine(TestCase):
             'bo': reverse('asset_search', args=('back_office',)),
         }
         self.assets_dc = [AssetFactory() for _ in range(5)]
-        self.assets_bo = [AssetBOFactory() for _ in range(5)]
+        self.assets_bo = [BOAssetFactory() for _ in range(5)]
         for name in ['iPad 5 16 GB', 'ProLiant BL2x2d', 'WS-CBS312']:
             AssetFactory(model__name=name)
-            AssetBOFactory(model__name=name)
+            BOAssetFactory(model__name=name)
 
         for manufacturer in ['Apple', 'Sony', 'Nikon', 'Sony Ericsson']:
             manu = AssetManufacturerFactory(name=manufacturer)
             AssetFactory(model__manufacturer=manu)
-            AssetBOFactory(model__manufacturer=manu)
+            BOAssetFactory(model__manufacturer=manu)
 
         for unique in ['123456', '456123']:
             AssetFactory(barcode=unique, sn=unique, niw=unique)
         for unique in ['654321', '321654']:
-            AssetBOFactory(barcode=unique, sn=unique, niw=unique)
+            BOAssetFactory(barcode=unique, sn=unique, niw=unique)
 
         self.msg_error = 'Error in {}, request has return {} but expected {}.'
 
