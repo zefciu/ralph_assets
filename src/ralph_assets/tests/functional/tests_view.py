@@ -296,6 +296,7 @@ class TestLicencesView(TestCase):
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
             'licence_type': sam_utils.LicenceTypeFactory().id,
+            'license_details': 'licence_details',
             'manufacturer': assets_utils.AssetManufacturerFactory().id,
             'niw': 'Inventory number',
             'number_bought': '99',
@@ -325,7 +326,6 @@ class TestLicencesView(TestCase):
         - get saved license from db
         - asserts all db license's fields with request's data
         """
-        license = LicenceFactory()
         request_data = self.license_data.copy()
         response = self.client.post(reverse('add_licence'), request_data)
         self.assertRedirects(
@@ -576,3 +576,32 @@ class LookupsTest(TestCase):
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+
+class ACLInheritanceTest(TestCase):
+
+    def test_all_views_inherits_acls(self):
+        """
+        - get all views from url.py except these urls:
+            - api (until it clarifies)
+            - redirections
+        - assert if each view has ACLClass in mro
+        """
+        from ralph_assets import urls
+        from ralph_assets.views.base import ACLGateway
+        excluded_urls_by_regexp = [
+            '^api/'  # skip it until api authen./author. is resolved
+        ]
+        for urlpattern in urls.urlpatterns:
+            if urlpattern._regex in excluded_urls_by_regexp:
+                continue
+            elif urlpattern.callback.func_name == 'RedirectView':
+                continue
+            module_name = urlpattern._callback.__module__
+            class_name = urlpattern._callback.__name__
+            imported_module = __import__(module_name, fromlist=[class_name])
+            found_class = getattr(imported_module, class_name)
+            msg = "View '{}' doesn't inherit from acl class".format(
+                '.'.join([module_name, class_name])
+            )
+            self.assertIn(ACLGateway, found_class.__mro__, msg)

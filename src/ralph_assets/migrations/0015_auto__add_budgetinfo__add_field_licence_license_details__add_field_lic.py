@@ -20,6 +20,11 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['BudgetInfo'])
 
+        # Adding field 'Licence.license_details'
+        db.add_column('ralph_assets_licence', 'license_details',
+                      self.gf('django.db.models.fields.CharField')(default=u'', max_length=1024, blank=True),
+                      keep_default=False)
+
         # Adding field 'Licence.budget_info'
         db.add_column('ralph_assets_licence', 'budget_info',
                       self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.BudgetInfo'], null=True, on_delete=models.PROTECT, blank=True),
@@ -34,6 +39,9 @@ class Migration(SchemaMigration):
     def backwards(self, orm):
         # Deleting model 'BudgetInfo'
         db.delete_table('ralph_assets_budgetinfo')
+
+        # Deleting field 'Licence.license_details'
+        db.delete_column('ralph_assets_licence', 'license_details')
 
         # Deleting field 'Licence.budget_info'
         db.delete_column('ralph_assets_licence', 'budget_info_id')
@@ -280,6 +288,7 @@ class Migration(SchemaMigration):
             'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
+            'license_details': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '1024', 'blank': 'True'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'niw': ('django.db.models.fields.CharField', [], {'default': "u'N/A'", 'unique': 'True', 'max_length': '200'}),

@@ -12,10 +12,12 @@ from bob.data_table import DataTableColumn
 from bob.views.bulk_edit import BulkEditBase as BobBulkEditBase
 
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 
+from ralph.account.models import Perm
 from ralph_assets import forms as assets_forms
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models import Asset
@@ -29,7 +31,18 @@ def get_return_link(mode):
     return "/assets/%s/" % mode
 
 
-class AssetsBase(Base):
+class ACLGateway(Base):
+    """
+    Assets module class which mainly checks user access to page.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(Perm.has_assets_access):
+            raise PermissionDenied
+        return super(ACLGateway, self).dispatch(request, *args, **kwargs)
+
+
+class AssetsBase(ACLGateway):
     template_name = "assets/base.html"
     sidebar_selected = None
     mainmenu_selected = None
