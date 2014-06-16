@@ -153,6 +153,12 @@ class Licence(
         blank=True,
         default=None,
     )
+    license_details = models.CharField(
+        verbose_name=_('License details'),
+        max_length=1024,
+        blank=True,
+        default='',
+    )
     service_name = models.ForeignKey(Service, null=True, blank=True)
     budget_info = models.ForeignKey(
         models_assets.BudgetInfo,
