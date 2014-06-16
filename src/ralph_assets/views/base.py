@@ -27,7 +27,11 @@ def get_return_link(mode):
     return "/assets/%s/" % mode
 
 
-class AssetsBase(Base):
+class ACLGateway(Base):
+    pass
+
+
+class AssetsBase(ACLGateway):
     template_name = "assets/base.html"
     sidebar_selected = None
     mainmenu_selected = None
