@@ -22,6 +22,7 @@ from ralph_assets.models_assets import (
     OfficeInfo,
 )
 from ralph_assets.models_sam import Licence
+from ralph_assets.models_support import Support
 
 
 class AssetHistoryChange(db.Model):
@@ -104,6 +105,46 @@ class LicenceHistoryChange(db.Model):
         )
 
 
+class SupportHistoryChange(db.Model):
+    """Represent a single change of a Support"""
+
+    date = db.DateTimeField(verbose_name=_("date"), default=datetime.now)
+    support = db.ForeignKey(
+        Support,
+        verbose_name=_('Support'),
+        null=True,
+        blank=True,
+        default=None,
+        on_delete=db.SET_NULL,
+    )
+    user = db.ForeignKey(
+        User,
+        verbose_name=_("user"),
+        null=True,
+        blank=True,
+        default=None,
+        on_delete=db.SET_NULL,
+    )
+    field_name = db.CharField(max_length=64, default='')
+    old_value = db.CharField(max_length=255, default='')
+    new_value = db.CharField(max_length=255, default='')
+
+    class Meta:
+        verbose_name = _("history change")
+        verbose_name_plural = _("history changes")
+
+    def __unicode__(self):
+        return "{!r}.{!r} = {!r} -> {!r} by {!r} on {!r} ({!r})".format(
+            self.support,
+            self.field_name,
+            self.old_value,
+            self.new_value,
+            self.user,
+            self.date,
+            self.id,
+        )
+
+
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.history_assets')
 def asset_post_save(sender, instance, raw, using, **kwargs):
     """A hook for creating ``HistoryChange`` entries when a asset changes."""
@@ -169,6 +210,18 @@ def licence_post_save(sender, instance, raw, using, **kwargs):
     for field, orig, new in field_changes(instance):
         LicenceHistoryChange(
             licence=instance,
+            field_name=field,
+            old_value=unicode(orig),
+            new_value=unicode(new),
+            user=instance.saving_user,
+        ).save()
+
+
+@receiver(post_save, sender=Support)
+def support_post_save(sender, instance, raw, using, **kwargs):
+    for field, orig, new in field_changes(instance):
+        SupportHistoryChange(
+            support=instance,
             field_name=field,
             old_value=unicode(orig),
             new_value=unicode(new),

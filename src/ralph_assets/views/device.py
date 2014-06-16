@@ -93,7 +93,7 @@ class AddDevice(AssetsBase):
                 if f_name not in {
                     "barcode", "category", "company", "cost_center",
                     "department", "employee_id", "imei", "licences", "manager",
-                    "sn", "profit_center",
+                    "sn", "profit_center", "supports",
                 }:
                     asset_data[f_name] = f_value
             sns = self.asset_form.cleaned_data.get('sn', [])
@@ -271,7 +271,11 @@ class EditDevice(AssetsBase):
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
-
+                self.asset.support_set.clear()
+                for support in self.asset_form.cleaned_data.get(
+                    'supports', []
+                ):
+                    self.asset.support_set.add(support)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(

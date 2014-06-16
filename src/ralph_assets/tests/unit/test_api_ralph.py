@@ -73,7 +73,16 @@ class TestApiRalph(TestCase):
         }
 
     def test_get_asset(self):
-        """Test get asset information by ralph_device_id"""
+        """Test get asset information by ralph_device_id."""
         asset = Asset.objects.get(pk=self.asset_id)
+        asset_data = get_asset(asset.device_info.ralph_device_id)
+        self.assertEqual(asset_data, self.asset_data_raw)
+
+    def test_get_asset_with_empty_asset_source(self):
+        """Getting an asset with empty 'source' field should also succeed."""
+        asset = Asset.objects.get(pk=self.asset_id)
+        asset.source = None
+        asset.save()
+        self.asset_data_raw['source'] = None
         asset_data = get_asset(asset.device_info.ralph_device_id)
         self.assertEqual(asset_data, self.asset_data_raw)

@@ -81,6 +81,12 @@ class AssetsBase(ACLGateway):
                 name='user list',
                 href=reverse('user_list'),
             ),
+            MenuItem(
+                label='Supports',
+                fugue_icon='fugue-lifebuoy',
+                name=_('supports'),
+                href=reverse('support_list'),
+            ),
         ]
         return mainmenu
 
@@ -94,6 +100,10 @@ class AssetsBase(ACLGateway):
         elif self.mainmenu_selected.startswith('licences'):
             base_items = (
                 ('add_licence', _('Add licence'), 'fugue-cheque--plus', False),
+            )
+        elif self.mainmenu_selected.startswith('supports'):
+            base_items = (
+                ('add_support', _('Add Support'), 'fugue-block--plus', False),
             )
         else:
             base_items = ()
@@ -116,7 +126,6 @@ class AssetsBase(ACLGateway):
                         if modal else
                         reverse(view)
                     )
-
                 ) for view, label, icon, modal in item['items']]
             )
             if sidebar_menu:
