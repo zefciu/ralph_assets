@@ -43,7 +43,8 @@ class SoftwareCategoryFactory(Factory):
 
 class LicenceFactory(Factory):
     FACTORY_FOR = Licence
-
+    number_bought = randint(0, 150)
+    parent = None
     accounting_id = ''
     asset_type = AssetType.back_office.id
     budget_info = SubFactory(BudgetInfoFactory)
@@ -70,3 +71,7 @@ class LicenceFactory(Factory):
         if not create:
             return None
         return [UserFactory() for i in range(randint(1, 8))]
+
+    @lazy_attribute
+    def sn(self):
+        return str(uuid1())

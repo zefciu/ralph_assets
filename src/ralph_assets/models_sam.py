@@ -19,14 +19,15 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
     AssetManufacturer,
     AssetOwner,
     AssetType,
-    ASSET_TYPE2MODE,
+    Attachment,
+    BudgetInfo,
     CreatableFromString,
+    LicenseAndAsset,
     Service,
 )
 from ralph_assets.models_util import (
@@ -58,7 +59,7 @@ class SoftwareCategory(Named, CreatableFromString):
 
 
 class Licence(
-    models_assets.LicenseAndAsset,
+    LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
     WithConcurrentGetOrCreate,
@@ -139,9 +140,7 @@ class Licence(
         verbose_name=_('Assigned Assets'),
     )
     users = models.ManyToManyField(User)
-    attachments = models.ManyToManyField(
-        models_assets.Attachment, null=True, blank=True
-    )
+    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     invoice_no = models.CharField(
         max_length=128, db_index=True, null=True, blank=True
@@ -161,11 +160,11 @@ class Licence(
     )
     service_name = models.ForeignKey(Service, null=True, blank=True)
     budget_info = models.ForeignKey(
-        models_assets.BudgetInfo,
+        BudgetInfo,
         blank=True,
         default=None,
         null=True,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
     )
 
     _used = None
@@ -181,7 +180,6 @@ class Licence(
     def url(self):
         return reverse('edit_licence', kwargs={
             'licence_id': self.id,
-            'mode': ASSET_TYPE2MODE[self.asset_type],
         })
 
     @property
@@ -196,10 +194,10 @@ class Licence(
 
 
 class BudgetInfoLookup(RestrictedLookupChannel):
-    model = models_assets.BudgetInfo
+    model = BudgetInfo
 
     def get_query(self, q, request):
-        return models_assets.BudgetInfo.objects.filter(
+        return BudgetInfo.objects.filter(
             name__icontains=q,
         ).order_by('name')[:10]
 

@@ -130,3 +130,7 @@ div#sidebar_search input, div#sidebar_search select{
 form.form-inline {
     display: inline;
 }
+
+.bulk-table textarea {
+    min-width: 150px;
+}

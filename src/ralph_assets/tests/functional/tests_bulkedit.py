@@ -5,8 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.test.utils import override_settings
 
 from ralph_assets import models_assets
 from ralph_assets.models_assets import AssetStatus
@@ -21,6 +23,7 @@ from ralph_assets.tests.utils.assets import (
     ServiceFactory,
     WarehouseFactory,
 )
+from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph_assets.tests.util import get_bulk_edit_post_data
 
 from ralph.ui.tests.global_utils import login_as_su
@@ -128,13 +131,14 @@ class TestBulkEdit(TestCase):
                 barcode='bc-4444-4444-4444-4444',
             )
         ]
-        counter = 0
-        for data in correct_data:
+        for counter, data in enumerate(correct_data):
             for key in data.keys():
                 self.assertEqual(
-                    unicode(getattr(fields[counter], key)), unicode(data[key])
+                    unicode(getattr(fields[counter], key)), unicode(data[key]),
+                    'returned {} expected {} for field {}'.format(
+                        getattr(fields[counter], key), data[key], key
+                    )
                 )
-            counter += 1
 
     def _test_showing_form_data(self, mode, asset_id, asset_data):
         """
@@ -193,3 +197,26 @@ class TestBulkEdit(TestCase):
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )
+
+    @override_settings(MAX_BULK_EDIT_SIZE=5)
+    def test_bulk_edit_max_items_at_once(self):
+        """Scenario:
+         - user selected more than MAX_BULK_EDIT_SIZE
+         - user should see message error
+        """
+        number_of_selected_items = settings.MAX_BULK_EDIT_SIZE + 1
+        licences = [LicenceFactory() for _ in range(number_of_selected_items)]
+        url = reverse('licence_bulkedit')
+        url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+
+class TestBulkEditAsset(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+
+    def test_edit_form(self):
+        url = reverse('bulkedit', args=('dc',))
+        self.client.get(url)

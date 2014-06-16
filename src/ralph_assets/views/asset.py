@@ -14,26 +14,21 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.forms.models import modelformset_factory
 
 from ralph_assets.models import Asset
 from ralph_assets.models_history import AssetHistoryChange
 from ralph_assets.models_assets import AssetType
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import AssetsBase, BulkEditBase, get_return_link
 from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
 from ralph_assets.views.utils import _move_data, _update_office_info
 from ralph.util.reports import Report
 
+
 MAX_PAGE_SIZE = 65535
 HISTORY_PAGE_SIZE = 25
-MAX_BULK_EDIT_SIZE = 40
 
 
 logger = logging.getLogger(__name__)
-
-
-class AssetSearch(Report, AssetSearchDataTable):
-    """The main-screen search form for all type of assets."""
 
 
 class DeleteAsset(AssetsBase):
@@ -122,95 +117,42 @@ class HistoryAsset(AssetsBase):
         return ret
 
 
-class BulkEdit(_AssetSearch):
-    template_name = 'assets/bulk_edit.html'
+class AssetSearch(Report, AssetSearchDataTable):
+    """The main-screen search form for all type of assets."""
 
-    def dispatch(self, request, mode=None, *args, **kwargs):
-        self.mode = mode
-        self.form_bulk = self.form_dispatcher('BulkEditAsset')
-        return super(BulkEdit, self).dispatch(request, mode, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        ret = super(BulkEdit, self).get_context_data(**kwargs)
-        ret.update({
-            'formset': self.asset_formset,
-            'mode': self.mode,
-        })
-        return ret
+class AssetBulkEdit(BulkEditBase, _AssetSearch):
+    model = Asset
+    commit_on_valid = False
 
-    def get_items_ids(self, *args, **kwargs):
-        items_ids = self.request.GET.getlist('select')
-        try:
-            int_ids = map(int, items_ids)
-        except ValueError:
-            int_ids = []
-        return int_ids
-
-    def get(self, *args, **kwargs):
-        if self.request.GET.get('from_query'):
-            query = super(
-                BulkEdit, self,
-            ).handle_search_data(*args, **kwargs)
-        else:
-            query = Q(pk__in=self.get_items_ids())
-        assets_count = self.asset_objects.filter(query).count()
-        if not (0 < assets_count <= MAX_BULK_EDIT_SIZE):
-            if assets_count > MAX_BULK_EDIT_SIZE:
-                messages.warning(
-                    self.request,
-                    _("You can edit max {} items".format(MAX_BULK_EDIT_SIZE)),
-                )
-            elif not assets_count:
-                messages.warning(self.request, _("Nothing to edit."))
-            return HttpResponseRedirect(get_return_link(self.mode))
-        AssetFormSet = modelformset_factory(
-            Asset,
-            form=self.form_bulk,
-            extra=0,
-        )
-        assets = self.asset_objects.filter(query)
-        self.asset_formset = AssetFormSet(queryset=assets)
-        for idx, asset in enumerate(assets):
+    def initial_forms(self, formset, queryset):
+        for idx, asset in enumerate(queryset):
             if asset.office_info:
                 for field in ['purpose']:
-                    if field not in self.asset_formset.forms[idx].fields:
+                    if field not in formset.forms[idx].fields:
                         continue
-                    self.asset_formset.forms[idx].fields[field].initial = (
+                    formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
                     )
-        return super(BulkEdit, self).get(*args, **kwargs)
 
-    def post(self, *args, **kwargs):
-        AssetFormSet = modelformset_factory(
-            Asset,
-            form=self.form_bulk,
-            extra=0,
+    def save_formset(self, instances, formset):
+        with transaction.commit_on_success():
+            for idx, instance in enumerate(instances):
+                instance.modified_by = self.request.user.get_profile()
+                instance.save(user=self.request.user)
+                new_src, office_info_data = _move_data(
+                    formset.forms[idx].cleaned_data,
+                    {}, ['purpose']
+                )
+                formset.forms[idx].cleaned_data = new_src
+                instance = _update_office_info(
+                    self.request.user, instance,
+                    office_info_data,
+                )
+
+    def handle_formset_error(self, formset_error):
+        messages.error(
+            self.request,
+            _(('Please correct errors and check both "serial numbers" and '
+               '"barcodes" for duplicates'))
         )
-        self.asset_formset = AssetFormSet(self.request.POST)
-        if self.asset_formset.is_valid():
-            with transaction.commit_on_success():
-                instances = self.asset_formset.save(commit=False)
-                for idx, instance in enumerate(instances):
-                    instance.modified_by = self.request.user.get_profile()
-                    instance.save(user=self.request.user)
-                    new_src, office_info_data = _move_data(
-                        self.asset_formset.forms[idx].cleaned_data,
-                        {}, ['purpose']
-                    )
-                    self.asset_formset.forms[idx].cleaned_data = new_src
-                    instance = _update_office_info(
-                        self.request.user, instance,
-                        office_info_data,
-                    )
-            messages.success(self.request, _("Changes saved."))
-            return HttpResponseRedirect(self.request.get_full_path())
-        form_error = self.asset_formset.get_form_error()
-        if form_error:
-            messages.error(
-                self.request,
-                _(("Please correct errors and check both"
-                  "\"serial numbers\" and \"barcodes\" for duplicates"))
-            )
-        else:
-            messages.error(self.request, _("Please correct the errors."))
-        return super(BulkEdit, self).get(*args, **kwargs)

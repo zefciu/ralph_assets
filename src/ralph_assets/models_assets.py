@@ -110,13 +110,12 @@ class AssetType(Choices):
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
     'back_office': AssetType.back_office,
+    'administration': AssetType.administration,
+    'other': AssetType.other,
 }
 
 
-ASSET_TYPE2MODE = {
-    AssetType.data_center: 'dc',
-    AssetType.back_office: 'back_office',
-}
+ASSET_TYPE2MODE = {v: k for k, v in MODE2ASSET_TYPE.items()}
 
 
 class AssetPurpose(Choices):
@@ -328,8 +327,8 @@ class BudgetInfo(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string):
+        return cls(name=string)
 
 
 class Asset(
@@ -458,7 +457,7 @@ class Asset(
         blank=True,
         default=None,
         null=True,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
     )
 
     def __unicode__(self):

@@ -29,7 +29,7 @@ from ralph_assets.views.user import EditUser, UserDetails, UserList
 from ralph_assets.views.part import AddPart, EditPart
 from ralph_assets.views.asset import (
     AssetSearch,
-    BulkEdit,
+    AssetBulkEdit,
     DeleteAsset,
     HistoryAsset,
 )
@@ -41,6 +41,7 @@ from ralph_assets.views.sam import (
     EditLicence,
     HistoryLicence,
     LicenceList,
+    LicenceBulkEdit,
     SoftwareCategoryList,
 )
 from ralph_assets.views.support import (
@@ -117,7 +118,7 @@ urlpatterns = patterns(
         login_required(HistoryAsset.as_view()),
         name='part_history'),
     url(r'(?P<mode>(back_office|dc))/bulkedit/$',
-        login_required(BulkEdit.as_view()),
+        login_required(AssetBulkEdit.as_view()),
         name='bulkedit'),
     url(r'(?P<mode>(back_office|dc))/delete/asset/$',
         login_required(DeleteAsset.as_view()),
@@ -146,6 +147,11 @@ urlpatterns = patterns(
         name='add_attachment'
     ),
     url(
+        r'add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        login_required(AddAttachment.as_view()),
+        name='add_attachment'
+    ),
+    url(
         r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
@@ -161,12 +167,17 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
+        r'sam/licences/bulkedit/',
+        login_required(LicenceBulkEdit.as_view()),
+        name='licence_bulkedit',
+    ),
+    url(
         r'sam/add_licence/$',
         login_required(AddLicence.as_view()),
         name='add_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
+        r'sam/edit_licence/(?P<licence_id>[0-9]+)$',
         login_required(EditLicence.as_view()),
         name='edit_licence',
     ),
@@ -202,7 +213,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license|support))/attachment/$',  # noqa
+        r'(?P<mode>(back_office|dc|administration|other))/delete/(?P<parent>(asset|license|support))/attachment/$',  # noqa
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),
@@ -222,7 +233,7 @@ urlpatterns = patterns(
         name='user_view',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/history/licence/(?P<licence_id>[0-9]+)/$',
+        r'history/licence/(?P<licence_id>[0-9]+)/$',
         login_required(HistoryLicence.as_view()),
         name='licence_history',
     ),

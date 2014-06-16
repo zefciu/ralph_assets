@@ -74,12 +74,14 @@ class DeviceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class='asset-model'>%s</span>
-            <span class='asset-barcode'>%s</span>
-            <span class='asset-sn'>%s</span>
-        </li>
-        """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
     def get_base_objects(self):
         return self.model.objects
@@ -132,16 +134,15 @@ class FreeLicenceLookup(RestrictedLookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
+        free = str(obj.number_bought - obj.assets.count() - obj.users.count())
         return """
-        <li class='asset-container'>
-            <span>{}</span>
-            <span class="licence-niw">{}</span>
-            <span>({} free)</span>
-        </li>
+        <span>{name}</span>
+        <span class="licence-niw">{niw}</span>
+        <span>({free} free)</span>
         """.format(
-            escape(str(obj)),
-            obj.niw,
-            str(obj.number_bought - obj.assets.count() - obj.users.count())
+            name=escape(str(obj)),
+            niw=obj.niw,
+            free=free,
         )
 
 
@@ -166,16 +167,15 @@ class LicenceLookup(RestrictedLookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        element = """
-            <span class='licence-bought'>%s</span>
-            <span class='licence-name'>%s</span>
-            <span class='licence-niw'>(%s)</span>
-        """ % (
-            escape(obj.number_bought),
-            escape(obj.software_category.name or ''),
-            escape(obj.niw),
+        return """
+            <span class="licence-bought">{bought}</span>
+            <span class="licence-name">{name}</span>
+            <span class="licence-niw">({niw})</span>
+        """.format(
+            bought=escape(obj.number_bought),
+            name=escape(obj.software_category.name or ''),
+            niw=escape(obj.niw),
         )
-        return element
 
     def get_base_objects(self):
         return self.model.objects
@@ -198,18 +198,13 @@ class SupportLookup(RestrictedLookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        element = """
-            <span class='support-contract_id'>%s</span>
-            <span class='support-name'>%s</span>
-        """ % (
-            escape(obj.contract_id),
-            escape(obj.name),
-        )
         return """
-            <li class='asset-container'>
-                %s
-            </li>
-            """ % (element,)
+            <span class='support-contract_id'>{contract_id}</span>
+            <span class='support-name'>{name}</span>
+        """.format(
+            escape(contract_id=obj.contract_id),
+            escape(name=obj.name),
+        )
 
     def get_base_objects(self):
         return self.model.objects
@@ -237,12 +232,14 @@ class RalphDeviceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class='asset-model'>%s</span>
-            <span class='asset-barcode'>%s</span>
-            <span class='asset-sn'>%s</span>
-        </li>
-        """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
 
 class AssetLookup(RestrictedLookupChannel):
@@ -285,13 +282,11 @@ class AssetModelLookup(RestrictedLookupChannel):
     def format_item_display(self, obj):
         manufacturer = getattr(obj, 'manufacturer', None) or '-'
         category = getattr(obj, 'category', None) or '-'
-        return '''
-        <li>
-            <span>{model}</span>
-            <span class='auto-complete-blue'>({manufacturer})</span>
-            <span class='asset-category'>({category})</span>
-        </li>
-        '''.format(
+        return """
+        <span>{model}</span>
+        <span class="auto-complete-blue">({manufacturer})</span>
+        <span class="asset-category">({category})</span>
+        """.format(
             model=escape(obj.name),
             manufacturer=escape(manufacturer),
             category=escape(category),
@@ -335,17 +330,26 @@ class ManufacturerLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.name
 
+    def format_item_display(self, obj):
+        return "<span>{name}</span>".format(name=obj.name)
+
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
 
     def get_query(self, q, request):
-        return self.model.objects.filter(Q(name__icontains=q)).order_by(
-            'name'
-        )[:10]
+        return SoftwareCategory.objects.filter(
+            name__icontains=q
+        ).order_by('name')[:10]
 
     def get_result(self, obj):
         return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return "<span>{name}</span>".format(name=obj.name)
 
 
 class WarehouseLookup(RestrictedLookupChannel):
@@ -442,10 +446,8 @@ class UserLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class=''>{first_name} {last_name}</span>
-            <span class='asset-user-department'>{department}</span>
-        </li>
+        <span>{first_name} {last_name}</span>
+        <span class="asset-user-department">{department}</span>
          """.format(
             first_name=obj.first_name,
             last_name=obj.last_name,

@@ -81,13 +81,14 @@ class LicenceForm(forms.ModelForm):
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
-                'number_bought', 'accounting_id', 'budget_info'
+                'number_bought', 'accounting_id', 'budget_info',
             ]),
         ])
         widgets = {
             'invoice_date': DateWidget,
             'license_details': forms.Textarea(attrs={'rows': 3}),
             'remarks': forms.Textarea(attrs={'rows': 3}),
+            'sn': forms.Textarea(attrs={'rows': 3}),
             'valid_thru': DateWidget,
         }
 
@@ -97,7 +98,7 @@ class LicenceForm(forms.ModelForm):
         label=_('Parent licence'),
     )
     software_category = SoftwareCategoryField(
-        ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
+        ('ralph_assets.models', 'SoftwareCategoryLookup'),
         widget=SoftwareCategoryWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/softwarecategory/add/?name=',
@@ -257,6 +258,41 @@ class LicenceSearchForm(SearchForm):
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
     budget_info = AjaxTextSearch(
-        '__name', LOOKUPS['budget_info'], required=False
+        '__name', LOOKUPS['budget_info'], required=False,
     )
     id = MultiSearchField(widget=forms.HiddenInput())
+
+
+class BulkEditLicenceForm(LicenceForm):
+
+    class Meta(LicenceForm.Meta):
+        model = models_sam.Licence
+        fields = (
+            'asset_type',
+            'manufacturer',
+            'licence_type',
+            'property_of',
+            'software_category',
+            'number_bought',
+            'parent',
+            'invoice_date',
+            'valid_thru',
+            'order_no',
+            'price',
+            'accounting_id',
+            'provider',
+            'invoice_no',
+            'niw',
+            'service_name',
+            'sn',
+            'remarks',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super(BulkEditLicenceForm, self).__init__(None, *args, **kwargs)
+        classes = "span12 fillable"
+        banned_fillables = set(['sn', 'niw', 'barcode', 'imei'])
+        for field_name in self.fields:
+            if field_name in banned_fillables:
+                classes = "span12"
+            self.fields[field_name].widget.attrs.update({'class': classes})
