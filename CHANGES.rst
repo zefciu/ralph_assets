@@ -1,7 +1,7 @@
 Change Log
 ----------
 
-2.0.1-rc2
+2.0.2-rc2
 ~~~~~~~~~
 Released on June 13, 2014
 
