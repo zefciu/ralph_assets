@@ -14,9 +14,11 @@ from django.core.urlresolvers import reverse
 from django.test.client import Client
 
 from ralph_assets import models_assets
+from ralph_assets import models_support
 from ralph_assets import models_sam
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
+from ralph_assets.tests.utils import supports as support_utils
 from ralph_assets.tests.utils.assets import (
     BOAssetFactory,
     AssetFactory,
@@ -74,7 +76,28 @@ class TestDataDisplay(TestCase):
         self.assertEqual(self.asset, first_table_row)
 
 
-class TestDataCenterDevicesView(TestCase):
+class TestDevicesView(TestCase):
+    """
+    Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
+    """
+
+    def _update_with_supports(self, _dict):
+        supports = [
+            support_utils.DCSupportFactory().id,
+            support_utils.BOSupportFactory().id,
+        ]
+        supports_value = '|{}|'.format('|'.join(map(str, supports)))
+        _dict.update(dict(supports=supports_value))
+        return supports
+
+    def _check_asset_supports(self, asset, expected_supports):
+        self.assertEqual(
+            len(asset.support_set.all()), len(expected_supports),
+        )
+        del self.new_asset_data['supports']
+
+
+class TestDataCenterDevicesView(TestDevicesView, TestCase):
 
     def setUp(self):
         self.client = login_as_su()
@@ -158,11 +181,12 @@ class TestDataCenterDevicesView(TestCase):
         - get a1 from db
         - assert a1's data is the same as d1 data
         """
-        new_asset_data = self.asset_data.copy()
+        self.new_asset_data = self.asset_data.copy()
+        supports = self._update_with_supports(self.new_asset_data)
         new_device_data = self.device_data.copy()
         asset = DCAssetFactory()
         edited_data = {}
-        edited_data.update(new_asset_data)
+        edited_data.update(self.new_asset_data)
         edited_data.update(new_device_data)
         url = reverse('device_edit', kwargs={
             'mode': self.mode,
@@ -173,13 +197,14 @@ class TestDataCenterDevicesView(TestCase):
             response, url, status_code=302, target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
-        del new_asset_data['asset']
-        check_fields(self, new_asset_data.items(), asset)
+        del self.new_asset_data['asset']
+        self._check_asset_supports(asset, supports)
+        check_fields(self, self.new_asset_data.items(), asset)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
 
 
-class TestBackOfficeDevicesView(TestCase):
+class TestBackOfficeDevicesView(TestDevicesView, TestCase):
 
     def setUp(self):
         self.client = login_as_su()
@@ -264,11 +289,12 @@ class TestBackOfficeDevicesView(TestCase):
         - get a1 from db
         - assert a1's data is the same as d1 data
         """
-        new_asset_data = self.asset_data.copy()
+        self.new_asset_data = self.asset_data.copy()
+        supports = self._update_with_supports(self.new_asset_data)
         new_office_data = self.office_data.copy()
         asset = BOAssetFactory()
         edited_data = {}
-        edited_data.update(new_asset_data)
+        edited_data.update(self.new_asset_data)
         edited_data.update(new_office_data)
         url = reverse('device_edit', kwargs={
             'mode': self.mode,
@@ -279,8 +305,9 @@ class TestBackOfficeDevicesView(TestCase):
             response, url, status_code=302, target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
-        del new_asset_data['asset']
-        check_fields(self, new_asset_data.items(), asset)
+        del self.new_asset_data['asset']
+        self._check_asset_supports(asset, supports)
+        check_fields(self, self.new_asset_data.items(), asset)
         check_fields(self, new_office_data.items(), asset.office_info)
 
 
@@ -393,6 +420,94 @@ class TestLicencesView(TestCase):
             self.assertIn(
                 key, response.context['formset'][0].fields.keys()
             )
+
+
+class TestSupportsView(TestCase):
+    """This test case concern all supports views."""
+
+    def setUp(self):
+        self.client = login_as_su()
+        support_utils.SupportTypeFactory().id
+        self.support_data = dict(
+            additional_notes="Additional notes",
+            # asset='',  # button, skip it
+            asset_type=101,
+            contract_id='1',
+            contract_terms='Contract terms',
+            date_from=datetime.date(2014, 06, 17),
+            date_to=datetime.date(2014, 06, 18),
+            description='Description',
+            escalation_path='Escalation path',
+            invoice_date=datetime.date(2014, 06, 19),
+            invoice_no='Invoice no',
+            name='name',
+            period_in_months='12',
+            price=Decimal('99.99'),
+            producer='Producer',
+            property_of=assets_utils.AssetOwnerFactory().id,
+            serial_no='Serial no',
+            sla_type='Sla type',
+            status=models_support.SupportStatus.new.id,
+            supplier='Supplier',
+            support_type=support_utils.SupportTypeFactory().id,
+        )
+
+    def _check_supports_assets(self, support, expected_assets):
+        self.assertEqual(
+            len(support.assets.all()), len(expected_assets),
+        )
+        del self.new_support_data['assets']
+
+    def _update_with_supports(self, _dict):
+        assets = [
+            assets_utils.DCAssetFactory().id,
+            assets_utils.BOAssetFactory().id,
+        ]
+        assets_values = '|{}|'.format('|'.join(map(str, assets)))
+        _dict.update(dict(assets=assets_values))
+        return assets
+
+    def test_add_support(self):
+        """
+        Add support with all fields filled.
+
+        - send the full support's data with post request
+        - get saved support from db
+        - asserts all db support's fields with request's data
+        """
+        request_data = self.support_data.copy()
+        response = self.client.post(reverse('add_support'), request_data)
+        self.assertRedirects(
+            response, reverse('support_list'), status_code=302,
+            target_status_code=200,
+        )
+        support = models_support.Support.objects.reverse()[0]
+        check_fields(self, request_data.items(), support)
+
+    def test_edit_support(self):
+        """
+        Edit support with all fields filled.
+        - generate support data
+        - create support
+        - send data via edit request to
+        - get from db
+        - assert data is the same as data
+        """
+
+        self.new_support_data = self.support_data.copy()
+        assets = self._update_with_supports(self.new_support_data)
+        support = support_utils.BOSupportFactory()
+        url = reverse('edit_support', kwargs={
+            'mode': 'back_office',
+            'support_id': support.id,
+        })
+        response = self.client.post(url, self.new_support_data)
+        self.assertRedirects(
+            response, url, status_code=302, target_status_code=200,
+        )
+        support = models_support.Support.objects.get(pk=support.id)
+        self._check_supports_assets(support, assets)
+        check_fields(self, self.new_support_data.items(), support)
 
 
 class DeviceEditViewTest(TestCase):
