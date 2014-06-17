@@ -14,6 +14,7 @@ from factory import (
     SubFactory,
 )
 from factory.django import DjangoModelFactory as Factory
+
 from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets.tests.utils import assets as assets_utils
@@ -29,8 +30,6 @@ class SupportFactory(Factory):
     FACTORY_FOR = models_support.Support
 
     additional_notes = Sequence(lambda n: 'additional-notes-#{}'.format(n))
-    # TODO? assets
-    # TODO? attachments
     contract_id = Sequence(lambda n: '{}'.format(n))
     contract_terms = Sequence(lambda n: 'contract-terms-#{}'.format(n))
     date_from = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
