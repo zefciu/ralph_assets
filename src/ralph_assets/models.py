@@ -202,8 +202,8 @@ class SupportLookup(RestrictedLookupChannel):
             <span class='support-contract_id'>{contract_id}</span>
             <span class='support-name'>{name}</span>
         """.format(
-            escape(contract_id=obj.contract_id),
-            escape(name=obj.name),
+            contract_id=escape(obj.contract_id),
+            name=escape(obj.name),
         )
 
     def get_base_objects(self):
