@@ -12,7 +12,7 @@
 
 <div class="row-fluid">
   <div class="span12">
-    <form id="{{ form_id }}" class="form form-horizontal" method="POST"{% if edit_mode %} enctype="multipart/form-data"{% endif %} {% dependency_data asset_form %}>
+    <form id="{{ form_id }}" class="form form-horizontal" method="POST" {% dependency_data asset_form %}>
       {% csrf_token %}
 
     <div class="row-fluid">
