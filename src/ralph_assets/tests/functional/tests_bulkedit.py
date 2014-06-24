@@ -207,7 +207,7 @@ class TestBulkEdit(TestCase):
         url = reverse('licence_bulkedit')
         url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestBulkEditAsset(TestCase):
