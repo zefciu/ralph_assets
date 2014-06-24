@@ -331,6 +331,7 @@ class Migration(SchemaMigration):
             'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'licence_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.LicenceType']", 'on_delete': 'models.PROTECT'}),
+            'license_details': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '1024', 'blank': 'True'}),
             'manufacturer': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetManufacturer']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'niw': ('django.db.models.fields.CharField', [], {'default': "u'N/A'", 'unique': 'True', 'max_length': '200'}),

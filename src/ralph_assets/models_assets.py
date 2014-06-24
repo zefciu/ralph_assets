@@ -459,6 +459,7 @@ class Asset(
         null=True,
         on_delete=models.PROTECT,
     )
+    hostname = models.CharField(max_length=10, blank=True)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
