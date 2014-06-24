@@ -81,7 +81,9 @@ asset_fieldset = lambda: OrderedDict([
 
 asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
-        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
+        'noncollapsed': [
+            'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
+        ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
@@ -112,7 +114,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
 asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
-            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -1363,6 +1365,15 @@ class SearchAssetForm(Form):
     barcode = CharField(
         required=False,
         label=_('Barcode'),
+        widget=TextInput(
+            attrs={
+                'title': _('separate ";" or "|" to search multiple value'),
+            },
+        )
+    )
+    hostname = CharField(
+        required=False,
+        label=_('hostname'),
         widget=TextInput(
             attrs={
                 'title': _('separate ";" or "|" to search multiple value'),

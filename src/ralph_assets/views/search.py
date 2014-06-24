@@ -37,40 +37,41 @@ class AssetsSearchQueryableMixin(object):
 
     def handle_search_data(self, *args, **kwargs):
         search_fields = [
-            'id',
-            'niw',
-            'category',
-            'invoice_no',
-            'model',
-            'order_no',
-            'part_info',
-            'provider',
-            'sn',
-            'status',
-            'deleted',
-            'manufacturer',
             'barcode',
-            'device_info',
-            'source',
-            'deprecation_rate',
-            'unlinked',
-            'ralph_device_id',
-            'task_url',
-            'imei',
-            'guardian',
-            'owner',
-            'location',
-            'company',
-            'employee_id',
-            'cost_center',
-            'profit_center',
-            'department',
-            'user',
-            'purpose',
-            'service_name',
-            'warehouse',
-            'remarks',
             'budget_info',
+            'category',
+            'company',
+            'cost_center',
+            'deleted',
+            'department',
+            'deprecation_rate',
+            'device_info',
+            'hostname',
+            'employee_id',
+            'guardian',
+            'id',
+            'imei',
+            'invoice_no',
+            'location',
+            'manufacturer',
+            'model',
+            'niw',
+            'order_no',
+            'owner',
+            'part_info',
+            'profit_center',
+            'provider',
+            'purpose',
+            'ralph_device_id',
+            'remarks',
+            'service_name',
+            'sn',
+            'source',
+            'status',
+            'task_url',
+            'unlinked',
+            'user',
+            'warehouse',
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -120,6 +121,16 @@ class AssetsSearchQueryableMixin(object):
                         )
                     else:
                         all_q &= Q(barcode__contains=field_value)
+                elif field == 'hostname':
+                    if exact:
+                        all_q &= Q(hostname=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['hostname'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
+                    else:
+                        all_q &= Q(hostname__contains=field_value)
                 elif field == 'sn':
                     if exact:
                         all_q &= Q(sn=field_value)

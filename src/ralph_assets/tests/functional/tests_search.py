@@ -663,20 +663,25 @@ class TestSearchEngine(TestCase):
             self._check_results_length(url, field_name, 'pp', 1)
             self._check_results_length(url, field_name, 'o', 3)
 
-    def test_barcode(self):
-        field_name = 'barcode'
+    def _test_triple_search_feature(self, field_name):
+        """
+        Checks if *field_name* has these three features:
+            - exact match: typed '"ab"' finds 'ab' but not 'a' or 'b'
+            - multi values match: typed 'a;b;c' finds 'a' or 'b' or 'c'
+            - contains match: typed 'ab' finds 'ab' but also 'aab' or 'cabd'
+        """
         self._field_exact(field_name)
         self._field_multi(field_name)
         self._field_icontains(field_name)
+
+    def test_barcode(self):
+        self._test_triple_search_feature('barcode')
 
     def test_sn(self):
-        field_name = 'sn'
-        self._field_exact(field_name)
-        self._field_multi(field_name)
-        self._field_icontains(field_name)
+        self._test_triple_search_feature('sn')
 
     def test_niw(self):
-        field_name = 'niw'
-        self._field_exact(field_name)
-        self._field_multi(field_name)
-        self._field_icontains(field_name)
+        self._test_triple_search_feature('niw')
+
+    def test_hostname(self):
+        self._test_triple_search_feature('hostname')
