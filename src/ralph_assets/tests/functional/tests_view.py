@@ -393,24 +393,24 @@ class TestLicencesView(TestCase):
     def test_bulk_edit(self):
         num_of_licences = 10
         fields = [
-            'asset_type',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
             'accounting_id',
+            'asset_type',
             'assets',
-            'provider',
+            'invoice_date',
             'invoice_no',
-            'sn',
+            'licence_type',
             'niw',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
             'remarks',
             'service_name',
+            'sn',
+            'software_category',
+            'valid_thru',
         ]
         licences = [LicenceFactory() for _ in range(num_of_licences)]
         url = reverse('licence_bulkedit')

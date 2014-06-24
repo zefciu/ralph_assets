@@ -333,13 +333,13 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
     class Meta:
         model = Asset
         widgets = {
-            'request_date': DateWidget(),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
+            'device_info': HiddenInput(),
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
-            'device_info': HiddenInput(),
+            'request_date': DateWidget(),
         }
 
     @property
@@ -367,6 +367,14 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
+    hostname = CharField(
+        max_length=10, required=False,
+        widget=TextInput(attrs={'readonly': '1'}),
+    )
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -402,7 +410,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        banned_fillables = set(['sn', 'barcode', 'imei'])
+        banned_fillables = set(['hostname', 'sn', 'barcode', 'imei'])
         for field_name in self.fields:
             if field_name not in banned_fillables:
                 classes = "span12 fillable"
@@ -410,7 +418,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 classes = ""
             else:
                 classes = "span12"
-            self.fields[field_name].widget.attrs = {'class': classes}
+            self.fields[field_name].widget.attrs.update({'class': classes})
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
@@ -420,7 +428,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
             'sn', 'property_of', 'purpose', 'remarks', 'service_name',
             'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
             'office_info', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date',
+            'deprecation_end_date', 'hostname',
         )
 
     model = AutoCompleteSelectField(
@@ -450,6 +458,7 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
             'property_of', 'remarks', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
             'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
+            'hostname',
         )
 
     model = AutoCompleteSelectField(
