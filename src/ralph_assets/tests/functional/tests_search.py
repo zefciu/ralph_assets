@@ -16,6 +16,7 @@ from ralph_assets.tests.util import create_model
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     BOAssetFactory,
+    DCAssetFactory,
     AssetManufacturerFactory,
 )
 from ralph_assets.models_assets import AssetStatus
@@ -634,6 +635,10 @@ class TestSearchEngine(TestCase):
             self.testing_urls['bo'], field_name, '321', 2
         )
 
+    def _check_search_result_count(self, data_to_check):
+        for url, field_name, value, expected in data_to_check:
+            self._check_results_length(url, field_name, value, expected)
+
     def test_model_exact(self):
         field_name = 'model'
         for _, url in self.testing_urls.items():
@@ -663,25 +668,45 @@ class TestSearchEngine(TestCase):
             self._check_results_length(url, field_name, 'pp', 1)
             self._check_results_length(url, field_name, 'o', 3)
 
-    def _test_triple_search_feature(self, field_name):
-        """
-        Checks if *field_name* has these three features:
-            - exact match: typed '"ab"' finds 'ab' but not 'a' or 'b'
-            - multi values match: typed 'a;b;c' finds 'a' or 'b' or 'c'
-            - contains match: typed 'ab' finds 'ab' but also 'aab' or 'cabd'
-        """
+    def test_barcode(self):
+        field_name = 'barcode'
         self._field_exact(field_name)
         self._field_multi(field_name)
         self._field_icontains(field_name)
 
-    def test_barcode(self):
-        self._test_triple_search_feature('barcode')
-
     def test_sn(self):
-        self._test_triple_search_feature('sn')
+        field_name = 'sn'
+        self._field_exact(field_name)
+        self._field_multi(field_name)
+        self._field_icontains(field_name)
 
     def test_niw(self):
-        self._test_triple_search_feature('niw')
+        field_name = 'niw'
+        self._field_exact(field_name)
+        self._field_multi(field_name)
+        self._field_icontains(field_name)
 
     def test_hostname(self):
-        self._test_triple_search_feature('hostname')
+        for hostname in ("POLPC10000", "POLPC10001"):
+            DCAssetFactory(hostname=hostname)
+        for hostname in ("POLPC20000", "POLPC20001"):
+            BOAssetFactory(hostname=hostname)
+
+        field_name = 'hostname'
+        self._check_search_result_count([
+            # exact check
+            (self.testing_urls['dc'], field_name, '"POLPC10001"', 1),
+            (self.testing_urls['dc'], field_name, '"POLPC1000"', 0),
+            (self.testing_urls['bo'], field_name, '"POLPC20001"', 1),
+            (self.testing_urls['bo'], field_name, '"POLPC2000"', 0),
+            # multi check
+            (self.testing_urls['dc'], field_name, 'POLPC10000;POLPC10001', 2),
+            (self.testing_urls['bo'], field_name, 'POLPC20000;POLPC20001', 2),
+            # icontains check
+            (self.testing_urls['dc'], field_name, 'POLPC1', 2),
+            (self.testing_urls['dc'], field_name, '10001', 1),
+            (self.testing_urls['dc'], field_name, 'none', 0),
+            (self.testing_urls['bo'], field_name, 'POLPC2', 2),
+            (self.testing_urls['bo'], field_name, '20001', 1),
+            (self.testing_urls['bo'], field_name, 'none', 0),
+        ])
