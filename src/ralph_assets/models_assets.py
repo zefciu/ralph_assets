@@ -14,6 +14,7 @@ import os
 
 from dateutil.relativedelta import relativedelta
 
+from dj.choices import Country
 from django.contrib.auth.models import User
 from lck.django.choices import Choices
 from lck.django.common.models import (
@@ -41,6 +42,7 @@ from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
+from ralph_assets.utils import iso2_to_iso3
 
 
 logger = logging.getLogger(__name__)
@@ -232,6 +234,7 @@ class AssetCategory(
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
+    code = models.CharField(max_length=4)
     is_blade = models.BooleanField()
     parent = TreeForeignKey(
         'self',
@@ -625,6 +628,30 @@ class Asset(
             'mode': ASSET_TYPE2MODE[self.type],
             'asset_id': self.id,
         })
+
+    @property
+    def can_generate_hostname(self):
+        return bool(self.user and self.model.category and not self.hostname)
+
+    def generate_hostname(self, commit=True):
+
+        if not self.can_generate_hostname:
+            return
+        country = Country.name_from_id(self.user.profile.country).upper()
+        category_code = self.model.category.code.upper()
+        country_category = iso2_to_iso3[country] + category_code
+        # TODO: Asset.objects.select_for_update() is necessary?
+        queryset = Asset.objects.select_for_update().filter(
+            hostname__startswith=country_category
+        ).order_by('-hostname')[:1]
+        if queryset:
+            last_hostname = int(queryset[0].hostname[len(country_category):])
+            hostname_number = last_hostname + 1
+        else:
+            hostname_number = 1
+        self.hostname = country_category + '{:05}'.format(hostname_number)
+        if commit:
+            self.save()
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
