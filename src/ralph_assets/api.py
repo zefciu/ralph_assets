@@ -243,7 +243,7 @@ class AssetsResource(ModelResource):
             'invoice_no': ALL,
             'location': ALL,
             'model': ALL_WITH_RELATIONS,
-            'name': ALL,
+            'hostname': ALL,
             'niw': ALL,
             'order_no': ALL,
             'owner': ALL_WITH_RELATIONS,
