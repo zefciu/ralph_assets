@@ -1,11 +1,25 @@
 Change Log
 ----------
 
+2.0.2-rc2
+~~~~~~~~~
+Released on June 13, 2014
+
+* Added asset id column to asset report
+
+
+2.0.1-rc2
+~~~~~~~~~
+
+Released on June 6, 2014
+
+* Bugfix - slots field is not shown when model category is blade
+
 
 2.0.0-rc2
 ~~~~~~~~~
 
-Released on July 3, 2014
+Released on June 3, 2014
 
 * Bugfixes in API,
 * Bugfixes in MANIFEST.in,
