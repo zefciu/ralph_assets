@@ -56,7 +56,7 @@ from ralph_assets.models import (
     Service,
 )
 from ralph_assets import models_assets
-from ralph.ui.widgets import DateWidget, ReadOnlyWidget
+from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
 RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
@@ -371,7 +371,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
     )
     hostname = CharField(
         max_length=10, required=False,
-        widget=TextInput(attrs={'readonly': '1'}),
+        widget=SimpleReadOnlyWidget(),
     )
 
     def clean_hostname(self):
@@ -803,7 +803,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         widgets = {
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': TextInput(attrs={'readonly': '1'}),
+            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
@@ -983,7 +983,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'barcode': Textarea(attrs={'rows': 1}),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': TextInput(attrs={'readonly': '1'}),
+            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
