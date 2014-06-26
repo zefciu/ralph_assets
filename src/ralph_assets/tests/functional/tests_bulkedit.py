@@ -49,21 +49,22 @@ class TestBulkEdit(TestCase):
         self.assetOwner = AssetOwnerFactory()
         self.asset_service = ServiceFactory()
         self.common_asset_data = {  # DC & BO common data
-            'status': models_assets.AssetStatus.in_progress,
             'barcode': 'barcode',
+            'deprecation_rate': '25',
+            'hostname': 'POLPC12345',
+            'invoice_date': '2011-11-14',
+            'invoice_no': 'invoice_no',
             'model': self.model,
-            'user': self.user,
+            'order_no': 'order_no',
             'owner': self.user,
-            'warehouse': self.warehouse,
+            'price': '100',
             'property_of': self.assetOwner,
             'service_name': self.asset_service,
-            'invoice_no': 'invoice_no',
-            'invoice_date': '2011-11-14',
-            'price': '100',
-            'task_url': 'www.test.com',
-            'deprecation_rate': '25',
-            'order_no': 'order_no',
             'source': models_assets.AssetSource.shipment,
+            'status': models_assets.AssetStatus.in_progress,
+            'task_url': 'www.test.com',
+            'user': self.user,
+            'warehouse': self.warehouse,
         }
 
     def test_edit_via_bulkedit_form(self):
@@ -72,26 +73,23 @@ class TestBulkEdit(TestCase):
         content = self.client.get(url)
         self.assertEqual(content.status_code, 200)
 
-        post_data = get_bulk_edit_post_data(
-            {
-                'model': self.model.id,
-                'invoice_no': 'Invoice No1',
-                'order_no': 'Order No1',
-                'invoice_date': '2012-02-02',
-                'status': AssetStatus.in_progress.id,
-                'sn': '3333-3333-3333-3333',
-                'barcode': 'bc-3333-3333-3333-3333',
-            },
-            {
-                'model': self.model1.id,
-                'invoice_no': 'Invoice No2',
-                'order_no': 'Order No2',
-                'invoice_date': '2011-02-03',
-                'status': AssetStatus.waiting_for_release.id,
-                'sn': '4444-4444-4444-4444',
-                'barcode': 'bc-4444-4444-4444-4444',
-            },
-        )
+        post_data = get_bulk_edit_post_data({
+            'model': self.model.id,
+            'invoice_no': 'Invoice No1',
+            'order_no': 'Order No1',
+            'invoice_date': '2012-02-02',
+            'status': AssetStatus.in_progress.id,
+            'sn': '3333-3333-3333-3333',
+            'barcode': 'bc-3333-3333-3333-3333',
+        }, {
+            'model': self.model1.id,
+            'invoice_no': 'Invoice No2',
+            'order_no': 'Order No2',
+            'invoice_date': '2011-02-03',
+            'status': AssetStatus.waiting_for_release.id,
+            'sn': '4444-4444-4444-4444',
+            'barcode': 'bc-4444-4444-4444-4444',
+        })
 
         response = self.client.post(url, post_data, follow=True)
 
@@ -209,7 +207,7 @@ class TestBulkEdit(TestCase):
         url = reverse('licence_bulkedit')
         url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestBulkEditAsset(TestCase):

@@ -56,7 +56,7 @@ from ralph_assets.models import (
     Service,
 )
 from ralph_assets import models_assets
-from ralph.ui.widgets import DateWidget, ReadOnlyWidget
+from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
 RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
@@ -66,7 +66,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of',
+        'service_name', 'property_of', 'hostname',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -81,7 +81,9 @@ asset_fieldset = lambda: OrderedDict([
 
 asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
-        'noncollapsed': ['barcode', 'status', 'imei', 'sn', 'model'],
+        'noncollapsed': [
+            'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
+        ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
@@ -112,7 +114,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
 asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
-            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -333,13 +335,13 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
     class Meta:
         model = Asset
         widgets = {
-            'request_date': DateWidget(),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
+            'device_info': HiddenInput(),
             'invoice_date': DateWidget(),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
-            'device_info': HiddenInput(),
+            'request_date': DateWidget(),
         }
 
     @property
@@ -367,6 +369,14 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
+    hostname = CharField(
+        max_length=10, required=False,
+        widget=SimpleReadOnlyWidget(),
+    )
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -402,7 +412,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        banned_fillables = set(['sn', 'barcode', 'imei'])
+        banned_fillables = set(['hostname', 'sn', 'barcode', 'imei'])
         for field_name in self.fields:
             if field_name not in banned_fillables:
                 classes = "span12 fillable"
@@ -410,7 +420,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 classes = ""
             else:
                 classes = "span12"
-            self.fields[field_name].widget.attrs = {'class': classes}
+            self.fields[field_name].widget.attrs.update({'class': classes})
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
@@ -420,7 +430,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
             'sn', 'property_of', 'purpose', 'remarks', 'service_name',
             'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
             'office_info', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date',
+            'deprecation_end_date', 'hostname',
         )
 
     model = AutoCompleteSelectField(
@@ -450,6 +460,7 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
             'property_of', 'remarks', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
             'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
+            'hostname',
         )
 
     model = AutoCompleteSelectField(
@@ -746,59 +757,61 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'niw',
-            'type',
+            'budget_info',
+            'company',
+            'cost_center',
+            'delivery_date',
+            'department',
+            'deprecation_end_date',
+            'deprecation_rate',
+            'hostname',
+            'employee_id',
+            'force_deprecation',
             'imei',
-            'model',
-            'status',
-            'task_url',
-            'warehouse',
-            'property_of',
-            'source',
+            'invoice_date',
             'invoice_no',
+            'loan_end_date',
+            'location',
+            'manager',
+            'model',
+            'niw',
+            'note',
             'order_no',
+            'owner',
             'price',
+            'production_use_date',
+            'production_year',
+            'profit_center',
+            'property_of',
+            'provider',
+            'provider_order_date',
+            'remarks',
+            'request_date',
+            'service_name',
+            'slots',
+            'source',
+            'status',
+            'support_period',
             'support_price',
             'support_type',
-            'support_period',
             'support_void_reporting',
-            'provider',
-            'remarks',
-            'service_name',
-            'request_date',
-            'provider_order_date',
-            'delivery_date',
-            'invoice_date',
-            'production_use_date',
-            'deprecation_rate',
-            'force_deprecation',
-            'slots',
-            'production_year',
+            'task_url',
+            'type',
             'user',
-            'owner',
-            'location',
-            'company',
-            'employee_id',
-            'cost_center',
-            'profit_center',
-            'department',
-            'manager',
-            'loan_end_date',
-            'note',
-            'deprecation_end_date',
-            'budget_info',
+            'warehouse',
         )
         widgets = {
-            'request_date': DateWidget(),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
+            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
+            'request_date': DateWidget(),
             'support_type': Textarea(attrs={'rows': 5}),
-            'loan_end_date': DateWidget(),
-            'note': Textarea(attrs={'rows': 3}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -919,65 +932,67 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     class Meta:
         model = Asset
         fields = (
-            'niw',
-            'sn',
-            'type',
+            'barcode',
+            'budget_info',
+            'company',
+            'cost_center',
+            'deleted',
+            'delivery_date',
+            'department',
+            'deprecation_end_date',
+            'deprecation_rate',
+            'hostname',
+            'employee_id',
+            'force_deprecation',
             'imei',
-            'model',
-            'status',
-            'task_url',
-            'warehouse',
-            'property_of',
-            'source',
+            'invoice_date',
             'invoice_no',
+            'loan_end_date',
+            'location',
+            'manager',
+            'model',
+            'niw',
+            'note',
             'order_no',
+            'owner',
             'price',
+            'production_use_date',
+            'production_year',
+            'profit_center',
+            'property_of',
+            'provider',
+            'provider_order_date',
+            'remarks',
+            'request_date',
+            'service_name',
+            'slots',
+            'sn',
+            'sn',
+            'source',
+            'status',
+            'support_period',
             'support_price',
             'support_type',
-            'support_period',
             'support_void_reporting',
-            'provider',
-            'remarks',
-            'service_name',
-            'sn',
-            'barcode',
-            'request_date',
-            'provider_order_date',
-            'delivery_date',
-            'invoice_date',
-            'production_use_date',
-            'deleted',
-            'deprecation_rate',
-            'force_deprecation',
-            'slots',
-            'production_year',
+            'task_url',
+            'type',
             'user',
-            'owner',
-            'location',
-            'company',
-            'employee_id',
-            'cost_center',
-            'profit_center',
-            'department',
-            'manager',
-            'loan_end_date',
-            'note',
-            'deprecation_end_date',
-            'budget_info',
+            'warehouse',
         )
         widgets = {
-            'request_date': DateWidget(),
+            'barcode': Textarea(attrs={'rows': 1}),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
+            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
+            'loan_end_date': DateWidget(),
+            'note': Textarea(attrs={'rows': 3}),
             'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
-            'support_type': Textarea(attrs={'rows': 5}),
+            'request_date': DateWidget(),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
-            'barcode': Textarea(attrs={'rows': 1}),
-            'loan_end_date': DateWidget(),
-            'note': Textarea(attrs={'rows': 3}),
+            'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -1091,6 +1106,10 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
 
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname
 
     def clean(self):
         self.cleaned_data = super(BaseEditAssetForm, self).clean()
@@ -1346,6 +1365,15 @@ class SearchAssetForm(Form):
     barcode = CharField(
         required=False,
         label=_('Barcode'),
+        widget=TextInput(
+            attrs={
+                'title': _('separate ";" or "|" to search multiple value'),
+            },
+        )
+    )
+    hostname = CharField(
+        required=False,
+        label=_('hostname'),
         widget=TextInput(
             attrs={
                 'title': _('separate ";" or "|" to search multiple value'),

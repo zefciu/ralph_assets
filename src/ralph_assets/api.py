@@ -235,11 +235,6 @@ class AssetsResource(ModelResource):
         queryset = Asset.objects.all()
         authentication = ApiKeyAuthentication()
         filtering = {
-            'model': ALL_WITH_RELATIONS,
-            'warehouse': ALL_WITH_RELATIONS,
-            'service_name': ALL_WITH_RELATIONS,
-            'owner': ALL_WITH_RELATIONS,
-            'user': ALL_WITH_RELATIONS,
             'barcode': ALL,
             'delivery_date': ALL,
             'deprecation_rate': ALL,
@@ -247,8 +242,11 @@ class AssetsResource(ModelResource):
             'invoice_date': ALL,
             'invoice_no': ALL,
             'location': ALL,
+            'model': ALL_WITH_RELATIONS,
+            'hostname': ALL,
             'niw': ALL,
             'order_no': ALL,
+            'owner': ALL_WITH_RELATIONS,
             'price': ALL,
             'production_use_date': ALL,
             'production_year': ALL,
@@ -256,6 +254,7 @@ class AssetsResource(ModelResource):
             'provider_order_date': ALL,
             'remarks': ALL,
             'request_date': ALL,
+            'service_name': ALL_WITH_RELATIONS,
             'slots': ALL,
             'sn': ALL,
             'source': ALL,
@@ -265,6 +264,8 @@ class AssetsResource(ModelResource):
             'support_type': ALL,
             'support_void_reporting': ALL,
             'type': ALL,
+            'user': ALL_WITH_RELATIONS,
+            'warehouse': ALL_WITH_RELATIONS,
         }
         list_allowed_methods = ['get']
         throttle = CacheThrottle(

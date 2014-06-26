@@ -30,6 +30,53 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
 
+def update(_dict, obj, keys):
+    """
+    Update *_dict* with *obj*'s values from keys.
+    """
+    for field_name in keys:
+        _dict['hostname'] = getattr(obj, field_name)
+    return _dict
+
+
+def get_asset_data():
+    """
+    Common asset data for DC & BO.
+
+    This can't be a just module dict, becasue these data include factories
+    which are not accessible during module import causing error.
+    """
+    return {
+        'asset': '',  # required if asset (instead of *part*) is edited
+        'barcode': 'barcode1',
+        'budget_info': assets_utils.BudgetInfoFactory().id,
+        'delivery_date': datetime.date(2013, 1, 7),
+        'deprecation_end_date': datetime.date(2013, 7, 25),
+        'deprecation_rate': 77,
+        'hostname': 'POLPC12345',
+        'invoice_date': datetime.date(2009, 2, 23),
+        'invoice_no': 'Invoice no #3',
+        'loan_end_date': datetime.date(2013, 12, 29),
+        'location': 'location #3',
+        'model': assets_utils.AssetModelFactory().id,
+        'niw': 'Inventory number #3',
+        'order_no': 'Order no #3',
+        'owner': assets_utils.UserFactory().id,
+        'price': Decimal('43.45'),
+        'property_of': assets_utils.AssetOwnerFactory().id,
+        'provider': 'Provider #3',
+        'provider_order_date': datetime.date(2014, 3, 17),
+        'remarks': 'Remarks #3',
+        'request_date': datetime.date(2014, 6, 9),
+        'service_name': assets_utils.ServiceFactory().id,
+        'source': models_assets.AssetSource.shipment.id,
+        'status': models_assets.AssetStatus.new.id,
+        'task_url': 'http://www.url-3.com/',
+        'user': assets_utils.UserFactory().id,
+        'warehouse': assets_utils.WarehouseFactory().id,
+    }
+
+
 def check_fields(testcase, correct_data, object_to_check):
     """
     Checks if *object_to_check* has the same data as *correct_data*
@@ -81,6 +128,9 @@ class TestDevicesView(TestCase):
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
 
+    def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
+        update(new_asset_data, asset, readonly_fields)
+
     def _update_with_supports(self, _dict):
         supports = [
             support_utils.DCSupportFactory().id,
@@ -102,35 +152,10 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.mode = 'dc'
-        self.asset_data = {
-            'asset': '',  # required if asset (instead of *part*) is edited
-            'barcode': 'barcode1',
-            'budget_info': assets_utils.BudgetInfoFactory().id,
-            'delivery_date': datetime.date(2013, 1, 7),
-            'deprecation_end_date': datetime.date(2013, 7, 25),
-            'deprecation_rate': 77,
-            'invoice_date': datetime.date(2009, 2, 23),
-            'invoice_no': 'Invoice no #3',
-            'loan_end_date': datetime.date(2013, 12, 29),
-            'location': 'location #3',
-            'model': assets_utils.AssetModelFactory().id,
-            'niw': 'Inventory number #3',
-            'order_no': 'Order no #3',
-            'owner': assets_utils.UserFactory().id,
-            'price': Decimal('43.45'),
-            'property_of': assets_utils.AssetOwnerFactory().id,
-            'provider': 'Provider #3',
-            'provider_order_date': datetime.date(2014, 3, 17),
-            'remarks': 'Remarks #3',
-            'request_date': datetime.date(2014, 6, 9),
-            'service_name': assets_utils.ServiceFactory().id,
-            'source': models_assets.AssetSource.shipment.id,
-            'status': models_assets.AssetStatus.new.id,
-            'task_url': 'http://www.url-3.com/',
+        self.asset_data = get_asset_data()
+        self.asset_data.update({
             'type': models_assets.AssetType.data_center.id,
-            'user': assets_utils.UserFactory().id,
-            'warehouse': assets_utils.WarehouseFactory().id,
-        }
+        })
         self.device_data = {
             'ralph_device_id': '',
             'u_height': 14,
@@ -199,6 +224,7 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
         asset = models_assets.Asset.objects.get(pk=asset.id)
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
+        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         check_fields(self, self.new_asset_data.items(), asset)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
@@ -209,35 +235,10 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
     def setUp(self):
         self.client = login_as_su()
         self.mode = 'back_office'
-        self.asset_data = {
-            'asset': '',  # required if asset (instead of *part*) is edited
-            'barcode': 'barcode1',
-            'budget_info': assets_utils.BudgetInfoFactory().id,
-            'delivery_date': datetime.date(2013, 1, 7),
-            'deprecation_end_date': datetime.date(2013, 7, 25),
-            'deprecation_rate': 77,
-            'invoice_date': datetime.date(2009, 2, 23),
-            'invoice_no': 'Invoice no #3',
-            'loan_end_date': datetime.date(2013, 12, 29),
-            'location': 'location #3',
-            'model': assets_utils.AssetModelFactory().id,
-            'niw': 'Inventory number #3',
-            'order_no': 'Order no #3',
-            'owner': assets_utils.UserFactory().id,
-            'price': Decimal('43.45'),
-            'property_of': assets_utils.AssetOwnerFactory().id,
-            'provider': 'Provider #3',
-            'provider_order_date': datetime.date(2014, 3, 17),
-            'remarks': 'Remarks #3',
-            'request_date': datetime.date(2014, 6, 9),
-            'service_name': assets_utils.ServiceFactory().id,
-            'source': models_assets.AssetSource.shipment.id,
-            'status': models_assets.AssetStatus.new.id,
-            'task_url': 'http://www.url-3.com/',
+        self.asset_data = get_asset_data()
+        self.asset_data.update({
             'type': models_assets.AssetType.back_office.id,
-            'user': assets_utils.UserFactory().id,
-            'warehouse': assets_utils.WarehouseFactory().id,
-        }
+        })
         self.office_data = {
             'coa_oem_os': assets_utils.CoaOemOsFactory().id,
             'purpose': models_assets.AssetPurpose.others.id,
@@ -305,6 +306,7 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
             response, url, status_code=302, target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
         check_fields(self, self.new_asset_data.items(), asset)
@@ -392,24 +394,24 @@ class TestLicencesView(TestCase):
     def test_bulk_edit(self):
         num_of_licences = 10
         fields = [
-            'asset_type',
-            'licence_type',
-            'property_of',
-            'software_category',
-            'number_bought',
-            'parent',
-            'invoice_date',
-            'valid_thru',
-            'order_no',
-            'price',
             'accounting_id',
+            'asset_type',
             'assets',
-            'provider',
+            'invoice_date',
             'invoice_no',
-            'sn',
+            'licence_type',
             'niw',
+            'number_bought',
+            'order_no',
+            'parent',
+            'price',
+            'property_of',
+            'provider',
             'remarks',
             'service_name',
+            'sn',
+            'software_category',
+            'valid_thru',
         ]
         licences = [LicenceFactory() for _ in range(num_of_licences)]
         url = reverse('licence_bulkedit')
