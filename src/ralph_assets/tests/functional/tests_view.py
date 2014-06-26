@@ -9,8 +9,9 @@ import datetime
 import uuid
 from decimal import Decimal
 
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 from django.test.client import Client
 
 from ralph_assets import models_assets
@@ -720,3 +721,50 @@ class ACLInheritanceTest(TestCase):
                 '.'.join([module_name, class_name])
             )
             self.assertIn(ACLGateway, found_class.__mro__, msg)
+
+
+class TestImport(TestCase):
+    def setUp(self):
+        self.client = login_as_su()
+        self.url = reverse('xls_upload')
+
+    def _update_asset_by_csv(self, asset, field, value):
+        self.client.get(self.url)
+        csv_data = '"id","%s"\n' % field
+        csv_data += '"%s","%s"' % (asset.id, value)
+
+        step1_post = {
+            'upload-asset_type': models_sam.AssetType.back_office.id,
+            'upload-model': 'ralph_assets.asset',
+            'upload-file': SimpleUploadedFile('test.csv', csv_data),
+            'xls_upload_view-current_step': 'upload',
+        }
+        response = self.client.post(self.url, step1_post)
+        self.assertContains(response, 'column_choice')
+        self.assertContains(response, 'step 2/3')
+
+        step2_post = {
+            'column_choice-%s' % field: field,
+            'xls_upload_view-current_step': 'column_choice',
+        }
+        response = self.client.post(self.url, step2_post)
+        self.assertContains(response, 'step 3/3')
+
+        step3_post = {
+            'xls_upload_view-current_step': 'confirm',
+        }
+        response = self.client.post(self.url, step3_post)
+        self.assertContains(response, 'Import done')
+
+    def test_import_csv_asset_back_office_update(self):
+        self.client.get(self.url)
+        asset = BOAssetFactory()
+
+        for field in ['barcode', 'invoice_no', 'order_no',
+                      'sn', 'remarks', 'niw']:
+            new_value = str(uuid.uuid1())
+            self._update_asset_by_csv(asset, field, new_value)
+            updated_asset = models_assets.Asset.objects.get(id=asset.id)
+            self.assertEqual(
+                getattr(updated_asset, field), new_value
+            )
