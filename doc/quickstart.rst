@@ -9,7 +9,7 @@ sources.  Let's start with the data center type.
 
 
 Searching and Filtering of Assets
-----------------
+---------------------------------
 
 Let's start with the main screen. Here you find all your hardware assets which are in the database. Use the left column for filtering of the assets. 
 
@@ -51,7 +51,7 @@ thus allowing you to batch-add many devices of the same type.
 
 
 Adding Parts
--------------
+------------
 
 In the same way you can add parts to the database, and then bind the parts to 
 devices. To do this, choose "Add part" from the menu.
@@ -64,7 +64,7 @@ devices. To do this, choose "Add part" from the menu.
 
 
 Bulk Editing
--------------
+------------
 
 It is often required to edit multiple assets at once. For example, when you
 want to move them from one warehouse to another. There is a special mode called
@@ -86,7 +86,7 @@ current cell.
 
 
 Work Flow and Statues
--------------
+---------------------
 
 .. image:: edit-device-status.png
 
@@ -95,7 +95,7 @@ another.  You can freely change statuses.  All changes will be recorded,
 allowing you to inspect the flow later.
 
 Edit Device
--------------
+-----------
 
 .. image:: edit-device.png
 

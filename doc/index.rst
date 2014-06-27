@@ -10,8 +10,8 @@ Ralph is an asset management system for your data center. It lets you see what
 hardware and software is installed. It also lets you keep track of who is using
 every device, for what, and how much it costs.
 
-This documentation
-------------------
+Assets
+------
 
 See: quickstart.rst and installation.rst
 
