@@ -47,9 +47,9 @@ def object_list_search(object_instance, field):
         params = None
         mode = ASSET_TYPE2MODE.get(object_instance.asset_type)
         base_url = reverse('asset_search', args=(mode,))
-        ids = getattr(object_instance, field).values('id')
+        ids = getattr(object_instance, field).values_list('id', flat=True)
         if ids:
-            params = ','.join([str(id['id']) for id in ids])
+            params = ','.join(map(str, ids))
         url = '{}?id={}'.format(base_url, params)
     else:
         raise ValueError('%s is not supported' % object_instance)
