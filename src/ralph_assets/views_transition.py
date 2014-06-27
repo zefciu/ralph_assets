@@ -16,6 +16,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView
 from django.utils.translation import ugettext_lazy as _
+from django.template.defaultfilters import slugify
 from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
@@ -397,7 +398,7 @@ class TransitionHistoryFileHandler(TemplateView):
     def get_file_content_from_history(self, history_object):
         try:
             content = history_object.report_file.read()
-        except IOError as e:
+        except (IOError, ValueError) as e:
             logger.error(
                 "Can not read transition history file: {} ({})".format(
                     history_object.id, e,
@@ -407,8 +408,9 @@ class TransitionHistoryFileHandler(TemplateView):
         return content, False
 
     def generate_file_name(self, history_object):
-        return "{}_{}_{}.pdf".format(
+        name = "{}_{}_{}.pdf".format(
             history_object.created.date(),
             history_object.affected_user.get_full_name(),
             history_object.transition.name,
         )
+        return slugify(name) + '.pdf'
