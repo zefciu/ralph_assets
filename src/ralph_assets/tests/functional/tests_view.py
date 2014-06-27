@@ -730,8 +730,7 @@ class TestImport(TestCase):
 
     def _update_asset_by_csv(self, asset, field, value):
         self.client.get(self.url)
-        csv_data = '"id","%s"\n' % field
-        csv_data += '"%s","%s"' % (asset.id, value)
+        csv_data = '"id","{}"\n"{}","{}"'.format(field, asset.id, value)
 
         step1_post = {
             'upload-asset_type': models_sam.AssetType.back_office.id,
@@ -760,8 +759,9 @@ class TestImport(TestCase):
         self.client.get(self.url)
         asset = BOAssetFactory()
 
-        for field in ['barcode', 'invoice_no', 'order_no',
-                      'sn', 'remarks', 'niw']:
+        for field in [
+            'barcode', 'invoice_no', 'order_no', 'sn', 'remarks', 'niw'
+        ]:
             new_value = str(uuid.uuid1())
             self._update_asset_by_csv(asset, field, new_value)
             updated_asset = models_assets.Asset.objects.get(id=asset.id)
