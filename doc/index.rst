@@ -11,7 +11,7 @@ hardware and software is installed. It also lets you keep track of who is using
 every device, for what, and how much it costs.
 
 Assets
-------------
+------
 
 See: quickstart.rst and installation.rst
 
