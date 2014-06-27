@@ -31,11 +31,13 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.db.utils import DatabaseError
 from django.dispatch import receiver
+from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
@@ -48,6 +50,9 @@ from ralph_assets.utils import iso2_to_iso3
 logger = logging.getLogger(__name__)
 
 SAVE_PRIORITY = 0
+ASSET_HOSTNAME_TEMPLATE = getattr(settings, 'ASSET_HOSTNAME_TEMPLATE', None)
+if not ASSET_HOSTNAME_TEMPLATE:
+    raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
 
 
 class LicenseAndAsset(object):
@@ -630,26 +635,43 @@ class Asset(
         })
 
     @property
+    def country_code(self):
+        iso2 = Country.name_from_id(self.owner.profile.country).upper()
+        return iso2_to_iso3.get(iso2, 'XX')
+
+    @property
     def can_generate_hostname(self):
-        return bool(self.user and self.model.category and not self.hostname)
+        return bool(self.owner and self.model.category and not self.hostname)
 
     def generate_hostname(self, commit=True):
-
         if not self.can_generate_hostname:
             return
-        country = Country.name_from_id(self.user.profile.country).upper()
-        category_code = self.model.category.code.upper()
-        country_category = iso2_to_iso3[country] + category_code
-        # TODO: Asset.objects.select_for_update() is necessary?
-        queryset = Asset.objects.select_for_update().filter(
-            hostname__startswith=country_category
+
+        def render_template(template, **kwargs):
+            template = Template(template)
+            context = Context(kwargs)
+            return template.render(context)
+        prefix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('prefix', ''),
+            object=self,
+        )
+        postfix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('postfix', ''),
+            object=self,
+        )
+        counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', '')
+        queryset = Asset.objects.filter(
+            hostname__startswith=prefix,
+            hostname__endswith=postfix,
         ).order_by('-hostname')[:1]
         if queryset:
-            last_hostname = int(queryset[0].hostname[len(country_category):])
+            prefix_len = len(prefix)
+            last_hostname = int(queryset[0].hostname[
+                                prefix_len:prefix_len + counter_length])
             hostname_number = last_hostname + 1
         else:
             hostname_number = 1
-        self.hostname = country_category + '{:05}'.format(hostname_number)
+        self.hostname = '{}{:05}{}'.format(prefix, hostname_number, postfix)
         if commit:
             self.save()
 

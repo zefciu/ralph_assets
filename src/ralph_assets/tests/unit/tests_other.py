@@ -212,15 +212,15 @@ class TestHostnameGenerator(TestCase):
         """
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
-        asset = BOAssetFactory(model=model, user=self.user_pl, hostname='')
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         asset.generate_hostname()
         self.assertEqual(asset.hostname, 'POLPC00001')
 
     def test_generate_next_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
-        asset = BOAssetFactory(model=model, user=self.user_pl, hostname='')
-        BOAssetFactory(user=self.user_pl, hostname='POLSW00003')
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
+        BOAssetFactory(owner=self.user_pl, hostname='POLSW00003')
         self.asset1.hostname = 'POLPC00001'
         self.asset1.save()
         self.asset2.hostname = 'POLPC00002'
@@ -230,29 +230,29 @@ class TestHostnameGenerator(TestCase):
 
     def test_can_generate_hostname_for_model_without_category(self):
         model = AssetModelFactory(category=None)
-        asset = BOAssetFactory(model=model, user=self.user_pl, hostname='')
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
     def test_can_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
-        asset = BOAssetFactory(model=model, user=self.user_pl)
+        asset = BOAssetFactory(model=model, owner=self.user_pl)
         self.assertFalse(asset.can_generate_hostname)
 
     def test_can_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
-        asset = BOAssetFactory(model=model, user=None, hostname='')
+        asset = BOAssetFactory(model=model, owner=None, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
     def test_can_generate_hostname_for_model_without_user_and_category(self):
         model = AssetModelFactory(category=None)
-        asset = BOAssetFactory(model=model, user=None, hostname='')
+        asset = BOAssetFactory(model=model, owner=None, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
     def test_generate_next_hostname_out_of_range(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
-        asset = BOAssetFactory(model=model, user=self.user_pl, hostname='')
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         self.asset1.hostname = 'POLPC99999'
         self.asset1.save()
         asset.generate_hostname()
