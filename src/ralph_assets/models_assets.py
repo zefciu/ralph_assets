@@ -14,6 +14,7 @@ import os
 
 from dateutil.relativedelta import relativedelta
 
+from dj.choices import Country
 from django.contrib.auth.models import User
 from lck.django.choices import Choices
 from lck.django.common.models import (
@@ -30,22 +31,28 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.db.utils import DatabaseError
 from django.dispatch import receiver
+from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
+from ralph_assets.utils import iso2_to_iso3
 
 
 logger = logging.getLogger(__name__)
 
 SAVE_PRIORITY = 0
+ASSET_HOSTNAME_TEMPLATE = getattr(settings, 'ASSET_HOSTNAME_TEMPLATE', None)
+if not ASSET_HOSTNAME_TEMPLATE:
+    raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
 
 
 class LicenseAndAsset(object):
@@ -232,6 +239,7 @@ class AssetCategory(
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
+    code = models.CharField(max_length=4)
     is_blade = models.BooleanField()
     parent = TreeForeignKey(
         'self',
@@ -625,6 +633,52 @@ class Asset(
             'mode': ASSET_TYPE2MODE[self.type],
             'asset_id': self.id,
         })
+
+    @property
+    def country_code(self):
+        iso2 = Country.name_from_id(self.owner.profile.country).upper()
+        return iso2_to_iso3.get(iso2, 'POL')
+
+    @property
+    def can_generate_hostname(self):
+        return bool(self.owner and self.model.category and not self.hostname)
+
+    def generate_hostname(self, commit=True):
+        if not self.can_generate_hostname:
+            return
+
+        def render_template(template, **kwargs):
+            template = Template(template)
+            context = Context(kwargs)
+            return template.render(context)
+        prefix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('prefix', ''),
+            object=self,
+        )
+        postfix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('postfix', ''),
+            object=self,
+        )
+        counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
+        queryset = Asset.objects.filter(
+            hostname__startswith=prefix,
+            hostname__endswith=postfix,
+        ).order_by('-hostname')[:1]
+        if queryset:
+            prefix_length = len(prefix)
+            last_hostname = int(queryset[0].hostname[
+                                prefix_length:prefix_length + counter_length])
+            hostname_number = last_hostname + 1
+        else:
+            hostname_number = 1
+        self.hostname = '{prefix}{counter:0{fill}}{postfix}'.format(
+            prefix=prefix,
+            counter=hostname_number,
+            fill=counter_length,
+            postfix=postfix,
+        )
+        if commit:
+            self.save()
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')

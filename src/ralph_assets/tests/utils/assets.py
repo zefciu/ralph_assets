@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import itertools
 import random
 from factory import (
     fuzzy,
@@ -37,6 +38,9 @@ from ralph_assets.models_assets import (
     Warehouse,
 )
 from ralph_assets.tests.utils import UserFactory
+
+category_code_set = 'ABCDEFGHIJKLMNOPRSTUVWXYZ1234567890'
+category_code_combinations = itertools.product(category_code_set, repeat=2)
 
 
 def generate_imei(n):
@@ -100,6 +104,10 @@ class AssetCategoryFactory(Factory):
     def slug(self):
         return slugify(str(self.type) + self.name)
 
+    @lazy_attribute
+    def code(self):
+        return ''.join(category_code_combinations.next())
+
 
 class AssetSubCategoryFactory(AssetCategoryFactory):
     parent = SubFactory(AssetCategoryFactory)
@@ -121,6 +129,7 @@ class AssetModelFactory(Factory):
     name = Sequence(lambda n: 'Model #%s' % n)
     type = AssetCategoryType.back_office
     manufacturer = SubFactory(AssetManufacturerFactory)
+    category = SubFactory(AssetCategoryFactory)
 
 
 class WarehouseFactory(Factory):
@@ -157,7 +166,6 @@ class AssetFactory(Factory):
     model = SubFactory(AssetModelFactory)
     status = AssetStatus.new
     source = AssetSource.shipment
-    model = SubFactory(AssetModelFactory)
     warehouse = SubFactory(WarehouseFactory)
     device_info = SubFactory(DeviceInfoFactory)
     provider = Sequence(lambda n: 'Provider #%s' % n)
@@ -176,7 +184,7 @@ class BaseAssetFactory(Factory):
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)
-    hostname = Sequence(lambda n: 'POLPC{:05}'.format(n))
+    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
     location = Sequence(lambda n: 'location #{}'.format(n))
