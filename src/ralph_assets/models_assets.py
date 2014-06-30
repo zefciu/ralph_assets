@@ -637,7 +637,7 @@ class Asset(
     @property
     def country_code(self):
         iso2 = Country.name_from_id(self.owner.profile.country).upper()
-        return iso2_to_iso3.get(iso2, 'XX')
+        return iso2_to_iso3.get(iso2, 'POL')
 
     @property
     def can_generate_hostname(self):
@@ -659,19 +659,24 @@ class Asset(
             ASSET_HOSTNAME_TEMPLATE.get('postfix', ''),
             object=self,
         )
-        counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', '')
+        counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
         queryset = Asset.objects.filter(
             hostname__startswith=prefix,
             hostname__endswith=postfix,
         ).order_by('-hostname')[:1]
         if queryset:
-            prefix_len = len(prefix)
+            prefix_length = len(prefix)
             last_hostname = int(queryset[0].hostname[
-                                prefix_len:prefix_len + counter_length])
+                                prefix_length:prefix_length + counter_length])
             hostname_number = last_hostname + 1
         else:
             hostname_number = 1
-        self.hostname = '{}{:05}{}'.format(prefix, hostname_number, postfix)
+        self.hostname = '{prefix}{counter:0{fill}}{postfix}'.format(
+            prefix=prefix,
+            counter=hostname_number,
+            fill=counter_length,
+            postfix=postfix,
+        )
         if commit:
             self.save()
 

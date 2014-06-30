@@ -19,12 +19,12 @@ from ralph_assets.models_sam import (
     LicenceType,
     SoftwareCategory,
 )
+from ralph_assets.others import get_assets_rows, get_licences_rows
 from ralph_assets.tests.util import (
     create_asset,
     create_category,
     create_model,
 )
-from ralph_assets.others import get_assets_rows, get_licences_rows
 from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
     AssetCategoryFactory,
@@ -228,23 +228,23 @@ class TestHostnameGenerator(TestCase):
         asset.generate_hostname()
         self.assertEqual(asset.hostname, 'POLPC00003')
 
-    def test_can_generate_hostname_for_model_without_category(self):
+    def test_cant_generate_hostname_for_model_without_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
-    def test_can_generate_hostname_for_model_with_hostname(self):
+    def test_cant_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl)
         self.assertFalse(asset.can_generate_hostname)
 
-    def test_can_generate_hostname_for_model_without_user(self):
+    def test_cant_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
         asset = BOAssetFactory(model=model, owner=None, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
-    def test_can_generate_hostname_for_model_without_user_and_category(self):
+    def test_cant_generate_hostname_for_model_without_user_and_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=None, hostname='')
         self.assertFalse(asset.can_generate_hostname)
