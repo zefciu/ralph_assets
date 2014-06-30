@@ -408,7 +408,7 @@ class TransitionHistoryFileHandler(TemplateView):
         return content, False
 
     def generate_file_name(self, history_object):
-        name = "{}_{}_{}.pdf".format(
+        name = "{}_{}_{}".format(
             history_object.created.date(),
             history_object.affected_user.get_full_name(),
             history_object.transition.name,
