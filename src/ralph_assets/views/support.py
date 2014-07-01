@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ralph_assets.forms_support import (
-    SupportForm,
+    AddSupportForm,
+    EditSupportForm,
     SupportSearchForm,
 )
 from ralph_assets.models_support import Support
@@ -40,7 +41,7 @@ class SupportFormView(AssetsBase):
     sidebar_selected = None
 
     def _get_form(self, data=None, **kwargs):
-        self.form = SupportForm(
+        self.form = self.form_class(
             mode=self.mode, data=data, **kwargs
         )
 
@@ -69,18 +70,20 @@ class SupportFormView(AssetsBase):
             return super(SupportFormView, self).get(request, *args, **kwargs)
 
 
-class AddSupportForm(SupportFormView):
+class AddSupportFormView(SupportFormView):
     """Add a new support"""
 
     caption = _('Add Support')
     mainmenu_selected = 'supports'
     message = _('Support added')
-    Form = SupportForm
+
+    def __init__(self, *args, **kwargs):
+        self.form_class = AddSupportForm
+        super(AddSupportFormView, self).__init__(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         self._get_form()
-        return super(AddSupportForm, self).get(
-            request, *args, **kwargs)
+        return super(AddSupportFormView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self._get_form(request.POST)
@@ -93,7 +96,9 @@ class AddSupportForm(SupportFormView):
             messages.success(self.request, self.message)
             return HttpResponseRedirect(reverse('support_list'))
         else:
-            return super(AddSupportForm, self).get(request, *args, **kwargs)
+            return super(AddSupportFormView, self).get(
+                request, *args, **kwargs
+            )
 
 
 class SupportList(GenericSearch):
@@ -158,17 +163,21 @@ class SupportList(GenericSearch):
         return data
 
 
-class EditSupportForm(SupportFormView):
+class EditSupportFormView(SupportFormView):
     """Edit support"""
+
+    def __init__(self, *args, **kwargs):
+        self.form_class = EditSupportForm
+        super(EditSupportFormView, self).__init__(*args, **kwargs)
 
     caption = _('Edit Support')
     message = _('Support changed')
-    Form = SupportForm
+    Form = EditSupportForm
 
     def get(self, request, support_id, *args, **kwargs):
         self.support = Support.objects.get(pk=support_id)
         self._get_form(instance=self.support)
-        return super(EditSupportForm, self).get(request, *args, **kwargs)
+        return super(EditSupportFormView, self).get(request, *args, **kwargs)
 
     def post(self, request, support_id, *args, **kwargs):
         self.support = Support.objects.get(pk=support_id)
@@ -176,7 +185,7 @@ class EditSupportForm(SupportFormView):
         return self._save(request, *args, **kwargs)
 
 
-class DeleteSupportForm(AssetsBase):
+class DeleteSupportFormView(AssetsBase):
     """Delete a support."""
 
     def post(self, *args, **kwargs):

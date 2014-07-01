@@ -549,13 +549,14 @@ class TestSupportsView(BaseViewsTest):
             support_type=support_utils.SupportTypeFactory().id,
         )
         self.visible_add_form_fields = [
-            'additional_notes', 'asset', 'asset_type', 'assets',
-            'contract_id', 'contract_terms', 'date_from', 'date_to',
-            'description', 'escalation_path', 'invoice_date', 'invoice_no',
-            'name', 'period_in_months', 'price', 'producer', 'property_of',
+            'additional_notes', 'asset', 'asset_type', 'contract_id',
+            'contract_terms', 'date_from', 'date_to', 'description',
+            'escalation_path', 'invoice_date', 'invoice_no', 'name',
+            'period_in_months', 'price', 'producer', 'property_of',
             'serial_no', 'sla_type', 'status', 'supplier', 'support_type',
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
+        self.visible_edit_form_fields.extend(['assets'])
 
     def _check_supports_assets(self, support, expected_assets):
         self.assertEqual(

@@ -46,9 +46,9 @@ from ralph_assets.views.sam import (
 )
 from ralph_assets.views.support import (
     SupportList,
-    AddSupportForm,
-    EditSupportForm,
-    DeleteSupportForm,
+    AddSupportFormView,
+    EditSupportFormView,
+    DeleteSupportFormView,
     HistorySupport,
 )
 from ralph_assets.views.invoice_report import (
@@ -188,13 +188,13 @@ urlpatterns = patterns(
     ),
     url(
         r'sup/add_support/$',
-        login_required(AddSupportForm.as_view()),
+        login_required(AddSupportFormView.as_view()),
         name='add_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sup/edit_support/'
         r'(?P<support_id>[0-9]+)$',
-        login_required(EditSupportForm.as_view()),
+        login_required(EditSupportFormView.as_view()),
         name='edit_support',
     ),
     url(
@@ -204,7 +204,7 @@ urlpatterns = patterns(
     ),
     url(
         r'(?P<mode>(back_office|dc))/sup/delete/$',
-        login_required(DeleteSupportForm.as_view()),
+        login_required(DeleteSupportFormView.as_view()),
         name='delete_support',
     ),
     url(
