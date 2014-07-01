@@ -234,11 +234,11 @@ class TestHostnameGenerator(TestCase):
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
-    def test_cant_generate_hostname_for_model_with_hostname(self):
+    def test_can_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl)
-        self.assertFalse(asset.can_generate_hostname)
+        self.assertTrue(asset.can_generate_hostname)
 
     def test_cant_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
