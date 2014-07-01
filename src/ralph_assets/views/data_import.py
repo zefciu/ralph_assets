@@ -116,7 +116,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 'column_choice'
             ).items():
                 if k in all_names and v != '':
-                    mappings[k] = v
+                    mappings[k.lower()] = v
             self.storage.data['mappings'] = mappings
         return form
 
@@ -133,7 +133,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 for asset_id, asset_data in sheet_data.items():
                     data_dicts.setdefault(asset_id, {})
                     for key, value in asset_data.items():
-                        data_dicts[asset_id][mappings[key]] = value
+                        data_dicts[asset_id][mappings[key.lower()]] = value
             update_table = []
             for asset_id, asset_data in data_dicts.items():
                 row = [asset_id]
@@ -196,7 +196,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
-            issubclass(field.rel.to, (Named, User, Sluggy))
+            issubclass(field.rel.to, (Named, Named.NonUnique, User, Sluggy))
         ):
             try:
                 if issubclass(field.rel.to, User):
@@ -267,6 +267,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     continue
                 try:
                     for key, value in asset_data.items():
+                        key = key.lower()
                         setattr(
                             asset, mappings[key],
                             self._get_field_value(mappings[key], value)

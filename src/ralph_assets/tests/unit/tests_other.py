@@ -6,6 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+from dj.choices import Country
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 
@@ -17,12 +19,19 @@ from ralph_assets.models_sam import (
     LicenceType,
     SoftwareCategory,
 )
+from ralph_assets.others import get_assets_rows, get_licences_rows
 from ralph_assets.tests.util import (
     create_asset,
     create_category,
     create_model,
 )
-from ralph_assets.others import get_assets_rows, get_licences_rows
+from ralph_assets.tests.utils import UserFactory
+from ralph_assets.tests.utils.assets import (
+    AssetCategoryFactory,
+    BOAssetFactory,
+    AssetModelFactory,
+)
+from ralph_assets.utils import iso2_to_iso3, iso3_to_iso2
 
 
 class TestExportRelations(TestCase):
@@ -181,3 +190,76 @@ class TestExportRelations(TestCase):
                 ],
             ]
         )
+
+
+class TestHostnameGenerator(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.user_pl = UserFactory()
+        self.user_pl.profile.country = Country.pl
+        self.user_pl.profile.save()
+        self.cat = AssetCategoryFactory()
+        self.cat1 = AssetCategoryFactory()
+        self.cat2 = AssetCategoryFactory()
+        self.cat3 = AssetCategoryFactory()
+        self.asset1 = BOAssetFactory()
+        self.asset2 = BOAssetFactory()
+
+    def test_generate_first_hostname(self):
+        """Scenario:
+         - none of assets has hostname
+         - after generate first of asset have XXXYY00001 in hostname field
+        """
+        category = AssetCategoryFactory(code='PC')
+        model = AssetModelFactory(category=category)
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
+        asset.generate_hostname()
+        self.assertEqual(asset.hostname, 'POLPC00001')
+
+    def test_generate_next_hostname(self):
+        category = AssetCategoryFactory(code='PC')
+        model = AssetModelFactory(category=category)
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
+        BOAssetFactory(owner=self.user_pl, hostname='POLSW00003')
+        self.asset1.hostname = 'POLPC00001'
+        self.asset1.save()
+        self.asset2.hostname = 'POLPC00002'
+        self.asset2.save()
+        asset.generate_hostname()
+        self.assertEqual(asset.hostname, 'POLPC00003')
+
+    def test_cant_generate_hostname_for_model_without_category(self):
+        model = AssetModelFactory(category=None)
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
+        self.assertFalse(asset.can_generate_hostname)
+
+    def test_cant_generate_hostname_for_model_with_hostname(self):
+        category = AssetCategoryFactory(code='PC')
+        model = AssetModelFactory(category=category)
+        asset = BOAssetFactory(model=model, owner=self.user_pl)
+        self.assertFalse(asset.can_generate_hostname)
+
+    def test_cant_generate_hostname_for_model_without_user(self):
+        model = AssetModelFactory()
+        asset = BOAssetFactory(model=model, owner=None, hostname='')
+        self.assertFalse(asset.can_generate_hostname)
+
+    def test_cant_generate_hostname_for_model_without_user_and_category(self):
+        model = AssetModelFactory(category=None)
+        asset = BOAssetFactory(model=model, owner=None, hostname='')
+        self.assertFalse(asset.can_generate_hostname)
+
+    def test_generate_next_hostname_out_of_range(self):
+        category = AssetCategoryFactory(code='PC')
+        model = AssetModelFactory(category=category)
+        asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
+        self.asset1.hostname = 'POLPC99999'
+        self.asset1.save()
+        asset.generate_hostname()
+        self.assertEqual(asset.hostname, 'POLPC100000')
+
+    def test_convert_iso2_to_iso3(self):
+        self.assertEqual(iso2_to_iso3['PL'], 'POL')
+
+    def test_convert_iso3_to_iso2(self):
+        self.assertEqual(iso3_to_iso2['POL'], 'PL')

@@ -1,4 +1,5 @@
 {% extends 'assets/base.html' %}
+{% load assets %}
 {% load bob %}
 {% load i18n %}
 {% block content %}
@@ -15,6 +16,7 @@
   <div class="row-fluid">
     <div class="span6">
     {% form_as_fieldsets form %}
+    {% if support %}{% object_list_search support 'assets' %}{% endif %}
     </div>
     <div class="span6">
       {% include 'assets/attachment_table.html' with attachment_parent=support mode=mode parent_name='support' %}
@@ -35,6 +37,7 @@
     </div>
   </div>
 </form>
+
 {% include 'assets/attachment_deletion.html' with attachment_parent=support mode=mode parent_name='support'%}
 {% endblock %}
 

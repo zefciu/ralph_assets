@@ -144,7 +144,7 @@
                 <td>{{ h.created|timesince_limited }}</td>
                 <td>{{ h.transition.name }}</td>
                 <td>{{ h.logged_user }}</td>
-                <td><a href="{{ h.report_file.url}}">{% trans "download" %}</a></td>
+                <td><a href="{% url transition_history_file h.id %}">{% trans "download" %}</a></td>
             </tr>
         {% endfor %}
         </tbody>

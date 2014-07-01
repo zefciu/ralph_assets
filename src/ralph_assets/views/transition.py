@@ -17,8 +17,10 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from django.http import Http404, HttpResponseRedirect
+from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
+
 
 from ralph_assets.views.base import get_return_link
 from ralph_assets.views.search import _AssetSearch
@@ -396,7 +398,7 @@ class TransitionHistoryFileHandler(ACLGateway, TemplateView):
     def get_file_content_from_history(self, history_object):
         try:
             content = history_object.report_file.read()
-        except IOError as e:
+        except (IOError, ValueError) as e:
             logger.error(
                 "Can not read transition history file: {} ({})".format(
                     history_object.id, e,
@@ -406,8 +408,9 @@ class TransitionHistoryFileHandler(ACLGateway, TemplateView):
         return content, False
 
     def generate_file_name(self, history_object):
-        return "{}_{}_{}.pdf".format(
+        name = "{}_{}_{}".format(
             history_object.created.date(),
             history_object.affected_user.get_full_name(),
             history_object.transition.name,
         )
+        return slugify(name) + '.pdf'
