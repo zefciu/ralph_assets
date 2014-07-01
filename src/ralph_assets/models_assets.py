@@ -55,6 +55,16 @@ if not ASSET_HOSTNAME_TEMPLATE:
     raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
 
 
+def get_user_iso3country_name(user):
+    """
+    :param user: instance of django.contrib.auth.models.User which has profile
+        with country attribute
+    """
+    country_name = Country.name_from_id(user.get_profile().country).upper()
+    iso3_country_name = iso2_to_iso3[country_name]
+    return iso3_country_name
+
+
 class LicenseAndAsset(object):
 
     def latest_attachments(self):
@@ -467,7 +477,9 @@ class Asset(
         null=True,
         on_delete=models.PROTECT,
     )
-    hostname = models.CharField(max_length=10, blank=True)
+    hostname = models.CharField(
+        blank=True, max_length=10, null=True, unique=True
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -527,6 +539,23 @@ class Asset(
             return 'part'
         else:
             return 'device'
+
+    def _try_assigned_hostname(self, owner, status):
+        if not getattr(settings, 'AUTO_ASSIGN_HOSTNAME'):
+            return
+
+        status_condition = (
+            self.status != AssetStatus.in_progress
+            and status == AssetStatus.in_progress
+        )
+        if status_condition:
+            if not self.hostname:
+                self.generate_hostname(False)
+            else:
+                user_country = get_user_iso3country_name(owner)
+                different_country = user_country not in self.hostname
+                if different_country:
+                    self.generate_hostname(False)
 
     def save(self, commit=True, *args, **kwargs):
         if self.source == '':
@@ -641,7 +670,7 @@ class Asset(
 
     @property
     def can_generate_hostname(self):
-        return bool(self.owner and self.model.category and not self.hostname)
+        return bool(self.owner and self.model.category)
 
     def generate_hostname(self, commit=True):
         if not self.can_generate_hostname:

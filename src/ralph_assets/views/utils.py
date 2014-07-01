@@ -87,6 +87,11 @@ def _update_device_info(user, asset, device_info_data):
 
 @transaction.commit_on_success
 def _update_asset(modifier_profile, asset, asset_updated_data):
+    not_part = True  # TODO:: make it reasonable
+    if not_part:
+        asset._try_assigned_hostname(
+            modifier_profile, asset_updated_data['status']
+        )
     if (
         'barcode' not in asset_updated_data or
         not asset_updated_data['barcode']

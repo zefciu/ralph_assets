@@ -29,3 +29,6 @@ ASSET_HOSTNAME_TEMPLATE = {
     'postfix': '',
     'counter_length': 5,
 }
+
+# automatically assign domain hostname to asset in edit and bulk forms
+AUTO_ASSIGN_HOSTNAME = False
