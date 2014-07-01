@@ -29,12 +29,6 @@ from ralph_assets.tests.utils.assets import (
 from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
-# TODO: check if all fields are shown in forms
-# - bulk
-#    - DC, BO, SO, LI
-# - search
-#    - DC, BO, SO, LI
-
 
 def update(_dict, obj, keys):
     """
@@ -421,12 +415,6 @@ class TestLicencesView(BaseViewsTest):
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
 
-    def _field_in_edit_form(self, field, modes=None):
-        # TODO:: remove it
-        url = reverse('edit_licence', args=(self.licence.pk,))
-        response = self.client.get(url)
-        self.assertContains(response, 'id_{}'.format(field))
-
     def test_add_license(self):
         """
         Add license with all fields filled.
@@ -464,14 +452,6 @@ class TestLicencesView(BaseViewsTest):
         )
         license = models_sam.Licence.objects.get(pk=license.id)
         check_fields(self, new_license_data.items(), license)
-
-    def test_edit_form_contains_remarks_field(self):
-        # TODO:: remove it
-        self._field_in_edit_form('remarks')
-
-    def test_edit_form_contains_service_name_field(self):
-        # TODO:: remove it
-        self._field_in_edit_form('service_name')
 
     def test_license_add_form_show_fields(self):
         required_fields = self.visible_add_form_fields[:]
