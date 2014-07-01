@@ -96,9 +96,7 @@ class AddSupportView(SupportView):
             messages.success(self.request, self.message)
             return HttpResponseRedirect(reverse('support_list'))
         else:
-            return super(AddSupportView, self).get(
-                request, *args, **kwargs,
-            )
+            return super(AddSupportView, self).get(request, *args, **kwargs)
 
 
 class SupportList(GenericSearch):
