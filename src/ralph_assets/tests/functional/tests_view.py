@@ -269,7 +269,7 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         required_fields = self.dc_visible_edit_form_fields[:]
         device = DCAssetFactory()
         form_url = reverse(
-            'device_edit', kwargs={'mode': 'dc', 'asset_id': device.id}
+            'device_edit', kwargs={'mode': 'dc', 'asset_id': device.id},
         )
         self._assert_field_in_form(form_url, required_fields)
 
@@ -374,7 +374,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         device = BOAssetFactory()
         form_url = reverse(
             'device_edit', kwargs={
-                'mode': 'back_office', 'asset_id': device.id
+                'mode': 'back_office', 'asset_id': device.id,
             }
         )
         self._assert_field_in_form(form_url, required_fields)
@@ -463,7 +463,7 @@ class TestLicencesView(BaseViewsTest):
         required_fields = self.visible_edit_form_fields[:]
         license = LicenceFactory()
         form_url = reverse(
-            'edit_licence', kwargs={'licence_id': license.id}
+            'edit_licence', kwargs={'licence_id': license.id},
         )
         self._assert_field_in_form(form_url, required_fields)
 

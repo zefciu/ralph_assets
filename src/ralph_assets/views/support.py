@@ -97,7 +97,7 @@ class AddSupportView(SupportView):
             return HttpResponseRedirect(reverse('support_list'))
         else:
             return super(AddSupportView, self).get(
-                request, *args, **kwargs
+                request, *args, **kwargs,
             )
 
 
