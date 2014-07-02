@@ -101,6 +101,15 @@ def check_fields(testcase, correct_data, object_to_check):
         testcase.assertEqual(object_value, expected, msg)
 
 
+class BaseViewsTest(TestCase):
+
+    def _assert_field_in_form(self, form_url, fields_names):
+        check_strings = ('name="{}"'.format(f) for f in fields_names)
+        response = self.client.get(form_url)
+        for check_string in check_strings:
+            self.assertContains(response, check_string)
+
+
 class TestDataDisplay(TestCase):
     """Test check if data from database are displayed on screen"""
 
@@ -129,6 +138,20 @@ class TestDevicesView(TestCase):
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
 
+    def setUp(self):
+        self.visible_add_form_fields = [
+            'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
+            'deprecation_end_date', 'deprecation_rate', 'hostname',
+            'invoice_date', 'invoice_no', 'location', 'model', 'niw',
+            'order_no', 'owner', 'price', 'property_of', 'provider',
+            'provider_order_date', 'remarks', 'request_date', 'service_name',
+            'sn', 'source', 'status', 'task_url', 'type', 'user', 'warehouse',
+        ]
+        self.visible_edit_form_fields = self.visible_add_form_fields[:]
+        self.visible_edit_form_fields.extend([
+            'supports_text', 'licences_text',
+        ])
+
     def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
         update(new_asset_data, asset, readonly_fields)
 
@@ -148,9 +171,10 @@ class TestDevicesView(TestCase):
         del self.new_asset_data['supports']
 
 
-class TestDataCenterDevicesView(TestDevicesView, TestCase):
+class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
+        super(TestDataCenterDevicesView, self).setUp()
         self.client = login_as_su()
         self.mode = 'dc'
         self.asset_data = get_asset_data()
@@ -162,6 +186,12 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
             'u_height': 14,
             'u_level': 21,
         }
+
+        dc_fields = ['ralph_device_id', 'u_height', 'u_level']
+        self.dc_visible_add_form_fields = self.visible_add_form_fields[:]
+        self.dc_visible_add_form_fields.extend(dc_fields)
+        self.dc_visible_edit_form_fields = self.visible_edit_form_fields[:]
+        self.dc_visible_edit_form_fields.extend(dc_fields)
 
     def test_add_device(self):
         """
@@ -230,10 +260,24 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
 
+    def test_device_add_form_show_fields(self):
+        required_fields = self.dc_visible_add_form_fields[:]
+        form_url = reverse('add_device', kwargs={'mode': 'dc'})
+        self._assert_field_in_form(form_url, required_fields)
 
-class TestBackOfficeDevicesView(TestDevicesView, TestCase):
+    def test_device_edit_form_show_fields(self):
+        required_fields = self.dc_visible_edit_form_fields[:]
+        device = DCAssetFactory()
+        form_url = reverse(
+            'device_edit', kwargs={'mode': 'dc', 'asset_id': device.id},
+        )
+        self._assert_field_in_form(form_url, required_fields)
+
+
+class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
+        super(TestBackOfficeDevicesView, self).setUp()
         self.client = login_as_su()
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
@@ -247,6 +291,13 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
             'imei': assets_utils.generate_imei(15),
             'coa_number': str(uuid.uuid1()),
         }
+        bo_fields = [
+            'budget_info', 'coa_number', 'coa_oem_os', 'license_key',
+        ]
+        self.bo_visible_add_form_fields = self.visible_add_form_fields[:]
+        self.bo_visible_add_form_fields.extend(bo_fields)
+        self.bo_visible_edit_form_fields = self.visible_edit_form_fields[:]
+        self.bo_visible_edit_form_fields.extend(bo_fields)
 
     def test_add_device(self):
         """
@@ -313,8 +364,23 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
         check_fields(self, self.new_asset_data.items(), asset)
         check_fields(self, new_office_data.items(), asset.office_info)
 
+    def test_device_add_form_show_fields(self):
+        required_fields = self.bo_visible_add_form_fields[:]
+        form_url = reverse('add_device', kwargs={'mode': 'back_office'})
+        self._assert_field_in_form(form_url, required_fields)
 
-class TestLicencesView(TestCase):
+    def test_device_edit_form_show_fields(self):
+        required_fields = self.bo_visible_edit_form_fields[:]
+        device = BOAssetFactory()
+        form_url = reverse(
+            'device_edit', kwargs={
+                'mode': 'back_office', 'asset_id': device.id,
+            }
+        )
+        self._assert_field_in_form(form_url, required_fields)
+
+
+class TestLicencesView(BaseViewsTest):
     """This test case concern all licences views."""
     def setUp(self):
         self.client = login_as_su()
@@ -340,13 +406,15 @@ class TestLicencesView(TestCase):
             'software_category': sam_utils.SoftwareCategoryFactory().id,
             'valid_thru': datetime.date(2014, 06, 10),
         }
-
         self.licence = LicenceFactory()
-
-    def _field_in_edit_form(self, field, modes=None):
-        url = reverse('edit_licence', args=(self.licence.pk,))
-        response = self.client.get(url)
-        self.assertContains(response, 'id_{}'.format(field))
+        self.visible_add_form_fields = [
+            'accounting_id', 'asset', 'asset_type', 'assets', 'budget_info',
+            'invoice_date', 'invoice_no', 'licence_type', 'license_details',
+            'manufacturer', 'niw', 'number_bought', 'order_no', 'parent',
+            'price', 'property_of', 'provider', 'remarks', 'service_name',
+            'sn', 'software_category', 'users', 'valid_thru',
+        ]
+        self.visible_edit_form_fields = self.visible_add_form_fields[:]
 
     def test_add_license(self):
         """
@@ -386,11 +454,18 @@ class TestLicencesView(TestCase):
         license = models_sam.Licence.objects.get(pk=license.id)
         check_fields(self, new_license_data.items(), license)
 
-    def test_edit_form_contains_remarks_field(self):
-        self._field_in_edit_form('remarks')
+    def test_license_add_form_show_fields(self):
+        required_fields = self.visible_add_form_fields[:]
+        form_url = reverse('add_licence')
+        self._assert_field_in_form(form_url, required_fields)
 
-    def test_edit_form_contains_service_name_field(self):
-        self._field_in_edit_form('service_name')
+    def test_license_edit_form_show_fields(self):
+        required_fields = self.visible_edit_form_fields[:]
+        license = LicenceFactory()
+        form_url = reverse(
+            'edit_licence', kwargs={'licence_id': license.id},
+        )
+        self._assert_field_in_form(form_url, required_fields)
 
     def test_bulk_edit(self):
         num_of_licences = 10
@@ -425,7 +500,7 @@ class TestLicencesView(TestCase):
             )
 
 
-class TestSupportsView(TestCase):
+class TestSupportsView(BaseViewsTest):
     """This test case concern all supports views."""
 
     def setUp(self):
@@ -454,6 +529,15 @@ class TestSupportsView(TestCase):
             supplier='Supplier',
             support_type=support_utils.SupportTypeFactory().id,
         )
+        self.visible_add_form_fields = [
+            'additional_notes', 'asset', 'asset_type', 'contract_id',
+            'contract_terms', 'date_from', 'date_to', 'description',
+            'escalation_path', 'invoice_date', 'invoice_no', 'name',
+            'period_in_months', 'price', 'producer', 'property_of',
+            'serial_no', 'sla_type', 'status', 'supplier', 'support_type',
+        ]
+        self.visible_edit_form_fields = self.visible_add_form_fields[:]
+        self.visible_edit_form_fields.extend(['assets'])
 
     def _check_supports_assets(self, support, expected_assets):
         self.assertEqual(
@@ -511,6 +595,24 @@ class TestSupportsView(TestCase):
         support = models_support.Support.objects.get(pk=support.id)
         self._check_supports_assets(support, assets)
         check_fields(self, self.new_support_data.items(), support)
+
+    def test_license_add_form_show_fields(self):
+        required_fields = self.visible_add_form_fields[:]
+        form_url = reverse('add_support')
+        self._assert_field_in_form(form_url, required_fields)
+
+    def test_license_edit_form_show_fields(self):
+        required_fields = self.visible_edit_form_fields[:]
+        test_data = (
+            ('dc', support_utils.DCSupportFactory()),
+            ('back_office', support_utils.BOSupportFactory()),
+        )
+        for mode, support in test_data:
+            form_url = reverse(
+                'edit_support',
+                kwargs={'mode': mode, 'support_id': support.id},
+            )
+            self._assert_field_in_form(form_url, required_fields)
 
 
 class DeviceEditViewTest(TestCase):
