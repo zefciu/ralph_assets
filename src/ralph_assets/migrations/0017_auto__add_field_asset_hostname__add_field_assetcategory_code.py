@@ -10,13 +10,21 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding field 'Asset.hostname'
         db.add_column('ralph_assets_asset', 'hostname',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=10, blank=True),
+                      self.gf('django.db.models.fields.CharField')(default=None, max_length=16, unique=True, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'AssetCategory.code'
+        db.add_column('ralph_assets_assetcategory', 'code',
+                      self.gf('django.db.models.fields.CharField')(default='', max_length=4),
                       keep_default=False)
 
 
     def backwards(self, orm):
         # Deleting field 'Asset.hostname'
         db.delete_column('ralph_assets_asset', 'hostname')
+
+        # Deleting field 'AssetCategory.code'
+        db.delete_column('ralph_assets_assetcategory', 'code')
 
 
     models = {
@@ -96,7 +104,7 @@ class Migration(SchemaMigration):
             'deprecation_rate': ('django.db.models.fields.DecimalField', [], {'default': '25', 'max_digits': '5', 'decimal_places': '2', 'blank': 'True'}),
             'device_info': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['ralph_assets.DeviceInfo']", 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'force_deprecation': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'hostname': ('django.db.models.fields.CharField', [], {'max_length': '10', 'blank': 'True'}),
+            'hostname': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '16', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'invoice_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'invoice_no': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '128', 'null': 'True', 'blank': 'True'}),
@@ -136,6 +144,7 @@ class Migration(SchemaMigration):
         'ralph_assets.assetcategory': {
             'Meta': {'object_name': 'AssetCategory'},
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'code': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'is_blade': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),

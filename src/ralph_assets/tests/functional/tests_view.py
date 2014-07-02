@@ -13,6 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
+from django.test.utils import override_settings
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
@@ -27,6 +28,7 @@ from ralph_assets.tests.utils.assets import (
     DCAssetFactory,
     WarehouseFactory,
 )
+from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
 from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
@@ -147,11 +149,53 @@ class TestDevicesView(TestCase):
         )
         del self.new_asset_data['supports']
 
+    def _test_hostname_is_assigned(self, extra_data):
+        """
+        Add (BO|DC)device with all fields filled.
+
+        - create asset a1 with hostname=None
+        - get edit data from form in context
+        - check if a1's hostname is None
+        - send save edits request
+        - check if a1's hostname is not None
+        """
+        asset = self.asset_factory(**{
+            'hostname': None,
+            'status': TestHostnameAssigning.neutral_status,
+        })
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # TODO:: make it function?
+        edit_data = {}
+        for field_name, field_value in response.context['asset_form'].fields.items():
+            raw_field_value = response.context['asset_form'][field_name].value()
+            field_value = str(raw_field_value) if raw_field_value else ''
+            edit_data[field_name] = field_value
+        edit_data.update(extra_data)
+
+        self.assertIsNone(asset.hostname)
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.post(url, edit_data)
+        self.assertRedirects(
+            response, url, status_code=302, target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertIsNotNone(asset.hostname)
+
 
 class TestDataCenterDevicesView(TestDevicesView, TestCase):
 
     def setUp(self):
         self.client = login_as_su()
+        self.asset_factory = DCAssetFactory
         self.mode = 'dc'
         self.asset_data = get_asset_data()
         self.asset_data.update({
@@ -227,14 +271,26 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
         self._check_asset_supports(asset, supports)
         self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         check_fields(self, self.new_asset_data.items(), asset)
+        self.assertIsNotNone(asset.hostname)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
+
+    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
+    def test_hostname_is_assigned(self):
+        extra_data = {
+            # required, useless data for this test
+            'ralph_device_id': '',
+            'asset': '',  # required button
+            'status': str(TestHostnameAssigning.trigger_status.id),
+        }
+        self._test_hostname_is_assigned(extra_data)
 
 
 class TestBackOfficeDevicesView(TestDevicesView, TestCase):
 
     def setUp(self):
         self.client = login_as_su()
+        self.asset_factory = BOAssetFactory
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
         self.asset_data.update({
@@ -311,7 +367,17 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
         check_fields(self, self.new_asset_data.items(), asset)
+        self.assertIsNotNone(asset.hostname)
         check_fields(self, new_office_data.items(), asset.office_info)
+
+    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
+    def test_hostname_is_assigned(self):
+        extra_data = {
+            # required, useless data for this test
+            'asset': '',  # required button
+            'status': str(TestHostnameAssigning.trigger_status.id),
+        }
+        self._test_hostname_is_assigned(extra_data)
 
 
 class TestLicencesView(TestCase):

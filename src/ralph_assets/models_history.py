@@ -9,11 +9,13 @@ from __future__ import unicode_literals
 from datetime import datetime
 
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from django.db import models as db
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from ralph_assets import models_assets
 from ralph_assets.history import field_changes
 from ralph_assets.models_assets import (
     Asset,
@@ -23,6 +25,9 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_sam import Licence
 from ralph_assets.models_support import Support
+
+
+HOSTNAME_ASSIGNING_TRIES_COUNT = 5
 
 
 class AssetHistoryChange(db.Model):
@@ -157,6 +162,23 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
             user=instance.saving_user,
             comment=instance.save_comment,
         ).save()
+
+
+@receiver(post_save, sender=Asset, dispatch_uid='ralph_assets.views.device')
+def device_hostname_assigning(sender, instance, raw, using, **kwargs):
+    """A hook for assigning ``hostname`` value when a asset is edited."""
+    for field, orig, new in field_changes(instance):
+        # TODO:: are descs are localized?
+        status_desc = models_assets.AssetStatus.in_progress.desc
+        if all((field == 'status', orig != status_desc, new == status_desc)):
+            for i in range(HOSTNAME_ASSIGNING_TRIES_COUNT):
+                try:
+                    instance._try_assign_hostname(commit=True)
+                except IntegrityError as e:
+                    print(e)
+                else:
+                    break
+                raise Exception("TODO::")
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')

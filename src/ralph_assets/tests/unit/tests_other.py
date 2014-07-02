@@ -268,6 +268,9 @@ class TestHostnameGenerator(TestCase):
 
 @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
 class TestHostnameAssigning(TestCase):
+    neutral_status = models_assets.AssetStatus.new
+    trigger_status = models_assets.AssetStatus.in_progress
+
     def setUp(self):
         self.owner = UserFactory()
         self.neutral_status = models_assets.AssetStatus.new

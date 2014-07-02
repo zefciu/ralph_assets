@@ -55,6 +55,14 @@ if not ASSET_HOSTNAME_TEMPLATE:
     raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
 
 
+def _replace_empty_with_none(obj, fields):
+    # XXX: replace '' with None, bec. null=True on model doesn't work
+    for field in ['source', 'hostname']:
+        value = getattr(obj, field, None)
+        if value == '':
+            setattr(obj, field, None)
+
+
 def get_user_iso3_country_name(user):
     """
     :param user: instance of django.contrib.auth.models.User which has profile
@@ -477,7 +485,9 @@ class Asset(
         null=True,
         on_delete=models.PROTECT,
     )
-    hostname = models.CharField(blank=True, max_length=16, null=True)
+    hostname = models.CharField(
+        blank=True, default=None, max_length=16, null=True, unique=True,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -538,27 +548,22 @@ class Asset(
         else:
             return 'device'
 
-    def _try_assign_hostname(self, owner, status):
-        if not getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None):
+    def _try_assign_hostname(self, commit):
+        if (
+            not self.can_generate_hostname or
+            not getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None)
+        ):
             return
-
-        status_condition = (
-            self.status != AssetStatus.in_progress
-            and status == AssetStatus.in_progress
-        )
-        if status_condition:
-            if not self.hostname:
-                self.generate_hostname(False)
-            else:
-                user_country = get_user_iso3_country_name(owner)
-                different_country = user_country not in self.hostname
-                if different_country:
-                    self.generate_hostname(False)
+        if not self.hostname:
+            self.generate_hostname(commit)
+        else:
+            user_country = get_user_iso3_country_name(self.owner)
+            different_country = user_country not in self.hostname
+            if different_country:
+                self.generate_hostname(commit)
 
     def save(self, commit=True, *args, **kwargs):
-        if self.source == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.source = None
+        _replace_empty_with_none(self, ['source', 'hostname'])
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 
@@ -815,9 +820,7 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         return AssetPurpose.from_id(self.purpose).raw if self.purpose else None
 
     def save(self, commit=True, *args, **kwargs):
-        if self.purpose == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.purpose = None
+        _replace_empty_with_none(self, ['purpose'])
         instance = super(OfficeInfo, self).save(commit=commit, *args, **kwargs)
         return instance
 
