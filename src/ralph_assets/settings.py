@@ -31,4 +31,4 @@ ASSET_HOSTNAME_TEMPLATE = {
 }
 
 # automatically assign domain hostname to asset in edit and bulk forms
-AUTO_ASSIGN_HOSTNAME = False
+ASSETS_AUTO_ASSIGN_HOSTNAME = False

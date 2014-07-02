@@ -89,7 +89,7 @@ def _update_device_info(user, asset, device_info_data):
 def _update_asset(modifier_profile, asset, asset_updated_data):
     not_part = True  # TODO:: make it reasonable
     if not_part:
-        asset._try_assigned_hostname(
+        asset._try_assign_hostname(
             modifier_profile, asset_updated_data['status']
         )
     if (

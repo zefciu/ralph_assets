@@ -55,7 +55,7 @@ if not ASSET_HOSTNAME_TEMPLATE:
     raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
 
 
-def get_user_iso3country_name(user):
+def get_user_iso3_country_name(user):
     """
     :param user: instance of django.contrib.auth.models.User which has profile
         with country attribute
@@ -477,7 +477,7 @@ class Asset(
         null=True,
         on_delete=models.PROTECT,
     )
-    hostname = models.CharField(blank=True, max_length=10, null=True)
+    hostname = models.CharField(blank=True, max_length=16, null=True)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -538,8 +538,8 @@ class Asset(
         else:
             return 'device'
 
-    def _try_assigned_hostname(self, owner, status):
-        if not getattr(settings, 'AUTO_ASSIGN_HOSTNAME'):
+    def _try_assign_hostname(self, owner, status):
+        if not getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None):
             return
 
         status_condition = (
@@ -550,7 +550,7 @@ class Asset(
             if not self.hostname:
                 self.generate_hostname(False)
             else:
-                user_country = get_user_iso3country_name(owner)
+                user_country = get_user_iso3_country_name(owner)
                 different_country = user_country not in self.hostname
                 if different_country:
                     self.generate_hostname(False)
