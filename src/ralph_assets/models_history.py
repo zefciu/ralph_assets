@@ -175,7 +175,7 @@ def device_hostname_assigning(sender, instance, raw, using, **kwargs):
                 try:
                     instance._try_assign_hostname(commit=True)
                 except IntegrityError as e:
-                    print(e)
+                    continue
                 else:
                     break
                 raise Exception("TODO::")

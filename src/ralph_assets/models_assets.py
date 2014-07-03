@@ -57,7 +57,7 @@ if not ASSET_HOSTNAME_TEMPLATE:
 
 def _replace_empty_with_none(obj, fields):
     # XXX: replace '' with None, bec. null=True on model doesn't work
-    for field in ['source', 'hostname']:
+    for field in fields:
         value = getattr(obj, field, None)
         if value == '':
             setattr(obj, field, None)
