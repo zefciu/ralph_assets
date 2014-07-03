@@ -275,7 +275,9 @@ class TestHostnameAssigning(TestCase):
         self.owner = UserFactory()
         self.neutral_status = models_assets.AssetStatus.new
         self.trigger_status = models_assets.AssetStatus.in_progress
-        self.country_name = models_assets.get_user_iso3_country_name(self.owner)
+        self.owner_country_name = models_assets.get_user_iso3_country_name(
+            self.owner
+        )
 
     def test_assigning_when_no_hostname(self):
         """
@@ -283,9 +285,7 @@ class TestHostnameAssigning(TestCase):
         """
         no_hostname_asset = BOAssetFactory(**{'hostname': None})
         self.assertEqual(no_hostname_asset.hostname, None)
-        no_hostname_asset._try_assign_hostname(
-            self.owner, self.trigger_status
-        )
+        no_hostname_asset._try_assign_hostname(True)
         self.assertNotEqual(no_hostname_asset.hostname, None)
 
     def test_assigning_when_different_country(self):
@@ -293,12 +293,12 @@ class TestHostnameAssigning(TestCase):
         Generate hostname when user has diffrent country than country from
         hostname.
         """
-        asset = BOAssetFactory()
+        asset = BOAssetFactory(**{'owner': self.owner})
         old_hostname = asset.hostname
-        self.assertNotIn(self.country_name, asset.hostname)
-        asset._try_assign_hostname(self.owner, self.trigger_status)
+        self.assertNotIn(self.owner_country_name, asset.hostname)
+        asset._try_assign_hostname(True)
         self.assertNotEqual(asset.hostname, old_hostname)
-        self.assertIn(self.country_name, asset.hostname)
+        self.assertIn(self.owner_country_name, asset.hostname)
 
     def test_assigning_when_same_country(self):
         """
@@ -310,25 +310,7 @@ class TestHostnameAssigning(TestCase):
             asset.hostname = hostname
             asset.save()
             return asset
-        asset = _asset_from_country(self.country_name)
+        asset = _asset_from_country(self.owner_country_name)
         old_hostname = asset.hostname
-        asset._try_assign_hostname(self.owner, self.trigger_status)
+        asset._try_assign_hostname(True)
         self.assertEqual(asset.hostname, old_hostname)
-
-    def test_assigning_when_trigger_already_set(self):
-        """
-        Keep existing hostname when status already in_progress.
-        """
-        asset = BOAssetFactory(**{'status': self.trigger_status})
-        old_hostname = asset.hostname
-        asset._try_assign_hostname(self.owner, self.trigger_status)
-        self.assertEqual(asset.hostname, old_hostname)
-
-    def test_assigning_when_trigger_status(self):
-        """
-        Generate hostname when status updated to in_progress.
-        """
-        asset = BOAssetFactory(**{'status': self.neutral_status})
-        old_hostname = asset.hostname
-        asset._try_assign_hostname(self.owner, self.trigger_status)
-        self.assertNotEqual(asset.hostname, old_hostname)

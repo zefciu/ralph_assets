@@ -179,15 +179,13 @@ class TestDevicesView(TestCase):
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-
-        # TODO:: make it function?
         edit_data = {}
-        for field_name, field_value in response.context['asset_form'].fields.items():
-            raw_field_value = response.context['asset_form'][field_name].value()
+        asset_form = response.context['asset_form']
+        for field_name, field_value in asset_form.fields.items():
+            raw_field_value = asset_form[field_name].value()
             field_value = str(raw_field_value) if raw_field_value else ''
             edit_data[field_name] = field_value
         edit_data.update(extra_data)
-
         self.assertIsNone(asset.hostname)
         url = reverse('device_edit', kwargs={
             'mode': self.mode,

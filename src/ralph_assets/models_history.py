@@ -27,6 +27,9 @@ from ralph_assets.models_sam import Licence
 from ralph_assets.models_support import Support
 
 
+class HostnameMaxTriesExceeded(Exception):
+    pass
+
 HOSTNAME_ASSIGNING_TRIES_COUNT = 5
 
 
@@ -168,17 +171,19 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
 def device_hostname_assigning(sender, instance, raw, using, **kwargs):
     """A hook for assigning ``hostname`` value when a asset is edited."""
     for field, orig, new in field_changes(instance):
-        # TODO:: are descs are localized?
         status_desc = models_assets.AssetStatus.in_progress.desc
         if all((field == 'status', orig != status_desc, new == status_desc)):
+            success = False
             for i in range(HOSTNAME_ASSIGNING_TRIES_COUNT):
                 try:
                     instance._try_assign_hostname(commit=True)
-                except IntegrityError as e:
+                except IntegrityError:
                     continue
                 else:
+                    success = True
                     break
-                raise Exception("TODO::")
+            if not success:
+                raise HostnameMaxTriesExceeded
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
