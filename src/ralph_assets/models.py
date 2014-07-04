@@ -262,7 +262,6 @@ class AssetLookupBase(RestrictedLookupChannel):
 
 
 class AssetLookup(AssetLookupBase):
-    model = Asset
 
     def get_query(self, q, request):
         return Asset.objects.filter(
