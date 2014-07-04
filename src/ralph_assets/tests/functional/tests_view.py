@@ -783,13 +783,9 @@ class LookupsTest(TestCase):
         - send request
         - check for 403
         """
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
         client = Client()
-        response = client.get(url)
+        response = client.get(url + '?term=test')
         self.assertEqual(response.status_code, 403)
 
     def test_logged_user_lookup_permission(self):
@@ -798,12 +794,8 @@ class LookupsTest(TestCase):
         - send request
         - check for 200
         """
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
-        response = self.client.get(url)
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
+        response = self.client.get(url + '?term=test')
         self.assertEqual(response.status_code, 200)
 
     def test_lookups_bo_and_dc(self):
