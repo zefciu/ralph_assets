@@ -787,6 +787,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'provider_order_date',
             'remarks',
             'request_date',
+            'required_support',
             'service_name',
             'slots',
             'source',
@@ -964,6 +965,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'provider_order_date',
             'remarks',
             'request_date',
+            'required_support',
             'service_name',
             'slots',
             'sn',
@@ -1239,7 +1241,10 @@ class EditPartForm(BaseEditAssetForm):
     def __init__(self, *args, **kwargs):
         super(EditPartForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
-        self.fieldsets['Assigned supports info'] = ['supports']
+        self.fieldsets['Assigned supports info'] = [
+            'required_support',
+            'supports',
+        ]
 
 
 class EditDeviceForm(BaseEditAssetForm):
@@ -1248,7 +1253,10 @@ class EditDeviceForm(BaseEditAssetForm):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
-        self.fieldsets['Assigned supports info'] = ['supports']
+        self.fieldsets['Assigned supports info'] = [
+            'required_support',
+            'supports',
+        ]
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
