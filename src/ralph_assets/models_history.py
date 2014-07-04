@@ -10,9 +10,8 @@ from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
 from django.db import models as db
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
@@ -26,12 +25,6 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_sam import Licence
 from ralph_assets.models_support import Support
-
-
-class HostnameMaxTriesExceeded(Exception):
-    pass
-
-HOSTNAME_ASSIGNING_TRIES_COUNT = 5
 
 
 class AssetHistoryChange(db.Model):
@@ -168,7 +161,7 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
         ).save()
 
 
-@receiver(post_save, sender=Asset, dispatch_uid='ralph_assets.views.device')
+@receiver(pre_save, sender=Asset, dispatch_uid='ralph_assets.views.device')
 def device_hostname_assigning(sender, instance, raw, using, **kwargs):
     """A hook for assigning ``hostname`` value when an asset is edited."""
     if getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None):
@@ -177,22 +170,7 @@ def device_hostname_assigning(sender, instance, raw, using, **kwargs):
             if all((
                 field == 'status', orig != status_desc, new == status_desc
             )):
-                success = False
-                for i in range(HOSTNAME_ASSIGNING_TRIES_COUNT):
-                    try:
-                        instance._try_assign_hostname(commit=True)
-                    except IntegrityError:
-                        continue
-                    else:
-                        success = True
-                        break
-                if not success:
-                    msg = ' '.join([
-                        'You are a lucky Ralph user who have just',
-                        'discovered almost non discoverable part of Ralph.',
-                        'Congratulations!!',
-                    ])
-                    raise HostnameMaxTriesExceeded(msg)
+                instance._try_assign_hostname(commit=False)
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')

@@ -33,14 +33,6 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
 
-def mocked_generate_hostname(self, commit):
-    """Mock function replacing Asset.generate_hostname.
-    It requires setting Asset.mocked_hostnames."""
-    hostname = models_assets.Asset.mocked_hostnames.next()
-    self.hostname = hostname
-    self.save(commit)
-
-
 def update(_dict, obj, keys):
     """
     Update *_dict* with *obj*'s values from keys.
@@ -157,15 +149,15 @@ class TestDevicesView(TestCase):
         )
         del self.new_asset_data['supports']
 
-    def _test_hostname_is_assigned(self, extra_data):
+    def _save_asset_for_hostname_generation(self, extra_data):
         """
-        Add (BO|DC)device with all fields filled.
+        Prepare (BO|DC)asset for further hostname field checks.
 
         - create asset a1 with hostname=None
         - get edit data from form in context
         - check if a1's hostname is None
         - send save edits request
-        - check if a1's hostname is not None
+        - return response object for futher checks
         """
         asset = self.asset_factory(**{
             'hostname': None,
@@ -190,37 +182,18 @@ class TestDevicesView(TestCase):
             'asset_id': asset.id,
         })
         response = self.client.post(url, edit_data)
+        return asset, response
+
+    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
+    def _test_hostname_is_assigned(self, extra_data):
+        asset, response = self._save_asset_for_hostname_generation(extra_data)
         self.assertRedirects(
-            response, url, status_code=302, target_status_code=200,
+            response, response.request['PATH_INFO'], status_code=302,
+            target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
         self.assertIsNotNone(asset.hostname)
         return asset
-
-    def _generate_hostname_from_mocks(self, extra_data, hostnames):
-        generate_hostname = models_assets.Asset.generate_hostname
-        models_assets.Asset.mocked_hostnames = (host for host in hostnames)
-        models_assets.Asset.generate_hostname = mocked_generate_hostname
-
-        asset = self._test_hostname_is_assigned(extra_data)
-
-        models_assets.Asset.generate_hostname = generate_hostname
-        del models_assets.Asset.mocked_hostnames
-        return asset
-
-    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
-    def _test_hostname_is_eventually_assigned(self, extra_data, hostnames):
-        """
-        Test that hostname is eventually generated after first failures,
-        because of integrity error.
-
-        - replace Asset.generate_hostname method with 'mock'
-        - call _test_hostname_is_assigned
-        - check if edited asset has correct_hostname
-        - revert Asset.generate_hostname method
-        """
-        asset = self._generate_hostname_from_mocks(extra_data, hostnames)
-        self.assertEqual(asset.hostname, hostnames[-1])
 
 
 class TestDataCenterDevicesView(TestDevicesView, TestCase):
@@ -307,7 +280,6 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
 
-    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
     def test_hostname_is_assigned(self):
         extra_data = {
             # required data for this test
@@ -316,17 +288,6 @@ class TestDataCenterDevicesView(TestDevicesView, TestCase):
             'status': str(TestHostnameAssigning.trigger_status.id),
         }
         self._test_hostname_is_assigned(extra_data)
-
-    def test_hostname_is_eventually_assigned(self):
-        extra_data = {
-            # required data for this test
-            'ralph_device_id': '',
-            'asset': '',  # required button
-            'status': str(TestHostnameAssigning.trigger_status.id),
-        }
-        asset = self.asset_factory()
-        hostnames = [asset.hostname, asset.hostname, 'POLPC00005']
-        self._test_hostname_is_eventually_assigned(extra_data, hostnames)
 
 
 class TestBackOfficeDevicesView(TestDevicesView, TestCase):
@@ -413,7 +374,6 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
         self.assertIsNotNone(asset.hostname)
         check_fields(self, new_office_data.items(), asset.office_info)
 
-    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
     def test_hostname_is_assigned(self):
         extra_data = {
             # required data for this test
@@ -421,16 +381,6 @@ class TestBackOfficeDevicesView(TestDevicesView, TestCase):
             'status': str(TestHostnameAssigning.trigger_status.id),
         }
         self._test_hostname_is_assigned(extra_data)
-
-    def test_hostname_is_eventually_assigned(self):
-        extra_data = {
-            # required data for this test
-            'asset': '',  # required button
-            'status': str(TestHostnameAssigning.trigger_status.id),
-        }
-        asset = self.asset_factory()
-        hostnames = [asset.hostname, asset.hostname, 'POLPC00005']
-        self._test_hostname_is_eventually_assigned(extra_data, hostnames)
 
 
 class TestLicencesView(TestCase):
