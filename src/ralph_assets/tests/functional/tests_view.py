@@ -34,10 +34,8 @@ from ralph.ui.tests.global_utils import login_as_su
 
 
 def mocked_generate_hostname(self, commit):
-    """
-    Mock function replacing Asset.generate_hostname.
-    It requires setting Asset.mocked_hostnames.
-    """
+    """Mock function replacing Asset.generate_hostname.
+    It requires setting Asset.mocked_hostnames."""
     hostname = models_assets.Asset.mocked_hostnames.next()
     self.hostname = hostname
     self.save(commit)

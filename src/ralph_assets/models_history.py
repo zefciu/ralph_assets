@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.db import models as db
@@ -169,21 +170,29 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph_assets.views.device')
 def device_hostname_assigning(sender, instance, raw, using, **kwargs):
-    """A hook for assigning ``hostname`` value when a asset is edited."""
-    for field, orig, new in field_changes(instance):
-        status_desc = models_assets.AssetStatus.in_progress.desc
-        if all((field == 'status', orig != status_desc, new == status_desc)):
-            success = False
-            for i in range(HOSTNAME_ASSIGNING_TRIES_COUNT):
-                try:
-                    instance._try_assign_hostname(commit=True)
-                except IntegrityError:
-                    continue
-                else:
-                    success = True
-                    break
-            if not success:
-                raise HostnameMaxTriesExceeded
+    """A hook for assigning ``hostname`` value when an asset is edited."""
+    if getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None):
+        for field, orig, new in field_changes(instance):
+            status_desc = models_assets.AssetStatus.in_progress.desc
+            if all((
+                field == 'status', orig != status_desc, new == status_desc
+            )):
+                success = False
+                for i in range(HOSTNAME_ASSIGNING_TRIES_COUNT):
+                    try:
+                        instance._try_assign_hostname(commit=True)
+                    except IntegrityError:
+                        continue
+                    else:
+                        success = True
+                        break
+                if not success:
+                    msg = ' '.join([
+                        'You are a lucky Ralph user who have just',
+                        'discovered almost non discoverable part of Ralph.',
+                        'Congratulations!!',
+                    ])
+                    raise HostnameMaxTriesExceeded(msg)
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')

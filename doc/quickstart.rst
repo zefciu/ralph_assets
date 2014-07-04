@@ -112,21 +112,3 @@ Here you can define
 * categories,
 * warehouses,
 * other dictionary data.
-
-Generating hostname
--------------
-The Ralph Assets provide generating hostname for asset. This feature is
-configurable from ``settings.py`` (see example below).
-
-.. code-block:: python
-
-    ASSET_HOSTNAME_TEMPLATE = {
-        'prefix': '{{ object.country_code|upper }}'
-        'postfix': '{{ object.model.category.code|upper }}',
-        'counter_length': 5,
-    }
-
-``prefix`` and ``postfix`` options takes template string - rendered by
-Django's template engine so you can use standard (or custom) template tags and
-filters. Template context contains ``object`` variable which is a asset
-instance. The ``counter_length`` describe constant length of counter.
