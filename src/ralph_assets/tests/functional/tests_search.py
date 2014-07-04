@@ -19,6 +19,8 @@ from ralph_assets.tests.utils.assets import (
     DCAssetFactory,
     AssetManufacturerFactory,
 )
+from ralph_assets.tests.utils import supports as supports_utils
+from ralph_assets import models_assets
 from ralph_assets.models_assets import AssetStatus
 from ralph.ui.tests.global_utils import login_as_su
 
@@ -593,6 +595,8 @@ class TestSearchEngine(TestCase):
 
     def _check_results_length(self, url, field_name, value, expected):
         results = self._search_results(url, field_name, urllib.quote(value))
+        from pdb import set_trace; set_trace()
+        #print(models_assets.Asset.objects.filter(required_support=True))
         self.assertEqual(
             len(results), expected,
             self.msg_error.format(url, len(results), expected),
@@ -710,3 +714,26 @@ class TestSearchEngine(TestCase):
             (self.testing_urls['bo'], field_name, '20001', 1),
             (self.testing_urls['bo'], field_name, 'none', 0),
         ])
+
+    def test_required_support(self):
+        """
+        - add asset a1 with support s1
+        - add asset a2 without support s2
+            - send request with checked
+                - found a1
+            - send request with unchecked
+                - found a1, a2
+        - assert found 1
+        """
+        asset_with_support = DCAssetFactory(**{'required_support': True})
+        asset_without_support = DCAssetFactory()
+        #for support in range(2):
+        #    support = supports_utils.DCSupportFactory()
+        #    asset_with_support.support_set.add(support)
+        #asset_with_support.save()
+        self._check_results_length(
+            self.testing_urls['dc'], 'required_support', 'checked', 1,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], '', 'not-checked', 2,
+        )

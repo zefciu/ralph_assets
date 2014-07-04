@@ -64,6 +64,7 @@ class AssetsSearchQueryableMixin(object):
             'purpose',
             'ralph_device_id',
             'remarks',
+            'required_support',
             'service_name',
             'sn',
             'source',
@@ -238,6 +239,8 @@ class AssetsSearchQueryableMixin(object):
                         all_q &= Q(budget_info__name=field_value)
                     else:
                         all_q &= Q(budget_info__name__icontains=field_value)
+                elif field == 'required_support':
+                    all_q &= Q(required_support=True)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

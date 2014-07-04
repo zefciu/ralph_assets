@@ -83,6 +83,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
+            'required_support',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -115,6 +116,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
+            'required_support',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -1512,6 +1514,14 @@ class SearchAssetForm(Form):
     )
     budget_info = AutoCompleteField(
         LOOKUPS['budget_info'], required=False,
+    )
+
+    required_support = AutoCompleteField(
+        LOOKUPS['budget_info'], required=False,
+    )
+    required_support = BooleanField(
+        required=False,
+        label=_('Required support:'),
     )
 
     def __init__(self, *args, **kwargs):
