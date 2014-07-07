@@ -53,6 +53,25 @@ SAVE_PRIORITY = 0
 ASSET_HOSTNAME_TEMPLATE = getattr(settings, 'ASSET_HOSTNAME_TEMPLATE', None)
 if not ASSET_HOSTNAME_TEMPLATE:
     raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
+HOSTNAME_FIELD_HELP_TIP = getattr(settings, 'HOSTNAME_FIELD_HELP_TIP', '')
+
+
+def _replace_empty_with_none(obj, fields):
+    # XXX: replace '' with None, because null=True on model doesn't work
+    for field in fields:
+        value = getattr(obj, field, None)
+        if value == '':
+            setattr(obj, field, None)
+
+
+def get_user_iso3_country_name(user):
+    """
+    :param user: instance of django.contrib.auth.models.User which has profile
+        with country attribute
+    """
+    country_name = Country.name_from_id(user.get_profile().country).upper()
+    iso3_country_name = iso2_to_iso3[country_name]
+    return iso3_country_name
 
 
 class LicenseAndAsset(object):
@@ -467,7 +486,14 @@ class Asset(
         null=True,
         on_delete=models.PROTECT,
     )
-    hostname = models.CharField(max_length=10, blank=True)
+    hostname = models.CharField(
+        blank=True,
+        default=None,
+        max_length=16,
+        null=True,
+        unique=True,
+        help_text=HOSTNAME_FIELD_HELP_TIP,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -528,10 +554,18 @@ class Asset(
         else:
             return 'device'
 
+    def _try_assign_hostname(self, commit):
+        if self.can_generate_hostname:
+            if not self.hostname:
+                self.generate_hostname(commit)
+            else:
+                user_country = get_user_iso3_country_name(self.owner)
+                different_country = user_country not in self.hostname
+                if different_country:
+                    self.generate_hostname(commit)
+
     def save(self, commit=True, *args, **kwargs):
-        if self.source == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.source = None
+        _replace_empty_with_none(self, ['source', 'hostname'])
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 
@@ -641,7 +675,9 @@ class Asset(
 
     @property
     def can_generate_hostname(self):
-        return bool(self.owner and self.model.category and not self.hostname)
+        return bool(
+            self.owner and self.model.category and self.model.category.code
+        )
 
     def generate_hostname(self, commit=True):
         if not self.can_generate_hostname:
@@ -788,9 +824,7 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         return AssetPurpose.from_id(self.purpose).raw if self.purpose else None
 
     def save(self, commit=True, *args, **kwargs):
-        if self.purpose == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.purpose = None
+        _replace_empty_with_none(self, ['purpose'])
         instance = super(OfficeInfo, self).save(commit=commit, *args, **kwargs)
         return instance
 
