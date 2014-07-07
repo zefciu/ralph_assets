@@ -5,7 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import base64
+import cPickle
 import datetime
+import json
 import uuid
 from decimal import Decimal
 
@@ -837,18 +840,21 @@ class DeviceEditViewTest(TestCase):
 
 class LookupsTest(TestCase):
 
+    def setUp(self):
+        self.client = login_as_su()
+
+    def _generate_url(self, *lookup):
+        channel = base64.b64encode(cPickle.dumps(lookup))
+        return reverse('ajax_lookup', kwargs={'channel': channel})
+
     def test_unlogged_user_lookup_permission(self):
         """
         - send request
         - check for 403
         """
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
         client = Client()
-        response = client.get(url)
+        response = client.get(url + '?term=test')
         self.assertEqual(response.status_code, 403)
 
     def test_logged_user_lookup_permission(self):
@@ -857,14 +863,25 @@ class LookupsTest(TestCase):
         - send request
         - check for 200
         """
-        self.client = login_as_su()
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
-        response = self.client.get(url)
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
+        response = self.client.get(url + '?term=test')
         self.assertEqual(response.status_code, 200)
+
+    def test_lookups_bo_and_dc(self):
+        """
+        - user type 'Model' in some ajax-selects field
+        - user get assets with DC and BO type
+        """
+        number_of_assets = 3
+        for _ in xrange(number_of_assets):
+            BOAssetFactory()
+            DCAssetFactory()
+
+        url = self._generate_url('ralph_assets.models', 'AssetLookup')
+        response = self.client.get(url + '?term=Model')
+        self.assertEqual(
+            len(json.loads(response.content)), number_of_assets * 2
+        )
 
 
 class ACLInheritanceTest(TestCase):

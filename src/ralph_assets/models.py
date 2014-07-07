@@ -254,7 +254,7 @@ class RalphDeviceLookup(RestrictedLookupChannel):
         )
 
 
-class AssetLookup(RestrictedLookupChannel):
+class AssetLookupBase(RestrictedLookupChannel):
     model = Asset
 
     def get_query(self, q, request):
@@ -274,6 +274,27 @@ class AssetLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return '{}'.format(escape(unicode(obj)))
+
+
+class AssetLookup(AssetLookupBase):
+
+    def get_query(self, q, request):
+        return Asset.objects.filter(
+            Q(model__name__icontains=q) |
+            Q(barcode__icontains=q) |
+            Q(sn__icontains=q)
+        ).order_by('sn', 'barcode')[:10]
+
+    def format_item_display(self, obj):
+        return """
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
 
 class AssetModelLookup(RestrictedLookupChannel):
@@ -395,7 +416,7 @@ class BODeviceLookup(DeviceLookup):
         return Asset.objects_bo
 
 
-class AssetLookupFuzzy(AssetLookup):
+class AssetLookupFuzzy(AssetLookupBase):
     def get_query(self, query, request):
         dev_ids = Device.objects.filter(
             model__type=DeviceType.unknown,
