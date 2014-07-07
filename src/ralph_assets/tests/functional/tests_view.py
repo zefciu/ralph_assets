@@ -171,7 +171,7 @@ class TestDevicesView(TestCase):
 
     def _check_asset_supports(self, asset, expected_supports):
         self.assertEqual(
-            len(asset.support_set.all()), len(expected_supports),
+            len(asset.supports.all()), len(expected_supports),
         )
         del self.new_asset_data['supports']
 

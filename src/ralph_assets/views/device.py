@@ -271,11 +271,11 @@ class EditDevice(AssetsBase):
                     'licences', []
                 ):
                     self.asset.licence_set.add(licence)
-                self.asset.support_set.clear()
+                self.asset.supports.clear()
                 for support in self.asset_form.cleaned_data.get(
                     'supports', []
                 ):
-                    self.asset.support_set.add(support)
+                    self.asset.supports.add(support)
                 messages.success(self.request, _("Assets edited."))
                 cat = self.request.path.split('/')[2]
                 return HttpResponseRedirect(

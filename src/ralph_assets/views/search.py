@@ -56,6 +56,7 @@ class AssetsSearchQueryableMixin(object):
             'manufacturer',
             'model',
             'niw',
+            'no_support_assigned',
             'order_no',
             'owner',
             'part_info',
@@ -64,6 +65,7 @@ class AssetsSearchQueryableMixin(object):
             'purpose',
             'ralph_device_id',
             'remarks',
+            'required_support',
             'service_name',
             'sn',
             'source',
@@ -231,6 +233,10 @@ class AssetsSearchQueryableMixin(object):
                         all_q &= Q(office_info__imei__icontains=field_value)
                 elif field == 'service_name':
                     all_q &= Q(service_name=field_value)
+                elif field == 'required_support':
+                    all_q &= Q(required_support=True)
+                elif field == 'no_support_assigned':
+                    all_q &= Q(supports=None)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 elif field == 'budget_info':

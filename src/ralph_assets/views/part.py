@@ -187,11 +187,11 @@ class EditPart(AssetsBase):
                 self.part_info_form.cleaned_data
             )
             self.asset.save(user=self.request.user)
-            self.asset.support_set.clear()
+            self.asset.supports.clear()
             for support in self.asset_form.cleaned_data.get(
                 'supports', []
             ):
-                self.asset.support_set.add(support)
+                self.asset.supports.add(support)
             messages.success(self.request, _("Part of asset was edited."))
             cat = self.request.path.split('/')[2]
             return HttpResponseRedirect(
