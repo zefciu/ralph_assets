@@ -77,7 +77,6 @@ class AssetsSearchQueryableMixin(object):
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
-        print('required_support vlaue', self.request.GET.get('required_support'))
         for field in search_fields:
             field_value = self.request.GET.get(field)
             if field_value:

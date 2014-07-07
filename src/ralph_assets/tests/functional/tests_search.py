@@ -597,7 +597,6 @@ class TestSearchEngine(TestCase):
         else:
             field_query = ''
         url = '{}?{}'.format(url, field_query)
-        print(url)
         response = self.client.get(url)
         return response.context['bob_page'].object_list
 

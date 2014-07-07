@@ -5,7 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import base64
+import cPickle
 import datetime
+import json
 import uuid
 from decimal import Decimal
 
@@ -13,6 +16,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
+from django.test.utils import override_settings
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
@@ -27,6 +31,7 @@ from ralph_assets.tests.utils.assets import (
     DCAssetFactory,
     WarehouseFactory,
 )
+from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
 from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
@@ -170,12 +175,59 @@ class TestDevicesView(TestCase):
         )
         del self.new_asset_data['supports']
 
+    def _save_asset_for_hostname_generation(self, extra_data):
+        """
+        Prepare (BO|DC)asset for further hostname field checks.
+
+        - create asset a1 with hostname=None
+        - get edit data from form in context
+        - check if a1's hostname is None
+        - send save edits request
+        - return response object for futher checks
+        """
+        asset = self.asset_factory(**{
+            'hostname': None,
+            'status': TestHostnameAssigning.neutral_status,
+        })
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        edit_data = {}
+        asset_form = response.context['asset_form']
+        for field_name, field_value in asset_form.fields.items():
+            raw_field_value = asset_form[field_name].value()
+            field_value = str(raw_field_value) if raw_field_value else ''
+            edit_data[field_name] = field_value
+        edit_data.update(extra_data)
+        self.assertIsNone(asset.hostname)
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode,
+            'asset_id': asset.id,
+        })
+        response = self.client.post(url, edit_data)
+        return asset, response
+
+    @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
+    def _test_hostname_is_assigned(self, extra_data):
+        asset, response = self._save_asset_for_hostname_generation(extra_data)
+        self.assertRedirects(
+            response, response.request['PATH_INFO'], status_code=302,
+            target_status_code=200,
+        )
+        asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertIsNotNone(asset.hostname)
+        return asset
+
 
 class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
         self.client = login_as_su()
+        self.asset_factory = DCAssetFactory
         self.mode = 'dc'
         self.asset_data = get_asset_data()
         self.asset_data.update({
@@ -257,8 +309,18 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         self._check_asset_supports(asset, supports)
         self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         check_fields(self, self.new_asset_data.items(), asset)
+        self.assertIsNotNone(asset.hostname)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
+
+    def test_hostname_is_assigned(self):
+        extra_data = {
+            # required data for this test
+            'ralph_device_id': '',
+            'asset': '',  # required button
+            'status': str(TestHostnameAssigning.trigger_status.id),
+        }
+        self._test_hostname_is_assigned(extra_data)
 
     def test_device_add_form_show_fields(self):
         required_fields = self.dc_visible_add_form_fields[:]
@@ -279,6 +341,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
         self.client = login_as_su()
+        self.asset_factory = BOAssetFactory
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
         self.asset_data.update({
@@ -362,7 +425,16 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
         check_fields(self, self.new_asset_data.items(), asset)
+        self.assertIsNotNone(asset.hostname)
         check_fields(self, new_office_data.items(), asset.office_info)
+
+    def test_hostname_is_assigned(self):
+        extra_data = {
+            # required data for this test
+            'asset': '',  # required button
+            'status': str(TestHostnameAssigning.trigger_status.id),
+        }
+        self._test_hostname_is_assigned(extra_data)
 
     def test_device_add_form_show_fields(self):
         required_fields = self.bo_visible_add_form_fields[:]
@@ -768,18 +840,21 @@ class DeviceEditViewTest(TestCase):
 
 class LookupsTest(TestCase):
 
+    def setUp(self):
+        self.client = login_as_su()
+
+    def _generate_url(self, *lookup):
+        channel = base64.b64encode(cPickle.dumps(lookup))
+        return reverse('ajax_lookup', kwargs={'channel': channel})
+
     def test_unlogged_user_lookup_permission(self):
         """
         - send request
         - check for 403
         """
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
         client = Client()
-        response = client.get(url)
+        response = client.get(url + '?term=test')
         self.assertEqual(response.status_code, 403)
 
     def test_logged_user_lookup_permission(self):
@@ -788,14 +863,25 @@ class LookupsTest(TestCase):
         - send request
         - check for 200
         """
-        self.client = login_as_su()
-        url = (
-            "/admin/lookups/ajax_lookup/"
-            "KFZyYWxwaF9hc3NldHMubW9kZWxzClZCT0Fzc2V0TW9kZWxMb29rdXAKdHAxCi4="
-            "?term=test"
-        )
-        response = self.client.get(url)
+        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
+        response = self.client.get(url + '?term=test')
         self.assertEqual(response.status_code, 200)
+
+    def test_lookups_bo_and_dc(self):
+        """
+        - user type 'Model' in some ajax-selects field
+        - user get assets with DC and BO type
+        """
+        number_of_assets = 3
+        for _ in xrange(number_of_assets):
+            BOAssetFactory()
+            DCAssetFactory()
+
+        url = self._generate_url('ralph_assets.models', 'AssetLookup')
+        response = self.client.get(url + '?term=Model')
+        self.assertEqual(
+            len(json.loads(response.content)), number_of_assets * 2
+        )
 
 
 class ACLInheritanceTest(TestCase):

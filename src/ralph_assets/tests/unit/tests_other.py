@@ -8,11 +8,12 @@ from __future__ import unicode_literals
 import datetime
 from dj.choices import Country
 
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import TestCase
+from django.test.utils import override_settings
 
 from ralph_assets.models import AssetManufacturer
-from ralph_assets.models_assets import AssetType
+from ralph_assets import models_assets
 from ralph_assets.models_sam import (
     AssetOwner,
     Licence,
@@ -62,7 +63,7 @@ class TestExportRelations(TestCase):
         )
 
         self.software_category = SoftwareCategory(
-            name='soft-cat1', asset_type=AssetType.DC
+            name='soft-cat1', asset_type=models_assets.AssetType.DC
         )
         self.software_category.save()
 
@@ -87,7 +88,7 @@ class TestExportRelations(TestCase):
             invoice_no="666-999-666",
             price=1000.0,
             provider="test_provider",
-            asset_type=AssetType.DC,
+            asset_type=models_assets.AssetType.DC,
         )
         self.licence1.save()
 
@@ -233,11 +234,11 @@ class TestHostnameGenerator(TestCase):
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         self.assertFalse(asset.can_generate_hostname)
 
-    def test_cant_generate_hostname_for_model_with_hostname(self):
+    def test_can_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl)
-        self.assertFalse(asset.can_generate_hostname)
+        self.assertTrue(asset.can_generate_hostname)
 
     def test_cant_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
@@ -263,3 +264,53 @@ class TestHostnameGenerator(TestCase):
 
     def test_convert_iso3_to_iso2(self):
         self.assertEqual(iso3_to_iso2['POL'], 'PL')
+
+
+@override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
+class TestHostnameAssigning(TestCase):
+    neutral_status = models_assets.AssetStatus.new
+    trigger_status = models_assets.AssetStatus.in_progress
+
+    def setUp(self):
+        self.owner = UserFactory()
+        self.neutral_status = models_assets.AssetStatus.new
+        self.trigger_status = models_assets.AssetStatus.in_progress
+        self.owner_country_name = models_assets.get_user_iso3_country_name(
+            self.owner
+        )
+
+    def test_assigning_when_no_hostname(self):
+        """
+        Generate hostname when it's none.
+        """
+        no_hostname_asset = BOAssetFactory(**{'hostname': None})
+        self.assertEqual(no_hostname_asset.hostname, None)
+        no_hostname_asset._try_assign_hostname(True)
+        self.assertNotEqual(no_hostname_asset.hostname, None)
+
+    def test_assigning_when_different_country(self):
+        """
+        Generate hostname when user has diffrent country than country from
+        hostname.
+        """
+        asset = BOAssetFactory(**{'owner': self.owner})
+        old_hostname = asset.hostname
+        self.assertNotIn(self.owner_country_name, asset.hostname)
+        asset._try_assign_hostname(True)
+        self.assertNotEqual(asset.hostname, old_hostname)
+        self.assertIn(self.owner_country_name, asset.hostname)
+
+    def test_assigning_when_same_country(self):
+        """
+        Keep existing hostname when user has the same country name
+        """
+        def _asset_from_country(iso3_country):
+            asset = BOAssetFactory()
+            hostname = asset.hostname.replace('XXX', iso3_country)
+            asset.hostname = hostname
+            asset.save()
+            return asset
+        asset = _asset_from_country(self.owner_country_name)
+        old_hostname = asset.hostname
+        asset._try_assign_hostname(True)
+        self.assertEqual(asset.hostname, old_hostname)

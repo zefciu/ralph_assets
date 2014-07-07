@@ -47,7 +47,7 @@ class Support(
     TimeTrackable,
     WithConcurrentGetOrCreate,
 ):
-    contract_id = models.CharField(max_length=50, unique=True, blank=False)
+    contract_id = models.CharField(max_length=50, blank=False)
     description = models.CharField(max_length=100, blank=True)
     attachments = models.ManyToManyField(
         models_assets.Attachment, null=True, blank=True

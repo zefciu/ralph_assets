@@ -87,7 +87,7 @@ class EditSupportForm(SupportForm):
     """Support edit form for supports."""
 
     assets = AutoCompleteSelectMultipleField(
-        LOOKUPS['asset'], required=False
+        LOOKUPS['asset_all'], required=False
     )
 
     class Meta(SupportForm.Meta):
