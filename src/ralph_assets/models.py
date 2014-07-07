@@ -69,6 +69,9 @@ class DeviceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
@@ -130,6 +133,9 @@ class FreeLicenceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
@@ -162,6 +168,9 @@ class LicenceLookup(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
+
+    def get_item_url(self, obj):
+        return obj.url
 
     def format_match(self, obj):
         return self.format_item_display(obj)
@@ -205,6 +214,9 @@ class SupportLookup(RestrictedLookupChannel):
             contract_id=escape(obj.contract_id),
             name=escape(obj.name),
         )
+
+    def get_item_url(self, obj):
+        return obj.url
 
     def get_base_objects(self):
         return self.model.objects
@@ -253,6 +265,9 @@ class AssetLookup(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
+
+    def get_item_url(self, obj):
+        return obj.url
 
     def format_match(self, obj):
         return self.format_item_display(obj)
@@ -440,6 +455,9 @@ class UserLookup(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
+
+    def get_item_url(self, obj):
+        return reverse('user_view', args=(obj.username,))
 
     def format_match(self, obj):
         return self.format_item_display(obj)

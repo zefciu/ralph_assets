@@ -26,20 +26,15 @@ from ralph_assets.models_support import SupportType
 class SupportForm(forms.ModelForm):
     """Support add/edit form for supports."""
 
-    assets = AutoCompleteSelectMultipleField(
-        LOOKUPS['asset'], required=False)
-
     class Meta:
         model = models_support.Support
         fieldset = OrderedDict([
             ('Info', [
-                'asset_type', 'support_type', 'status', 'contract_id',
-                'name', 'description', 'price', 'date_from',
-                'date_to', 'escalation_path',
-                'contract_terms', 'additional_notes',
-                'sla_type', 'producer', 'supplier',
-                'serial_no', 'invoice_no', 'invoice_date',
-                'period_in_months', 'property_of', 'assets',
+                'asset_type', 'support_type', 'status', 'contract_id', 'name',
+                'description', 'price', 'date_from', 'date_to',
+                'escalation_path', 'contract_terms', 'additional_notes',
+                'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
+                'invoice_date', 'period_in_months', 'property_of',
             ]),
         ])
         widgets = {
@@ -55,7 +50,6 @@ class SupportForm(forms.ModelForm):
         fields = (
             'additional_notes',
             'asset_type',
-            'assets',
             'contract_id',
             'contract_terms',
             'date_from',
@@ -83,6 +77,52 @@ class SupportForm(forms.ModelForm):
     def clean(self, *args, **kwargs):
         result = super(SupportForm, self).clean(*args, **kwargs)
         return result
+
+
+class AddSupportForm(SupportForm):
+    """Support add form for supports."""
+
+
+class EditSupportForm(SupportForm):
+    """Support edit form for supports."""
+
+    assets = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset'], required=False
+    )
+
+    class Meta(SupportForm.Meta):
+        fieldset = OrderedDict([
+            ('Info', [
+                'asset_type', 'support_type', 'status', 'contract_id', 'name',
+                'description', 'price', 'date_from', 'date_to',
+                'escalation_path', 'contract_terms', 'additional_notes',
+                'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
+                'invoice_date', 'period_in_months', 'property_of', 'assets',
+            ]),
+        ])
+        fields = (
+            'additional_notes',
+            'asset_type',
+            'assets',
+            'contract_id',
+            'contract_terms',
+            'date_from',
+            'date_to',
+            'description',
+            'escalation_path',
+            'invoice_date',
+            'invoice_no',
+            'name',
+            'period_in_months',
+            'price',
+            'producer',
+            'property_of',
+            'serial_no',
+            'sla_type',
+            'status',
+            'supplier',
+            'support_type',
+        )
 
 
 class SupportSearchForm(SearchForm):
