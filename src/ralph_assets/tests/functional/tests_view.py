@@ -804,7 +804,7 @@ class LookupsTest(TestCase):
         - user get assets with DC and BO type
         """
         number_of_assets = 3
-        for _ in range(number_of_assets):
+        for _ in xrange(number_of_assets):
             BOAssetFactory()
             DCAssetFactory()
 
