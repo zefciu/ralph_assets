@@ -494,6 +494,7 @@ class Asset(
         unique=True,
         help_text=HOSTNAME_FIELD_HELP_TIP,
     )
+    required_support = models.BooleanField(default=False)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)

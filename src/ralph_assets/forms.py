@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import re
-import time
 
 from ajax_select.fields import (
     AutoCompleteSelectField,
@@ -340,7 +339,6 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
             'deprecation_end_date': DateWidget(),
             'device_info': HiddenInput(),
             'invoice_date': DateWidget(),
-            'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
             'request_date': DateWidget(),
         }
@@ -780,20 +778,18 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'order_no',
             'owner',
             'price',
-            'production_use_date',
-            'production_year',
             'profit_center',
             'property_of',
             'provider',
             'provider_order_date',
             'remarks',
             'request_date',
+            'required_support',
             'service_name',
             'slots',
             'source',
             'status',
             'support_period',
-            'support_price',
             'support_type',
             'support_void_reporting',
             'task_url',
@@ -808,7 +804,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
-            'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'request_date': DateWidget(),
@@ -921,9 +916,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
-    def clean_production_year(self):
-        return validate_production_year(self)
-
 
 class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     '''
@@ -957,14 +949,13 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'order_no',
             'owner',
             'price',
-            'production_use_date',
-            'production_year',
             'profit_center',
             'property_of',
             'provider',
             'provider_order_date',
             'remarks',
             'request_date',
+            'required_support',
             'service_name',
             'slots',
             'sn',
@@ -972,7 +963,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'source',
             'status',
             'support_period',
-            'support_price',
             'support_type',
             'support_void_reporting',
             'task_url',
@@ -988,7 +978,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
-            'production_use_date': DateWidget(),
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'request_date': DateWidget(),
@@ -1102,9 +1091,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             )
         return category
 
-    def clean_production_year(self):
-        return validate_production_year(self)
-
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
@@ -1118,24 +1104,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             raise ValidationError(_("Cannot edit deleted asset"))
         cleaned_data = super(BaseEditAssetForm, self).clean()
         return cleaned_data
-
-
-def validate_production_year(asset):
-    data = asset.cleaned_data["production_year"]
-    if data is None:
-        return data
-    # Matches any 4-digit number:
-    year_re = re.compile('^\d{4}$')
-    if not year_re.match(str(data)):
-        raise ValidationError(u'%s is not a valid year.' % data)
-    # Check not before this year:
-    year = int(data)
-    thisyear = time.localtime()[0]
-    if year > thisyear:
-        raise ValidationError(
-            u'%s is a year in the future.'
-            u' Please enter a current or past year.' % data)
-    return data
 
 
 class MoveAssetPartForm(Form):
@@ -1240,7 +1208,10 @@ class EditPartForm(BaseEditAssetForm):
     def __init__(self, *args, **kwargs):
         super(EditPartForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
-        self.fieldsets['Assigned supports info'] = ['supports']
+        self.fieldsets['Assigned supports info'] = [
+            'required_support',
+            'supports',
+        ]
 
 
 class EditDeviceForm(BaseEditAssetForm):
@@ -1249,7 +1220,10 @@ class EditDeviceForm(BaseEditAssetForm):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
-        self.fieldsets['Assigned supports info'] = ['supports']
+        self.fieldsets['Assigned supports info'] = [
+            'required_support',
+            'supports',
+        ]
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
@@ -1464,22 +1438,6 @@ class SearchAssetForm(Form):
         label='',
         input_formats=RALPH_DATE_FORMAT_LIST,
     )
-
-    production_use_date_from = DateField(
-        required=False, widget=DateWidget(attrs={
-            'placeholder': _('Start YYYY-MM-DD'),
-            'data-collapsed': True,
-        }),
-        label=_('Production use date'),
-        input_formats=RALPH_DATE_FORMAT_LIST,
-    )
-    production_use_date_to = DateField(
-        required=False, widget=DateWidget(attrs={
-            'class': 'end-date-field ',
-            'placeholder': _('End YYYY-MM-DD'),
-            'data-collapsed': True,
-        }),
-        label='')
     unlinked = BooleanField(required=False, label=_('Is unlinked'))
     deleted = BooleanField(required=False, label=_('Include deleted'))
     loan_end_date_from = DateField(
@@ -1580,11 +1538,10 @@ class SplitDevice(ModelForm):
         model = Asset
         fields = (
             'id', 'delete', 'model_proposed', 'model_user', 'invoice_no',
-            'order_no', 'sn', 'barcode', 'price', 'support_price',
-            'support_period', 'support_type', 'support_void_reporting',
-            'provider', 'source', 'status', 'request_date', 'delivery_date',
-            'invoice_date', 'production_use_date', 'provider_order_date',
-            'warehouse', 'production_year',
+            'order_no', 'sn', 'barcode', 'price', 'support_period',
+            'support_type', 'support_void_reporting', 'provider', 'source',
+            'status', 'request_date', 'delivery_date', 'invoice_date',
+            'provider_order_date', 'warehouse',
         )
         widgets = {
             'request_date': DateWidget(),
@@ -1605,7 +1562,7 @@ class SplitDevice(ModelForm):
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
             'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'warehouse', 'production_year',
+            'provider', 'source', 'status', 'warehouse',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
