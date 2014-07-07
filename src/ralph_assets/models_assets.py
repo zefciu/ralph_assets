@@ -487,7 +487,11 @@ class Asset(
         on_delete=models.PROTECT,
     )
     hostname = models.CharField(
-        blank=True, default=None, max_length=16, null=True, unique=True,
+        blank=True,
+        default=None,
+        max_length=16,
+        null=True,
+        unique=True,
         help_text=HOSTNAME_FIELD_HELP_TIP,
     )
 
