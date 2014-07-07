@@ -8,12 +8,14 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models as db
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from ralph_assets import models_assets
 from ralph_assets.history import field_changes
 from ralph_assets.models_assets import (
     Asset,
@@ -157,6 +159,18 @@ def asset_post_save(sender, instance, raw, using, **kwargs):
             user=instance.saving_user,
             comment=instance.save_comment,
         ).save()
+
+
+@receiver(pre_save, sender=Asset, dispatch_uid='ralph_assets.views.device')
+def device_hostname_assigning(sender, instance, raw, using, **kwargs):
+    """A hook for assigning ``hostname`` value when an asset is edited."""
+    if getattr(settings, 'ASSETS_AUTO_ASSIGN_HOSTNAME', None):
+        for field, orig, new in field_changes(instance):
+            status_desc = models_assets.AssetStatus.in_progress.desc
+            if all((
+                field == 'status', orig != status_desc, new == status_desc
+            )):
+                instance._try_assign_hostname(commit=False)
 
 
 @receiver(post_save, sender=DeviceInfo, dispatch_uid='ralph.history_assets')
