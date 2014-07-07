@@ -205,6 +205,9 @@ class BaseAssetFactory(Factory):
     task_url = Sequence(lambda n: 'http://www.url-{}.com/'.format(n))
     user = SubFactory(UserFactory)
     warehouse = SubFactory(WarehouseFactory)
+    support_price = 1000
+    production_use_date = '2012-02-12'
+    production_year = 1998
 
     @lazy_attribute
     def sn(self):
