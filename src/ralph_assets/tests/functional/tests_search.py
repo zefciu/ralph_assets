@@ -734,7 +734,7 @@ class TestSearchEngine(TestCase):
         )
         self._check_results_length(
             self.testing_urls['dc'], '', '',
-            len(Asset.objects.filter(type=AssetType.data_center.id).all()),
+            Asset.objects.filter(type=AssetType.data_center.id).count(),
         )
 
     def test_has_no_support(self):
@@ -755,7 +755,7 @@ class TestSearchEngine(TestCase):
 
         self._check_results_length(
             self.testing_urls['dc'], 'no_support_assigned', 'checked',
-            len(Asset.objects.filter(
+            Asset.objects.filter(
                 type=AssetType.data_center.id, supports=None
-            ).all()),
+            ).count(),
         )
