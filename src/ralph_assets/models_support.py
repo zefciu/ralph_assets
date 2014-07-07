@@ -89,7 +89,7 @@ class Support(
         SupportType,
         on_delete=models.PROTECT,
     )
-    assets = models.ManyToManyField(Asset)
+    assets = models.ManyToManyField(Asset, related_name='supports')
 
     def __init__(self, *args, **kwargs):
         self.saving_user = None

@@ -56,6 +56,7 @@ class AssetsSearchQueryableMixin(object):
             'manufacturer',
             'model',
             'niw',
+            'no_support_assigned',
             'order_no',
             'owner',
             'part_info',
@@ -76,6 +77,7 @@ class AssetsSearchQueryableMixin(object):
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
+        print('required_support vlaue', self.request.GET.get('required_support'))
         for field in search_fields:
             field_value = self.request.GET.get(field)
             if field_value:
@@ -232,6 +234,10 @@ class AssetsSearchQueryableMixin(object):
                         all_q &= Q(office_info__imei__icontains=field_value)
                 elif field == 'service_name':
                     all_q &= Q(service_name=field_value)
+                elif field == 'required_support':
+                    all_q &= Q(required_support=True)
+                elif field == 'no_support_assigned':
+                    all_q &= Q(supports=None)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 elif field == 'budget_info':
@@ -239,8 +245,6 @@ class AssetsSearchQueryableMixin(object):
                         all_q &= Q(budget_info__name=field_value)
                     else:
                         all_q &= Q(budget_info__name__icontains=field_value)
-                elif field == 'required_support':
-                    all_q &= Q(required_support=True)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

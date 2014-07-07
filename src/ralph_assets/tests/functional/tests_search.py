@@ -13,15 +13,18 @@ from django.core.urlresolvers import reverse
 
 
 from ralph_assets.tests.util import create_model
+from ralph_assets.tests.utils import supports as supports_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     BOAssetFactory,
     DCAssetFactory,
     AssetManufacturerFactory,
 )
-from ralph_assets.tests.utils import supports as supports_utils
-from ralph_assets import models_assets
-from ralph_assets.models_assets import AssetStatus
+from ralph_assets.models_assets import (
+    Asset,
+    AssetType,
+    AssetStatus,
+)
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -588,15 +591,18 @@ class TestSearchEngine(TestCase):
 
         self.msg_error = 'Error in {}, request has return {} but expected {}.'
 
-    def _search_results(self, url, field_name, value):
-        url = '{}?{}={}'.format(url, field_name, value)
+    def _search_results(self, url, field_name=None, value=None):
+        if field_name and value:
+            field_query = '='.join([field_name, value])
+        else:
+            field_query = ''
+        url = '{}?{}'.format(url, field_query)
+        print(url)
         response = self.client.get(url)
         return response.context['bob_page'].object_list
 
     def _check_results_length(self, url, field_name, value, expected):
         results = self._search_results(url, field_name, urllib.quote(value))
-        from pdb import set_trace; set_trace()
-        #print(models_assets.Asset.objects.filter(required_support=True))
         self.assertEqual(
             len(results), expected,
             self.msg_error.format(url, len(results), expected),
@@ -717,23 +723,40 @@ class TestSearchEngine(TestCase):
 
     def test_required_support(self):
         """
-        - add asset a1 with support s1
-        - add asset a2 without support s2
+        - add asset a1 with required_support=True
             - send request with checked
-                - found a1
-            - send request with unchecked
-                - found a1, a2
-        - assert found 1
+                - assert found a1
+            - send request without checked
+                - assert found all assets
         """
-        asset_with_support = DCAssetFactory(**{'required_support': True})
-        asset_without_support = DCAssetFactory()
-        #for support in range(2):
-        #    support = supports_utils.DCSupportFactory()
-        #    asset_with_support.support_set.add(support)
-        #asset_with_support.save()
+        DCAssetFactory(**{'required_support': True})
         self._check_results_length(
             self.testing_urls['dc'], 'required_support', 'checked', 1,
         )
         self._check_results_length(
-            self.testing_urls['dc'], '', 'not-checked', 2,
+            self.testing_urls['dc'], '', '',
+            len(Asset.objects.filter(type=AssetType.data_center.id).all()),
+        )
+
+    def test_has_no_support(self):
+        """
+        - add asset a1
+        - add supports s1, s2
+        - add s1, s2 to a1
+            - send request with checked *no_support_assigned*
+                - assert found: (all-assets - 1)
+            - send request without checked *no_support_assigned*
+                - assert found: 1
+        """
+        asset_with_support = DCAssetFactory()
+        for support in range(2):
+            support = supports_utils.DCSupportFactory()
+            asset_with_support.supports.add(support)
+        asset_with_support.save()
+
+        self._check_results_length(
+            self.testing_urls['dc'], 'no_support_assigned', 'checked',
+            len(Asset.objects.filter(
+                type=AssetType.data_center.id, supports=None
+            ).all()),
         )

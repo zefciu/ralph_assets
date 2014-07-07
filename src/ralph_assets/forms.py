@@ -83,7 +83,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support',
+            'required_support', 'no_support_assigned',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -116,7 +116,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
-            'required_support',
+            'required_support', 'no_support_assigned',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -596,7 +596,7 @@ class DependencyAssetForm(DependencyForm):
             ]
             initial['supports'] = [
                 support['pk']
-                for support in kwargs['instance'].support_set.values('pk')
+                for support in kwargs['instance'].supports.values('pk')
             ]
         super(DependencyAssetForm, self).__init__(*args, **kwargs)
 
@@ -1515,13 +1515,13 @@ class SearchAssetForm(Form):
     budget_info = AutoCompleteField(
         LOOKUPS['budget_info'], required=False,
     )
-
-    required_support = AutoCompleteField(
-        LOOKUPS['budget_info'], required=False,
-    )
     required_support = BooleanField(
         required=False,
         label=_('Required support:'),
+    )
+    no_support_assigned = BooleanField(
+        required=False,
+        label=_('Without support:'),
     )
 
     def __init__(self, *args, **kwargs):
