@@ -258,7 +258,7 @@ class AssetCategory(
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
-    code = models.CharField(max_length=4)
+    code = models.CharField(max_length=4, blank=True, default='')
     is_blade = models.BooleanField()
     parent = TreeForeignKey(
         'self',
