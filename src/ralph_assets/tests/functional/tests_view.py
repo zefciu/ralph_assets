@@ -466,7 +466,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         self._assert_field_in_form(form_url, required_fields)
 
     def test_last_hostname_change_owner(self):
-        """Assets user change user and status and expect new hostname.
+        """Assets user change owner and status and expect new hostname.
         Scenario:
         - user change status and owner in asset
         - again, change status and owner in asset

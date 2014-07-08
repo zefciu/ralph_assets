@@ -222,7 +222,8 @@ class TestHostnameGenerator(TestCase):
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
         BOAssetFactory(owner=self.user_pl, hostname='POLSW00003')
-        models_assets.AssetLastHostname.objects.create(hostname='POLPC00002')
+        models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
+        models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
         asset.generate_hostname()
         self.assertEqual(asset.hostname, 'POLPC00003')
 
@@ -251,7 +252,9 @@ class TestHostnameGenerator(TestCase):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
-        models_assets.AssetLastHostname.objects.create(hostname='POLPC99999')
+        models_assets.AssetLastHostname.objects.create(
+            prefix='POLPC', counter=99999
+        )
         asset.generate_hostname()
         self.assertEqual(asset.hostname, 'POLPC100000')
 
