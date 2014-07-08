@@ -359,19 +359,48 @@ class BudgetInfo(
 
 
 class AssetLastHostname(models.Model):
-    hostname = models.CharField(
-        max_length=16,
-        unique=True,
-        db_index=True,
-    )
+    prefix = models.CharField(max_length=8, db_index=True)
+    counter = models.PositiveSmallIntegerField()
+    postfix = models.CharField(max_length=8, db_index=True)
+
+    class Meta:
+        unique_together = ('prefix', 'postfix')
+
+    def __unicode__(self):
+        return self.formatted_hostname()
+
+    def formatted_hostname(self, fill=5):
+        return '{prefix}{counter:0{fill}}{postfix}'.format(
+            prefix=self.prefix,
+            counter=int(self.counter),
+            fill=fill,
+            postfix=self.postfix,
+        )
 
     @classmethod
     def get_last_hostname(cls, prefix, postfix):
-        queryset = cls.objects.filter(
-            hostname__startswith=prefix,
-            hostname__endswith=postfix,
-        ).order_by('-hostname')[:1]
-        return queryset[0] if queryset else None
+        created = False
+        try:
+            obj = cls.objects.get(prefix=prefix, postfix=postfix)
+        except cls.DoesNotExist:
+            obj = cls.objects.create(
+                prefix=prefix,
+                postfix=postfix,
+                counter=1,
+            )
+            created = True
+        return obj, created
+
+    @classmethod
+    def increment_hostname(cls, prefix, postfix=''):
+        obj, created = cls.get_last_hostname(prefix, postfix)
+        if not created:
+            # F() avoid race condition problem
+            obj.counter = models.F('counter') + 1
+            obj.save()
+            return cls.objects.get(pk=obj.pk)
+        else:
+            return obj
 
 
 class Asset(
@@ -713,25 +742,8 @@ class Asset(
             object=self,
         )
         counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
-        last_hostname = AssetLastHostname.get_last_hostname(prefix, postfix)
-        if last_hostname:
-            prefix_length = len(prefix)
-            last_counter = int(last_hostname.hostname[
-                               prefix_length:prefix_length + counter_length])
-            hostname_number = last_counter + 1
-        else:
-            hostname_number = 1
-        self.hostname = '{prefix}{counter:0{fill}}{postfix}'.format(
-            prefix=prefix,
-            counter=hostname_number,
-            fill=counter_length,
-            postfix=postfix,
-        )
-        if last_hostname:
-            AssetLastHostname.objects.filter(
-                pk=last_hostname.pk).update(hostname=self.hostname)
-        else:
-            AssetLastHostname.objects.create(hostname=self.hostname)
+        last_hostname = AssetLastHostname.increment_hostname(prefix, postfix)
+        self.hostname = last_hostname.formatted_hostname(fill=counter_length)
         if commit:
             self.save()
 
