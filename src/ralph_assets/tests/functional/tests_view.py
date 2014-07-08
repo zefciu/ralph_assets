@@ -11,6 +11,7 @@ import datetime
 import json
 import uuid
 from decimal import Decimal
+from dj.choices import Country
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
@@ -21,6 +22,7 @@ from django.test.utils import override_settings
 from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets import models_sam
+from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
 from ralph_assets.tests.utils import supports as support_utils
@@ -220,6 +222,18 @@ class TestDevicesView(TestCase):
         asset = models_assets.Asset.objects.get(pk=asset.id)
         self.assertIsNotNone(asset.hostname)
         return asset
+
+    def update_asset(self, asset_id, **kwargs):
+        url = reverse('device_edit', kwargs={
+            'mode': self.mode if self.mode else 'back_office',
+            'asset_id': asset_id,
+        })
+        response = self.client.get(url)
+        form = response.context['asset_form']
+        update_dict = form.__dict__['initial']
+        update_dict.update(**kwargs)
+        response = self.client.post(url, update_dict, follow=True)
+        return response, models_assets.Asset.objects.get(id=asset_id)
 
 
 class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
@@ -450,6 +464,68 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             }
         )
         self._assert_field_in_form(form_url, required_fields)
+
+    def test_last_hostname_change_owner(self):
+        """Assets user change user and status and expect new hostname.
+        Scenario:
+        - user change status and owner in asset
+        - again, change status and owner in asset
+        - user change status to in progress (this action will by generate
+        new hostname respected latest hostname)
+        """
+        def set_user_country(user, country):
+            user.profile.country = country
+            user.profile.save()
+
+        user_pl_1 = UserFactory()
+        set_user_country(user_pl_1, Country.pl)
+        user_pl_2 = UserFactory()
+        set_user_country(user_pl_2, Country.pl)
+        user_pl_3 = UserFactory()
+        set_user_country(user_pl_3, Country.pl)
+        user_cz = UserFactory()
+        set_user_country(user_cz, Country.cz)
+        asset = BOAssetFactory(
+            model=AssetModelFactory(category__code='XX'),
+            hostname='',
+            user=user_pl_1,
+            owner=user_pl_1,
+            status=models_assets.AssetStatus.new,
+        )
+
+        response, asset = self.update_asset(
+            asset.id,
+            asset=True,
+            owner=user_pl_2.id,
+            status=models_assets.AssetStatus.in_progress.id,
+        )
+        self.assertEqual(asset.hostname, 'POLXX00001')
+
+        response, asset = self.update_asset(
+            asset.id,
+            asset=True,
+            owner=user_cz.id,
+            status=models_assets.AssetStatus.new.id,
+        )
+        response, asset = self.update_asset(
+            asset.id,
+            asset=True,
+            status=models_assets.AssetStatus.in_progress.id,
+        )
+        self.assertEqual(asset.hostname, 'CZEXX00001')
+
+        response, asset = self.update_asset(
+            asset.id,
+            asset=True,
+            owner=user_pl_3.id,
+            status=models_assets.AssetStatus.new.id,
+        )
+        response, asset = self.update_asset(
+            asset.id,
+            asset=True,
+            status=models_assets.AssetStatus.in_progress.id,
+        )
+        self.assertEqual(asset.hostname, 'POLXX00002')
 
 
 class TestLicencesView(BaseViewsTest):
