@@ -207,6 +207,10 @@ class BaseAssetFactory(Factory):
     warehouse = SubFactory(WarehouseFactory)
 
     @lazy_attribute
+    def barcode(self):
+        return str(uuid1())
+
+    @lazy_attribute
     def sn(self):
         return str(uuid1())
 

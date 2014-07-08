@@ -36,12 +36,26 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
 
+def get_asset_form_data(asset, client):
+    """
+    TODO::  docstring
+    """
+    # TODO:: move it above
+    from ralph_assets import urls
+    url = reverse('device_edit', kwargs={
+        'mode': urls.normalize_asset_mode(asset.type.name),
+        'asset_id': asset.id,
+    })
+    response = client.get(url)
+    form = response.context['asset_form']
+    return form.__dict__['initial']
+
 def update(_dict, obj, keys):
     """
     Update *_dict* with *obj*'s values from keys.
     """
     for field_name in keys:
-        _dict['hostname'] = getattr(obj, field_name)
+        _dict[field_name] = getattr(obj, field_name)
     return _dict
 
 
@@ -144,7 +158,7 @@ class TestDevicesView(TestCase):
     """
 
     def setUp(self):
-        self.visible_add_form_fields = [
+        self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
             'deprecation_end_date', 'deprecation_rate', 'hostname',
             'invoice_date', 'invoice_no', 'location', 'model', 'niw',
@@ -152,8 +166,8 @@ class TestDevicesView(TestCase):
             'provider_order_date', 'remarks', 'request_date', 'service_name',
             'sn', 'source', 'status', 'task_url', 'type', 'user', 'warehouse',
         ]
-        self.visible_edit_form_fields = self.visible_add_form_fields[:]
-        self.visible_edit_form_fields.extend([
+        self._visible_edit_form_fields = self._visible_add_form_fields[:]
+        self._visible_edit_form_fields.extend([
             'supports_text', 'licences_text',
         ])
 
@@ -221,6 +235,51 @@ class TestDevicesView(TestCase):
         self.assertIsNotNone(asset.hostname)
         return asset
 
+    def get_add_form_data(self):
+        """
+        TODO::
+        """
+        asset = self.asset_factory()
+        add_form_data = get_asset_form_data(asset, self.client)
+        asset.delete()
+        return add_form_data
+
+    def _test_mulitvalues_behaviour(self):
+        '''
+        - get add device request data d1
+        - update d1 with duplicated values for field sn
+        - send add device request with data d1
+        - assert error about duplicates occured
+
+        - update d1 with unique values for field sn
+        - send add device request with data d1
+        - assert asset was added
+        '''
+        request_data = self.get_add_form_data()
+        request_data.update(dict(
+            # required, irrelevant data here
+            ralph_device_id='',
+            hostname='',
+        ))
+        url = reverse('add_device', kwargs={'mode': self.mode})
+
+        duplicated_sns = ','.join([self.asset_factory.build().sn] * 3)
+        request_data['sn'] = duplicated_sns
+        response = self.client.post(url, request_data)
+        self.assertFormError(
+            response, 'asset_form', 'sn', 'There are duplicates in field.',
+        )
+        unique_sns = ','.join([
+            self.asset_factory.build().sn for i in xrange(3)
+        ])
+        request_data.update(dict(
+            sn=unique_sns,
+            barcode='1,2,3',
+        ))
+        request_data['sn'] = unique_sns
+        response = self.client.post(url, request_data)
+        self.assertEqual(response.status_code, 302)
+
 
 class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
@@ -239,11 +298,11 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
             'u_level': 21,
         }
 
-        dc_fields = ['ralph_device_id', 'u_height', 'u_level']
-        self.dc_visible_add_form_fields = self.visible_add_form_fields[:]
-        self.dc_visible_add_form_fields.extend(dc_fields)
-        self.dc_visible_edit_form_fields = self.visible_edit_form_fields[:]
-        self.dc_visible_edit_form_fields.extend(dc_fields)
+        self.additional_fields = ['ralph_device_id', 'u_height', 'u_level']
+        self.visible_add_form_fields = self._visible_add_form_fields[:]
+        self.visible_add_form_fields.extend(self.additional_fields)
+        self.visible_edit_form_fields = self._visible_edit_form_fields[:]
+        self.visible_edit_form_fields.extend(self.additional_fields)
 
     def test_add_device(self):
         """
@@ -323,17 +382,20 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         self._test_hostname_is_assigned(extra_data)
 
     def test_device_add_form_show_fields(self):
-        required_fields = self.dc_visible_add_form_fields[:]
+        required_fields = self.visible_add_form_fields[:]
         form_url = reverse('add_device', kwargs={'mode': 'dc'})
         self._assert_field_in_form(form_url, required_fields)
 
     def test_device_edit_form_show_fields(self):
-        required_fields = self.dc_visible_edit_form_fields[:]
+        required_fields = self.visible_edit_form_fields[:]
         device = DCAssetFactory()
         form_url = reverse(
             'device_edit', kwargs={'mode': 'dc', 'asset_id': device.id},
         )
         self._assert_field_in_form(form_url, required_fields)
+
+    def test_mulitvalues_behaviour(self):
+        self._test_mulitvalues_behaviour()
 
 
 class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
@@ -354,13 +416,13 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             'imei': assets_utils.generate_imei(15),
             'coa_number': str(uuid.uuid1()),
         }
-        bo_fields = [
+        self.additional_fields = [
             'budget_info', 'coa_number', 'coa_oem_os', 'license_key',
         ]
-        self.bo_visible_add_form_fields = self.visible_add_form_fields[:]
-        self.bo_visible_add_form_fields.extend(bo_fields)
-        self.bo_visible_edit_form_fields = self.visible_edit_form_fields[:]
-        self.bo_visible_edit_form_fields.extend(bo_fields)
+        self.visible_add_form_fields = self._visible_add_form_fields[:]
+        self.visible_add_form_fields.extend(self.additional_fields)
+        self.visible_edit_form_fields = self._visible_edit_form_fields[:]
+        self.visible_edit_form_fields.extend(self.additional_fields)
 
     def test_add_device(self):
         """
@@ -437,12 +499,12 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         self._test_hostname_is_assigned(extra_data)
 
     def test_device_add_form_show_fields(self):
-        required_fields = self.bo_visible_add_form_fields[:]
+        required_fields = self.visible_add_form_fields[:]
         form_url = reverse('add_device', kwargs={'mode': 'back_office'})
         self._assert_field_in_form(form_url, required_fields)
 
     def test_device_edit_form_show_fields(self):
-        required_fields = self.bo_visible_edit_form_fields[:]
+        required_fields = self.visible_edit_form_fields[:]
         device = BOAssetFactory()
         form_url = reverse(
             'device_edit', kwargs={
@@ -451,9 +513,13 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         )
         self._assert_field_in_form(form_url, required_fields)
 
+    def test_mulitvalues_behaviour(self):
+        self._test_mulitvalues_behaviour()
+
 
 class TestLicencesView(BaseViewsTest):
     """This test case concern all licences views."""
+
     def setUp(self):
         self.client = login_as_su()
         self.license_data = {
@@ -570,6 +636,46 @@ class TestLicencesView(BaseViewsTest):
             self.assertIn(
                 key, response.context['formset'][0].fields.keys()
             )
+
+    def test_mulitvalues_behaviour(self):
+        '''
+        - get add license request data d1
+        - update d1 with duplicated values for field sn
+        - send add device request with data d1
+        - assert error about duplicates occured
+
+        - update d1 with unique values for field sn
+        - send add device request with data d1
+        - assert asset was added
+
+
+        1. sn allows duplicates
+        2. inv.nb. rejects duplicates
+        '''
+        request_data = self.get_add_form_data()
+        request_data.update(dict(
+            # required, irrelevant data here
+            ralph_device_id='',
+            hostname='',
+            barcode='',
+        ))
+        url = reverse('add_device', kwargs={'mode': self.mode})
+
+        duplicated_sns = ','.join([self.asset_factory.build().sn] * 3)
+        request_data['sn'] = duplicated_sns
+        response = self.client.post(url, request_data)
+        self.assertFormError(
+            response, 'asset_form', 'sn', 'There are duplicates in field.',
+        )
+        unique_sns = ','.join([
+            self.asset_factory.build().sn for i in xrange(3)
+        ])
+        request_data.update(dict(
+            sn=unique_sns,
+        ))
+        request_data['sn'] = unique_sns
+        response = self.client.post(url, request_data)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestSupportsView(BaseViewsTest):
