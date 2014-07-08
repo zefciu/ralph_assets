@@ -358,6 +358,22 @@ class BudgetInfo(
         return cls(name=string)
 
 
+class AssetLastHostname(models.Model):
+    hostname = models.CharField(
+        max_length=16,
+        unique=True,
+        db_index=True,
+    )
+
+    @classmethod
+    def get_last_hostname(cls, prefix, postfix):
+        queryset = cls.objects.filter(
+            hostname__startswith=prefix,
+            hostname__endswith=postfix,
+        ).order_by('-hostname')[:1]
+        return queryset[0] if queryset else None
+
+
 class Asset(
     LicenseAndAsset,
     TimeTrackable,
@@ -697,15 +713,12 @@ class Asset(
             object=self,
         )
         counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
-        queryset = Asset.objects.filter(
-            hostname__startswith=prefix,
-            hostname__endswith=postfix,
-        ).order_by('-hostname')[:1]
-        if queryset:
+        last_hostname = AssetLastHostname.get_last_hostname(prefix, postfix)
+        if last_hostname:
             prefix_length = len(prefix)
-            last_hostname = int(queryset[0].hostname[
-                                prefix_length:prefix_length + counter_length])
-            hostname_number = last_hostname + 1
+            last_counter = int(last_hostname.hostname[
+                               prefix_length:prefix_length + counter_length])
+            hostname_number = last_counter + 1
         else:
             hostname_number = 1
         self.hostname = '{prefix}{counter:0{fill}}{postfix}'.format(
@@ -714,6 +727,11 @@ class Asset(
             fill=counter_length,
             postfix=postfix,
         )
+        if last_hostname:
+            AssetLastHostname.objects.filter(
+                pk=last_hostname.pk).update(hostname=self.hostname)
+        else:
+            AssetLastHostname.objects.create(hostname=self.hostname)
         if commit:
             self.save()
 
