@@ -15,6 +15,18 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['SupportType'])
 
+        # Adding model 'AssetLastHostname'
+        db.create_table('ralph_assets_assetlasthostname', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('prefix', self.gf('django.db.models.fields.CharField')(max_length=8, db_index=True)),
+            ('counter', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=1)),
+            ('postfix', self.gf('django.db.models.fields.CharField')(max_length=8, db_index=True)),
+        ))
+        db.send_create_signal('ralph_assets', ['AssetLastHostname'])
+
+        # Adding unique constraint on 'AssetLastHostname', fields ['prefix', 'postfix']
+        db.create_unique('ralph_assets_assetlasthostname', ['prefix', 'postfix'])
+
         # Adding model 'BudgetInfo'
         db.create_table('ralph_assets_budgetinfo', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -119,8 +131,14 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Removing unique constraint on 'AssetLastHostname', fields ['prefix', 'postfix']
+        db.delete_unique('ralph_assets_assetlasthostname', ['prefix', 'postfix'])
+
         # Deleting model 'SupportType'
         db.delete_table('ralph_assets_supporttype')
+
+        # Deleting model 'AssetLastHostname'
+        db.delete_table('ralph_assets_assetlasthostname')
 
         # Deleting model 'BudgetInfo'
         db.delete_table('ralph_assets_budgetinfo')
@@ -302,6 +320,13 @@ class Migration(SchemaMigration):
             'old_value': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'part_info': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['ralph_assets.PartInfo']", 'null': 'True', 'on_delete': 'models.SET_NULL', 'blank': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['auth.User']", 'null': 'True', 'on_delete': 'models.SET_NULL', 'blank': 'True'})
+        },
+        'ralph_assets.assetlasthostname': {
+            'Meta': {'unique_together': "((u'prefix', u'postfix'),)", 'object_name': 'AssetLastHostname'},
+            'counter': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '1'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'postfix': ('django.db.models.fields.CharField', [], {'max_length': '8', 'db_index': 'True'}),
+            'prefix': ('django.db.models.fields.CharField', [], {'max_length': '8', 'db_index': 'True'})
         },
         'ralph_assets.assetmanufacturer': {
             'Meta': {'object_name': 'AssetManufacturer'},
@@ -485,7 +510,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Support'},
             'additional_notes': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
             'asset_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'assets': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Asset']", 'symmetrical': 'False'}),
+            'assets': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "u'supports'", 'symmetrical': 'False', 'to': "orm['ralph_assets.Asset']"}),
             'attachments': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['ralph_assets.Attachment']", 'null': 'True', 'blank': 'True'}),
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'contract_id': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
