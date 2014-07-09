@@ -244,12 +244,13 @@ class MultilineField(CharField):
     """
     separators = ",|\n"
 
-    def __init__(self, db_field_path, *args, **kwargs):
+    def __init__(self, db_field_path, reject_duplicates=True, *args, **kwargs):
         """
         :param string db_field_path: check arg *field_path* of function
         *_check_field_uniqueness*
         """
         self.db_field_path = db_field_path
+        self.reject_duplicates = reject_duplicates
         super(MultilineField, self).__init__(*args, **kwargs)
 
     def validate(self, values):
@@ -261,7 +262,7 @@ class MultilineField(CharField):
             raise ValidationError(error_msg, code='required')
         items = set()
         for value in values:
-            if value in items:
+            if value in items and self.reject_duplicates:
                 raise ValidationError(_("There are duplicates in field."))
             elif value == '':
                 raise ValidationError(_("Empty items disallowed, remove it."))
@@ -377,7 +378,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
 
     def clean_hostname(self):
         # make field readonly
-        return self.instance.hostname
+        return self.instance.hostname or None
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -918,6 +919,9 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
+    def clean_hostname(self):
+        return self.cleaned_data['hostname'] or None
+
 
 class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     '''
@@ -1098,7 +1102,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
 
     def clean_hostname(self):
         # make field readonly
-        return self.instance.hostname
+        return self.instance.hostname or None
 
     def clean(self):
         self.cleaned_data = super(BaseEditAssetForm, self).clean()

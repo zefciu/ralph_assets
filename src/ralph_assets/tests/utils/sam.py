@@ -5,7 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
+
 from factory import (
+    fuzzy,
     Sequence,
     SubFactory,
     lazy_attribute,
@@ -21,10 +24,12 @@ from ralph_assets.models_sam import (
     LicenceType,
     SoftwareCategory,
 )
-from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
+    AssetManufacturerFactory,
+    AssetOwnerFactory,
     BudgetInfoFactory,
     ServiceFactory,
+    UserFactory,
 )
 
 
@@ -43,24 +48,26 @@ class SoftwareCategoryFactory(Factory):
 
 class LicenceFactory(Factory):
     FACTORY_FOR = Licence
-    number_bought = randint(0, 150)
-    parent = None
     accounting_id = ''
-    asset_type = AssetType.back_office.id
+    asset_type = AssetType.back_office.id  # TODO:: remove it?
+    # assets: probabbly it should be set as kwargs during creation?
     budget_info = SubFactory(BudgetInfoFactory)
-    invoice_date = None
+    invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'INVOICE-NUMBER-%s' % n)
     licence_type = SubFactory(LicenceTypeFactory)
+    license_details = Sequence(lambda n: 'Licence-details-%s' % n)
+    manufacturer = SubFactory(AssetManufacturerFactory)
     number_bought = randint(0, 150)
     order_no = Sequence(lambda n: 'ORDER-NUMBER-%s' % n)
     parent = None
     price = 0
+    property_of = SubFactory(AssetOwnerFactory)
     provider = ''
     remarks = ''
     service_name = SubFactory(ServiceFactory)
-    sn = str(uuid1())
     software_category = SubFactory(SoftwareCategoryFactory)
-    valid_thru = None
+    users = None
+    valid_thru = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
 
     @lazy_attribute
     def niw(self):

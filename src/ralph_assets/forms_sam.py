@@ -179,6 +179,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
 
     sn = MultilineField(
         db_field_path='sn',
+        reject_duplicates=False,
         label=_('Licence key'),
         required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
