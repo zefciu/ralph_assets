@@ -36,20 +36,6 @@ from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.ui.tests.global_utils import login_as_su
 
 
-def get_asset_form_data(asset, client):
-    """
-    TODO::  docstring
-    """
-    # TODO:: move it above
-    from ralph_assets import urls
-    url = reverse('device_edit', kwargs={
-        'mode': urls.normalize_asset_mode(asset.type.name),
-        'asset_id': asset.id,
-    })
-    response = client.get(url)
-    form = response.context['asset_form']
-    return form.__dict__['initial']
-
 def update(_dict, obj, keys):
     """
     Update *_dict* with *obj*'s values from keys.
@@ -128,6 +114,15 @@ class BaseViewsTest(TestCase):
         for check_string in check_strings:
             self.assertContains(response, check_string)
 
+    def get_object_form_data(self, url, form_name):
+        """
+        Gets data from form *form_name* inside context under *url*.
+        Useful when, eg. request data for add|edit asset is needed.
+        """
+        response = self.client.get(url)
+        form = response.context[form_name]
+        return form.__dict__['initial']
+
 
 class TestDataDisplay(TestCase):
     """Test check if data from database are displayed on screen"""
@@ -170,6 +165,17 @@ class TestDevicesView(TestCase):
         self._visible_edit_form_fields.extend([
             'supports_text', 'licences_text',
         ])
+
+    def get_asset_form_data(self):
+        from ralph_assets import urls
+        asset = self.asset_factory()
+        url = reverse('device_edit', kwargs={
+            'mode': urls.normalize_asset_mode(asset.type.name),
+            'asset_id': asset.id,
+        })
+        form_data = self.get_object_form_data(url, 'asset_form')
+        asset.delete()
+        return form_data
 
     def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
         update(new_asset_data, asset, readonly_fields)
@@ -235,15 +241,6 @@ class TestDevicesView(TestCase):
         self.assertIsNotNone(asset.hostname)
         return asset
 
-    def get_add_form_data(self):
-        """
-        TODO::
-        """
-        asset = self.asset_factory()
-        add_form_data = get_asset_form_data(asset, self.client)
-        asset.delete()
-        return add_form_data
-
     def _test_mulitvalues_behaviour(self):
         '''
         - get add device request data d1
@@ -255,7 +252,7 @@ class TestDevicesView(TestCase):
         - send add device request with data d1
         - assert asset was added
         '''
-        request_data = self.get_add_form_data()
+        request_data = self.get_asset_form_data()
         request_data.update(dict(
             # required, irrelevant data here
             ralph_device_id='',
@@ -637,43 +634,41 @@ class TestLicencesView(BaseViewsTest):
                 key, response.context['formset'][0].fields.keys()
             )
 
+    def get_license_form_data(self):
+        license = LicenceFactory()
+        url = reverse('edit_licence', kwargs={
+            'licence_id': license.id,
+        })
+        form_data = self.get_object_form_data(url, 'form')
+        license.delete()
+        return form_data
+
     def test_mulitvalues_behaviour(self):
-        '''
+        """
         - get add license request data d1
-        - update d1 with duplicated values for field sn
-        - send add device request with data d1
-        - assert error about duplicates occured
 
-        - update d1 with unique values for field sn
-        - send add device request with data d1
-        - assert asset was added
+        - add licence with duplicated inv. nb. in data
+        - assert error occured
 
-
-        1. sn allows duplicates
-        2. inv.nb. rejects duplicates
-        '''
-        request_data = self.get_add_form_data()
+        - edit licence with duplicated sn in data
+        - assert licence was added
+        """
+        request_data = self.get_license_form_data()
         request_data.update(dict(
             # required, irrelevant data here
-            ralph_device_id='',
-            hostname='',
-            barcode='',
+            parent='',
+            sn=','.join([LicenceFactory.build().niw] * 3),
         ))
-        url = reverse('add_device', kwargs={'mode': self.mode})
+        url = reverse('add_licence')
 
-        duplicated_sns = ','.join([self.asset_factory.build().sn] * 3)
-        request_data['sn'] = duplicated_sns
+        request_data['niw'] = ','.join([LicenceFactory.build().niw] * 3)
         response = self.client.post(url, request_data)
         self.assertFormError(
-            response, 'asset_form', 'sn', 'There are duplicates in field.',
+            response, 'form', 'niw', 'There are duplicates in field.',
         )
-        unique_sns = ','.join([
-            self.asset_factory.build().sn for i in xrange(3)
-        ])
         request_data.update(dict(
-            sn=unique_sns,
+            niw=','.join([LicenceFactory.build().niw for idx in xrange(3)]),
         ))
-        request_data['sn'] = unique_sns
         response = self.client.post(url, request_data)
         self.assertEqual(response.status_code, 302)
 

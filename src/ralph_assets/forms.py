@@ -244,12 +244,13 @@ class MultilineField(CharField):
     """
     separators = ",|\n"
 
-    def __init__(self, db_field_path, allow_duplicates=False, *args, **kwargs):
+    def __init__(self, db_field_path, reject_duplicates=True, *args, **kwargs):
         """
         :param string db_field_path: check arg *field_path* of function
         *_check_field_uniqueness*
         """
         self.db_field_path = db_field_path
+        self.reject_duplicates = reject_duplicates
         super(MultilineField, self).__init__(*args, **kwargs)
 
     def validate(self, values):
@@ -261,7 +262,7 @@ class MultilineField(CharField):
             raise ValidationError(error_msg, code='required')
         items = set()
         for value in values:
-            if value in items:
+            if value in items and self.reject_duplicates:
                 raise ValidationError(_("There are duplicates in field."))
             elif value == '':
                 raise ValidationError(_("Empty items disallowed, remove it."))
