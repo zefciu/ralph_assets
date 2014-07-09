@@ -24,7 +24,6 @@ from ralph_assets.models_sam import (
     LicenceType,
     SoftwareCategory,
 )
-from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
     AssetManufacturerFactory,
     AssetOwnerFactory,
