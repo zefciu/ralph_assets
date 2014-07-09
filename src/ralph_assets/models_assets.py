@@ -17,6 +17,7 @@ from dateutil.relativedelta import relativedelta
 from dj.choices import Country
 from django.contrib.auth.models import User
 from lck.django.choices import Choices
+from lck.django.common import nested_commit_on_success
 from lck.django.common.models import (
     EditorTrackable,
     Named,
@@ -360,7 +361,7 @@ class BudgetInfo(
 
 class AssetLastHostname(models.Model):
     prefix = models.CharField(max_length=8, db_index=True)
-    counter = models.PositiveSmallIntegerField()
+    counter = models.PositiveSmallIntegerField(default=1)
     postfix = models.CharField(max_length=8, db_index=True)
 
     class Meta:
@@ -378,22 +379,11 @@ class AssetLastHostname(models.Model):
         )
 
     @classmethod
-    def get_last_hostname(cls, prefix, postfix):
-        created = False
-        try:
-            obj = cls.objects.get(prefix=prefix, postfix=postfix)
-        except cls.DoesNotExist:
-            obj = cls.objects.create(
-                prefix=prefix,
-                postfix=postfix,
-                counter=1,
-            )
-            created = True
-        return obj, created
-
-    @classmethod
     def increment_hostname(cls, prefix, postfix=''):
-        obj, created = cls.get_last_hostname(prefix, postfix)
+        obj, created = cls.objects.get_or_create(
+            prefix=prefix,
+            postfix=postfix,
+        )
         if not created:
             # F() avoid race condition problem
             obj.counter = models.F('counter') + 1
@@ -725,6 +715,7 @@ class Asset(
             self.owner and self.model.category and self.model.category.code
         )
 
+    @nested_commit_on_success
     def generate_hostname(self, commit=True):
         if not self.can_generate_hostname:
             return
