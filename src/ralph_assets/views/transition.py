@@ -28,9 +28,15 @@ from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.views.base import ACLGateway
 from ralph_assets.views.invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
+from ralph_assets import signals
 
 
 logger = logging.getLogger(__name__)
+
+
+# TODO:: it's dirty version
+class AuthentiFailed(Exception):
+    pass
 
 
 class TransitionDispatcher(object):
@@ -122,6 +128,7 @@ class TransitionDispatcher(object):
         return data, uid
 
     def _generate_report(self):
+        self.template_file = None
         data, self.uid = self._get_report_data()
         self.file_name = '{}-{}.pdf'.format(
             self.template_file.slug,
@@ -163,8 +170,17 @@ class TransitionDispatcher(object):
     def get_report_file_name(self):
         return self.file_name
 
+    def pre_transition(self):
+        pass
+
+    def post_transition(self):
+        signals.generate_doc.send(
+            sender=self, user=self.logged_user, assets=self.assets,
+        )
+
     @nested_commit_on_success
     def run(self):
+        self.pre_transition()
         self.file_name = None
         actions = self.transition.actions_names
         if 'change_status' in actions:
@@ -190,6 +206,7 @@ class TransitionDispatcher(object):
         elif 'return_report' in actions:
             self._action_return_report()
         self._save_history()
+        self.post_transition()
 
 
 class TransitionView(_AssetSearch):
@@ -350,15 +367,21 @@ class TransitionView(_AssetSearch):
                 self.get_warehouse(),
                 loan_end_date=self.request.POST.get('loan_end_date'),
             )
-            dispatcher.run()
-            self.report_file_path = dispatcher.report_file_patch
-            self.report_file_name = dispatcher.get_report_file_name
-            self.transition_history = dispatcher.get_transition_history_object()  # noqa
-            messages.success(
-                self.request,
-                _("Transitions performed successfully"),
-            )
-            return super(TransitionView, self).get(*args, **kwargs)
+            try:
+                dispatcher.run()
+            except AuthentiFailed:
+                msg = _("TODO:: Request for authenti failed")
+                messages.error(self.request, msg)
+            else:
+                self.report_file_path = dispatcher.report_file_patch
+                self.report_file_name = dispatcher.get_report_file_name
+                self.transition_history = dispatcher.get_transition_history_object()  # noqa
+                messages.success(
+                    self.request,
+                    _("Transitions performed successfully"),
+                )
+            finally:
+                return super(TransitionView, self).get(*args, **kwargs)
         messages.error(self.request, _('Please correct errors.'))
         return super(TransitionView, self).get(*args, **kwargs)
 

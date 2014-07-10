@@ -314,3 +314,17 @@ class TestHostnameAssigning(TestCase):
         old_hostname = asset.hostname
         asset._try_assign_hostname(True)
         self.assertEqual(asset.hostname, old_hostname)
+
+
+class TestSignals(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_docs_generation(self):
+        from ralph_assets import signals
+        self.logged_user = UserFactory()
+        self.assets = [BOAssetFactory() for i in xrange(3)]
+        signals.generate_doc.send(
+            sender=self, user=self.logged_user, assets=self.assets,
+        )
