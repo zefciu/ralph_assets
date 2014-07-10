@@ -680,7 +680,7 @@ class Asset(
             self.owner and self.model.category and self.model.category.code
         )
 
-    def generate_hostname(self, commit=True):
+    def generate_hostname(self, commit=True, **kwargs):
         if not self.can_generate_hostname:
             return
 
