@@ -592,13 +592,17 @@ class Asset(
 
     def _try_assign_hostname(self, commit):
         if self.can_generate_hostname:
+            template_vars = {
+                'code': self.model.category.code,
+                'country_code': self.country_code,
+            }
             if not self.hostname:
-                self.generate_hostname(commit)
+                self.generate_hostname(commit, template_vars)
             else:
                 user_country = get_user_iso3_country_name(self.owner)
                 different_country = user_country not in self.hostname
                 if different_country:
-                    self.generate_hostname(commit)
+                    self.generate_hostname(commit, template_vars)
 
     def save(self, commit=True, *args, **kwargs):
         _replace_empty_with_none(self, ['source', 'hostname'])
@@ -716,21 +720,19 @@ class Asset(
         )
 
     @nested_commit_on_success
-    def generate_hostname(self, commit=True, **kwargs):
+    def generate_hostname(self, commit=True, template_vars={}):
         if not self.can_generate_hostname:
             return
 
-        def render_template(template, **kwargs):
+        def render_template(template):
             template = Template(template)
-            context = Context(kwargs)
+            context = Context(template_vars)
             return template.render(context)
         prefix = render_template(
             ASSET_HOSTNAME_TEMPLATE.get('prefix', ''),
-            object=self,
         )
         postfix = render_template(
             ASSET_HOSTNAME_TEMPLATE.get('postfix', ''),
-            object=self,
         )
         counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
         last_hostname = AssetLastHostname.increment_hostname(prefix, postfix)
