@@ -78,6 +78,14 @@ for r in (
     v09_api.register(r())
 
 
+def normalize_asset_mode(mode):
+    modes = {
+        'data_center': 'dc',
+    }
+    normalized_mode = modes.get(mode, mode)
+    return normalized_mode
+
+
 urlpatterns = patterns(
     '',
     url(r'^api/', include(v09_api.urls)),

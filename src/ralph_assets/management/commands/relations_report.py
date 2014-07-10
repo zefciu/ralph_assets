@@ -66,7 +66,7 @@ class Command(BaseCommand):
         writer = csv.writer(output)
         if only_assets and not only_licences:
             for row in get_assets_rows(filter_type):
-                writer.writerow([smart_str(item) for item in row if item])
+                writer.writerow([smart_str(item) for item in row])
             self.stdout.write(output.getvalue())
         elif only_licences and not only_assets:
             for row in get_licences_rows(filter_type, only_assigned_licences):

@@ -17,6 +17,7 @@ from dateutil.relativedelta import relativedelta
 from dj.choices import Country
 from django.contrib.auth.models import User
 from lck.django.choices import Choices
+from lck.django.common import nested_commit_on_success
 from lck.django.common.models import (
     EditorTrackable,
     Named,
@@ -358,6 +359,40 @@ class BudgetInfo(
         return cls(name=string)
 
 
+class AssetLastHostname(models.Model):
+    prefix = models.CharField(max_length=8, db_index=True)
+    counter = models.PositiveSmallIntegerField(default=1)
+    postfix = models.CharField(max_length=8, db_index=True)
+
+    class Meta:
+        unique_together = ('prefix', 'postfix')
+
+    def __unicode__(self):
+        return self.formatted_hostname()
+
+    def formatted_hostname(self, fill=5):
+        return '{prefix}{counter:0{fill}}{postfix}'.format(
+            prefix=self.prefix,
+            counter=int(self.counter),
+            fill=fill,
+            postfix=self.postfix,
+        )
+
+    @classmethod
+    def increment_hostname(cls, prefix, postfix=''):
+        obj, created = cls.objects.get_or_create(
+            prefix=prefix,
+            postfix=postfix,
+        )
+        if not created:
+            # F() avoid race condition problem
+            obj.counter = models.F('counter') + 1
+            obj.save()
+            return cls.objects.get(pk=obj.pk)
+        else:
+            return obj
+
+
 class Asset(
     LicenseAndAsset,
     TimeTrackable,
@@ -680,6 +715,7 @@ class Asset(
             self.owner and self.model.category and self.model.category.code
         )
 
+    @nested_commit_on_success
     def generate_hostname(self, commit=True, **kwargs):
         if not self.can_generate_hostname:
             return
@@ -697,23 +733,8 @@ class Asset(
             object=self,
         )
         counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
-        queryset = Asset.objects.filter(
-            hostname__startswith=prefix,
-            hostname__endswith=postfix,
-        ).order_by('-hostname')[:1]
-        if queryset:
-            prefix_length = len(prefix)
-            last_hostname = int(queryset[0].hostname[
-                                prefix_length:prefix_length + counter_length])
-            hostname_number = last_hostname + 1
-        else:
-            hostname_number = 1
-        self.hostname = '{prefix}{counter:0{fill}}{postfix}'.format(
-            prefix=prefix,
-            counter=hostname_number,
-            fill=counter_length,
-            postfix=postfix,
-        )
+        last_hostname = AssetLastHostname.increment_hostname(prefix, postfix)
+        self.hostname = last_hostname.formatted_hostname(fill=counter_length)
         if commit:
             self.save()
 
