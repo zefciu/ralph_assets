@@ -15,6 +15,7 @@ ASSETS_TRANSITIONS = {
         'RELEASE-ASSET': 'release-asset',
         'LOAN-ASSET': 'loan-asset',
         'RETURN-ASSET': 'return-asset',
+        'CHANGE-HOSTNAME': 'change-hostname',
     }
 }
 

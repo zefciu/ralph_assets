@@ -58,7 +58,7 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
 class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
     class Meta:
         ordering = ['-created']
-    transition = models.ForeignKey(Transition) # WYSWIETLANIE W TABELI html OD typu cyz generuje raport czy nie
+    transition = models.ForeignKey(Transition)
     assets = models.ManyToManyField(Asset)
     logged_user = models.ForeignKey(User, related_name='logged user')
     affected_user = models.ForeignKey(

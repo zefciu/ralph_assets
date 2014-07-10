@@ -161,7 +161,7 @@ class TransitionDispatcher(object):
     def _action_change_hostname(self):
         for asset in self.assets:
             country_id = self.kwargs['request'].POST.get('country')
-            country_name = Country.name_from_id(country_id).upper()
+            country_name = Country.name_from_id(int(country_id)).upper()
             iso3_country_name = iso2_to_iso3[country_name]
             asset.generate_hostname(country_code=iso3_country_name)
             asset.save(user=self.logged_user)
