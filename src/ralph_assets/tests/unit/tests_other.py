@@ -214,7 +214,11 @@ class TestHostnameGenerator(TestCase):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC00001')
 
     def test_generate_next_hostname(self):
@@ -224,7 +228,11 @@ class TestHostnameGenerator(TestCase):
         BOAssetFactory(owner=self.user_pl, hostname='POLSW00003')
         models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
         models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC00003')
 
     def test_cant_generate_hostname_for_model_without_category(self):
@@ -255,7 +263,11 @@ class TestHostnameGenerator(TestCase):
         models_assets.AssetLastHostname.objects.create(
             prefix='POLPC', counter=99999
         )
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC100000')
 
     def test_convert_iso2_to_iso3(self):
