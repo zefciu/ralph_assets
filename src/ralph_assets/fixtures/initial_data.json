@@ -2269,5 +2269,11 @@
       "fields": {
          "name": "unassign_licences"
       }
+   }, {
+      "pk": 12,
+      "model": "ralph_assets.action",
+      "fields": {
+         "name": "change_hostname"
+      }
    }
 ]
