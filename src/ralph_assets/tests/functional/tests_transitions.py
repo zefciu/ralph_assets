@@ -43,11 +43,14 @@ class TestTransitionHostname(TestCase):
         self.transition.actions.add(Action.objects.get(name='change_hostname'))
 
     def test_change_hostname_success(self):
-        asset = BOAssetFactory(**{'hostname': ''})
+        asset = BOAssetFactory(**{
+            'hostname': '',
+            'model__category__code': 'PC'
+        })
         post_data = {'country': Country.pl.id}
         url_base = reverse('transition', args=('back_office',))
         url_params = {'select': asset.id, 'transition_type': 'change-hostname'}
         url = "{}?{}".format(url_base, urllib.urlencode(url_params))
         self.client.post(url, post_data, follow=True)
         changed_asset = Asset.objects.get(pk=asset.id)
-        self.assertEqual(changed_asset.hostname, 'POLAA00001')
+        self.assertEqual(changed_asset.hostname, 'POLPC00001')
