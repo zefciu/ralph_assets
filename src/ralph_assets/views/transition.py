@@ -325,6 +325,15 @@ class TransitionView(_AssetSearch):
             self.change_hostname = (
                 'change_hostname' in self.transition_object.actions_names
             )
+
+        if (
+            self.change_hostname
+            and self.assets.filter(model__category__code='').count() > 0
+        ):
+            messages.error(
+                self.request, _("Asset has no assigned category with code"),
+            )
+            error = True
         # check assets has assigned user
         if (
             self.transition_type in required_user_transitions

@@ -45,7 +45,7 @@ class TestTransitionHostname(TestCase):
     def test_change_hostname_success(self):
         asset = BOAssetFactory(**{
             'hostname': '',
-            'model__category__code': 'PC'
+            'model__category__code': 'PC',
         })
         post_data = {'country': Country.pl.id}
         url_base = reverse('transition', args=('back_office',))
