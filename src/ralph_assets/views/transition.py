@@ -163,7 +163,11 @@ class TransitionDispatcher(object):
             country_id = self.kwargs['request'].POST.get('country')
             country_name = Country.name_from_id(int(country_id)).upper()
             iso3_country_name = iso2_to_iso3[country_name]
-            asset.generate_hostname(country_code=iso3_country_name)
+            template_vars = {
+                'code': asset.model.category.code,
+                'country_code': iso3_country_name,
+            }
+            asset.generate_hostname(template_vars=template_vars)
             asset.save(user=self.logged_user)
 
     def get_transition_history_object(self):
@@ -242,6 +246,8 @@ class TransitionView(_AssetSearch):
             form.fields.pop('warehouse')
         if not self.assign_loan_end_date:
             form.fields.pop('loan_end_date')
+        if not self.change_hostname:
+            form.fields.pop('country')
         return form
 
     def get_assets(self, *args, **kwargs):
@@ -315,6 +321,9 @@ class TransitionView(_AssetSearch):
             )
             self.assign_loan_end_date = (
                 'assign_loan_end_date' in self.transition_object.actions_names
+            )
+            self.change_hostname = (
+                'change_hostname' in self.transition_object.actions_names
             )
         # check assets has assigned user
         if (

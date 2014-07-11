@@ -36,5 +36,5 @@ class TransitionForm(forms.Form):
     country = forms.ChoiceField(
         choices=[('', '----')] + Country(),
         label=_('Country'),
-        required=False,
+        required=True,
     )
