@@ -336,6 +336,6 @@ class TestSignals(TestCase):
         from ralph_assets import signals
         self.logged_user = UserFactory()
         self.assets = [BOAssetFactory() for i in xrange(3)]
-        signals.generate_doc.send(
+        signals.post_transition.send(
             sender=self, user=self.logged_user, assets=self.assets,
         )

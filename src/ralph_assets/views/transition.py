@@ -170,17 +170,8 @@ class TransitionDispatcher(object):
     def get_report_file_name(self):
         return self.file_name
 
-    def pre_transition(self):
-        pass
-
-    def post_transition(self):
-        signals.generate_doc.send(
-            sender=self, user=self.logged_user, assets=self.assets,
-        )
-
     @nested_commit_on_success
     def run(self):
-        self.pre_transition()
         self.file_name = None
         actions = self.transition.actions_names
         if 'change_status' in actions:
@@ -206,7 +197,9 @@ class TransitionDispatcher(object):
         elif 'return_report' in actions:
             self._action_return_report()
         self._save_history()
-        self.post_transition()
+        signals.post_transition.send(
+            sender=self, user=self.logged_user, assets=self.assets,
+        )
 
 
 class TransitionView(_AssetSearch):
@@ -370,7 +363,7 @@ class TransitionView(_AssetSearch):
             try:
                 dispatcher.run()
             except AuthentiFailed:
-                msg = _("TODO:: Request for authenti failed")
+                msg = _("TODO:: Request to authenti failed")
                 messages.error(self.request, msg)
             else:
                 self.report_file_path = dispatcher.report_file_patch
