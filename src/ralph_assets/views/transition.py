@@ -400,7 +400,7 @@ class TransitionView(_AssetSearch):
             )
             try:
                 dispatcher.run()
-            except AuthentiFailed:
+            except Exception as e:
                 self.transition_ended = False
                 msg = _("TODO:: Request to authenti failed")
                 messages.error(self.request, msg)

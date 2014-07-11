@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import urllib
 
+import django.dispatch
 from dj.choices import Country
 from django.core.urlresolvers import reverse
 from django.test import TestCase
@@ -14,6 +15,7 @@ from django.test.utils import override_settings
 
 from ralph.ui.tests.global_utils import login_as_su
 from ralph_assets.models_assets import Asset
+from ralph_assets import signals
 from ralph_assets.models_transition import Action
 from ralph_assets.tests.utils.assets import BOAssetFactory
 from ralph_assets.tests.utils.transitions import TransitionFactory
@@ -38,6 +40,22 @@ class TestTransitionHostname(TestCase):
         self.client = login_as_su()
         self.prepare_transition()
 
+        # XXX:: My stuff
+        self.asset = BOAssetFactory(**{
+            'hostname': '',
+            'model__category__code': 'PC',
+        })
+        self.url_base = reverse('transition', args=('back_office',))
+        self.url_params = {
+            'select': self.asset.id,
+            'transition_type': 'change-hostname',  # TODO:: use another trans.?
+        }
+        self.url = "{}?{}".format(
+            self.url_base, urllib.urlencode(self.url_params)
+        )
+        self.post_data = {'country': Country.pl.id}
+
+
     def prepare_transition(self):
         self.transition = TransitionFactory()
         self.transition.actions.add(Action.objects.get(name='change_hostname'))
@@ -54,3 +72,27 @@ class TestTransitionHostname(TestCase):
         self.client.post(url, post_data, follow=True)
         changed_asset = Asset.objects.get(pk=asset.id)
         self.assertEqual(changed_asset.hostname, 'POLPC00001')
+
+    def test_successful_post_transition(self):
+        """
+        Transition is done successfully.
+        """
+        @django.dispatch.receiver(signals.post_transition)
+        def post_transition_handler(sender, user, assets, **kwargs):
+            pass
+
+        response = self.client.post(url, post_data, follow=True)
+        self.assertEqual(len(response.context['messages']), 1)
+        self.assertEqual(
+            str(response.context['messages']._loaded_messages[0]),
+            "Transitions performed successfully",
+        )
+
+    def test_failed_post_transition(self):
+        """
+        Transition is done unsuccessfully.
+        """
+        pass
+        # self.assertFormError(
+        #     response, 'asset_form', 'sn', 'There are duplicates in field.',
+        # )
