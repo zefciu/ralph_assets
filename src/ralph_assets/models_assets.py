@@ -716,7 +716,7 @@ class Asset(
     @property
     def can_generate_hostname(self):
         return bool(
-            self.owner and self.model.category and self.model.category.code
+            self.model.category and self.model.category.code
         )
 
     @nested_commit_on_success
