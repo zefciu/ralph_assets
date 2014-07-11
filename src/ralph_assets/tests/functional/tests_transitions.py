@@ -51,5 +51,3 @@ class TestTransitionHostname(TestCase):
         self.client.post(url, post_data, follow=True)
         changed_asset = Asset.objects.get(pk=asset.id)
         self.assertEqual(changed_asset.hostname, 'POLAA00001')
-
-
