@@ -9,7 +9,6 @@ import urllib
 
 from dj.choices import Country
 from django.core.urlresolvers import reverse
-from django.test import TestCase
 from django.test.utils import override_settings
 
 from ralph.ui.tests.global_utils import login_as_su

@@ -5,19 +5,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import urllib
 
-from dj.choices import Country
 from django.core.urlresolvers import reverse
-from django.test import TestCase
-from django.test.utils import override_settings
 
 from ralph.ui.tests.global_utils import login_as_su
-from ralph_assets.models_assets import Asset
-from ralph_assets.models_transition import Action
 from ralph_assets.tests.utils import MessagesTestMixin, UserFactory
-from ralph_assets.tests.utils.assets import BOAssetFactory
-from ralph_assets.tests.utils.transitions import TransitionFactory
 
 
 class TestUserListView(MessagesTestMixin):
@@ -45,5 +37,3 @@ class TestUserDetailView(MessagesTestMixin):
             response,
             'User {} not found'.format('invalid_username'),
         )
-        # import ipdb; ipdb.set_trace()
-
