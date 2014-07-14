@@ -22,22 +22,20 @@ from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
 
+from ralph_assets import signals
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 from ralph_assets.utils import iso2_to_iso3
 from ralph_assets.views.base import ACLGateway
 from ralph_assets.views.base import get_return_link
 from ralph_assets.views.invoice_report import generate_pdf_response
-from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
-from ralph_assets import signals
 from ralph_assets.views.search import _AssetSearch
 
 
 logger = logging.getLogger(__name__)
 
 
-# TODO:: it's dirty version
-class AuthentiFailed(Exception):
+class PostTransitionException(Exception):
     pass
 
 
@@ -400,10 +398,9 @@ class TransitionView(_AssetSearch):
             )
             try:
                 dispatcher.run()
-            except Exception as e:
+            except PostTransitionException as e:
                 self.transition_ended = False
-                msg = _("TODO:: Request to authenti failed")
-                messages.error(self.request, msg)
+                messages.error(self.request, _(e.message))
             else:
                 self.report_file_path = dispatcher.report_file_patch
                 self.report_file_name = dispatcher.get_report_file_name
