@@ -372,8 +372,7 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         required=False,
     )
     hostname = CharField(
-        max_length=10, required=False,
-        widget=SimpleReadOnlyWidget(),
+        required=False, widget=SimpleReadOnlyWidget(),
     )
 
     def clean_hostname(self):
