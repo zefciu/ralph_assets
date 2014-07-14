@@ -38,6 +38,18 @@ class TestTransitionHostname(TestCase):
         self.client = login_as_su()
         self.prepare_transition()
 
+    def assertMessageEqual(self, response, text):
+        """
+        Asserts that the response includes the message text.
+        """
+        messages = [m.message for m in response.context['messages']]
+        if text not in messages:
+            self.fail(
+                'No message with text "{}", messages were: {}'.format(
+                    text, messages,
+                )
+            )
+
     def prepare_transition(self):
         self.transition = TransitionFactory()
         self.transition.actions.add(Action.objects.get(name='change_hostname'))
@@ -54,3 +66,23 @@ class TestTransitionHostname(TestCase):
         self.client.post(url, post_data, follow=True)
         changed_asset = Asset.objects.get(pk=asset.id)
         self.assertEqual(changed_asset.hostname, 'POLPC00001')
+
+    def test_change_hostname_failed(self):
+        """Asset model has not assigned category with code,
+        hostname will be not generated"""
+        asset = BOAssetFactory(**{
+            'hostname': '',
+            'model__category__code': '',
+        })
+        post_data = {'country': Country.pl.id}
+        url_base = reverse('transition', args=('back_office',))
+        url_params = {'select': asset.id, 'transition_type': 'change-hostname'}
+        url = "{}?{}".format(url_base, urllib.urlencode(url_params))
+        response = self.client.get(url, follow=True)
+        self.assertMessageEqual(
+            response,
+            'Asset has no assigned category with code',
+        )
+        self.client.post(url, post_data, follow=True)
+        changed_asset = Asset.objects.get(pk=asset.id)
+        self.assertEqual(changed_asset.hostname, None)
