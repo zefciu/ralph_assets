@@ -9,6 +9,7 @@ from factory import Sequence, lazy_attribute
 from factory.django import DjangoModelFactory
 
 from django.contrib.auth.models import User
+from django.test import TestCase
 
 
 class UserFactory(DjangoModelFactory):
@@ -23,3 +24,17 @@ class UserFactory(DjangoModelFactory):
 
 class AdminFactory(UserFactory):
     admin = True
+
+
+class MessagesTestMixin(TestCase):
+    def assertMessageEqual(self, response, text):
+        """
+        Asserts that the response includes the message text.
+        """
+        messages = [m.message for m in response.context['messages']]
+        if text not in messages:
+            self.fail(
+                'No message with text "{}", messages were: {}'.format(
+                    text, messages,
+                )
+            )

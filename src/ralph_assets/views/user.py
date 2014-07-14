@@ -39,7 +39,7 @@ class UserDetails(AssetsBase):
             self.user = User.objects.get(username=username)
         except User.DoesNotExist:
             messages.error(request, _('User {} not found'.format(username)))
-            return HttpResponseRedirect(reverse('user list'))
+            return HttpResponseRedirect(reverse('user_list'))
         self.assigned_assets = Asset.objects.filter(user=self.user)
         self.assigned_licences = self.user.licence_set.all()
         self.transitions_history = TransitionsHistory.objects.filter(

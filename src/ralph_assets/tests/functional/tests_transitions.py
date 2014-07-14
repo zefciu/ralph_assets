@@ -15,6 +15,7 @@ from django.test.utils import override_settings
 from ralph.ui.tests.global_utils import login_as_su
 from ralph_assets.models_assets import Asset
 from ralph_assets.models_transition import Action
+from ralph_assets.tests.utils import MessagesTestMixin
 from ralph_assets.tests.utils.assets import BOAssetFactory
 from ralph_assets.tests.utils.transitions import TransitionFactory
 
@@ -32,7 +33,7 @@ ASSETS_TRANSITIONS = {
 
 @override_settings(ASSETS_AUTO_ASSIGN_HOSTNAME=True)
 @override_settings(ASSETS_TRANSITIONS=ASSETS_TRANSITIONS)
-class TestTransitionHostname(TestCase):
+class TestTransitionHostname(MessagesTestMixin):
 
     def setUp(self):
         self.client = login_as_su()
