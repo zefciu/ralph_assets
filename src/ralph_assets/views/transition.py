@@ -22,6 +22,7 @@ from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
 
+from ralph_assets import signals
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
 from ralph_assets.utils import iso2_to_iso3
@@ -32,6 +33,11 @@ from ralph_assets.views.search import _AssetSearch
 
 
 logger = logging.getLogger(__name__)
+
+
+class PostTransitionException(Exception):
+    """General exception to be thrown in *post_transition* signal receivers.
+    Exception message is used to inform user."""
 
 
 class TransitionDispatcher(object):
@@ -208,6 +214,9 @@ class TransitionDispatcher(object):
         elif 'change_hostname' in actions:
             self._action_change_hostname()
         self._save_history()
+        signals.post_transition.send(
+            sender=self, user=self.logged_user, assets=self.assets,
+        )
 
 
 class TransitionView(_AssetSearch):
@@ -396,16 +405,22 @@ class TransitionView(_AssetSearch):
                 loan_end_date=self.request.POST.get('loan_end_date'),
                 request=self.request,
             )
-            dispatcher.run()
-            self.report_file_path = dispatcher.report_file_patch
-            self.report_file_name = dispatcher.get_report_file_name
-            self.transition_history = dispatcher.get_transition_history_object()  # noqa
-            messages.success(
-                self.request,
-                _("Transitions performed successfully"),
-            )
-            self.transition_ended = True
-            return super(TransitionView, self).get(*args, **kwargs)
+            try:
+                dispatcher.run()
+            except PostTransitionException as e:
+                self.transition_ended = False
+                messages.error(self.request, _(e.message))
+            else:
+                self.report_file_path = dispatcher.report_file_patch
+                self.report_file_name = dispatcher.get_report_file_name
+                self.transition_history = dispatcher.get_transition_history_object()  # noqa
+                messages.success(
+                    self.request,
+                    _("Transitions performed successfully"),
+                )
+                self.transition_ended = True
+            finally:
+                return super(TransitionView, self).get(*args, **kwargs)
         messages.error(self.request, _('Please correct errors.'))
         return super(TransitionView, self).get(*args, **kwargs)
 

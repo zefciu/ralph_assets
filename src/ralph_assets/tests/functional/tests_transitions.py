@@ -7,11 +7,13 @@ from __future__ import unicode_literals
 
 import urllib
 
+import django.dispatch
 from dj.choices import Country
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 
 from ralph.ui.tests.global_utils import login_as_su
+from ralph_assets import signals
 from ralph_assets.models_assets import Asset
 from ralph_assets.models_transition import Action
 from ralph_assets.tests.utils import MessagesTestMixin
@@ -86,3 +88,55 @@ class TestTransitionHostname(MessagesTestMixin):
         self.client.post(url, post_data, follow=True)
         changed_asset = Asset.objects.get(pk=asset.id)
         self.assertEqual(changed_asset.hostname, None)
+
+    def _get_simple_transition_data(self):
+        """Executes steps required by transition"""
+        asset = BOAssetFactory(**{
+            'hostname': '',
+            'model__category__code': 'PC',
+        })
+        post_data = {'country': Country.pl.id}
+        url_base = reverse('transition', args=('back_office',))
+        url_params = {
+            'select': asset.id,
+            'transition_type': 'change-hostname',
+        }
+        url = "{}?{}".format(
+            url_base, urllib.urlencode(url_params)
+        )
+        return url, post_data
+
+    def test_successful_post_transition(self):
+        """
+        Transition is done successfully.
+        """
+        @django.dispatch.receiver(signals.post_transition)
+        def post_transition_handler(sender, user, assets, **kwargs):
+            pass
+
+        url, post_data = self._get_simple_transition_data()
+        response = self.client.post(url, post_data, follow=True)
+        self.assertEqual(len(response.context['messages']), 1)
+        self.assertEqual(
+            str(response.context['messages']._loaded_messages[0]),
+            "Transitions performed successfully",
+        )
+
+    def test_failed_post_transition(self):
+        """
+        Transition is done unsuccessfully.
+        """
+        @django.dispatch.receiver(signals.post_transition)
+        def post_transition_handler(sender, user, assets, **kwargs):
+            from ralph_assets.views import transition
+            raise transition.PostTransitionException(
+                "Unable to generate document - try later, please."
+            )
+
+        url, post_data = self._get_simple_transition_data()
+        response = self.client.post(url, post_data, follow=True)
+        self.assertEqual(len(response.context['messages']), 1)
+        self.assertEqual(
+            str(response.context['messages']._loaded_messages[0]),
+            "Unable to generate document - try later, please.",
+        )
