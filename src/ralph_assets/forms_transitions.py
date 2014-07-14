@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from ajax_select.fields import AutoCompleteSelectField
+from dj.choices import Country
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 
@@ -31,4 +32,9 @@ class TransitionForm(forms.Form):
         }),
         label=_('Loan end date'),
         input_formats=RALPH_DATE_FORMAT_LIST,
+    )
+    country = forms.ChoiceField(
+        choices=[('', '----')] + Country(),
+        label=_('Country'),
+        required=True,
     )

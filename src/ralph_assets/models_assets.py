@@ -591,7 +591,7 @@ class Asset(
             return 'device'
 
     def _try_assign_hostname(self, commit):
-        if self.can_generate_hostname:
+        if self.owner and self.model.category and self.model.category.code:
             template_vars = {
                 'code': self.model.category.code,
                 'country_code': self.country_code,
@@ -713,17 +713,8 @@ class Asset(
         iso2 = Country.name_from_id(self.owner.profile.country).upper()
         return iso2_to_iso3.get(iso2, 'POL')
 
-    @property
-    def can_generate_hostname(self):
-        return bool(
-            self.owner and self.model.category and self.model.category.code
-        )
-
     @nested_commit_on_success
     def generate_hostname(self, commit=True, template_vars={}):
-        if not self.can_generate_hostname:
-            return
-
         def render_template(template):
             template = Template(template)
             context = Context(template_vars)

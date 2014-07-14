@@ -74,12 +74,12 @@
 
         if (selected_all_pages &&
             params.length &&
-            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset', 'change-hostname']) != -1
         ) {
              window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
         } else if (
             ids.length &&
-            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset', 'change-hostname']) != -1
         ) {
             window.location.href = 'transition?select=' + ids.join('&select=') + '&transition_type=' + type;
         }
