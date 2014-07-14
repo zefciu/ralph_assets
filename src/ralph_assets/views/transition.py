@@ -216,6 +216,7 @@ class TransitionDispatcher(object):
         self._save_history()
         signals.post_transition.send(
             sender=self, user=self.logged_user, assets=self.assets,
+            actions=actions,
         )
 
 
