@@ -75,3 +75,13 @@ signal are:
 
   * user: signed in user calling executing transition,
   * assets: assets used in transition.
+
+This is an example of the signal receiver::
+
+    import django.dispatch
+    from ralph_assets import signals
+
+    @django.dispatch.receiver(signals.post_transition)
+    def post_transition_handler(sender, user, assets, **kwargs):
+        pass
+
