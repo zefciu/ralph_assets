@@ -111,7 +111,9 @@ class TestTransitionHostname(MessagesTestMixin):
         Transition is done successfully.
         """
         @django.dispatch.receiver(signals.post_transition)
-        def post_transition_handler(sender, user, assets, actions, **kwargs):
+        def post_transition_handler(
+            sender, user, assets, transition, **kwargs
+        ):
             pass
 
         url, post_data = self._get_simple_transition_data()
@@ -127,7 +129,9 @@ class TestTransitionHostname(MessagesTestMixin):
         Transition is done unsuccessfully.
         """
         @django.dispatch.receiver(signals.post_transition)
-        def post_transition_handler(sender, user, assets, actions, **kwargs):
+        def post_transition_handler(
+            sender, user, assets, transition, **kwargs
+        ):
             from ralph_assets.views import transition
             raise transition.PostTransitionException(
                 "Unable to generate document - try later, please."
