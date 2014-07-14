@@ -131,7 +131,6 @@ class TransitionDispatcher(object):
         return data, uid
 
     def _generate_report(self):
-        self.template_file = None
         data, self.uid = self._get_report_data()
         self.file_name = '{}-{}.pdf'.format(
             self.template_file.slug,
