@@ -66,3 +66,12 @@ option to changed that. You can force locale only for reports by setting
     GENERATED_DOCS_LOCALE = 'pl'
 
 If so, all generated reports will have polish locale.
+
+
+Post transition signal
+^^^^^^^^^^^^^^^^^^^^^^
+The transition feature sends post transition signal. Arguments defined by the
+signal are:
+
+  * user: signed in user calling executing transition,
+  * assets: assets used in transition.

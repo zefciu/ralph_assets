@@ -36,7 +36,8 @@ logger = logging.getLogger(__name__)
 
 
 class PostTransitionException(Exception):
-    pass
+    """General exception to be thrown in *post_transition* signal receivers.
+    Exception message is used to inform user."""
 
 
 class TransitionDispatcher(object):
