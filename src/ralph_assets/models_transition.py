@@ -60,9 +60,15 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
         ordering = ['-created']
     transition = models.ForeignKey(Transition)
     assets = models.ManyToManyField(Asset)
-    logged_user = models.ForeignKey(User, related_name='logged user')
+    logged_user = models.ForeignKey(
+        User, related_name='logged_user_transition_histories'
+    )
     affected_user = models.ForeignKey(
-        User, related_name='affected user', null=True, blank=True, default=None
+        User,
+        related_name='affected_user_transition_histories',
+        null=True,
+        blank=True,
+        default=None
     )
     report_filename = models.CharField(max_length=256, null=True, blank=True)
     uid = models.CharField(max_length=36, null=True, blank=True, default=None)
