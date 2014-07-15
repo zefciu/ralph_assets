@@ -26,6 +26,7 @@ from ralph_assets.models_assets import (
     AssetStatus,
 )
 from ralph.ui.tests.global_utils import login_as_su
+from ralph_assets.tests.utils import supports
 
 
 class TestSearchForm(TestCase):
@@ -598,7 +599,7 @@ class TestSearchEngine(TestCase):
             field_query = ''
         url = '{}?{}'.format(url, field_query)
         response = self.client.get(url)
-        return response.context['bob_page'].object_list
+        return response.context['bob_page'].paginator.object_list
 
     def _check_results_length(self, url, field_name, value, expected):
         results = self._search_results(url, field_name, urllib.quote(value))
@@ -758,4 +759,36 @@ class TestSearchEngine(TestCase):
             Asset.objects.filter(
                 type=AssetType.data_center.id, supports=None
             ).count(),
+        )
+
+    def test_support_assignment(self):
+        """
+        - add asset a1 without supports
+        - add asset a2 with support s1
+        - send request without param *support_assigned*
+            - assert found: all-assets
+        - send request with support_assigned=any
+            - assert found: 1
+        - send request with support_assigned=false
+            - assert found: (all-assets - 1)
+        """
+        asset_without_support = DCAssetFactory()
+        asset_with_support = DCAssetFactory(**dict(
+            supports=(supports.DCSupportFactory(),),
+        ))
+
+        assets_count = Asset.objects.filter(
+            type=AssetType.data_center.id
+        ).count()
+        self._check_results_length(
+            self.testing_urls['dc'], 'support_assigned', '', assets_count,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], 'support_assigned', 'any', 1,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'],
+            'support_assigned',
+            'none',
+            assets_count - 1,
         )

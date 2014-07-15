@@ -56,7 +56,7 @@ class AssetsSearchQueryableMixin(object):
             'manufacturer',
             'model',
             'niw',
-            'no_support_assigned',
+            'support_assigned',
             'order_no',
             'owner',
             'part_info',
@@ -235,8 +235,9 @@ class AssetsSearchQueryableMixin(object):
                     all_q &= Q(service_name=field_value)
                 elif field == 'required_support':
                     all_q &= Q(required_support=True)
-                elif field == 'no_support_assigned':
-                    all_q &= Q(supports=None)
+                elif field == 'support_assigned':
+                    user_choice = True if field_value == 'none' else False
+                    all_q &= Q(supports__isnull=user_choice)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 elif field == 'budget_info':

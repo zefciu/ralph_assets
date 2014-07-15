@@ -82,7 +82,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'no_support_assigned',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -115,7 +115,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
-            'required_support', 'no_support_assigned',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -1481,9 +1481,10 @@ class SearchAssetForm(Form):
         required=False,
         label=_('Required support:'),
     )
-    no_support_assigned = BooleanField(
+    support_assigned = ChoiceField(
         required=False,
-        label=_('Without support:'),
+        choices=[('', '----'), ('any', 'any'), ('none', 'none')],
+        label=_('Assigned supports'),
     )
 
     def __init__(self, *args, **kwargs):

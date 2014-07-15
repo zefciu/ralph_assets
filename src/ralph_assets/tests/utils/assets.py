@@ -8,12 +8,15 @@ from __future__ import unicode_literals
 import datetime
 import itertools
 import random
+
+import factory
 from factory import (
     fuzzy,
     lazy_attribute,
     Sequence,
     SubFactory,
 )
+# TODO:: rm 'as'
 from factory.django import DjangoModelFactory as Factory
 from uuid import uuid1
 
@@ -214,6 +217,19 @@ class BaseAssetFactory(Factory):
     def sn(self):
         return str(uuid1())
 
+    @factory.post_generation
+    def supports(self, create, extracted, **kwargs):
+        # from pdb import set_trace; set_trace()
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of supports were passed in, use them
+            for support in extracted:
+                self.supports.add(support)
+
+
 
 class DCAssetFactory(BaseAssetFactory):
     type = AssetType.data_center
@@ -223,3 +239,4 @@ class DCAssetFactory(BaseAssetFactory):
 class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
     office_info = SubFactory(OfficeInfoFactory)
+
