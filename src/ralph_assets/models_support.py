@@ -88,6 +88,9 @@ class Support(
     support_type = models.ForeignKey(
         SupportType,
         on_delete=models.PROTECT,
+        blank=True,
+        default=None,
+        null=True,
     )
     assets = models.ManyToManyField(Asset, related_name='supports')
 
