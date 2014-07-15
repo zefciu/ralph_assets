@@ -98,6 +98,12 @@ class AssetsBase(ACLGateway):
                 name=_('supports'),
                 href=reverse('support_list'),
             ),
+            MenuItem(
+                label='Reports',
+                fugue_icon='fugue-table',
+                name=_('reports'),
+                href=reverse('reports'),
+            ),
         ]
         return mainmenu
 
