@@ -48,6 +48,7 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
         choices=AssetStatus(),
     )
     actions = models.ManyToManyField(Action)
+    required_report = models.BooleanField(default=False)
 
     @property
     def actions_names(self, *args, **kwargs):
@@ -59,10 +60,18 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
         ordering = ['-created']
     transition = models.ForeignKey(Transition)
     assets = models.ManyToManyField(Asset)
-    logged_user = models.ForeignKey(User, related_name='logged user')
-    affected_user = models.ForeignKey(User, related_name='affected user')
+    logged_user = models.ForeignKey(
+        User, related_name='logged_user_transition_histories'
+    )
+    affected_user = models.ForeignKey(
+        User,
+        related_name='affected_user_transition_histories',
+        null=True,
+        blank=True,
+        default=None
+    )
     report_filename = models.CharField(max_length=256, null=True, blank=True)
-    uid = models.CharField(max_length=36)
+    uid = models.CharField(max_length=36, null=True, blank=True, default=None)
     report_file = models.FileField(upload_to=_get_file_path)
 
     def __unicode__(self, *args, **kwargs):
@@ -85,20 +94,21 @@ class TransitionsHistory(TimeTrackable, WithConcurrentGetOrCreate):
         transition_history.affected_user = affected_user
         transition_history.report_filename = report_filename
         transition_history.uid = uid
-        try:
-            with open(report_file_path, 'rb') as f:
-                content = f.read()
-                f.close()
-                content = ContentFile(content)
-                transition_history.report_file.save(
-                    report_filename, content, save=True,
+        if report_filename:
+            try:
+                with open(report_file_path, 'rb') as f:
+                    content = f.read()
+                    f.close()
+                    content = ContentFile(content)
+                    transition_history.report_file.save(
+                        report_filename, content, save=True,
+                    )
+            except IOError as e:
+                logger.error(
+                    "Can not read report file: {} ({})".format(
+                        report_file_path, e,
+                    ),
                 )
-        except IOError as e:
-            logger.error(
-                "Can not read report file: {} ({})".format(
-                    report_file_path, e,
-                ),
-            )
         transition_history.save()
         transition_history.assets.add(*assets)
         return transition_history

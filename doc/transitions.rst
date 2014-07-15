@@ -66,3 +66,23 @@ option to changed that. You can force locale only for reports by setting
     GENERATED_DOCS_LOCALE = 'pl'
 
 If so, all generated reports will have polish locale.
+
+
+Post transition signal
+^^^^^^^^^^^^^^^^^^^^^^
+The transition feature sends post transition signal. Arguments defined by the
+signal are:
+
+  * user: signed in user calling executing transition,
+  * assets: assets used in transition,
+  * transition: tranistion which is executed.
+
+This is an example of the signal receiver::
+
+    import django.dispatch
+    from ralph_assets import signals
+
+    @django.dispatch.receiver(signals.post_transition)
+    def post_transition_handler(sender, user, assets, transition, **kwargs):
+        pass
+

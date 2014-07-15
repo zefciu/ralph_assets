@@ -10,11 +10,4 @@ from __future__ import unicode_literals
 
 import django.dispatch
 
-generate_doc = django.dispatch.Signal(['user', 'assets'])
-
-
-@django.dispatch.receiver(generate_doc)
-def generate_doc_handler(sender, user, assets, **kwargs):
-    print(user)
-    print(assets)
-    print('generating_doc')
+post_transition = django.dispatch.Signal(['user', 'assets', 'transition'])
