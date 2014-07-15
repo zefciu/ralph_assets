@@ -1,6 +1,16 @@
 Change Log
 ----------
 
+2.0.2-rc3
+~~~~~~~~~
+Released on July 9, 2014
+
+* Added supports submodule
+* Added generate hostname feature
+* Added bulkedit in licences
+* Minor bugfixes
+
+
 2.0.2-rc2
 ~~~~~~~~~
 Released on June 13, 2014
