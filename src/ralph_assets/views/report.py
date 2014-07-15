@@ -49,5 +49,8 @@ class ReportsList(ReportViewBase):
 
 
 class ReportDetail(ReportViewBase):
-    pass
-
+    def get_context_data(self, *args, **kwargs):
+        ret = super(ReportDetail, self).get_context_data(**kwargs)
+        report_dict = {}
+        ret.update({'report_dict': report_dict})
+        return ret
