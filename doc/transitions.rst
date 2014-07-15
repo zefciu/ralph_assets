@@ -74,7 +74,8 @@ The transition feature sends post transition signal. Arguments defined by the
 signal are:
 
   * user: signed in user calling executing transition,
-  * assets: assets used in transition.
+  * assets: assets used in transition,
+  * transition: tranistion which is executed.
 
 This is an example of the signal receiver::
 
@@ -82,6 +83,6 @@ This is an example of the signal receiver::
     from ralph_assets import signals
 
     @django.dispatch.receiver(signals.post_transition)
-    def post_transition_handler(sender, user, assets, **kwargs):
+    def post_transition_handler(sender, user, assets, transition, **kwargs):
         pass
 

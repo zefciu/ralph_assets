@@ -215,7 +215,10 @@ class TransitionDispatcher(object):
             self._action_change_hostname()
         self._save_history()
         signals.post_transition.send(
-            sender=self, user=self.logged_user, assets=self.assets,
+            sender=self,
+            user=self.logged_user,
+            assets=self.assets,
+            transition=self.instance,
         )
 
 
