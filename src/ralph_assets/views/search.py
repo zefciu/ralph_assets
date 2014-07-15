@@ -234,7 +234,8 @@ class AssetsSearchQueryableMixin(object):
                 elif field == 'service_name':
                     all_q &= Q(service_name=field_value)
                 elif field == 'required_support':
-                    all_q &= Q(required_support=True)
+                    user_choice = True if field_value == 'yes' else False
+                    all_q &= Q(required_support=user_choice)
                 elif field == 'support_assigned':
                     user_choice = True if field_value == 'none' else False
                     all_q &= Q(supports__isnull=user_choice)

@@ -1477,9 +1477,10 @@ class SearchAssetForm(Form):
     budget_info = AutoCompleteField(
         LOOKUPS['budget_info'], required=False,
     )
-    required_support = BooleanField(
+    required_support = ChoiceField(
         required=False,
-        label=_('Required support:'),
+        choices=[('', '----'), ('yes', 'yes'), ('no', 'no')],
+        label=_('Required support'),
     )
     support_assigned = ChoiceField(
         required=False,

@@ -16,8 +16,7 @@ from factory import (
     Sequence,
     SubFactory,
 )
-# TODO:: rm 'as'
-from factory.django import DjangoModelFactory as Factory
+from factory.django import DjangoModelFactory
 from uuid import uuid1
 
 from django.template.defaultfilters import slugify
@@ -60,13 +59,13 @@ def generate_imei(n):
     return '{}{}'.format(part, -res % 10)
 
 
-class CoaOemOsFactory(Factory):
+class CoaOemOsFactory(DjangoModelFactory):
     FACTORY_FOR = CoaOemOs
 
     name = Sequence(lambda n: 'COA OEM OS #%s' % n)
 
 
-class OfficeInfoFactory(Factory):
+class OfficeInfoFactory(DjangoModelFactory):
     FACTORY_FOR = OfficeInfo
 
     coa_oem_os = SubFactory(CoaOemOsFactory)
@@ -85,19 +84,19 @@ class OfficeInfoFactory(Factory):
         return str(uuid1())
 
 
-class ServiceFactory(Factory):
+class ServiceFactory(DjangoModelFactory):
     FACTORY_FOR = Service
 
     name = Sequence(lambda n: 'Service #%s' % n)
 
 
-class AssetOwnerFactory(Factory):
+class AssetOwnerFactory(DjangoModelFactory):
     FACTORY_FOR = AssetOwner
 
     name = Sequence(lambda n: 'Asset owner #%s' % n)
 
 
-class AssetCategoryFactory(Factory):
+class AssetCategoryFactory(DjangoModelFactory):
     FACTORY_FOR = AssetCategory
 
     name = Sequence(lambda n: 'Asset category #%s' % n)
@@ -120,13 +119,13 @@ class AssetSubCategoryFactory(AssetCategoryFactory):
         return slugify(str(self.type) + self.name + self.parent.name)
 
 
-class AssetManufacturerFactory(Factory):
+class AssetManufacturerFactory(DjangoModelFactory):
     FACTORY_FOR = AssetManufacturer
 
     name = Sequence(lambda n: 'Manufacturer #%s' % n)
 
 
-class AssetModelFactory(Factory):
+class AssetModelFactory(DjangoModelFactory):
     FACTORY_FOR = AssetModel
 
     name = Sequence(lambda n: 'Model #%s' % n)
@@ -135,13 +134,13 @@ class AssetModelFactory(Factory):
     category = SubFactory(AssetCategoryFactory)
 
 
-class WarehouseFactory(Factory):
+class WarehouseFactory(DjangoModelFactory):
     FACTORY_FOR = Warehouse
 
     name = Sequence(lambda n: 'Warehouse #%s' % n)
 
 
-class DeviceInfoFactory(Factory):
+class DeviceInfoFactory(DjangoModelFactory):
     FACTORY_FOR = DeviceInfo
 
     u_level = random.randint(0, 100)
@@ -149,19 +148,19 @@ class DeviceInfoFactory(Factory):
     rack = Sequence(lambda n: 'Rack #%s' % n)
 
 
-class BudgetInfoFactory(Factory):
+class BudgetInfoFactory(DjangoModelFactory):
     FACTORY_FOR = models_assets.BudgetInfo
 
     name = Sequence(lambda n: 'Budget info #{}'.format(n))
 
 
-class OwnerFactory(Factory):
+class OwnerFactory(DjangoModelFactory):
     FACTORY_FOR = models_assets.User
 
     name = Sequence(lambda n: 'Owner #{}'.format(n))
 
 
-class AssetFactory(Factory):
+class AssetFactory(DjangoModelFactory):
     # XXX: DEPRECATED, use: DCAssetFactory, BOAssetFactory
     FACTORY_FOR = Asset
 
@@ -180,7 +179,7 @@ class AssetFactory(Factory):
         return str(uuid1())
 
 
-class BaseAssetFactory(Factory):
+class BaseAssetFactory(DjangoModelFactory):
     FACTORY_FOR = Asset
 
     budget_info = SubFactory(BudgetInfoFactory)
@@ -230,7 +229,6 @@ class BaseAssetFactory(Factory):
                 self.supports.add(support)
 
 
-
 class DCAssetFactory(BaseAssetFactory):
     type = AssetType.data_center
     device_info = SubFactory(DeviceInfoFactory)
@@ -239,4 +237,3 @@ class DCAssetFactory(BaseAssetFactory):
 class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
     office_info = SubFactory(OfficeInfoFactory)
-

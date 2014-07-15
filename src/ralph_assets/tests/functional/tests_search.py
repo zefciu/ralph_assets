@@ -13,7 +13,6 @@ from django.core.urlresolvers import reverse
 
 
 from ralph_assets.tests.util import create_model
-from ralph_assets.tests.utils import supports as supports_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     BOAssetFactory,
@@ -721,44 +720,34 @@ class TestSearchEngine(TestCase):
             (self.testing_urls['bo'], field_name, 'none', 0),
         ])
 
-    def test_required_support(self):
+    def test_support_requirement(self):
         """
         - add asset a1 with required_support=True
-            - send request with checked
-                - assert found a1
-            - send request without checked
-                - assert found all assets
+        - add asset a2 with required_support=False
+        - send request without param *required_support*
+            - assert found: all-assets
+        - send request with required_support=yes
+            - assert found: 1
+        - send request with required_support=no
+            - assert found: (all-assets - 1)
         """
         DCAssetFactory(**{'required_support': True})
+        DCAssetFactory(**{'required_support': False})
+
+        assets_count = Asset.objects.filter(
+            type=AssetType.data_center.id
+        ).count()
         self._check_results_length(
-            self.testing_urls['dc'], 'required_support', 'checked', 1,
+            self.testing_urls['dc'], 'required_support', '', assets_count,
         )
         self._check_results_length(
-            self.testing_urls['dc'], '', '',
-            Asset.objects.filter(type=AssetType.data_center.id).count(),
+            self.testing_urls['dc'], 'required_support', 'yes', 1,
         )
-
-    def test_has_no_support(self):
-        """
-        - add asset a1
-        - add supports s1, s2
-        - add s1, s2 to a1
-            - send request with checked *no_support_assigned*
-                - assert found: (all-assets - 1)
-            - send request without checked *no_support_assigned*
-                - assert found: 1
-        """
-        asset_with_support = DCAssetFactory()
-        for support in range(2):
-            support = supports_utils.DCSupportFactory()
-            asset_with_support.supports.add(support)
-        asset_with_support.save()
-
         self._check_results_length(
-            self.testing_urls['dc'], 'no_support_assigned', 'checked',
-            Asset.objects.filter(
-                type=AssetType.data_center.id, supports=None
-            ).count(),
+            self.testing_urls['dc'],
+            'required_support',
+            'no',
+            assets_count - 1,
         )
 
     def test_support_assignment(self):
@@ -772,8 +761,8 @@ class TestSearchEngine(TestCase):
         - send request with support_assigned=false
             - assert found: (all-assets - 1)
         """
-        asset_without_support = DCAssetFactory()
-        asset_with_support = DCAssetFactory(**dict(
+        DCAssetFactory()
+        DCAssetFactory(**dict(
             supports=(supports.DCSupportFactory(),),
         ))
 
