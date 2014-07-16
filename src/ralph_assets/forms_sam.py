@@ -27,9 +27,6 @@ from django_search_forms.fields_ajax import (
     AjaxTextSearch,
 )
 
-from ajax_select.fields import (
-    AutoCompleteField,
-)
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm

@@ -151,8 +151,6 @@ LOOKUPS = {
     'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
-    # TODO:: remove it
-    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
     'manufacturer': ('ralph_assets.models', 'ManufacturerLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
@@ -1287,7 +1285,7 @@ class SearchAssetForm(Form):
     :returns Form
     """
     manufacturer = AutoCompleteField(
-        LOOKUPS['asset_manufacturer'],
+        LOOKUPS['manufacturer'],
         required=False,
         help_text=None,
         plugin_options={'disable_confirm': True}
