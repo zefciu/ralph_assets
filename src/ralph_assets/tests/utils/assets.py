@@ -10,6 +10,7 @@ import itertools
 import random
 
 import factory
+
 from factory import (
     fuzzy,
     lazy_attribute,
