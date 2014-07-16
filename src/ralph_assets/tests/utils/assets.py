@@ -218,7 +218,6 @@ class BaseAssetFactory(DjangoModelFactory):
 
     @factory.post_generation
     def supports(self, create, extracted, **kwargs):
-        # from pdb import set_trace; set_trace()
         if not create:
             # Simple build, do nothing.
             return
