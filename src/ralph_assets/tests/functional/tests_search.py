@@ -13,6 +13,7 @@ from django.core.urlresolvers import reverse
 
 
 from ralph_assets.tests.util import create_model
+from ralph_assets.tests.utils import sam
 from ralph_assets.tests.utils import supports as supports_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
@@ -583,6 +584,7 @@ class TestSearchEngine(TestCase):
             manu = AssetManufacturerFactory(name=manufacturer)
             AssetFactory(model__manufacturer=manu)
             BOAssetFactory(model__manufacturer=manu)
+            sam.LicenceFactory(manufacturer=manu)
 
         for unique in ['123456', '456123']:
             AssetFactory(barcode=unique, sn=unique, niw=unique)
@@ -663,16 +665,20 @@ class TestSearchEngine(TestCase):
             self._check_results_length(url, field_name, '404', 0)
 
     def test_manufacturer_exact(self):
+        urls = self.testing_urls.copy()
+        urls['license'] = reverse('licence_list')
         field_name = 'manufacturer'
-        for _, url in self.testing_urls.items():
+        for url in urls.values():
             self._check_results_length(url, field_name, '"Sony"', 1)
             self._check_results_length(url, field_name, '"Apple"', 1)
             self._check_results_length(url, field_name, '"Sony Ericsson"', 1)
             self._check_results_length(url, field_name, '"Manu 404"', 0)
 
     def test_manufacturer_icontains(self):
+        urls = self.testing_urls.copy()
+        urls['license'] = reverse('licence_list')
         field_name = 'manufacturer'
-        for _, url in self.testing_urls.items():
+        for url in urls.values():
             self._check_results_length(url, field_name, 'Sony', 2)
             self._check_results_length(url, field_name, 'pp', 1)
             self._check_results_length(url, field_name, 'o', 3)

@@ -27,6 +27,9 @@ from django_search_forms.fields_ajax import (
     AjaxTextSearch,
 )
 
+from ajax_select.fields import (
+    AutoCompleteField,
+)
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
@@ -260,6 +263,9 @@ class LicenceSearchForm(SearchForm):
     order_date = DateRangeSearchField()
     budget_info = AjaxTextSearch(
         '__name', LOOKUPS['budget_info'], required=False,
+    )
+    manufacturer = AjaxTextSearch(
+        '__name', LOOKUPS['manufacturer'], required=False,
     )
     id = MultiSearchField(widget=forms.HiddenInput())
 
