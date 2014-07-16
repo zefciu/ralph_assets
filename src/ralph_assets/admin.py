@@ -36,15 +36,60 @@ from ralph_assets.models_sam import LicenceType, SoftwareCategory
 from ralph_assets.models_support import Support, SupportType
 
 
-admin.site.register(AssetOwner)
-admin.site.register(LicenceType)
-admin.site.register(SoftwareCategory)
-admin.site.register(Support)
-admin.site.register(SupportType)
+class SupportAdmin(ModelAdmin):
+    raw_id_fields = ('assets',)
+    date_hierarchy = 'date_to'
+    exclude = ('attachments',)
+    list_display = ('name', 'contract_id',)
+    list_filter = ('asset_type', 'status',)
+    list_display = (
+        'name',
+        'contract_id',
+        'date_to',
+        'asset_type',
+        'status',
+        'support_type',
+        'deleted',
+    )
+
+
+admin.site.register(Support, SupportAdmin)
+
+
+class SupportTypeAdmin(ModelAdmin):
+    search_fields = ('name',)
+
+
+admin.site.register(SupportType, SupportTypeAdmin)
+
+
+class SoftwareCategoryAdmin(ModelAdmin):
+    search_fields = ('name',)
+    list_display = ('name', 'asset_type',)
+    list_filter = ('asset_type',)
+
+
+admin.site.register(SoftwareCategory, SoftwareCategoryAdmin)
+
+
+class LicenceTypeAdmin(ModelAdmin):
+    search_fields = ('name',)
+
+
+admin.site.register(LicenceType, LicenceTypeAdmin)
+
+
+class AssetOwnerAdmin(ModelAdmin):
+    search_fields = ('name',)
+
+
+admin.site.register(AssetOwner, AssetOwnerAdmin)
 
 
 class ImportProblemAdmin(ModelAdmin):
     change_form_template = "assets/import_problem_change_form.html"
+    list_filter = ('severity', 'content_type',)
+    list_display = ('message', 'object_id', 'severity', 'content_type',)
 
     def change_view(self, request, object_id, extra_context=None):
         extra_context = extra_context or {}
@@ -108,7 +153,7 @@ class AssetAdmin(ModelAdmin):
         'barcode',
         'device_info__ralph_device_id',
     )
-    list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted')
+    list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted',)
     list_filter = ('type',)
 
     def has_delete_permission(self, request, obj=None):
@@ -120,8 +165,8 @@ admin.site.register(Asset, AssetAdmin)
 
 class AssetModelAdmin(ModelAdmin):
     save_on_top = True
-    list_display = ('name', 'type', 'category', 'show_assets_count')
-    list_filter = ('type', 'category')
+    list_display = ('name', 'type', 'category', 'show_assets_count',)
+    list_filter = ('type', 'category',)
     search_fields = ('name',)
 
     def queryset(self, request):
@@ -158,10 +203,10 @@ class AssetCategoryAdmin(ModelAdmin):
         return name
     form = AssetCategoryAdminForm
     save_on_top = True
-    list_display = (name, 'parent', 'slug', 'type')
-    list_filter = ('type',)
+    list_display = (name, 'parent', 'slug', 'type', 'code',)
+    list_filter = ('type', 'is_blade',)
     search_fields = ('name',)
-    prepopulated_fields = {"slug": ("type", "parent", "name")}
+    prepopulated_fields = {"slug": ("type", "parent", "name",)}
 
 
 admin.site.register(AssetCategory, AssetCategoryAdmin)
@@ -178,6 +223,7 @@ admin.site.register(AssetManufacturer, AssetManufacturerAdmin)
 
 class ReportOdtSourceAdmin(ModelAdmin):
     save_on_top = True
+    search_fields = ('name', 'slug',)
     list_display = ('name', 'slug',)
     prepopulated_fields = {"slug": ("name",)}
 
@@ -188,13 +234,17 @@ admin.site.register(ReportOdtSource, ReportOdtSourceAdmin)
 class TransitionAdmin(ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     filter_horizontal = ('actions',)
+    list_filter = ('from_status', 'to_status', 'required_report',)
+    list_display = (
+        'name', 'slug', 'from_status', 'to_status', 'required_report',
+    )
 
 
 admin.site.register(Transition, TransitionAdmin)
 
 
 class TransitionsHistoryAdmin(ModelAdmin):
-    list_display = ('transition', 'logged_user', 'affected_user', 'created')
+    list_display = ('transition', 'logged_user', 'affected_user', 'created',)
     readonly_fields = (
         'transition', 'assets', 'logged_user', 'affected_user', 'report_file',
     )
@@ -208,26 +258,40 @@ admin.site.register(TransitionsHistory, TransitionsHistoryAdmin)
 
 class CoaOemOsAdmin(ModelAdmin):
     list_display = ('name',)
+    search_fields = ('name',)
 
 
 admin.site.register(CoaOemOs, CoaOemOsAdmin)
 
 
 class ServiceAdmin(ModelAdmin):
-    list_display = ('name', 'profit_center', 'cost_center')
+    list_display = ('name', 'profit_center', 'cost_center',)
+    search_fields = ('name', 'profit_center', 'cost_center',)
 
 
 admin.site.register(Service, ServiceAdmin)
 
 
 class LicenceAdmin(ModelAdmin):
-    raw_id_fields = (
-        'manufacturer',
-        'property_of',
-        'parent',
-        'assets',
-        'software_category',
-        'users'
-    )
+    def name(self):
+        return self.__unicode__()
 
-admin.site.register(Licence)
+    raw_id_fields = (
+        'assets',
+        'attachments',
+        'manufacturer',
+        'parent',
+        'property_of',
+        'software_category',
+        'users',
+    )
+    search_fields = (
+        'software_category__name', 'manufacturer__name', 'sn', 'niw',
+    )
+    list_display = (
+        name, 'licence_type', 'number_bought', 'niw', 'asset_type', 'provider',
+    )
+    list_filter = ('licence_type', 'asset_type', 'budget_info', 'provider',)
+
+
+admin.site.register(Licence, LicenceAdmin)
