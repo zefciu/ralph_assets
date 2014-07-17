@@ -286,6 +286,7 @@ class DeleteLicence(AssetsBase):
 
 class HistoryLicence(AssetsBase):
     template_name = 'assets/history.html'
+    mainmenu_selected = 'licences'
 
     def get_context_data(self, **kwargs):
         query_variable_name = 'history_page'
@@ -311,13 +312,7 @@ class HistoryLicence(AssetsBase):
             'show_status_button': False,
             'query_variable_name': query_variable_name,
             'object': licence,
-            'object_url': reverse(
-                'edit_licence',
-                kwargs={
-                    'licence_id': licence.id,
-                    'mode': self.mode,
-                }
-            ),
+            'object_url': licence.url,
             'title': _('History licence'),
         })
         return ret
