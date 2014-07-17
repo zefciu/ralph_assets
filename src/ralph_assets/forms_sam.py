@@ -261,6 +261,9 @@ class LicenceSearchForm(SearchForm):
     budget_info = AjaxTextSearch(
         '__name', LOOKUPS['budget_info'], required=False,
     )
+    manufacturer = AjaxTextSearch(
+        '__name', LOOKUPS['manufacturer'], required=False,
+    )
     id = MultiSearchField(widget=forms.HiddenInput())
 
 
