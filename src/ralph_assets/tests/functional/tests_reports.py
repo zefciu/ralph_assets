@@ -23,6 +23,7 @@ class TestReportCategoryTreeView(TestCase):
     def setUp(self):
         self.client = login_as_su()
         self._create_models()
+        self._create_assets()
 
     def _create_models(self):
         self.keyboard_model = AssetModelFactory(
@@ -58,27 +59,45 @@ class TestReportCategoryTreeView(TestCase):
         [BOAssetFactory(**{'model': self.scanner_model}) for _ in xrange(3)]
         [BOAssetFactory(**{'model': self.shredder_model}) for _ in xrange(3)]
 
+    def _get_item(self, data, name):
+        for item in data:
+            if item['name'] == name:
+                return item
+        return None
+
     def test_category_model_tree(self):
         url = reverse(
-            'report', kwargs={'mode': 'back_office', 'slug': 'category-model'},
+            'report_detail', kwargs={'mode': 'all', 'slug': 'category-model'},
         )
         response = self.client.get(url, follow=True)
-        report_dict = response.context_data.get('report_dict')
-        back_office_dict = report_dict['BACK OFFICE']
-        equipment_dict = back_office_dict['children']['EQUIPMENT']
-        accesories_dict = back_office_dict['children']['ACCESSORIES']
+        report_dict = response.context_data.get('result')
+        accesories_dict = self._get_item(report_dict, 'ACCESSORIES')
+        equipment_dict = self._get_item(report_dict, 'EQUIPMENT')
 
-        self.assertEqual(back_office_dict['count'], 20)
         self.assertEqual(equipment_dict['count'], 10)
         self.assertEqual(accesories_dict['count'], 10)
 
         accesories_children = accesories_dict['children']
-        self.assertEqual(accesories_children['Keyboard']['count'], 6)
-        self.assertEqual(accesories_children['Mouse']['count'], 2)
-        self.assertEqual(accesories_children['Pendrive']['count'], 2)
+        self.assertEqual(
+            self._get_item(accesories_children, 'Keyboard')['count'], 6
+        )
+        self.assertEqual(
+            self._get_item(accesories_children, 'Mouse')['count'], 2
+        )
+        self.assertEqual(
+            self._get_item(accesories_children, 'Pendrive')['count'], 2
+        )
 
         equipment_children = equipment_dict['children']
-        self.assertEqual(equipment_children['Monitor']['count'], 2)
-        self.assertEqual(equipment_children['Navigation']['count'], 2)
-        self.assertEqual(equipment_children['Scanner']['count'], 3)
-        self.assertEqual(equipment_children['Shredder']['count'], 3)
+        self.assertEqual(
+            self._get_item(equipment_children, 'Monitor')['count'], 2
+        )
+        self.assertEqual(
+            self._get_item(equipment_children, 'Navigation')['count'], 2
+        )
+        self.assertEqual(
+            self._get_item(equipment_children, 'Scanner')['count'], 3
+        )
+        self.assertEqual(
+            self._get_item(equipment_children, 'Shredder')['count'], 3
+        )

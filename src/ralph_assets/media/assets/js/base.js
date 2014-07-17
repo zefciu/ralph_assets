@@ -5,6 +5,21 @@
     var Bulk = function () {};
     var TableListing = function () {};
 
+    function prepareReport() {
+      $('.report').find('li:has(ul)')
+        .click( function(event) {
+            if (this == event.target) {
+                $('span.fugue-icon', this).toggleClass('fugue-chevron');
+                $(this).children('ul').toggle();
+            }
+            return false;
+        })
+        .each(function(){
+            $('span.fugue-icon', this).addClass('fugue-chevron-expand');
+        })
+        .children('ul').hide();
+      };
+
     TableListing.prototype.toggleChildDisplay = function(){
         var trigger = this;
         var trgt_id = $(trigger).attr('data-trgt');
@@ -118,6 +133,8 @@
     $(document).ready(function() {
         var bulk = new Bulk();
         var tableListing = new TableListing();
+
+        prepareReport();
 
         $('#post_edit_all').click(function() {
             bulk.edit_selected();
