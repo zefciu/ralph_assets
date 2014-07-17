@@ -1,0 +1,16 @@
+{% extends 'assets/base.html' %}
+
+{% block content %}
+	<h1>{{ report.name }}</h1>
+	{% spaceless %}
+	<div class="report">
+		<ul class="report-list">
+			{%for node in result %}
+				{% with level=0 %}
+					{%include "assets/report_tree.html" %}
+				{% endwith %}
+			{%endfor%}
+		</ul>
+	</div>
+	{% endspaceless %}
+{% endblock %}

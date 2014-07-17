@@ -60,6 +60,7 @@ from ralph_assets.views.transition import (
     TransitionView,
     TransitionHistoryFileHandler,
 )
+from ralph_assets.views.report import ReportsList, ReportDetail
 
 v09_api = Api(api_name='v0.9')
 for r in (
@@ -249,5 +250,15 @@ urlpatterns = patterns(
         r'transition-history-file/(?P<history_id>[0-9]+)$',
         login_required(TransitionHistoryFileHandler.as_view()),
         name='transition_history_file',
+    ),
+    url(
+        r'reports/$',
+        login_required(ReportsList.as_view()),
+        name='reports',
+    ),
+    url(
+        r'reports/(?P<mode>\S+)/(?P<slug>\S+)$',
+        login_required(ReportDetail.as_view()),
+        name='report_detail',
     ),
 )
