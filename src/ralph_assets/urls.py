@@ -257,8 +257,8 @@ urlpatterns = patterns(
         name='reports',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/reports/(?P<slug>\S+)$',
+        r'reports/(?P<mode>\S+)/(?P<slug>\S+)$',
         login_required(ReportDetail.as_view()),
-        name='report',
+        name='report_detail',
     ),
 )

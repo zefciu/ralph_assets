@@ -218,7 +218,7 @@ class AssetModel(
     '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
-    category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    category = models.ForeignKey('AssetCategory', null=True, blank=True, related_name='models')
     power_consumption = models.IntegerField(
         verbose_name=_("Power consumption"),
         blank=True,
@@ -414,7 +414,7 @@ class Asset(
         'OfficeInfo', null=True, blank=True, on_delete=models.CASCADE
     )
     type = models.PositiveSmallIntegerField(choices=AssetType())
-    model = models.ForeignKey('AssetModel', on_delete=models.PROTECT)
+    model = models.ForeignKey('AssetModel', on_delete=models.PROTECT, related_name='assets')
     source = models.PositiveIntegerField(
         verbose_name=_("source"), choices=AssetSource(), db_index=True,
         null=True, blank=True,
