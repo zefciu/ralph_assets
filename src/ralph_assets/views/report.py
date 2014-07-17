@@ -17,6 +17,7 @@ from bob.menu import MenuItem, MenuHeader
 from ralph_assets.views.base import AssetsBase
 from ralph_assets.models_assets import (
     Asset,
+    AssetStatus,
     MODE2ASSET_TYPE,
 )
 
@@ -134,10 +135,30 @@ class CategoryModelReport(ReportBase):
                 parent=item['model__category__parent__name']
             )
 
+class StatusModelReport(ReportBase):
+    slug = 'status-model'
+    name = _('Status - model')
+
+    def prepare(self, mode=None):
+        qs = Asset.objects
+        if mode:
+            qs = qs.filter(type=mode)
+        qs = qs.values('status', 'model__name').annotate(num=Count('model'))
+        for item in qs:
+            self.report.add(
+                name=item['model__name'],
+                count=item['num'],
+                parent=AssetStatus.DescFromID(item['status']),
+            )
+
+
 
 class ReportViewBase(AssetsBase):
     mainmenu_selected = 'reports'
-    reports = [CategoryModelReport]
+    reports = [
+        CategoryModelReport,
+        StatusModelReport,
+    ]
     modes = ['dc', 'back_office', 'all']
 
     def get_sidebar_items(self, base_sidebar_caption):
