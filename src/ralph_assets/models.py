@@ -11,6 +11,7 @@ import difflib
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
+from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
 from ralph_assets.models_assets import (
@@ -210,9 +211,12 @@ class SupportLookup(RestrictedLookupChannel):
         return """
             <span class='support-contract_id'>{contract_id}</span>
             <span class='support-name'>{name}</span>
+            <span class='support-end'>({expired}: {end})</span>
         """.format(
             contract_id=escape(obj.contract_id),
             name=escape(obj.name),
+            expired=_('expired'),
+            end=obj.get_natural_end_support(),
         )
 
     def get_item_url(self, obj):
