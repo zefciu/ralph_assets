@@ -187,7 +187,6 @@ class ManufacturerCategoryModelReport(ReportBase):
         qs = AssetModel.objects
         if mode:
             qs = qs.filter(type=mode)
-            # qs = qs.filter(category__type=mode) type in model or category?
         qs = qs.select_related('manufacturer', 'category').values(
             'manufacturer__name',
             'category__name',

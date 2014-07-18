@@ -15,6 +15,11 @@ from ralph_assets.tests.utils.assets import BOAssetFactory
 from ralph_assets.tests.utils.assets import (
     AssetModelFactory,
 )
+from ralph_assets.views.report import (
+    CategoryModelReport,
+    CategoryModelStatusReport,
+    ManufacturerCategoryModelReport,
+)
 
 
 class TestReportCategoryTreeView(TestCase):
@@ -65,39 +70,38 @@ class TestReportCategoryTreeView(TestCase):
                 return item
         return None
 
+    def _get_report(self, report_class, mode=None):
+        report = report_class()
+        report.execute(None)
+        return report.report.to_dict()
+
     def test_category_model_tree(self):
-        url = reverse(
-            'report_detail', kwargs={'mode': 'all', 'slug': 'category-model'},
-        )
-        response = self.client.get(url, follow=True)
-        report_dict = response.context_data.get('result')
-        accesories_dict = self._get_item(report_dict, 'ACCESSORIES')
-        equipment_dict = self._get_item(report_dict, 'EQUIPMENT')
+        report = self._get_report(CategoryModelReport)
 
-        self.assertEqual(equipment_dict['count'], 10)
-        self.assertEqual(accesories_dict['count'], 10)
+        self.assertEqual(self._get_item(report, 'Keyboard')['count'], 6)
+        self.assertEqual(self._get_item(report, 'Mouse')['count'], 2)
+        self.assertEqual(self._get_item(report, 'Pendrive')['count'], 2)
 
-        accesories_children = accesories_dict['children']
-        self.assertEqual(
-            self._get_item(accesories_children, 'Keyboard')['count'], 6
-        )
-        self.assertEqual(
-            self._get_item(accesories_children, 'Mouse')['count'], 2
-        )
-        self.assertEqual(
-            self._get_item(accesories_children, 'Pendrive')['count'], 2
-        )
+        self.assertEqual(self._get_item(report, 'Monitor')['count'], 2)
+        self.assertEqual(self._get_item(report, 'Navigation')['count'], 2)
+        self.assertEqual(self._get_item(report, 'Scanner')['count'], 3)
+        self.assertEqual(self._get_item(report, 'Shredder')['count'], 3)
 
-        equipment_children = equipment_dict['children']
-        self.assertEqual(
-            self._get_item(equipment_children, 'Monitor')['count'], 2
-        )
-        self.assertEqual(
-            self._get_item(equipment_children, 'Navigation')['count'], 2
-        )
-        self.assertEqual(
-            self._get_item(equipment_children, 'Scanner')['count'], 3
-        )
-        self.assertEqual(
-            self._get_item(equipment_children, 'Shredder')['count'], 3
-        )
+    def test_category_model_status_tree(self):
+        report = self._get_report(CategoryModelStatusReport)
+
+        item = self._get_item(report, 'Keyboard')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 6)
+        item = self._get_item(report, 'Mouse')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 2)
+        item = self._get_item(report, 'Pendrive')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 2)
+
+        item = self._get_item(report, 'Monitor')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 2)
+        item = self._get_item(report, 'Navigation')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 2)
+        item = self._get_item(report, 'Scanner')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 3)
+        item = self._get_item(report, 'Shredder')['children'][0]['children']
+        self.assertEqual(item[0]['count'], 3)
