@@ -426,11 +426,11 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
-            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
-            'sn', 'property_of', 'purpose', 'remarks', 'service_name',
-            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
-            'office_info', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date', 'hostname',
+            'type', 'hostname', 'status', 'barcode', 'model', 'user', 'owner',
+            'warehouse', 'sn', 'property_of', 'purpose', 'remarks',
+            'service_name', 'invoice_no', 'invoice_date', 'price', 'provider',
+            'task_url', 'office_info', 'deprecation_rate', 'order_no',
+            'source', 'deprecation_end_date',
         )
 
     model = AutoCompleteSelectField(
@@ -460,7 +460,6 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
             'property_of', 'remarks', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
             'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
-            'hostname',
         )
 
     model = AutoCompleteSelectField(
@@ -764,7 +763,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
-            'hostname',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -801,7 +799,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         widgets = {
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
@@ -917,9 +914,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
-    def clean_hostname(self):
-        return self.cleaned_data['hostname'] or None
-
 
 class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     '''
@@ -938,7 +932,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
-            'hostname',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -1098,10 +1091,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
-    def clean_hostname(self):
-        # make field readonly
-        return self.instance.hostname or None
-
     def clean(self):
         self.cleaned_data = super(BaseEditAssetForm, self).clean()
         if self.instance.deleted:
@@ -1251,6 +1240,11 @@ class EditDeviceForm(BaseEditAssetForm):
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
+    class Meta(BaseEditAssetForm.Meta):
+        widgets = {
+            'hostname': SimpleReadOnlyWidget(),
+        }
+
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
@@ -1265,6 +1259,10 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname or None
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
