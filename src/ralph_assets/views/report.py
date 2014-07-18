@@ -7,12 +7,11 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.db.models import Count
-from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse
-from django.http import Http404
-
 from bob.menu import MenuItem, MenuHeader
+from django.core.urlresolvers import reverse
+from django.db.models import Count
+from django.http import Http404
+from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.views.base import AssetsBase
 from ralph_assets.models_assets import (
@@ -20,7 +19,6 @@ from ralph_assets.models_assets import (
     AssetModel,
     AssetStatus,
     MODE2ASSET_TYPE,
-
 )
 
 
@@ -28,13 +26,13 @@ logger = logging.getLogger(__name__)
 
 
 class ReportNode(object):
-
+    """The basic report node. It is simple object which store name, count,
+    parent and children."""
     def __init__(self, name, count=0, parent=None, children=[], **kwargs):
         self.name = name
         self.count = count
         self.parent = parent
         self.children = []
-        self.kwargs = kwargs
 
     def add_child(self, child):
         self.children.append(child)
@@ -44,7 +42,7 @@ class ReportNode(object):
         self.count += count
 
     def update_count(self):
-        map(lambda x: x.add_to_count(self.count), self.ancestors)
+        map(lambda node: node.add_to_count(self.count), self.ancestors)
 
     @property
     def ancestors(self):
@@ -63,10 +61,11 @@ class ReportNode(object):
         return '{} ({})'.format(self.name, self.count)
 
 
-class Report(list):
-
+class ReportContainer(list):
+    """Container for nodes. This class provides few helpful methods to
+    manipulate on node set."""
     def get(self, name):
-        return next((x for x in self if x.name == name), None)
+        return next((node for node in self if node.name == name), None)
 
     def get_or_create(self, name):
         node = self.get(name)
@@ -94,11 +93,11 @@ class Report(list):
 
     @property
     def roots(self):
-        return [x for x in self if x.parent is None]
+        return [node for node in self if node.parent is None]
 
     @property
-    def leafs(self):
-        return [x for x in self if x.children == []]
+    def leaves(self):
+        return [node for node in self if node.children == []]
 
     def to_dict(self):
         def traverse(node):
@@ -110,36 +109,37 @@ class Report(list):
         return [traverse(root) for root in self.roots]
 
 
-class ReportBase(object):
+class BaseReport(object):
+    """Each report must inherit from this class."""
     def __init__(self):
-        self.report = Report()
+        self.report = ReportContainer()
 
     def execute(self, mode):
         self.mode = mode
         self.prepare(mode)
-        map(lambda x: x.update_count(), self.report.leafs)
+        map(lambda x: x.update_count(), self.report.leaves)
         return self.report.roots
 
     def prepare(self, mode):
         raise NotImplemented()
 
 
-class CategoryModelReport(ReportBase):
+class CategoryModelReport(BaseReport):
     slug = 'category-model'
     name = _('Category - model')
 
     def prepare(self, mode):
-        qs = Asset.objects
+        queryset = Asset.objects
         if mode:
-            qs = qs.filter(type=mode)
-        qs = qs.select_related('model', 'category').values(
+            queryset = queryset.filter(type=mode)
+        queryset = queryset.select_related('model', 'category').values(
             'model__category__name',
             'model__name',
         ).annotate(
             num=Count('model')
         ).order_by('model__category__name')
 
-        for item in qs:
+        for item in queryset:
             cat = item['model__category__name'] or 'None'
             self.report.add(
                 name=item['model__name'],
@@ -148,15 +148,15 @@ class CategoryModelReport(ReportBase):
             )
 
 
-class CategoryModelStatusReport(ReportBase):
+class CategoryModelStatusReport(BaseReport):
     slug = 'category-model-status'
     name = _('Category - model - status')
 
     def prepare(self, mode):
-        qs = Asset.objects
+        queryset = Asset.objects
         if mode:
-            qs = qs.filter(type=mode)
-        qs = qs.select_related('model', 'category').values(
+            queryset = queryset.filter(type=mode)
+        queryset = queryset.select_related('model', 'category').values(
             'model__category__name',
             'model__name',
             'status',
@@ -164,7 +164,7 @@ class CategoryModelStatusReport(ReportBase):
             num=Count('status')
         ).order_by('model__category__name')
 
-        for item in qs:
+        for item in queryset:
             parent = item['model__category__name'] or 'Without category'
             name = item['model__name']
             node = self.report.add(
@@ -179,15 +179,15 @@ class CategoryModelStatusReport(ReportBase):
             )
 
 
-class ManufacturerCategoryModelReport(ReportBase):
+class ManufacturerCategoryModelReport(BaseReport):
     slug = 'manufactured-category-model'
     name = _('Manufactured - category - model')
 
     def prepare(self, mode=None):
-        qs = AssetModel.objects
+        queryset = AssetModel.objects
         if mode:
-            qs = qs.filter(type=mode)
-        qs = qs.select_related('manufacturer', 'category').values(
+            queryset = queryset.filter(type=mode)
+        queryset = queryset.select_related('manufacturer', 'category').values(
             'manufacturer__name',
             'category__name',
             'name',
@@ -195,7 +195,7 @@ class ManufacturerCategoryModelReport(ReportBase):
             num=Count('assets')
         ).order_by('manufacturer__name')
 
-        for item in qs:
+        for item in queryset:
             manufacturer = item['manufacturer__name'] or 'Without manufacturer'
             parent = self.report.add(
                 name=item['category__name'],
@@ -208,16 +208,21 @@ class ManufacturerCategoryModelReport(ReportBase):
             )
 
 
-class StatusModelReport(ReportBase):
+class StatusModelReport(BaseReport):
     slug = 'status-model'
     name = _('Status - model')
 
     def prepare(self, mode=None):
-        qs = Asset.objects
+        queryset = Asset.objects
         if mode:
-            qs = qs.filter(type=mode)
-        qs = qs.values('status', 'model__name').annotate(num=Count('model'))
-        for item in qs:
+            queryset = queryset.filter(type=mode)
+        queryset = queryset.values(
+            'status',
+            'model__name',
+        ).annotate(
+            num=Count('model')
+        )
+        for item in queryset:
             self.report.add(
                 name=item['model__name'],
                 count=item['num'],
@@ -255,11 +260,10 @@ class ReportViewBase(AssetsBase):
 
 
 class ReportsList(ReportViewBase):
-    pass
+    template_name = 'assets/report_list.html'
 
 
 class ReportDetail(ReportViewBase):
-
     template_name = 'assets/report_detail.html'
 
     def get_report(self, slug):

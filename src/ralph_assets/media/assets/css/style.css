@@ -141,20 +141,20 @@ form.form-inline {
 .report .count {
   float: right;
 }
-.report  li:last-child{
+.report  li:last-child {
   border-bottom: 0;
   margin-bottom: 5px;
 }
-.level-1 li:hover {
+.report .level-1 li:hover {
   background: #f8f8f8;
 }
-.level-2 li:hover {
+.report .level-2 li:hover {
   background: #f0f0f0;
 }
-.level-3 li:hover {
+.report .level-3 li:hover {
   background: #e8e8e8;
 }
-.level-4 li:hover {
+.report .level-4 li:hover {
   background: #e0e0e0;
 }
 .report .report-list ul, li {
