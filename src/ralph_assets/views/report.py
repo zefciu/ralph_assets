@@ -20,7 +20,9 @@ from ralph_assets.models_assets import (
     AssetModel,
     AssetStatus,
     MODE2ASSET_TYPE,
+
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +39,12 @@ class ReportNode(object):
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
+        child.update_count()
 
     def add_to_count(self, count):
         self.count += count
 
     def update_count(self):
-        print(self.count)
         map(lambda x: x.add_to_count(self.count), self.ancestors)
 
     @property
@@ -59,7 +61,7 @@ class ReportNode(object):
         }
 
     def __str__(self):
-        return '{}'.format(self.count)
+        return '{} ({})'.format(self.name, self.count)
 
 
 class Report(list):
@@ -118,10 +120,6 @@ class ReportBase(object):
         self.prepare(mode)
         map(lambda x: x.update_count(), self.report.leafs)
         return self.report.roots
-        # return self.report.to_dict()
-
-    def add_mode_filter(self, qs):
-        return qs
 
     def prepare(self, mode):
         raise NotImplemented()
@@ -215,12 +213,30 @@ class ManufacturerCategoryModelReport(ReportBase):
             )
 
 
+class StatusModelReport(ReportBase):
+    slug = 'status-model'
+    name = _('Status - model')
+
+    def prepare(self, mode=None):
+        qs = Asset.objects
+        if mode:
+            qs = qs.filter(type=mode)
+        qs = qs.values('status', 'model__name').annotate(num=Count('model'))
+        for item in qs:
+            self.report.add(
+                name=item['model__name'],
+                count=item['num'],
+                parent=AssetStatus.DescFromID(item['status']),
+            )
+
+
 class ReportViewBase(AssetsBase):
     mainmenu_selected = 'reports'
     reports = [
         CategoryModelReport,
         CategoryModelStatusReport,
         ManufacturerCategoryModelReport,
+        StatusModelReport,
     ]
     modes = ['dc', 'back_office', 'all']
 

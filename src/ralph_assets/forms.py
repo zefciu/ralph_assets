@@ -82,7 +82,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'no_support_assigned',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -115,7 +115,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
-            'required_support', 'no_support_assigned',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -151,7 +151,7 @@ LOOKUPS = {
     'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
-    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'manufacturer': ('ralph_assets.models', 'ManufacturerLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
@@ -161,7 +161,6 @@ LOOKUPS = {
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
-    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
 }
 
 
@@ -1286,7 +1285,7 @@ class SearchAssetForm(Form):
     :returns Form
     """
     manufacturer = AutoCompleteField(
-        LOOKUPS['asset_manufacturer'],
+        LOOKUPS['manufacturer'],
         required=False,
         help_text=None,
         plugin_options={'disable_confirm': True}
@@ -1477,13 +1476,15 @@ class SearchAssetForm(Form):
     budget_info = AutoCompleteField(
         LOOKUPS['budget_info'], required=False,
     )
-    required_support = BooleanField(
+    required_support = ChoiceField(
         required=False,
-        label=_('Required support:'),
+        choices=[('', '----'), ('yes', 'yes'), ('no', 'no')],
+        label=_('Required support'),
     )
-    no_support_assigned = BooleanField(
+    support_assigned = ChoiceField(
         required=False,
-        label=_('Without support:'),
+        choices=[('', '----'), ('any', 'any'), ('none', 'none')],
+        label=_('Assigned supports'),
     )
 
     def __init__(self, *args, **kwargs):

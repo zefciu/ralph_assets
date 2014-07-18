@@ -10,8 +10,8 @@ from random import randint
 
 from factory import (
     Sequence,
-    fuzzy,
     SubFactory,
+    fuzzy,
 )
 from factory.django import DjangoModelFactory as Factory
 
