@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from ralph.ui.tests.global_utils import login_as_su
@@ -18,7 +17,6 @@ from ralph_assets.tests.utils.assets import (
 from ralph_assets.views.report import (
     CategoryModelReport,
     CategoryModelStatusReport,
-    ManufacturerCategoryModelReport,
 )
 
 
