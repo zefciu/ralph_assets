@@ -1,16 +1,26 @@
 {% extends 'assets/base.html' %}
 
+{% load cache i18n %}
+
 {% block content %}
 	<h1>{{ report.name }}</h1>
-	{% spaceless %}
-	<div class="report">
-		<ul class="report-list">
-			{%for node in result %}
-				{% with level=0 %}
-					{%include "assets/report_tree.html" %}
-				{% endwith %}
-			{%endfor%}
-		</ul>
-	</div>
-	{% endspaceless %}
+	{% cache 1 report cache_key %}
+		<p>{% trans 'Last update:' %} {% now "SHORT_DATETIME_FORMAT" %}</p>
+		{% spaceless %}
+		<div class="report">
+			<div class="pagination pagination-centered">
+				<ul>
+					<li><a class="expand-all" href="#">Expand all</a></li>
+				</ul>
+			</div>
+			<ul class="report-list">
+				{%for node in result %}
+					{% with level=0 %}
+						{%include "assets/report_tree.html" %}
+					{% endwith %}
+				{%endfor%}
+			</ul>
+		</div>
+		{% endspaceless %}
+	{% endcache %}
 {% endblock %}

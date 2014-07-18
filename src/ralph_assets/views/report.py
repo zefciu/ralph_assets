@@ -39,7 +39,6 @@ class ReportNode(object):
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
-        child.update_count()
 
     def add_to_count(self, count):
         self.count += count
@@ -141,11 +140,10 @@ class CategoryModelReport(ReportBase):
         ).order_by('model__category__name')
 
         for item in qs:
-            parent = item['model__category__name'] or 'Without category'
-            name = item['model__name']
+            cat = item['model__category__name'] or 'None'
             self.report.add(
-                name=name,
-                parent=parent,
+                name=item['model__name'],
+                parent=cat,
                 count=item['num'],
             )
 
@@ -165,8 +163,6 @@ class CategoryModelStatusReport(ReportBase):
         ).annotate(
             num=Count('status')
         ).order_by('model__category__name')
-
-        print(qs.query)
 
         for item in qs:
             parent = item['model__category__name'] or 'Without category'
@@ -197,7 +193,7 @@ class ManufacturerCategoryModelReport(ReportBase):
             'category__name',
             'name',
         ).annotate(
-           num=Count('assets')
+            num=Count('assets')
         ).order_by('manufacturer__name')
 
         for item in qs:
@@ -274,13 +270,13 @@ class ReportDetail(ReportViewBase):
         return None
 
     def dispatch(self, request, *args, **kwargs):
-        slug = kwargs.get('slug')
-        mode = kwargs.get('mode', 'all')
-        if mode == 'all':
+        self.slug = kwargs.get('slug')
+        self.mode = kwargs.get('mode', 'all')
+        if self.mode == 'all':
             self.asset_type = None
         else:
-            self.asset_type = MODE2ASSET_TYPE[mode]
-        self.report = self.get_report(slug)
+            self.asset_type = MODE2ASSET_TYPE[self.mode]
+        self.report = self.get_report(self.slug)
         if not self.report:
             raise Http404
         return super(ReportDetail, self).dispatch(request, *args, **kwargs)
@@ -291,6 +287,6 @@ class ReportDetail(ReportViewBase):
             'report': self.report,
             'subsection': self.report.name,
             'result': self.report.execute(self.asset_type),
+            'cache_key': self.mode + self.slug,
         })
-        # print(self.report.execute(self.asset_type))
         return context_data
