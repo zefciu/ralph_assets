@@ -218,7 +218,9 @@ class AssetModel(
     '''
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
-    category = models.ForeignKey('AssetCategory', null=True, blank=True)
+    category = models.ForeignKey(
+        'AssetCategory', null=True, blank=True, related_name='models'
+    )
     power_consumption = models.IntegerField(
         verbose_name=_("Power consumption"),
         blank=True,
@@ -405,34 +407,36 @@ class Asset(
     Asset model contain fields with basic information about single asset
     '''
     device_info = models.OneToOneField(
-        'DeviceInfo', null=True, blank=True, on_delete=models.CASCADE
+        'DeviceInfo', null=True, blank=True, on_delete=models.CASCADE,
     )
     part_info = models.OneToOneField(
-        'PartInfo', null=True, blank=True, on_delete=models.CASCADE
+        'PartInfo', null=True, blank=True, on_delete=models.CASCADE,
     )
     office_info = models.OneToOneField(
-        'OfficeInfo', null=True, blank=True, on_delete=models.CASCADE
+        'OfficeInfo', null=True, blank=True, on_delete=models.CASCADE,
     )
     type = models.PositiveSmallIntegerField(choices=AssetType())
-    model = models.ForeignKey('AssetModel', on_delete=models.PROTECT)
+    model = models.ForeignKey(
+        'AssetModel', on_delete=models.PROTECT, related_name='assets',
+    )
     source = models.PositiveIntegerField(
         verbose_name=_("source"), choices=AssetSource(), db_index=True,
         null=True, blank=True,
     )
     invoice_no = models.CharField(
-        max_length=128, db_index=True, null=True, blank=True
+        max_length=128, db_index=True, null=True, blank=True,
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
     sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
     barcode = models.CharField(
-        max_length=200, null=True, blank=True, unique=True, default=None
+        max_length=200, null=True, blank=True, unique=True, default=None,
     )
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, blank=True, null=True,
     )
     support_price = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
+        max_digits=10, decimal_places=2, null=True, blank=True,
     )
     support_period = models.PositiveSmallIntegerField(
         blank=True,
@@ -457,7 +461,7 @@ class Asset(
     )
     niw = models.CharField(
         max_length=200, null=True, blank=True, default=None,
-        verbose_name='Inventory number'
+        verbose_name='Inventory number',
     )
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     location = models.CharField(max_length=128, null=True, blank=True)

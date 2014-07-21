@@ -218,7 +218,7 @@ class TransitionDispatcher(object):
             sender=self,
             user=self.logged_user,
             assets=self.assets,
-            transition=self.instance,
+            transition=self.instance.transition_object,
         )
 
 

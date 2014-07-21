@@ -170,7 +170,7 @@ class AssetModelAdmin(ModelAdmin):
     search_fields = ('name',)
 
     def queryset(self, request):
-        return AssetModel.objects.annotate(assets_count=Count('asset'))
+        return AssetModel.objects.annotate(assets_count=Count('assets'))
 
     def show_assets_count(self, instance):
         return instance.assets_count
