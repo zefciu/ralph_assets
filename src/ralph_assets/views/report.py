@@ -272,13 +272,9 @@ class ReportDetail(ReportViewBase):
                 return report()
         return None
 
-    def dispatch(self, request, *args, **kwargs):
-        self.slug = kwargs.get('slug')
-        self.mode = kwargs.get('mode', 'all')
-        if self.mode == 'all':
-            self.asset_type = None
-        else:
-            self.asset_type = MODE2ASSET_TYPE[self.mode]
+    def dispatch(self, request, slug, mode, *args, **kwargs):
+        self.slug = slug
+        self.asset_type = MODE2ASSET_TYPE.get(mode, None)
         self.report = self.get_report(self.slug)
         if not self.report:
             raise Http404
@@ -290,6 +286,6 @@ class ReportDetail(ReportViewBase):
             'report': self.report,
             'subsection': self.report.name,
             'result': self.report.execute(self.asset_type),
-            'cache_key': self.mode + self.slug,
+            'cache_key': self.asset_type or 'all' + self.slug,
         })
         return context_data
