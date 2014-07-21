@@ -65,7 +65,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of', 'hostname',
+        'service_name', 'property_of',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -114,7 +114,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
 asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
-            'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
             'required_support', 'support_assigned',
         ],
         'collapsed': [
@@ -370,13 +370,6 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
-    hostname = CharField(
-        required=False, widget=SimpleReadOnlyWidget(),
-    )
-
-    def clean_hostname(self):
-        # make field readonly
-        return self.instance.hostname or None
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -410,29 +403,44 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 ])
         return barcode
 
+    def _update_field_css_class(self, field_name):
+        if field_name not in self.banned_fillables:
+            classes = "span12 fillable"
+        elif field_name == 'support_void_reporting':
+            classes = ""
+        else:
+            classes = "span12"
+        self.fields[field_name].widget.attrs.update({'class': classes})
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        banned_fillables = set(['hostname', 'sn', 'barcode', 'imei'])
+        self.banned_fillables = set(['sn', 'barcode', 'imei'])
         for field_name in self.fields:
-            if field_name not in banned_fillables:
-                classes = "span12 fillable"
-            elif field_name == 'support_void_reporting':
-                classes = ""
-            else:
-                classes = "span12"
-            self.fields[field_name].widget.attrs.update({'class': classes})
+            self._update_field_css_class(field_name)
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
-            'type', 'hostname', 'status', 'barcode', 'model', 'user', 'owner',
+            'type', 'status', 'barcode', 'hostname', 'model', 'user', 'owner',
             'warehouse', 'sn', 'property_of', 'purpose', 'remarks',
             'service_name', 'invoice_no', 'invoice_date', 'price', 'provider',
             'task_url', 'office_info', 'deprecation_rate', 'order_no',
             'source', 'deprecation_end_date',
         )
 
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeBulkEditAssetForm, self).__init__(*args, **kwargs)
+        self.banned_fillables.add('hostname')
+        self._update_field_css_class('hostname')
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname or None
+
+    hostname = CharField(
+        required=False, widget=SimpleReadOnlyWidget(),
+    )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_bomodel'],
         required=True,
@@ -971,7 +979,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'barcode': Textarea(attrs={'rows': 1}),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
@@ -1245,6 +1252,9 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
             'hostname': SimpleReadOnlyWidget(),
         }
 
+    hostname = CharField(
+        required=False, widget=SimpleReadOnlyWidget(),
+    )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
@@ -1256,6 +1266,7 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
         for after, field in (
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
+            ('property_of', 'hostname'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)

@@ -187,7 +187,6 @@ class BaseAssetFactory(DjangoModelFactory):
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)
-    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
     location = Sequence(lambda n: 'location #{}'.format(n))
@@ -236,4 +235,5 @@ class DCAssetFactory(BaseAssetFactory):
 
 class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
+    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
     office_info = SubFactory(OfficeInfoFactory)

@@ -61,7 +61,6 @@ def get_asset_data():
         'delivery_date': datetime.date(2013, 1, 7),
         'deprecation_end_date': datetime.date(2013, 7, 25),
         'deprecation_rate': 77,
-        'hostname': 'POLPC12345',
         'invoice_date': datetime.date(2009, 2, 23),
         'invoice_no': 'Invoice no #3',
         'loan_end_date': datetime.date(2013, 12, 29),
@@ -157,11 +156,11 @@ class TestDevicesView(TestCase):
     def setUp(self):
         self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
-            'deprecation_end_date', 'deprecation_rate', 'hostname',
-            'invoice_date', 'invoice_no', 'location', 'model', 'niw',
-            'order_no', 'owner', 'price', 'property_of', 'provider',
-            'provider_order_date', 'remarks', 'request_date', 'service_name',
-            'sn', 'source', 'status', 'task_url', 'type', 'user', 'warehouse',
+            'deprecation_end_date', 'deprecation_rate', 'invoice_date',
+            'invoice_no', 'location', 'model', 'niw', 'order_no', 'owner',
+            'price', 'property_of', 'provider', 'provider_order_date',
+            'remarks', 'request_date', 'service_name', 'sn', 'source',
+            'status', 'task_url', 'type', 'user', 'warehouse',
         ]
         self._visible_edit_form_fields = self._visible_add_form_fields[:]
         self._visible_edit_form_fields.extend([
@@ -377,9 +376,7 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         asset = models_assets.Asset.objects.get(pk=asset.id)
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
-        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         check_fields(self, self.new_asset_data.items(), asset)
-        self.assertIsNotNone(asset.hostname)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
 
@@ -470,7 +467,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_edit_device(self):
         """
-        Add device with all fields filled.
+        Edit device with all fields filled.
 
         - generate asset data d1
         - create asset a1
@@ -479,6 +476,9 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         - assert a1's data is the same as d1 data
         """
         self.new_asset_data = self.asset_data.copy()
+        self.new_asset_data.update({
+            'hostname': 'XXXYY00001'
+        })
         supports = self._update_with_supports(self.new_asset_data)
         new_office_data = self.office_data.copy()
         asset = BOAssetFactory()
@@ -494,8 +494,8 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             response, url, status_code=302, target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
-        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         del self.new_asset_data['asset']
+        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         self._check_asset_supports(asset, supports)
         check_fields(self, self.new_asset_data.items(), asset)
         self.assertIsNotNone(asset.hostname)
