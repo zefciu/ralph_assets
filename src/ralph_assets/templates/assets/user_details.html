@@ -73,8 +73,8 @@
                 <td>{{ asset.model }}</td>
                 <td>{{ asset.sn }}</td>
                 <td>{{ asset.barcode }}</td>
-                <td>{{ asset.get_status_display }}</td>
                 <td>{{ asset.remarks }}</td>
+                <td>{{ asset.get_status_display }}</td>
                 <td>
                     <a href="{% url device_edit mode='back_office' asset_id=asset.id %}">{% trans "go to asset" %}</a>
                 </td>
