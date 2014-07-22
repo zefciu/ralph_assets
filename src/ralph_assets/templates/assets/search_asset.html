@@ -61,7 +61,7 @@
                     {% if mode == 'back_office' %}
                         <td>{{row.office_info.imei|default:'-' }}</td>
                         <td>{{row.property_of|default:'-' }}</td>
-                        <td>{{row.office_info.get_purpose|default:'-' }}</td>
+                        <td>{{row.hostname|default:'-' }}</td>
                         <td>{{row.service_name|default:'-' }}</td>
                     {% endif %}
                     <td>{{row.invoice_date|default:'-' }}</td>
