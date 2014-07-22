@@ -53,7 +53,7 @@ Asset fields has been splitted into sections in forms:
 
 - **Basic info**:
     - **Type** - a read only field for data center, back office or administration for back offic. Administration is used for assets like buildings etc.
-    - **Model** - type a couple of letters to search for a given model. If don't find it in the database, just click "Add" button to add it.
+    - **Model** - type a couple of letters to search for a given model. If no result is found, just click "Add" button to add it.
     - **Inventory number** -
     - **Warehouse** - the place where the asset is located.
     - **Location** - a more exact location of the device in the building/room.
@@ -139,7 +139,7 @@ This field ability to store Multi-Seat licence.
 Relations
 ---------
 
-License can be assigned to a device or user on licence, asset and user form.
+Licenses may be related to the relationship with the user or device.
 In asset and user form, during the search are shown only unassigned license,
 that is, those that have still free slots.
 
