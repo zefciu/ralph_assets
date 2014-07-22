@@ -1135,3 +1135,87 @@ class TestImport(TestCase):
             self.assertEqual(
                 getattr(updated_asset, field), new_value
             )
+
+
+class TestColumnsInSearch(BaseViewsTest):
+    def setUp(self):
+        self.client = login_as_su()
+
+    def get_cols_by_mode(self, bob_cols, mode):
+        mode_cols = set()
+        for col in bob_cols:
+            if col.bob_tag is not True:
+                continue
+            elif col.show_conditions is True:
+                mode_cols.add(col.header_name)
+            elif (
+                isinstance(col.show_conditions, tuple)
+                and col.show_conditions[1] == mode
+            ):
+                mode_cols.add(col.header_name)
+        return mode_cols
+
+    def check_cols_presence(self, search_url, correct_col_names, mode):
+        """
+        Checks if bob table has all required columns.
+        :parma search_url: url where bob table occures,
+        :parma correct_col_names: sequence of expected column names,
+        :parma mode: filtering mode comapared with
+            bob_table.col.show_conditions, which is 'dc' or 'back_office'
+        """
+        response = self.client.get(search_url)
+        self.assertEqual(response.status_code, 200)
+        if mode:
+            found_cols = self.get_cols_by_mode(
+                response.context_data['columns'], mode
+            )
+        else:
+            found_cols = [
+                unicode(col.header_name)
+                for col in response.context_data['columns']
+            ]
+        self.assertEqual(len(found_cols), len(correct_col_names))
+        for correct_field in correct_col_names:
+            self.assertIn(correct_field, found_cols)
+
+    def test_bo_cols_presence(self):
+        BOAssetFactory()
+        correct_col_names = set([
+            'Additional remarks', 'Barcode', 'Category', 'Dropdown',
+            'Hostname', 'IMEI', 'Invoice date', 'Invoice no.', 'Manufacturer',
+            'Model', 'Property of', 'SN', 'Service name', 'Status', 'Type',
+            'User', 'Warehouse',
+        ])
+        mode = 'back_office'
+        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        self.check_cols_presence(search_url, correct_col_names, mode)
+
+    def test_dc_cols_presence(self):
+        DCAssetFactory()
+        correct_col_names = set([
+            'Barcode', 'Discovered', 'Dropdown', 'Invoice date',
+            'Invoice no.', 'Model', 'Order no.', 'Price', 'SN', 'Status',
+            'Type', 'Venture', 'Warehouse',
+        ])
+        mode = 'dc'
+        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        self.check_cols_presence(search_url, correct_col_names, mode)
+
+    def test_license_cols_presence(self):
+        LicenceFactory()
+        correct_col_names = set([
+            'Dropdown', 'Inventory number', 'Invoice date', 'Invoice no.',
+            'Licence Type', 'Manufacturer', 'Number of purchased items',
+            'Property of', 'Software Category', 'Type', 'Used', 'Valid thru',
+        ])
+        search_url = reverse('licence_list')
+        self.check_cols_presence(search_url, correct_col_names, mode=None)
+
+    def test_supports_cols_presence(self):
+        support_utils.DCSupportFactory()
+        correct_col_names = set([
+            'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
+            'Price',
+        ])
+        search_url = reverse('support_list')
+        self.check_cols_presence(search_url, correct_col_names, mode=None)
