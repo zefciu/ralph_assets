@@ -1144,11 +1144,9 @@ class TestColumnsInSearch(BaseViewsTest):
     def get_cols_by_mode(self, bob_cols, mode):
         mode_cols = set()
         for col in bob_cols:
-            if col.bob_tag is not True:
+            if not col.bob_tag:
                 continue
-            elif col.show_conditions is True:
-                mode_cols.add(col.header_name)
-            elif (
+            if (col.show_conditions is True) or (
                 isinstance(col.show_conditions, tuple)
                 and col.show_conditions[1] == mode
             ):
