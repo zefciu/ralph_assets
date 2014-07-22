@@ -68,7 +68,7 @@ Asset fields has been splitted into sections in forms:
     - **Depreciation rate**- number of months device depreciation.
     - **Source**- device was purchased or salvaged.
     - **Request date** - date of submission of the demand for the device.
-    - **Delivery date** - date delivered device.
+    - **Delivery date** - date of device delivery.
     - **Deprecation end date** - the end day of the depreciation
     - **Order number**, **Invoice date**, **Invoice no**, **Provider order date**, **Budget info**.
 - **User info**:
@@ -122,8 +122,7 @@ Adding and editing is performed in much the same way as in assets.
 Adding License
 --------------
 
-Now, let's add some license. Click the "Add license" option from the
-top of submenu.
+To add a license, click the "Add support" option from the top of submenu.
 
 .. image:: images/add_licence.png
     :scale: 75%
@@ -132,7 +131,7 @@ top of submenu.
 Fields
 ------
 
-Licence fields has been splited into 2 section: **Basic info** and **Financial info**.
+Licence fields are split into 2 section: **Basic info** and **Financial info**.
 **Financial info** contains very important field, **Number of purchased items**.
 This field ability to store Multi-Seat licence.
 
@@ -154,8 +153,7 @@ Adding and editing is performed in much the same way as in assets.
 Adding Support
 --------------
 
-Now, let's add some license. Click the "Add support" option from the
-top of submenu.
+To add a support, click the "Add support" option from the top of submenu.
 
 .. image:: images/add_support.png
     :scale: 75%
