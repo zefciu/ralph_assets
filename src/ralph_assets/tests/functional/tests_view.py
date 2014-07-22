@@ -61,7 +61,6 @@ def get_asset_data():
         'delivery_date': datetime.date(2013, 1, 7),
         'deprecation_end_date': datetime.date(2013, 7, 25),
         'deprecation_rate': 77,
-        'hostname': 'POLPC12345',
         'invoice_date': datetime.date(2009, 2, 23),
         'invoice_no': 'Invoice no #3',
         'loan_end_date': datetime.date(2013, 12, 29),
@@ -157,11 +156,11 @@ class TestDevicesView(TestCase):
     def setUp(self):
         self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
-            'deprecation_end_date', 'deprecation_rate', 'hostname',
-            'invoice_date', 'invoice_no', 'location', 'model', 'niw',
-            'order_no', 'owner', 'price', 'property_of', 'provider',
-            'provider_order_date', 'remarks', 'request_date', 'service_name',
-            'sn', 'source', 'status', 'task_url', 'type', 'user', 'warehouse',
+            'deprecation_end_date', 'deprecation_rate', 'invoice_date',
+            'invoice_no', 'location', 'model', 'niw', 'order_no', 'owner',
+            'price', 'property_of', 'provider', 'provider_order_date',
+            'remarks', 'request_date', 'service_name', 'sn', 'source',
+            'status', 'task_url', 'type', 'user', 'warehouse',
         ]
         self._visible_edit_form_fields = self._visible_add_form_fields[:]
         self._visible_edit_form_fields.extend([
@@ -377,9 +376,7 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         asset = models_assets.Asset.objects.get(pk=asset.id)
         del self.new_asset_data['asset']
         self._check_asset_supports(asset, supports)
-        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         check_fields(self, self.new_asset_data.items(), asset)
-        self.assertIsNotNone(asset.hostname)
         new_device_data['ralph_device_id'] = None
         check_fields(self, new_device_data.items(), asset.device_info)
 
@@ -470,7 +467,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_edit_device(self):
         """
-        Add device with all fields filled.
+        Edit device with all fields filled.
 
         - generate asset data d1
         - create asset a1
@@ -479,6 +476,9 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         - assert a1's data is the same as d1 data
         """
         self.new_asset_data = self.asset_data.copy()
+        self.new_asset_data.update({
+            'hostname': 'XXXYY00001'
+        })
         supports = self._update_with_supports(self.new_asset_data)
         new_office_data = self.office_data.copy()
         asset = BOAssetFactory()
@@ -494,8 +494,8 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             response, url, status_code=302, target_status_code=200,
         )
         asset = models_assets.Asset.objects.get(pk=asset.id)
-        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         del self.new_asset_data['asset']
+        self.prepare_readonly_fields(self.new_asset_data, asset, ['hostname'])
         self._check_asset_supports(asset, supports)
         check_fields(self, self.new_asset_data.items(), asset)
         self.assertIsNotNone(asset.hostname)
@@ -1135,3 +1135,85 @@ class TestImport(TestCase):
             self.assertEqual(
                 getattr(updated_asset, field), new_value
             )
+
+
+class TestColumnsInSearch(BaseViewsTest):
+    def setUp(self):
+        self.client = login_as_su()
+
+    def get_cols_by_mode(self, bob_cols, mode):
+        mode_cols = set()
+        for col in bob_cols:
+            if not col.bob_tag:
+                continue
+            if (col.show_conditions is True) or (
+                isinstance(col.show_conditions, tuple)
+                and col.show_conditions[1] == mode
+            ):
+                mode_cols.add(col.header_name)
+        return mode_cols
+
+    def check_cols_presence(self, search_url, correct_col_names, mode):
+        """
+        Checks if bob table has all required columns.
+        :parma search_url: url where bob table occures,
+        :parma correct_col_names: sequence of expected column names,
+        :parma mode: filtering mode comapared with
+            bob_table.col.show_conditions, which is 'dc' or 'back_office'
+        """
+        response = self.client.get(search_url)
+        self.assertEqual(response.status_code, 200)
+        if mode:
+            found_cols = self.get_cols_by_mode(
+                response.context_data['columns'], mode
+            )
+        else:
+            found_cols = [
+                unicode(col.header_name)
+                for col in response.context_data['columns']
+            ]
+        self.assertEqual(len(found_cols), len(correct_col_names))
+        for correct_field in correct_col_names:
+            self.assertIn(correct_field, found_cols)
+
+    def test_bo_cols_presence(self):
+        BOAssetFactory()
+        correct_col_names = set([
+            'Additional remarks', 'Barcode', 'Category', 'Dropdown',
+            'Hostname', 'IMEI', 'Invoice date', 'Invoice no.', 'Manufacturer',
+            'Model', 'Property of', 'SN', 'Service name', 'Status', 'Type',
+            'User', 'Warehouse',
+        ])
+        mode = 'back_office'
+        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        self.check_cols_presence(search_url, correct_col_names, mode)
+
+    def test_dc_cols_presence(self):
+        DCAssetFactory()
+        correct_col_names = set([
+            'Barcode', 'Discovered', 'Dropdown', 'Invoice date',
+            'Invoice no.', 'Model', 'Order no.', 'Price', 'SN', 'Status',
+            'Type', 'Venture', 'Warehouse',
+        ])
+        mode = 'dc'
+        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        self.check_cols_presence(search_url, correct_col_names, mode)
+
+    def test_license_cols_presence(self):
+        LicenceFactory()
+        correct_col_names = set([
+            'Dropdown', 'Inventory number', 'Invoice date', 'Invoice no.',
+            'Licence Type', 'Manufacturer', 'Number of purchased items',
+            'Property of', 'Software Category', 'Type', 'Used', 'Valid thru',
+        ])
+        search_url = reverse('licence_list')
+        self.check_cols_presence(search_url, correct_col_names, mode=None)
+
+    def test_supports_cols_presence(self):
+        support_utils.DCSupportFactory()
+        correct_col_names = set([
+            'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
+            'Price',
+        ])
+        search_url = reverse('support_list')
+        self.check_cols_presence(search_url, correct_col_names, mode=None)
