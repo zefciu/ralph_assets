@@ -162,7 +162,7 @@ Relations
 ---------
 
 Support can be assigned to a device. On the asset form page, there is the
-possibility of marking device that requires a support.
+option of marking device that requires a support.
 This is valuable information that helps you better manage supports.
 
 
@@ -172,8 +172,8 @@ Users
 User Page
 ---------
 
-User page contains all information about user. Assigned devices, licenses into
-user, personal information and transition history.
+User page contains all information about user. User's devices, licenses,
+personal information and transition history.
 
 .. image:: images/user_page.png
     :scale: 75%
