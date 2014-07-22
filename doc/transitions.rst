@@ -78,7 +78,7 @@ Post transition signal
 The transition feature sends post transition signal. Arguments defined by the
 signal are:
 
-  * ``user`` - signed in user calling executing transition,
+  * ``user`` - signed in user executing transition,
   * ``assets`` - assets used in transition,
   * ``transition`` - tranistion which is executed.
 
