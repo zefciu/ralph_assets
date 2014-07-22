@@ -1248,9 +1248,9 @@ class EditDeviceForm(BaseEditAssetForm):
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
-        widgets = {
-            'hostname': SimpleReadOnlyWidget(),
-        }
+        fields = BaseEditAssetForm.Meta.fields + (
+            'hostname',
+        )
 
     hostname = CharField(
         required=False, widget=SimpleReadOnlyWidget(),
