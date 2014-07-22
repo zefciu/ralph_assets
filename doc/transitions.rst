@@ -1,3 +1,5 @@
+.. _transitions:
+
 Transitions
 ===========
 
@@ -10,7 +12,7 @@ Transition is disabled by default. To enable it, set settings as follow::
 
     ASSETS_TRANSITIONS['ENABLE'] = True
 
-Defining your own transition requires adding transition object to the database. Actually we support following transitions: ``RELEASE-ASSET``, ``LOAN-ASSET``, ``RETURN-ASSET``.
+Defining your own transition requires adding transition object to the database. Actually we support following transitions: ``RELEASE-ASSET``, ``LOAN-ASSET``, ``RETURN-ASSET``, ``CHANGE-HOSTNAME``.
 
 Each transition has default slug defined in settings. You don't have to change anything in settings and use predefined slugs in transition definition objects.
 
@@ -23,6 +25,7 @@ Default slugs:
     * ``release-asset`` - for ``RELEASE-ASSET`` transition
     * ``loan-asset`` - for ``LOAN-ASSET`` transition
     * ``return-asset`` - for ``RETURN-ASSET`` transition
+    * ``change-chostname`` - for ``CHANGE-HOSTNAME`` transition
 
 Actions available in transitions:
 
@@ -31,6 +34,7 @@ Actions available in transitions:
     * ``assign_user`` - assign new owner into assets.
     * ``assign_warehouse`` -  assign new warehouse into assets.
     * ``change_status`` - change status into defined in ``to_status`` Transition field.
+    * ``change_hostname`` - change hostname with selected country code.
     * ``release_report`` - generate release report file.
     * ``return_report`` - generate return report file.
     * ``unassign_licences`` - remove all licences assigned into assets.
@@ -54,10 +58,11 @@ You can use predefined slugs:
     * ``release-asset`` - for release asset transition
     * ``loan-asset`` - for loan asset transition
     * ``return-asset`` - for return asset transition
+    * ``change-hostname`` - for manually change hostname country
 
 
 Reports locale
-^^^^^^^^^^^^^^
+--------------
 
 Reports generation uses Django's *LANGUAGE_CODE* setting, however there is an
 option to changed that. You can force locale only for reports by setting
@@ -69,13 +74,13 @@ If so, all generated reports will have polish locale.
 
 
 Post transition signal
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 The transition feature sends post transition signal. Arguments defined by the
 signal are:
 
-  * user: signed in user calling executing transition,
-  * assets: assets used in transition,
-  * transition: tranistion which is executed.
+  * ``user`` - signed in user executing transition,
+  * ``assets`` - assets used in transition,
+  * ``transition`` - tranistion which is executed.
 
 This is an example of the signal receiver::
 
