@@ -1248,44 +1248,8 @@ class EditDeviceForm(BaseEditAssetForm):
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
-        fields = (
-            'barcode',
-            'budget_info',
-            'company',
-            'cost_center',
-            'delivery_date',
-            'department',
-            'deprecation_end_date',
-            'deprecation_rate',
-            'employee_id',
+        fields = BaseEditAssetForm.Meta.fields + (
             'hostname',
-            'imei',
-            'invoice_date',
-            'invoice_no',
-            'loan_end_date',
-            'location',
-            'manager',
-            'model',
-            'niw',
-            'note',
-            'order_no',
-            'owner',
-            'price',
-            'profit_center',
-            'property_of',
-            'provider',
-            'provider_order_date',
-            'remarks',
-            'request_date',
-            'required_support',
-            'service_name',
-            'sn',
-            'source',
-            'status',
-            'task_url',
-            'type',
-            'user',
-            'warehouse',
         )
 
     hostname = CharField(
