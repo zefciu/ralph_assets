@@ -1,5 +1,5 @@
-<li{% if node.children %} class="collapsed"{% endif %}>
-  {% if node.children %}<span class="fugue-icon fugue-chevron-expand"></span>{% endif %}{{ node.name }} <span class="count">{{ node.count }}</span>
+<li class="{% if node.children %}icon collapsed{% else %}zero{% endif %}">
+  {{ node.name }} <span class="count">{{ node.count }}</span>
   {% if node.children %}
     <ul class="level-{{level|add:1}}">
     {% for ch in node.children %}
