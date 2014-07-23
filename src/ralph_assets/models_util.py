@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.core.exceptions import PermissionDenied
 from django.db import models
+from django.utils.html import escape
 from lck.django.choices import Choices
 
 from ajax_select import LookupChannel
@@ -26,6 +27,23 @@ class RestrictedLookupChannel(LookupChannel):
         """
         if not request.user.is_authenticated():
             raise PermissionDenied
+
+    # TODO:: delete it if duplicated
+    def get_query(self, q, request):
+        founds = self.model.objects.filter(name__icontains=q)[:10]
+        return founds
+
+    def get_result(self, obj):
+        return obj.id
+
+    def get_item_url(self, obj):
+        return obj.url
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return '{}'.format(escape(unicode(obj)))
 
 
 class SavingUser(models.Model):

@@ -258,6 +258,20 @@ class RalphDeviceLookup(RestrictedLookupChannel):
         )
 
 
+# TODO:: move it to ralph
+from ralph.discovery import models_device
+class ServiceLookup(RestrictedLookupChannel):
+    model = models_device.ServiceCatalog
+
+    def format_item_display(self, obj):
+        return '{}'.format(escape(unicode(obj)))
+
+
+# TODO:: move it to ralph
+class DeviceEnvironmentLookup(RestrictedLookupChannel):
+    model = models_device.DeviceEnvironment
+
+
 class AssetLookupBase(RestrictedLookupChannel):
     model = Asset
 

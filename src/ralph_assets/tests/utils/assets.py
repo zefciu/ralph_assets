@@ -22,6 +22,7 @@ from uuid import uuid1
 
 from django.template.defaultfilters import slugify
 
+from ralph.cmdb import models_ci
 from ralph.discovery import models_device
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
@@ -87,10 +88,34 @@ class OfficeInfoFactory(DjangoModelFactory):
 
 
 # TODO:: move it to ralph?
-class CIFactory(DjangoModelFactory):
-    FACTORY_FOR = models_device.DeviceEnvironment
+class CITypeFactory(DjangoModelFactory):
+    FACTORY_FOR = models_ci.CIType
+    name = Sequence(lambda n: 'Name #{}'.format(n))
 
-    name = Sequence(lambda n: 'Device Environment #%s' % n)
+
+# TODO:: move it to ralph?
+class CIFactory(DjangoModelFactory):
+    FACTORY_FOR = models_ci.CI
+
+    @lazy_attribute
+    def uid(self):
+        return str(uuid1())
+    name = Sequence(lambda n: 'Name #{}'.format(n))
+    business_service = False
+    technical_service = True
+    pci_scope = False
+    # layers, m2m
+    barcode = None
+    # content_type = #TODO:: fk models.ForeignKey( ContentType, verbose_name=_("content type"), null=True, blank=True,)
+    object_id = True
+    # content_object = # TODO:: generic.GenericForeignKey('content_type', 'object_id')
+    state = models_ci.CI_STATE_TYPES.INACTIVE.id
+    status = models_ci.CI_STATUS_TYPES.REFERENCE.id
+    type = SubFactory(CITypeFactory)
+    zabbix_id = None
+    # relations, m2m
+    added_manually = False
+    # owners, m2m
 
 
 # TODO:: move it to ralph?
@@ -99,12 +124,13 @@ class DeviceEnvironmentFactory(DjangoModelFactory):
 
     name = Sequence(lambda n: 'Device Environment #%s' % n)
 
-
 # TODO:: move it to ralph?
-class ServiceCatalogFactory(DjangoModelFactory):
+class ServiceCatalogFactory(CIFactory):
     FACTORY_FOR = models_device.ServiceCatalog
 
-    #name = Sequence(lambda n: 'Service Catalog #%s' % n)
+    @lazy_attribute
+    def type(self):
+        return CITypeFactory(name=models_ci.CI_TYPES.SERVICE)
 
 
 class ServiceFactory(DjangoModelFactory):
@@ -223,7 +249,7 @@ class BaseAssetFactory(DjangoModelFactory):
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
-    # service = SubFactory(ServiceCatalogFactory)
+    service = SubFactory(ServiceCatalogFactory)
     service_name = SubFactory(ServiceFactory)
     # sn exists below, as a lazy_attribute
     source = AssetSource.shipment

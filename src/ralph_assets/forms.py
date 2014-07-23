@@ -156,10 +156,14 @@ LOOKUPS = {
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
+    #TODO:: move it to ralph
+    'device_environment': ('ralph_assets.models', 'DeviceEnvironmentLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'licence': ('ralph_assets.models', 'LicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
+    #TODO:: move it to ralph
+    'service': ('ralph_assets.models', 'ServiceLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
 }
 
@@ -940,6 +944,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
+            'device_environment',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -961,9 +966,9 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'remarks',
             'request_date',
             'required_support',
+            'service',
             'service_name',
             'slots',
-            'sn',
             'sn',
             'source',
             'status',
@@ -1062,6 +1067,18 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             add_link='/admin/ralph_assets/budgetinfo/add/',
         )
     )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=False,
+    )
+    device_environment = AutoCompleteSelectField(
+        LOOKUPS['device_environment'],
+        required=False,
+        plugin_options=dict(
+            add_link='/admin/discovery/deviceenvironment/',
+        )
+    )
+
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
@@ -1267,6 +1284,8 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
             ('property_of', 'hostname'),
+            ('hostname', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
@@ -1282,6 +1301,8 @@ class DataCenterEditDeviceForm(EditDeviceForm):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
             ('status', 'slots'),
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
