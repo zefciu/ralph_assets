@@ -22,6 +22,7 @@ from uuid import uuid1
 
 from django.template.defaultfilters import slugify
 
+from ralph.discovery import models_device
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
@@ -83,6 +84,27 @@ class OfficeInfoFactory(DjangoModelFactory):
     @lazy_attribute
     def coa_number(self):
         return str(uuid1())
+
+
+# TODO:: move it to ralph?
+class CIFactory(DjangoModelFactory):
+    FACTORY_FOR = models_device.DeviceEnvironment
+
+    name = Sequence(lambda n: 'Device Environment #%s' % n)
+
+
+# TODO:: move it to ralph?
+class DeviceEnvironmentFactory(DjangoModelFactory):
+    FACTORY_FOR = models_device.DeviceEnvironment
+
+    name = Sequence(lambda n: 'Device Environment #%s' % n)
+
+
+# TODO:: move it to ralph?
+class ServiceCatalogFactory(DjangoModelFactory):
+    FACTORY_FOR = models_device.ServiceCatalog
+
+    #name = Sequence(lambda n: 'Service Catalog #%s' % n)
 
 
 class ServiceFactory(DjangoModelFactory):
@@ -187,6 +209,7 @@ class BaseAssetFactory(DjangoModelFactory):
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)
+    device_environment = SubFactory(DeviceEnvironmentFactory)
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
     location = Sequence(lambda n: 'location #{}'.format(n))
@@ -200,6 +223,7 @@ class BaseAssetFactory(DjangoModelFactory):
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    # service = SubFactory(ServiceCatalogFactory)
     service_name = SubFactory(ServiceFactory)
     # sn exists below, as a lazy_attribute
     source = AssetSource.shipment
