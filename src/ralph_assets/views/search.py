@@ -381,7 +381,7 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True),
             _('Category', field='model__category',
               sort_expression='model__category', bob_tag=True,
-              show_conditions=show_back_office),
+              show_conditions=show_back_office, export=True),
             _('Manufacturer', field='model__manufacturer__name',
               sort_expression='model__manufacturer__name',
               bob_tag=True, export=True, show_conditions=show_back_office),
