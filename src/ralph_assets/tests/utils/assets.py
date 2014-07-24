@@ -22,11 +22,7 @@ from uuid import uuid1
 
 from django.template.defaultfilters import slugify
 
-from ralph.cmdb import models_ci
-from ralph.discovery import models_device
 from ralph.cmdb.tests.utils import (
-    CIFactory,
-    CITypeFactory,
     DeviceEnvironmentFactory,
     ServiceCatalogFactory,
 )

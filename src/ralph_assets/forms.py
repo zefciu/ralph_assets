@@ -55,6 +55,7 @@ from ralph_assets.models import (
     Service,
 )
 from ralph_assets import models_assets
+from ralph.discovery import models_device
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
@@ -156,7 +157,6 @@ LOOKUPS = {
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
-    'device_environment': ('ralph.ui.channels', 'DeviceEnvironmentLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'licence': ('ralph_assets.models', 'LicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
@@ -942,7 +942,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
-            'device_environment',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -964,7 +963,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'remarks',
             'request_date',
             'required_support',
-            'service',
             'service_name',
             'slots',
             'sn',
@@ -1065,18 +1063,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             add_link='/admin/ralph_assets/budgetinfo/add/',
         )
     )
-    service = AutoCompleteSelectField(
-        LOOKUPS['service'],
-        required=False,
-    )
-    device_environment = AutoCompleteSelectField(
-        LOOKUPS['device_environment'],
-        required=False,
-        plugin_options=dict(
-            add_link='/admin/discovery/deviceenvironment/',
-        )
-    )
-
 
     def __init__(self, *args, **kwargs):
         self.fieldsets = asset_fieldset()
@@ -1264,9 +1250,14 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
-            'hostname',
+            'device_environment', 'hostname', 'service',
         )
 
+    device_environment = ModelChoiceField(
+        required=False,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
     hostname = CharField(
         required=False, widget=SimpleReadOnlyWidget(),
     )
@@ -1274,6 +1265,11 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
         required=False,
+    )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=False,
+        label=_('Service catalog'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1294,6 +1290,21 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
+
+    class Meta(BaseEditAssetForm.Meta):
+        fields = BaseEditAssetForm.Meta.fields + (
+            'device_environment', 'service',
+        )
+    device_environment = ModelChoiceField(
+        required=True,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=True,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)

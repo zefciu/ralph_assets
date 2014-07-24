@@ -11,12 +11,8 @@ from __future__ import unicode_literals
 import abc
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
-from django.core.exceptions import PermissionDenied
 from django.db import models
-from django.utils.html import escape
 from lck.django.choices import Choices
-
-from ajax_select import LookupChannel
 
 
 class SavingUser(models.Model):
