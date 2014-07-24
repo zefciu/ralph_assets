@@ -24,6 +24,12 @@ from django.template.defaultfilters import slugify
 
 from ralph.cmdb import models_ci
 from ralph.discovery import models_device
+from ralph.cmdb.tests.utils import (
+    CIFactory,
+    CITypeFactory,
+    DeviceEnvironmentFactory,
+    ServiceCatalogFactory,
+)
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
@@ -85,52 +91,6 @@ class OfficeInfoFactory(DjangoModelFactory):
     @lazy_attribute
     def coa_number(self):
         return str(uuid1())
-
-
-# TODO:: move it to ralph?
-class CITypeFactory(DjangoModelFactory):
-    FACTORY_FOR = models_ci.CIType
-    name = Sequence(lambda n: 'Name #{}'.format(n))
-
-
-# TODO:: move it to ralph?
-class CIFactory(DjangoModelFactory):
-    FACTORY_FOR = models_ci.CI
-
-    @lazy_attribute
-    def uid(self):
-        return str(uuid1())
-    name = Sequence(lambda n: 'Name #{}'.format(n))
-    business_service = False
-    technical_service = True
-    pci_scope = False
-    # layers, m2m
-    barcode = None
-    # content_type = #TODO:: fk models.ForeignKey( ContentType, verbose_name=_("content type"), null=True, blank=True,)
-    object_id = True
-    # content_object = # TODO:: generic.GenericForeignKey('content_type', 'object_id')
-    state = models_ci.CI_STATE_TYPES.INACTIVE.id
-    status = models_ci.CI_STATUS_TYPES.REFERENCE.id
-    type = SubFactory(CITypeFactory)
-    zabbix_id = None
-    # relations, m2m
-    added_manually = False
-    # owners, m2m
-
-
-# TODO:: move it to ralph?
-class DeviceEnvironmentFactory(DjangoModelFactory):
-    FACTORY_FOR = models_device.DeviceEnvironment
-
-    name = Sequence(lambda n: 'Device Environment #%s' % n)
-
-# TODO:: move it to ralph?
-class ServiceCatalogFactory(CIFactory):
-    FACTORY_FOR = models_device.ServiceCatalog
-
-    @lazy_attribute
-    def type(self):
-        return CITypeFactory(name=models_ci.CI_TYPES.SERVICE)
 
 
 class ServiceFactory(DjangoModelFactory):

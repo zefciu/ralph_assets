@@ -19,6 +19,7 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
+from ralph.ui.channels import RestrictedLookupChannel
 from ralph_assets.models_assets import (
     Asset,
     AssetManufacturer,
@@ -31,7 +32,6 @@ from ralph_assets.models_assets import (
     Service,
 )
 from ralph_assets.models_util import (
-    RestrictedLookupChannel,
     WithForm,
 )
 from ralph.discovery.models_util import SavingUser
@@ -196,34 +196,6 @@ class Licence(
 class BudgetInfoLookup(RestrictedLookupChannel):
     model = BudgetInfo
 
-    def get_query(self, q, request):
-        return BudgetInfo.objects.filter(
-            name__icontains=q,
-        ).order_by('name')[:10]
-
-    def get_result(self, obj):
-        return obj.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
-    def format_item_display(self, obj):
-        return escape(obj.name)
-
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
-
-    def get_query(self, q, request):
-        return SoftwareCategory.objects.filter(
-            name__icontains=q
-        ).order_by('name')[:10]
-
-    def get_result(self, obj):
-        return obj.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
-    def format_item_display(self, obj):
-        return escape(obj.name)

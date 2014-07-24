@@ -156,14 +156,12 @@ LOOKUPS = {
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
     'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
-    #TODO:: move it to ralph
-    'device_environment': ('ralph_assets.models', 'DeviceEnvironmentLookup'),
+    'device_environment': ('ralph.ui.channels', 'DeviceEnvironmentLookup'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'licence': ('ralph_assets.models', 'LicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
-    #TODO:: move it to ralph
-    'service': ('ralph_assets.models', 'ServiceLookup'),
+    'service': ('ralph.ui.channels', 'ServiceCatalogLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
 }
 
