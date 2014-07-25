@@ -21,32 +21,33 @@ class TestApiRalph(TestCase):
 
     def test_get_asset(self):
         """Test get asset information by ralph_device_id."""
-        self.support1 = DCSupportFactory()
-        self.support2 = DCSupportFactory()
-        self.category = AssetCategoryFactory()
-        self.model = AssetModelFactory(category=self.category)
-        self.asset = DCAssetFactory(
-            model=self.model,
-            supports=[self.support1, self.support2],
+        support1 = DCSupportFactory()
+        support2 = DCSupportFactory()
+        category = AssetCategoryFactory()
+        model = AssetModelFactory(category=category)
+        asset = DCAssetFactory(
+            model=model,
+            supports=[support1, support2],
         )
-        asset_data = get_asset(self.asset.device_info.ralph_device_id)
-        self.assertEqual(asset_data['sn'], self.asset.sn)
-        self.assertEqual(asset_data['barcode'], self.asset.barcode)
-        self.assertEqual(asset_data['supports'][0]['name'], self.support1.name)
-        self.assertEqual(asset_data['supports'][0]['url'], self.support1.url)
-        self.assertEqual(asset_data['supports'][1]['name'], self.support2.name)
-        self.assertEqual(asset_data['supports'][1]['url'], self.support2.url)
+        asset_data = get_asset(asset.device_info.ralph_device_id)
+        self.assertEqual(asset_data['sn'], asset.sn)
+        self.assertEqual(asset_data['barcode'], asset.barcode)
+        self.assertEqual(asset_data['supports'][0]['name'], support1.name)
+        self.assertEqual(asset_data['supports'][0]['url'], support1.url)
+        self.assertEqual(asset_data['supports'][1]['name'], support2.name)
+        self.assertEqual(asset_data['supports'][1]['url'], support2.url)
         self.assertEqual(
-            asset_data['required_support'], self.asset.required_support,
+            asset_data['required_support'], asset.required_support,
         )
 
-    def test_get_asset_without_asset(self):
+    def test_none_existisng_asset(self):
+        """Getting an assets when assest does not exist"""
         self.assertEqual(get_asset(666), None)
 
     def test_get_asset_with_empty_asset_source(self):
         """Getting an asset with empty 'source' field should also succeed."""
-        self.category = AssetCategoryFactory()
-        self.model = AssetModelFactory(category=self.category)
-        self.asset = DCAssetFactory(model=self.model, source=None)
-        self.asset_data = get_asset(self.asset.device_info.ralph_device_id)
-        self.assertEqual(self.asset_data['source'], None)
+        category = AssetCategoryFactory()
+        model = AssetModelFactory(category=category)
+        asset = DCAssetFactory(model=model, source=None)
+        asset_data = get_asset(asset.device_info.ralph_device_id)
+        self.assertEqual(asset_data['source'], None)
