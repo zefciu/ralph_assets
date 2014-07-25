@@ -5,7 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from factory import Sequence, lazy_attribute
+from factory import (
+    Sequence,
+    lazy_attribute,
+)
 from factory.django import DjangoModelFactory
 
 from django.contrib.auth.models import User
@@ -13,6 +16,9 @@ from django.test import TestCase
 
 
 class UserFactory(DjangoModelFactory):
+    """
+    User *password* is 'ralph'.
+    """
     FACTORY_FOR = User
 
     username = Sequence(lambda n: 'user_%d' % n)
@@ -20,6 +26,13 @@ class UserFactory(DjangoModelFactory):
     @lazy_attribute
     def email(self):
         return '%s@example.com' % self.username
+
+    @classmethod
+    def _generate(cls, create, attrs):
+        user = super(UserFactory, cls)._generate(create, attrs)
+        user.set_password('ralph')
+        user.save()
+        return user
 
 
 class AdminFactory(UserFactory):

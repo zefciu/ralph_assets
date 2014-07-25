@@ -31,6 +31,8 @@ def get_return_link(mode):
     return "/assets/%s/" % mode
 
 
+# TODO:: use it
+# @ralph_permission(Perm.has_assets_access)  # 'Perm.has_core_access' are used by default
 class ACLGateway(Base):
     """
     Assets module class which mainly checks user access to page.
