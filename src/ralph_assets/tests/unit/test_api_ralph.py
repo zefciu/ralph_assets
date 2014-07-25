@@ -9,9 +9,9 @@ from django.test import TestCase
 
 from ralph_assets.api_ralph import get_asset
 from ralph_assets.tests.utils.assets import (
-    DCAssetFactory,
     AssetCategoryFactory,
     AssetModelFactory,
+    DCAssetFactory,
 )
 from ralph_assets.tests.utils.supports import DCSupportFactory
 
