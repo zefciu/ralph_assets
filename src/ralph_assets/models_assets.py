@@ -42,7 +42,12 @@ from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
-from ralph.discovery.models_device import Device, DeviceType
+from ralph.discovery.models_device import (
+    Device,
+    DeviceEnvironment,
+    DeviceType,
+    ServiceCatalog,
+)
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
 from ralph_assets.utils import iso2_to_iso3
@@ -534,6 +539,18 @@ class Asset(
         help_text=HOSTNAME_FIELD_HELP_TIP,
     )
     required_support = models.BooleanField(default=False)
+    service = models.ForeignKey(
+        ServiceCatalog,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+    device_environment = models.ForeignKey(
+        DeviceEnvironment,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
