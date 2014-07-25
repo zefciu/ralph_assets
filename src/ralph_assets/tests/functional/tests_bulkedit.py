@@ -51,7 +51,6 @@ class TestBulkEdit(TestCase):
         self.common_asset_data = {  # DC & BO common data
             'barcode': 'barcode',
             'deprecation_rate': '25',
-            'hostname': 'POLPC12345',
             'invoice_date': '2011-11-14',
             'invoice_no': 'invoice_no',
             'model': self.model,
@@ -183,6 +182,9 @@ class TestBulkEdit(TestCase):
         3. check if all fields are set like the added asset.
         """
         bo_asset_data = self.common_asset_data.copy()
+        bo_asset_data.update({
+            'hostname': 'POLPC12345',
+        })
         bo_asset_data.update({
             'sn': 'bo-sn-number',
             'type': models_assets.AssetType.back_office,

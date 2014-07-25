@@ -238,21 +238,33 @@ class ReportViewBase(AssetsBase):
         ManufacturerCategoryModelReport,
         StatusModelReport,
     ]
-    modes = ['dc', 'back_office', 'all']
+    modes = [
+        {
+            'name': 'all',
+            'verbose_name': 'All',
+        },
+        {
+            'name': 'dc',
+            'verbose_name': 'Only data center',
+        },
+        {
+            'name': 'back_office',
+            'verbose_name': 'Only back office',
+        },
+    ]
 
     def get_sidebar_items(self, base_sidebar_caption):
         sidebar_menu = []
-        for mode in self.modes:
-            sidebar_menu += [MenuHeader(_('Reports {mode}'.format(mode=mode)))]
-            sidebar_menu += [
-                MenuItem(
-                    label=r.name, href=reverse('report_detail', kwargs={
-                        'mode': mode,
-                        'slug': r.slug,
-                    })
-                )
-                for r in self.reports
-            ]
+        sidebar_menu += [MenuHeader(_('Reports'))]
+        sidebar_menu += [
+            MenuItem(
+                label=r.name, href=reverse('report_detail', kwargs={
+                    'mode': 'all',
+                    'slug': r.slug,
+                })
+            )
+            for r in self.reports
+        ]
         sidebar_menu.extend(super(ReportViewBase, self).get_sidebar_items(
             base_sidebar_caption
         ))
@@ -272,9 +284,9 @@ class ReportDetail(ReportViewBase):
                 return report()
         return None
 
-    def dispatch(self, request, slug, mode, *args, **kwargs):
-        self.slug = slug
-        self.asset_type = MODE2ASSET_TYPE.get(mode, None)
+    def dispatch(self, request, *args, **kwargs):
+        self.slug = kwargs.pop('slug')
+        self.asset_type = MODE2ASSET_TYPE.get(kwargs.get('mode'), None)
         self.report = self.get_report(self.slug)
         if not self.report:
             raise Http404
@@ -286,6 +298,8 @@ class ReportDetail(ReportViewBase):
             'report': self.report,
             'subsection': self.report.name,
             'result': self.report.execute(self.asset_type),
-            'cache_key': self.asset_type or 'all' + self.slug,
+            'cache_key': (str(self.asset_type) or 'all') + self.slug,
+            'modes': self.modes,
+            'slug': self.slug,
         })
         return context_data

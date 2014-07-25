@@ -10,23 +10,25 @@
         $('.report').find('li:has(ul)')
             .click(function(event) {
                 if (this == event.target) {
-                    $('span.fugue-icon', this).toggleClass('fugue-chevron');
                     $(this).children('ul').toggle();
+                    $(this).toggleClass('expanded collapsed');
                 }
                 return false;
             })
-            .each(function(){
-                    $('span.fugue-icon', this).addClass('fugue-chevron-expand');
-            })
-            .children('ul').hide();
     };
 
     Report.prototype.expand_all = function() {
-        $('.report').find('li:has(ul)').children().show();
+        $('.report').find('li')
+            .removeClass('collapsed')
+            .addClass('expanded')
+            .children('ul').show();
     };
 
     Report.prototype.collapse_all = function() {
-        $('.report').find('li:has(ul)').children().hide();
+        $('.report').find('li')
+            .removeClass('expanded')
+            .addClass('collapsed')
+            .children('ul').hide();
     };
 
     TableListing.prototype.toggleChildDisplay = function(){

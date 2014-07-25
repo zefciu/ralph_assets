@@ -22,6 +22,10 @@ from uuid import uuid1
 
 from django.template.defaultfilters import slugify
 
+from ralph.cmdb.tests.utils import (
+    DeviceEnvironmentFactory,
+    ServiceCatalogFactory,
+)
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
@@ -188,7 +192,7 @@ class BaseAssetFactory(DjangoModelFactory):
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)
-    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
+    device_environment = SubFactory(DeviceEnvironmentFactory)
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
     location = Sequence(lambda n: 'location #{}'.format(n))
@@ -202,6 +206,7 @@ class BaseAssetFactory(DjangoModelFactory):
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    service = SubFactory(ServiceCatalogFactory)
     service_name = SubFactory(ServiceFactory)
     # sn exists below, as a lazy_attribute
     source = AssetSource.shipment
@@ -237,4 +242,5 @@ class DCAssetFactory(BaseAssetFactory):
 
 class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
+    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
     office_info = SubFactory(OfficeInfoFactory)
