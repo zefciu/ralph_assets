@@ -1,7 +1,7 @@
 Change Log
 ----------
 
-next-release (dirty version):
+DEV:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To be announced
 

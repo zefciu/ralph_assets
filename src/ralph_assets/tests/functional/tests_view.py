@@ -400,9 +400,6 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_device_edit_form_show_fields(self):
         required_fields = self.visible_edit_form_fields[:]
-        required_fields.extend([
-            'device_environment', 'service',
-        ])
         device = DCAssetFactory()
         form_url = reverse(
             'device_edit', kwargs={'mode': 'dc', 'asset_id': device.id},
@@ -525,9 +522,6 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_device_edit_form_show_fields(self):
         required_fields = self.visible_edit_form_fields[:]
-        required_fields.extend([
-            'device_environment', 'service',
-        ])
         device = BOAssetFactory()
         form_url = reverse(
             'device_edit', kwargs={
