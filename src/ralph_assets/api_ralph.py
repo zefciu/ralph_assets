@@ -34,6 +34,16 @@ class UnassignedDCDeviceLookup(DCDeviceLookup):
         ).distinct().order_by('sn')[:10]
 
 
+def get_asset_supports(asset):
+    supports = []
+    for support in asset.supports.all():
+        supports.append({
+            'name': support.name,
+            'url': support.url,
+        })
+    return supports
+
+
 def get_asset(device_id):
     try:
         asset = Asset.objects.get(device_info__ralph_device_id=device_id)
@@ -79,6 +89,9 @@ def get_asset(device_id):
         'u_level': asset.device_info.u_level,
         'u_height': asset.device_info.u_height,
         'rack': asset.device_info.rack,
+        'required_support': asset.required_support,
+        'supports': get_asset_supports(asset),
+        'url': asset.url,
     }
 
 
