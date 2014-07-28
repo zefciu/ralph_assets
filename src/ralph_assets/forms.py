@@ -1172,25 +1172,60 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
 
 class BackOfficeAddDeviceForm(AddDeviceForm):
 
+    class Meta(BaseAddAssetForm.Meta):
+        fields = BaseAddAssetForm.Meta.fields + (
+            'device_environment', 'service',
+        )
+
+    device_environment = ModelChoiceField(
+        required=False,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
         required=False,
     )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=False,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = move_after(
-            self.fields.keyOrder, 'warehouse', 'purpose'
-        )
+        for after, field in (
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
+
+    class Meta(BaseAddAssetForm.Meta):
+        fields = BaseAddAssetForm.Meta.fields + (
+            'device_environment', 'service', 'slots',
+        )
+    device_environment = ModelChoiceField(
+        required=True,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=True,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(DataCenterAddDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
             ('status', 'slots'),
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
