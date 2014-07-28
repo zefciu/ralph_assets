@@ -61,6 +61,7 @@ def get_asset_data():
         'delivery_date': datetime.date(2013, 1, 7),
         'deprecation_end_date': datetime.date(2013, 7, 25),
         'deprecation_rate': 77,
+        'device_environment': assets_utils.DeviceEnvironmentFactory().id,
         'invoice_date': datetime.date(2009, 2, 23),
         'invoice_no': 'Invoice no #3',
         'loan_end_date': datetime.date(2013, 12, 29),
@@ -75,6 +76,7 @@ def get_asset_data():
         'provider_order_date': datetime.date(2014, 3, 17),
         'remarks': 'Remarks #3',
         'request_date': datetime.date(2014, 6, 9),
+        'service': assets_utils.ServiceCatalogFactory().id,
         'service_name': assets_utils.ServiceFactory().id,
         'source': models_assets.AssetSource.shipment.id,
         'status': models_assets.AssetStatus.new.id,
@@ -156,15 +158,16 @@ class TestDevicesView(TestCase):
     def setUp(self):
         self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
-            'deprecation_end_date', 'deprecation_rate', 'invoice_date',
-            'invoice_no', 'location', 'model', 'niw', 'order_no', 'owner',
-            'price', 'property_of', 'provider', 'provider_order_date',
-            'remarks', 'request_date', 'service_name', 'sn', 'source',
-            'status', 'task_url', 'type', 'user', 'warehouse',
+            'deprecation_end_date', 'deprecation_rate', 'device_environment',
+            'invoice_date', 'invoice_no', 'location', 'model', 'niw',
+            'order_no', 'owner', 'price', 'property_of', 'provider',
+            'provider_order_date', 'remarks', 'request_date', 'service',
+            'service_name', 'sn', 'source', 'status', 'task_url', 'type',
+            'user', 'warehouse',
         ]
         self._visible_edit_form_fields = self._visible_add_form_fields[:]
         self._visible_edit_form_fields.extend([
-            'device_environment', 'licences_text', 'service', 'supports_text',
+            'licences_text', 'supports_text',
         ])
 
     def get_asset_form_data(self):
@@ -350,7 +353,7 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_edit_device(self):
         """
-        Add device with all fields filled.
+        Edit device with all fields filled.
 
         - generate asset data d1
         - create asset a1
@@ -359,10 +362,6 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         - assert a1's data is the same as d1 data
         """
         self.new_asset_data = self.asset_data.copy()
-        self.new_asset_data.update({
-            'device_environment': assets_utils.DeviceEnvironmentFactory().id,
-            'service': assets_utils.ServiceCatalogFactory().id,
-        })
         supports = self._update_with_supports(self.new_asset_data)
         new_device_data = self.device_data.copy()
         asset = DCAssetFactory()
@@ -481,9 +480,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         """
         self.new_asset_data = self.asset_data.copy()
         self.new_asset_data.update({
-            'device_environment': assets_utils.DeviceEnvironmentFactory().id,
             'hostname': 'XXXYY00001',
-            'service': assets_utils.ServiceCatalogFactory().id,
         })
         supports = self._update_with_supports(self.new_asset_data)
         new_office_data = self.office_data.copy()
