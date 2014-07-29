@@ -638,13 +638,13 @@ class Asset(
         return [obj] if obj else []
 
     def get_synced_fields(self):
-        return ['barcode']
+        return ['service', 'device_environment']
 
     def save(self, commit=True, sync=True, *args, **kwargs):
         _replace_empty_with_none(self, ['source', 'hostname'])
-        instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         if sync:
-            SyncFieldMixin.save(self)
+            SyncFieldMixin.save(self, *args, **kwargs)
+        instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 
     def get_data_icon(self):
