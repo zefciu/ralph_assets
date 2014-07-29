@@ -32,6 +32,17 @@ def get_return_link(mode):
     return "/assets/%s/" % mode
 
 
+class ACLGateway(object):
+    """
+    Assets module class which mainly checks user access to page.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.get_profile().has_perm(Perm.has_assets_access):
+            raise PermissionDenied
+        return super(ACLGateway, self).dispatch(request, *args, **kwargs)
+
+
 class Base(TemplateView):
     columns = []
     status = ''
@@ -43,19 +54,19 @@ class Base(TemplateView):
                 label=_('Data center'),
                 name='dc',
                 fugue_icon='fugue-building',
-                href='/assets/dc',
+                href=reverse('asset_search', kwargs={'mode': 'dc'}),
             ),
             MenuItem(
                 label=_('BackOffice'),
                 fugue_icon='fugue-printer',
                 name='back_office',
-                href='/assets/back_office',
+                href=reverse('asset_search', kwargs={'mode': 'back_office'}),
             ),
             MenuItem(
-                label=_('Licences'),
-                fugue_icon='fugue-cheque',
-                name='licences',
-                href=reverse('licence_list'),
+                label='Supports',
+                fugue_icon='fugue-lifebuoy',
+                name=_('supports'),
+                href=reverse('support_list'),
             ),
             MenuItem(
                 label=_('User list'),
@@ -64,10 +75,10 @@ class Base(TemplateView):
                 href=reverse('user_list'),
             ),
             MenuItem(
-                label='Supports',
-                fugue_icon='fugue-lifebuoy',
-                name=_('supports'),
-                href=reverse('support_list'),
+                label=_('Licences'),
+                fugue_icon='fugue-cheque',
+                name='licences',
+                href=reverse('licence_list'),
             ),
             MenuItem(
                 label='Reports',
@@ -110,7 +121,7 @@ class Base(TemplateView):
         )
         footer_items.append(
             MenuItem(
-                'lllogout',
+                'logout',
                 fugue_icon='fugue-door-open-out',
                 view_name='logout',
                 view_args=[details or 'info', ''],
@@ -137,17 +148,6 @@ class Base(TemplateView):
         return conetext
 
 
-class ACLGateway(object):
-    """
-    Assets module class which mainly checks user access to page.
-    """
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.get_profile().has_perm(Perm.has_assets_access):
-            raise PermissionDenied
-        return super(ACLGateway, self).dispatch(request, *args, **kwargs)
-
-
 class AssetsBase(ACLGateway, Base):
     template_name = "assets/base.html"
     sidebar_selected = None
@@ -171,47 +171,6 @@ class AssetsBase(ACLGateway, Base):
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
         })
         return ret
-
-    def get_mainmenu_items(self):
-        mainmenu = [
-            MenuItem(
-                label=_('Data center'),
-                name='dc',
-                fugue_icon='fugue-building',
-                href='/assets/dc',
-            ),
-            MenuItem(
-                label=_('BackOffice'),
-                fugue_icon='fugue-printer',
-                name='back_office',
-                href='/assets/back_office',
-            ),
-            MenuItem(
-                label=_('Licences'),
-                fugue_icon='fugue-cheque',
-                name='licences',
-                href=reverse('licence_list'),
-            ),
-            MenuItem(
-                label=_('User list'),
-                fugue_icon='fugue-user-green-female',
-                name='user list',
-                href=reverse('user_list'),
-            ),
-            MenuItem(
-                label='Supports',
-                fugue_icon='fugue-lifebuoy',
-                name=_('supports'),
-                href=reverse('support_list'),
-            ),
-            MenuItem(
-                label='Reports',
-                fugue_icon='fugue-table',
-                name=_('reports'),
-                href=reverse('reports'),
-            ),
-        ]
-        return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
         if self.mode in ('back_office', 'dc'):
