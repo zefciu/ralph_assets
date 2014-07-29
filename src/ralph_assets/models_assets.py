@@ -49,6 +49,7 @@ from ralph.discovery.models_device import (
     ServiceCatalog,
 )
 from ralph.discovery.models_util import SavingUser
+from ralph.util.models import SyncFieldMixin
 from ralph_assets.models_util import WithForm
 from ralph_assets.utils import iso2_to_iso3
 
@@ -407,6 +408,7 @@ class Asset(
     SavingUser,
     SoftDeletable,
     WithForm,
+    SyncFieldMixin,
 ):
     '''
     Asset model contain fields with basic information about single asset
@@ -557,13 +559,9 @@ class Asset(
 
     @property
     def venture(self):
-        if not self.device_info or not self.device_info.ralph_device_id:
-            return None
         try:
-            return Device.objects.get(
-                pk=self.device_info.ralph_device_id,
-            ).venture
-        except Device.DoesNotExist:
+            self.get_ralph_device().venture
+        except AttributeError:
             return None
 
     @property
@@ -625,8 +623,26 @@ class Asset(
                 if different_country:
                     self.generate_hostname(commit, template_vars)
 
-    def save(self, commit=True, *args, **kwargs):
+    def get_ralph_device(self):
+        if not self.device_info or not self.device_info.ralph_device_id:
+            return None
+        try:
+            return Device.objects.get(
+                pk=self.device_info.ralph_device_id,
+            )
+        except Device.DoesNotExist:
+            return None
+
+    def get_synced_objs_and_fields(self):
+        # Implementation of the abstract method from SyncFieldMixin.
+        fields = ['service', 'device_environment']
+        obj = self.get_ralph_device()
+        return [(obj, fields)] if obj else []
+
+    def save(self, commit=True, sync=True, *args, **kwargs):
         _replace_empty_with_none(self, ['source', 'hostname'])
+        if sync:
+            SyncFieldMixin.save(self, *args, **kwargs)
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 
