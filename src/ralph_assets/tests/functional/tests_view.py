@@ -32,7 +32,6 @@ from ralph_assets.tests.utils.assets import (
     AssetModelFactory,
     BOAssetFactory,
     DCAssetFactory,
-    DeviceInfoFactory,
     WarehouseFactory,
 )
 from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
@@ -129,7 +128,7 @@ class BaseViewsTest(TestCase):
         Useful when, eg. request data for add|edit asset is needed.
         """
         response = self.client.get(url)
-        form_data= {}
+        form_data = {}
         for form_name in forms_name:
             form_data.update(response.context[form_name].__dict__['initial'])
         return form_data
@@ -1292,12 +1291,12 @@ class TestSyncFieldMixin(TestDevicesView):
         url = reverse(
             'device_edit', kwargs={'mode': 'dc', 'asset_id': asset.id},
         )
-        data = self.get_object_form_data(url, ['asset_form', 'additional_info'])
+        data = self.get_object_form_data(url, ['asset_form', 'additional_info'])  # noqa
         data['ralph_device_id'] = device.id
         data['service'] = service.id
         data['device_environment'] = device_environment.id
         data['asset'] = 1
-        response = self.client.post(url, data, follow=True)
+        self.client.post(url, data, follow=True)
 
         asset = Asset.objects.all()[0]
         device = Device.objects.get(pk=device.id)
