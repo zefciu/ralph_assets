@@ -51,40 +51,40 @@ class Base(TemplateView):
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                label=_('Data center'),
-                name='dc',
                 fugue_icon='fugue-building',
                 href=reverse('asset_search', kwargs={'mode': 'dc'}),
+                label=_('Data center'),
+                name='dc',
             ),
             MenuItem(
-                label=_('BackOffice'),
                 fugue_icon='fugue-printer',
-                name='back_office',
                 href=reverse('asset_search', kwargs={'mode': 'back_office'}),
+                label=_('BackOffice'),
+                name='back_office',
             ),
             MenuItem(
-                label='Supports',
                 fugue_icon='fugue-lifebuoy',
-                name=_('supports'),
                 href=reverse('support_list'),
+                label=_('Supports'),
+                name='supports',
             ),
             MenuItem(
-                label=_('User list'),
                 fugue_icon='fugue-user-green-female',
-                name='user list',
                 href=reverse('user_list'),
+                label=_('User list'),
+                name='user list',
             ),
             MenuItem(
-                label=_('Licences'),
                 fugue_icon='fugue-cheque',
-                name='licences',
                 href=reverse('licence_list'),
+                label=_('Licences'),
+                name='licences',
             ),
             MenuItem(
-                label='Reports',
                 fugue_icon='fugue-table',
-                name=_('reports'),
                 href=reverse('reports'),
+                label=_('Reports'),
+                name='reports',
             ),
         ]
         return mainmenu
@@ -94,39 +94,49 @@ class Base(TemplateView):
         if settings.BUGTRACKER_URL:
             footer_items.append(
                 MenuItem(
-                    'Report a bug', fugue_icon='fugue-bug', pull_right=True,
-                    href=settings.BUGTRACKER_URL
+                    fugue_icon='fugue-bug',
+                    href=settings.BUGTRACKER_URL,
+                    label=_('Report a bug'),
+                    pull_right=True,
                 )
             )
         footer_items.append(
             MenuItem(
-                "Version %s" % '.'.join((str(part) for part in VERSION)),
                 fugue_icon='fugue-document-number',
                 href=settings.CHANGELOG_URL,
+                label=_(
+                    "Version {version}".format(
+                        version='.'.join((str(part) for part in VERSION)),
+                    ),
+                ),
             )
         )
         if self.request.user.is_staff:
             footer_items.append(
-                MenuItem('Admin', fugue_icon='fugue-toolbox', href='/admin')
+                MenuItem(
+                    fugue_icon='fugue-toolbox',
+                    href='/admin',
+                    label=_('Admin'),
+                )
             )
         footer_items.append(
             MenuItem(
-                '%s (preference)' % self.request.user,
                 fugue_icon='fugue-user',
-                view_name='preference',
-                view_args=[details or 'info', ''],
-                pull_right=True,
                 href=reverse('user_preference', args=[]),
+                label=_('{user} (preference)'.format(user=self.request.user)),
+                pull_right=True,
+                view_args=[details or 'info', ''],
+                view_name='preference',
             )
         )
         footer_items.append(
             MenuItem(
-                'logout',
                 fugue_icon='fugue-door-open-out',
-                view_name='logout',
-                view_args=[details or 'info', ''],
-                pull_right=True,
                 href=settings.LOGOUT_URL,
+                label=_('logout'),
+                pull_right=True,
+                view_args=[details or 'info', ''],
+                view_name='logout',
             )
         )
         return footer_items
