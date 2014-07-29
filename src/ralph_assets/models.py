@@ -44,8 +44,8 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
+from ralph.ui.channels import RestrictedLookupChannel
 from ralph_assets.models_util import (
-    RestrictedLookupChannel,
     WithForm,
 )
 from ralph.discovery.models import Device, DeviceType
@@ -70,12 +70,6 @@ class DeviceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
-    def get_item_url(self, obj):
-        return obj.url
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         return """
         <span class="asset-model">{model}</span>
@@ -86,9 +80,6 @@ class DeviceLookup(RestrictedLookupChannel):
             barcode=escape(obj.barcode or ''),
             sn=escape(obj.sn),
         )
-
-    def get_base_objects(self):
-        return self.model.objects
 
 
 class FreeLicenceLookup(RestrictedLookupChannel):
@@ -134,12 +125,6 @@ class FreeLicenceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
-    def get_item_url(self, obj):
-        return obj.url
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         free = str(obj.number_bought - obj.assets.count() - obj.users.count())
         return """
@@ -170,12 +155,6 @@ class LicenceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
-    def get_item_url(self, obj):
-        return obj.url
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         return """
             <span class="licence-bought">{bought}</span>
@@ -186,9 +165,6 @@ class LicenceLookup(RestrictedLookupChannel):
             name=escape(obj.software_category.name or ''),
             niw=escape(obj.niw),
         )
-
-    def get_base_objects(self):
-        return self.model.objects
 
 
 class SupportLookup(RestrictedLookupChannel):
@@ -204,9 +180,6 @@ class SupportLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         return """
             <span class='support-contract_id'>{contract_id}</span>
@@ -218,12 +191,6 @@ class SupportLookup(RestrictedLookupChannel):
             expired=_('expired'),
             end=obj.get_natural_end_support(),
         )
-
-    def get_item_url(self, obj):
-        return obj.url
-
-    def get_base_objects(self):
-        return self.model.objects
 
 
 class RalphDeviceLookup(RestrictedLookupChannel):
@@ -242,9 +209,6 @@ class RalphDeviceLookup(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return """
@@ -269,12 +233,6 @@ class AssetLookupBase(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
-
-    def get_item_url(self, obj):
-        return obj.url
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return '{}'.format(escape(unicode(obj)))
@@ -313,12 +271,6 @@ class AssetModelLookup(RestrictedLookupChannel):
             ) & Q(type=self.type)
         ).order_by('name')[:10]
 
-    def get_result(self, obj):
-        return obj.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         manufacturer = getattr(obj, 'manufacturer', None) or '-'
         category = getattr(obj, 'category', None) or '-'
@@ -349,9 +301,6 @@ class ManufacturerLookup(RestrictedLookupChannel):
             'name'
         )[:10]
 
-    def get_result(self, obj):
-        return obj.name
-
     def format_item_display(self, obj):
         return "<span>{name}</span>".format(name=obj.name)
 
@@ -363,12 +312,6 @@ class SoftwareCategoryLookup(RestrictedLookupChannel):
         return SoftwareCategory.objects.filter(
             name__icontains=q
         ).order_by('name')[:10]
-
-    def get_result(self, obj):
-        return obj.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return "<span>{name}</span>".format(name=obj.name)
@@ -384,9 +327,6 @@ class WarehouseLookup(RestrictedLookupChannel):
 
     def get_result(self, obj):
         return obj.id
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return escape(obj.name)
@@ -465,9 +405,6 @@ class UserLookup(RestrictedLookupChannel):
 
     def get_item_url(self, obj):
         return reverse('user_view', args=(obj.username,))
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return """

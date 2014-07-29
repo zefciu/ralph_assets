@@ -55,6 +55,7 @@ from ralph_assets.models import (
     Service,
 )
 from ralph_assets import models_assets
+from ralph.discovery import models_device
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
@@ -160,6 +161,7 @@ LOOKUPS = {
     'licence': ('ralph_assets.models', 'LicenceLookup'),
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
+    'service': ('ralph.ui.channels', 'ServiceCatalogLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
 }
 
@@ -964,7 +966,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'service_name',
             'slots',
             'sn',
-            'sn',
             'source',
             'status',
             'support_period',
@@ -1171,25 +1172,60 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
 
 class BackOfficeAddDeviceForm(AddDeviceForm):
 
+    class Meta(BaseAddAssetForm.Meta):
+        fields = BaseAddAssetForm.Meta.fields + (
+            'device_environment', 'service',
+        )
+
+    device_environment = ModelChoiceField(
+        required=False,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
         required=False,
     )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=False,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = move_after(
-            self.fields.keyOrder, 'warehouse', 'purpose'
-        )
+        for after, field in (
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
+        ):
+            self.fieldsets['Basic Info'].append(field)
+            move_after(self.fieldsets['Basic Info'], after, field)
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
+
+    class Meta(BaseAddAssetForm.Meta):
+        fields = BaseAddAssetForm.Meta.fields + (
+            'device_environment', 'service', 'slots',
+        )
+    device_environment = ModelChoiceField(
+        required=True,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=True,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(DataCenterAddDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
             ('status', 'slots'),
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
@@ -1249,9 +1285,14 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
-            'hostname',
+            'device_environment', 'hostname', 'service',
         )
 
+    device_environment = ModelChoiceField(
+        required=False,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
     hostname = CharField(
         required=False, widget=SimpleReadOnlyWidget(),
     )
@@ -1260,6 +1301,11 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
         label=_('Purpose'),
         required=False,
     )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=False,
+        label=_('Service catalog'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
@@ -1267,6 +1313,8 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
             ('property_of', 'hostname'),
+            ('hostname', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
@@ -1278,10 +1326,27 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
 
 class DataCenterEditDeviceForm(EditDeviceForm):
 
+    class Meta(BaseEditAssetForm.Meta):
+        fields = BaseEditAssetForm.Meta.fields + (
+            'device_environment', 'service',
+        )
+    device_environment = ModelChoiceField(
+        required=True,
+        queryset=models_device.DeviceEnvironment.objects.all(),
+        label=_('Environment'),
+    )
+    service = AutoCompleteSelectField(
+        LOOKUPS['service'],
+        required=True,
+        label=_('Service catalog'),
+    )
+
     def __init__(self, *args, **kwargs):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
             ('status', 'slots'),
+            ('property_of', 'device_environment'),
+            ('device_environment', 'service'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
