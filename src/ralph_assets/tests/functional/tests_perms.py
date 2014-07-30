@@ -7,28 +7,13 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.test.client import Client
 
 from ralph.account.models import BoundPerm, Perm
-from ralph.ui.tests.global_utils import login_as_su
+from ralph.ui.tests.global_utils import (
+    login_as_su,
+    login_as_user,
+)
 from ralph_assets.tests.utils import UserFactory
-
-
-def login_as_user(user=None, password='ralph', *args, **kwargs):
-    if not user:
-        user = UserFactory(*args, **kwargs)
-        user.set_password(password)
-        user.save()
-    client = Client()
-    client.login(username=user.username, password=password)
-    return client
-
-    @classmethod
-    def _generate(cls, create, attrs):
-        user = super(UserFactory, cls)._generate(create, attrs)
-
-        post_save.connect(handler_create_user_profile, auth_models.User)
-        return user
 
 
 class ACLInheritanceTest(TestCase):
@@ -77,7 +62,6 @@ class TestAssetModulePerms(TestCase):
             is_staff=False,
             is_superuser=False,
         )
-        # TODO:: move it to contructor ;P
         no_access_user.get_profile().boundperm_set.all().delete()
         client = login_as_user(no_access_user)
         response = client.get(self.assets_module_url, follow=True)
@@ -88,8 +72,6 @@ class TestAssetModulePerms(TestCase):
             is_staff=False,
             is_superuser=False,
         )
-
-        # TODO:: move it to contructor ;P
         BoundPerm(
             profile=user_with_access.get_profile(),
             perm=Perm.has_assets_access,
@@ -97,5 +79,4 @@ class TestAssetModulePerms(TestCase):
 
         client = login_as_user(user_with_access)
         response = client.get(self.assets_module_url, follow=True)
-        #TODO:: ralph-core blocks: "You don't have permissions for this resource."
         self.assertEqual(response.status_code, 200)

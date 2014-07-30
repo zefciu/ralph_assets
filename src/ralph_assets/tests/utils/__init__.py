@@ -13,6 +13,17 @@ from factory.django import DjangoModelFactory
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.test.client import Client
+
+
+def login_as_user(user=None, password='ralph', *args, **kwargs):
+    if not user:
+        user = UserFactory(*args, **kwargs)
+        user.set_password(password)
+        user.save()
+    client = Client()
+    client.login(username=user.username, password=password)
+    return client
 
 
 class UserFactory(DjangoModelFactory):
