@@ -103,7 +103,7 @@ class Base(TemplateView):
         footer_items.append(
             MenuItem(
                 fugue_icon='fugue-document-number',
-                href=settings.CHANGELOG_URL,
+                href=settings.ASSETS_CHANGELOG_URL,
                 label=_(
                     "Version {version}".format(
                         version='.'.join((str(part) for part in VERSION)),
