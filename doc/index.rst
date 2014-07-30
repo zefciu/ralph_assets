@@ -15,6 +15,7 @@ every device, for what, and how much it costs.
 
    quickstart
    installation
+   configuration
    transitions
 
 

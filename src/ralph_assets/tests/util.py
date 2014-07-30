@@ -54,8 +54,8 @@ DEFAULT_BO_VALUE = {
 
 SCREEN_ERROR_MESSAGES = dict(
     duplicated_sn_or_bc=cgi.escape((
-        "Please correct errors and check both"
-        "\"serial numbers\" and \"barcodes\" for duplicates"
+        'Please correct errors and check both '
+        '"serial numbers" and "barcodes" for duplicates'
     ), quote=True),
     duplicated_sn_in_field='There are duplicates in field.',
     contain_white_character="Item can't contain white characters.",

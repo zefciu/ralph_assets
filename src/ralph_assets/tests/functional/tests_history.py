@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 
 from ralph_assets.models_assets import (
     Asset,
@@ -20,6 +21,7 @@ from ralph_assets.tests.utils.assets import (
     AssetManufacturerFactory,
     AssetOwnerFactory,
     AssetModelFactory,
+    BOAssetFactory,
     WarehouseFactory,
 )
 from ralph.business.models import Venture
@@ -124,6 +126,27 @@ class HistoryAssetsView(TestCase):
             [asset_history[0].old_value, asset_history[0].new_value],
             [self.asset_params['barcode'], self.asset_change_params['barcode']]
         )
+
+    def test_change_required_support(self):
+        asset = BOAssetFactory()
+        url = reverse('device_edit', kwargs={
+            'mode': 'back_office',
+            'asset_id': asset.id,
+        })
+        response = self.client.get(url)
+        form = response.context['asset_form']
+        update_dict = form.__dict__['initial']
+        update_dict.update({
+            'required_support': 1,
+            'asset': True,
+        })
+        response = self.client.post(url, update_dict)
+        url = reverse('device_history', kwargs={
+            'mode': 'back_office',
+            'asset_id': asset.id,
+        })
+        response = self.client.get(url)
+        self.assertContains(response, 'required_support')
 
 
 class ConnectAssetWithDevice(TestCase):

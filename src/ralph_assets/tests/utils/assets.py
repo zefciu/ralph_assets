@@ -5,13 +5,21 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
+import itertools
 import random
-from factory import Sequence, SubFactory, lazy_attribute
+from factory import (
+    fuzzy,
+    lazy_attribute,
+    Sequence,
+    SubFactory,
+)
 from factory.django import DjangoModelFactory as Factory
 from uuid import uuid1
 
 from django.template.defaultfilters import slugify
 
+from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
@@ -23,11 +31,16 @@ from ralph_assets.models_assets import (
     AssetStatus,
     AssetSource,
     AssetType,
+    CoaOemOs,
     DeviceInfo,
     OfficeInfo,
     Service,
     Warehouse,
 )
+from ralph_assets.tests.utils import UserFactory
+
+category_code_set = 'ABCDEFGHIJKLMNOPRSTUVWXYZ1234567890'
+category_code_combinations = itertools.product(category_code_set, repeat=2)
 
 
 def generate_imei(n):
@@ -44,9 +57,16 @@ def generate_imei(n):
     return '{}{}'.format(part, -res % 10)
 
 
+class CoaOemOsFactory(Factory):
+    FACTORY_FOR = CoaOemOs
+
+    name = Sequence(lambda n: 'COA OEM OS #%s' % n)
+
+
 class OfficeInfoFactory(Factory):
     FACTORY_FOR = OfficeInfo
 
+    coa_oem_os = SubFactory(CoaOemOsFactory)
     purpose = AssetPurpose.others
 
     @lazy_attribute
@@ -84,6 +104,10 @@ class AssetCategoryFactory(Factory):
     def slug(self):
         return slugify(str(self.type) + self.name)
 
+    @lazy_attribute
+    def code(self):
+        return ''.join(category_code_combinations.next())
+
 
 class AssetSubCategoryFactory(AssetCategoryFactory):
     parent = SubFactory(AssetCategoryFactory)
@@ -105,6 +129,7 @@ class AssetModelFactory(Factory):
     name = Sequence(lambda n: 'Model #%s' % n)
     type = AssetCategoryType.back_office
     manufacturer = SubFactory(AssetManufacturerFactory)
+    category = SubFactory(AssetCategoryFactory)
 
 
 class WarehouseFactory(Factory):
@@ -121,14 +146,26 @@ class DeviceInfoFactory(Factory):
     rack = Sequence(lambda n: 'Rack #%s' % n)
 
 
+class BudgetInfoFactory(Factory):
+    FACTORY_FOR = models_assets.BudgetInfo
+
+    name = Sequence(lambda n: 'Budget info #{}'.format(n))
+
+
+class OwnerFactory(Factory):
+    FACTORY_FOR = models_assets.User
+
+    name = Sequence(lambda n: 'Owner #{}'.format(n))
+
+
 class AssetFactory(Factory):
+    # XXX: DEPRECATED, use: DCAssetFactory, BOAssetFactory
     FACTORY_FOR = Asset
 
     type = AssetType.data_center
     model = SubFactory(AssetModelFactory)
     status = AssetStatus.new
     source = AssetSource.shipment
-    model = SubFactory(AssetModelFactory)
     warehouse = SubFactory(WarehouseFactory)
     device_info = SubFactory(DeviceInfoFactory)
     provider = Sequence(lambda n: 'Provider #%s' % n)
@@ -140,6 +177,49 @@ class AssetFactory(Factory):
         return str(uuid1())
 
 
-class AssetBOFactory(AssetFactory):
+class BaseAssetFactory(Factory):
+    FACTORY_FOR = Asset
+
+    budget_info = SubFactory(BudgetInfoFactory)
+    delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    deprecation_rate = fuzzy.FuzzyInteger(0, 100)
+    hostname = Sequence(lambda n: 'XXXYY{:05}'.format(n))
+    invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
+    location = Sequence(lambda n: 'location #{}'.format(n))
+    model = SubFactory(AssetModelFactory)
+    niw = Sequence(lambda n: 'Inventory number #{}'.format(n))
+    order_no = Sequence(lambda n: 'Order no #{}'.format(n))
+    owner = SubFactory(UserFactory)
+    price = fuzzy.FuzzyDecimal(0, 100)
+    property_of = SubFactory(AssetOwnerFactory)
+    provider = Sequence(lambda n: 'Provider #%s' % n)
+    provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
+    request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    service_name = SubFactory(ServiceFactory)
+    # sn exists below, as a lazy_attribute
+    source = AssetSource.shipment
+    status = AssetStatus.new
+    task_url = Sequence(lambda n: 'http://www.url-{}.com/'.format(n))
+    user = SubFactory(UserFactory)
+    warehouse = SubFactory(WarehouseFactory)
+
+    @lazy_attribute
+    def barcode(self):
+        return str(uuid1())
+
+    @lazy_attribute
+    def sn(self):
+        return str(uuid1())
+
+
+class DCAssetFactory(BaseAssetFactory):
+    type = AssetType.data_center
+    device_info = SubFactory(DeviceInfoFactory)
+
+
+class BOAssetFactory(BaseAssetFactory):
     type = AssetType.back_office
     office_info = SubFactory(OfficeInfoFactory)

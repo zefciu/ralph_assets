@@ -1,6 +1,5 @@
 {% extends 'assets/base.html' %}
-{% load bob %}
-{% load icons %}
+{% load bob icons i18n %}
 
 {% block content %}
 <div id="float_toolbar">
@@ -9,7 +8,7 @@
   </a>
 </div>
 
-<div class="row"><h3>Bulk edit</h3></div>
+<div class="row"><h3>{% trans 'Bulk edit' %}</h3></div>
 <form method="POST" class="form form-inline" {% dependency_data formset.forms.0 %}>
   {% csrf_token %}
   {{ formset.management_form }}

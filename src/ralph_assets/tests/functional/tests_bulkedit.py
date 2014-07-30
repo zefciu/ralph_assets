@@ -5,15 +5,17 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.test.utils import override_settings
 
 from ralph_assets import models_assets
 from ralph_assets.models_assets import AssetStatus
 from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
-    AssetBOFactory,
+    BOAssetFactory,
     AssetCategoryFactory,
     AssetModelFactory,
     AssetOwnerFactory,
@@ -21,6 +23,7 @@ from ralph_assets.tests.utils.assets import (
     ServiceFactory,
     WarehouseFactory,
 )
+from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph_assets.tests.util import get_bulk_edit_post_data
 
 from ralph.ui.tests.global_utils import login_as_su
@@ -46,21 +49,22 @@ class TestBulkEdit(TestCase):
         self.assetOwner = AssetOwnerFactory()
         self.asset_service = ServiceFactory()
         self.common_asset_data = {  # DC & BO common data
-            'status': models_assets.AssetStatus.in_progress,
             'barcode': 'barcode',
+            'deprecation_rate': '25',
+            'hostname': 'POLPC12345',
+            'invoice_date': '2011-11-14',
+            'invoice_no': 'invoice_no',
             'model': self.model,
-            'user': self.user,
+            'order_no': 'order_no',
             'owner': self.user,
-            'warehouse': self.warehouse,
+            'price': '100',
             'property_of': self.assetOwner,
             'service_name': self.asset_service,
-            'invoice_no': 'invoice_no',
-            'invoice_date': '2011-11-14',
-            'price': '100',
-            'task_url': 'www.test.com',
-            'deprecation_rate': '25',
-            'order_no': 'order_no',
             'source': models_assets.AssetSource.shipment,
+            'status': models_assets.AssetStatus.in_progress,
+            'task_url': 'www.test.com',
+            'user': self.user,
+            'warehouse': self.warehouse,
         }
 
     def test_edit_via_bulkedit_form(self):
@@ -69,26 +73,23 @@ class TestBulkEdit(TestCase):
         content = self.client.get(url)
         self.assertEqual(content.status_code, 200)
 
-        post_data = get_bulk_edit_post_data(
-            {
-                'model': self.model.id,
-                'invoice_no': 'Invoice No1',
-                'order_no': 'Order No1',
-                'invoice_date': '2012-02-02',
-                'status': AssetStatus.in_progress.id,
-                'sn': '3333-3333-3333-3333',
-                'barcode': 'bc-3333-3333-3333-3333',
-            },
-            {
-                'model': self.model1.id,
-                'invoice_no': 'Invoice No2',
-                'order_no': 'Order No2',
-                'invoice_date': '2011-02-03',
-                'status': AssetStatus.waiting_for_release.id,
-                'sn': '4444-4444-4444-4444',
-                'barcode': 'bc-4444-4444-4444-4444',
-            },
-        )
+        post_data = get_bulk_edit_post_data({
+            'model': self.model.id,
+            'invoice_no': 'Invoice No1',
+            'order_no': 'Order No1',
+            'invoice_date': '2012-02-02',
+            'status': AssetStatus.in_progress.id,
+            'sn': '3333-3333-3333-3333',
+            'barcode': 'bc-3333-3333-3333-3333',
+        }, {
+            'model': self.model1.id,
+            'invoice_no': 'Invoice No2',
+            'order_no': 'Order No2',
+            'invoice_date': '2011-02-03',
+            'status': AssetStatus.waiting_for_release.id,
+            'sn': '4444-4444-4444-4444',
+            'barcode': 'bc-4444-4444-4444-4444',
+        })
 
         response = self.client.post(url, post_data, follow=True)
 
@@ -128,13 +129,14 @@ class TestBulkEdit(TestCase):
                 barcode='bc-4444-4444-4444-4444',
             )
         ]
-        counter = 0
-        for data in correct_data:
+        for counter, data in enumerate(correct_data):
             for key in data.keys():
                 self.assertEqual(
-                    unicode(getattr(fields[counter], key)), unicode(data[key])
+                    unicode(getattr(fields[counter], key)), unicode(data[key]),
+                    'returned {} expected {} for field {}'.format(
+                        getattr(fields[counter], key), data[key], key
+                    )
                 )
-            counter += 1
 
     def _test_showing_form_data(self, mode, asset_id, asset_data):
         """
@@ -188,8 +190,31 @@ class TestBulkEdit(TestCase):
             'provider': 'provider',
         })
 
-        bo_asset = AssetBOFactory(**bo_asset_data)
+        bo_asset = BOAssetFactory(**bo_asset_data)
 
         self._test_showing_form_data(
             'back_office', bo_asset.id, bo_asset_data
         )
+
+    @override_settings(MAX_BULK_EDIT_SIZE=5)
+    def test_bulk_edit_max_items_at_once(self):
+        """Scenario:
+         - user selected more than MAX_BULK_EDIT_SIZE
+         - user should see message error
+        """
+        number_of_selected_items = settings.MAX_BULK_EDIT_SIZE + 1
+        licences = [LicenceFactory() for _ in range(number_of_selected_items)]
+        url = reverse('licence_bulkedit')
+        url += '?' + '&'.join(['select={}'.format(obj.pk) for obj in licences])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+
+
+class TestBulkEditAsset(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+
+    def test_edit_form(self):
+        url = reverse('bulkedit', args=('dc',))
+        self.client.get(url)

@@ -13,12 +13,18 @@ from django.core.urlresolvers import reverse
 
 
 from ralph_assets.tests.util import create_model
+from ralph_assets.tests.utils import supports as supports_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
-    AssetBOFactory,
+    BOAssetFactory,
+    DCAssetFactory,
     AssetManufacturerFactory,
 )
-from ralph_assets.models_assets import AssetStatus
+from ralph_assets.models_assets import (
+    Asset,
+    AssetType,
+    AssetStatus,
+)
 from ralph.ui.tests.global_utils import login_as_su
 
 
@@ -568,25 +574,29 @@ class TestSearchEngine(TestCase):
             'bo': reverse('asset_search', args=('back_office',)),
         }
         self.assets_dc = [AssetFactory() for _ in range(5)]
-        self.assets_bo = [AssetBOFactory() for _ in range(5)]
+        self.assets_bo = [BOAssetFactory() for _ in range(5)]
         for name in ['iPad 5 16 GB', 'ProLiant BL2x2d', 'WS-CBS312']:
             AssetFactory(model__name=name)
-            AssetBOFactory(model__name=name)
+            BOAssetFactory(model__name=name)
 
         for manufacturer in ['Apple', 'Sony', 'Nikon', 'Sony Ericsson']:
             manu = AssetManufacturerFactory(name=manufacturer)
             AssetFactory(model__manufacturer=manu)
-            AssetBOFactory(model__manufacturer=manu)
+            BOAssetFactory(model__manufacturer=manu)
 
         for unique in ['123456', '456123']:
             AssetFactory(barcode=unique, sn=unique, niw=unique)
         for unique in ['654321', '321654']:
-            AssetBOFactory(barcode=unique, sn=unique, niw=unique)
+            BOAssetFactory(barcode=unique, sn=unique, niw=unique)
 
         self.msg_error = 'Error in {}, request has return {} but expected {}.'
 
-    def _search_results(self, url, field_name, value):
-        url = '{}?{}={}'.format(url, field_name, value)
+    def _search_results(self, url, field_name=None, value=None):
+        if field_name and value:
+            field_query = '='.join([field_name, value])
+        else:
+            field_query = ''
+        url = '{}?{}'.format(url, field_query)
         response = self.client.get(url)
         return response.context['bob_page'].object_list
 
@@ -634,6 +644,10 @@ class TestSearchEngine(TestCase):
             self.testing_urls['bo'], field_name, '321', 2
         )
 
+    def _check_search_result_count(self, data_to_check):
+        for url, field_name, value, expected in data_to_check:
+            self._check_results_length(url, field_name, value, expected)
+
     def test_model_exact(self):
         field_name = 'model'
         for _, url in self.testing_urls.items():
@@ -680,3 +694,68 @@ class TestSearchEngine(TestCase):
         self._field_exact(field_name)
         self._field_multi(field_name)
         self._field_icontains(field_name)
+
+    def test_hostname(self):
+        for hostname in ("POLPC10000", "POLPC10001"):
+            DCAssetFactory(hostname=hostname)
+        for hostname in ("POLPC20000", "POLPC20001"):
+            BOAssetFactory(hostname=hostname)
+
+        field_name = 'hostname'
+        self._check_search_result_count([
+            # exact check
+            (self.testing_urls['dc'], field_name, '"POLPC10001"', 1),
+            (self.testing_urls['dc'], field_name, '"POLPC1000"', 0),
+            (self.testing_urls['bo'], field_name, '"POLPC20001"', 1),
+            (self.testing_urls['bo'], field_name, '"POLPC2000"', 0),
+            # multi check
+            (self.testing_urls['dc'], field_name, 'POLPC10000;POLPC10001', 2),
+            (self.testing_urls['bo'], field_name, 'POLPC20000;POLPC20001', 2),
+            # icontains check
+            (self.testing_urls['dc'], field_name, 'POLPC1', 2),
+            (self.testing_urls['dc'], field_name, '10001', 1),
+            (self.testing_urls['dc'], field_name, 'none', 0),
+            (self.testing_urls['bo'], field_name, 'POLPC2', 2),
+            (self.testing_urls['bo'], field_name, '20001', 1),
+            (self.testing_urls['bo'], field_name, 'none', 0),
+        ])
+
+    def test_required_support(self):
+        """
+        - add asset a1 with required_support=True
+            - send request with checked
+                - assert found a1
+            - send request without checked
+                - assert found all assets
+        """
+        DCAssetFactory(**{'required_support': True})
+        self._check_results_length(
+            self.testing_urls['dc'], 'required_support', 'checked', 1,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], '', '',
+            Asset.objects.filter(type=AssetType.data_center.id).count(),
+        )
+
+    def test_has_no_support(self):
+        """
+        - add asset a1
+        - add supports s1, s2
+        - add s1, s2 to a1
+            - send request with checked *no_support_assigned*
+                - assert found: (all-assets - 1)
+            - send request without checked *no_support_assigned*
+                - assert found: 1
+        """
+        asset_with_support = DCAssetFactory()
+        for support in range(2):
+            support = supports_utils.DCSupportFactory()
+            asset_with_support.supports.add(support)
+        asset_with_support.save()
+
+        self._check_results_length(
+            self.testing_urls['dc'], 'no_support_assigned', 'checked',
+            Asset.objects.filter(
+                type=AssetType.data_center.id, supports=None
+            ).count(),
+        )

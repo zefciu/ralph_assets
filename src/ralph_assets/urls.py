@@ -23,39 +23,40 @@ from ralph_assets.api import (
     UserResource,
     WarehouseResource,
 )
-from ralph_assets.views import (
-    AddAttachment,
-    AddDevice,
-    AddPart,
+from ralph_assets.views.attachment import AddAttachment, DeleteAttachment
+from ralph_assets.views.device import AddDevice, EditDevice, SplitDeviceView
+from ralph_assets.views.user import EditUser, UserDetails, UserList
+from ralph_assets.views.part import AddPart, EditPart
+from ralph_assets.views.asset import (
     AssetSearch,
-    BulkEdit,
-    CategoryDependencyView,
-    ModelDependencyView,
+    AssetBulkEdit,
     DeleteAsset,
-    DeleteAttachment,
-    DeleteLicence,
-    EditDevice,
-    EditPart,
-    EditUser,
     HistoryAsset,
-    SplitDeviceView,
-    UserDetails,
-    UserList,
 )
-from ralph_assets.views_import import XlsUploadView
-from ralph_assets.views_sam import (
+from ralph_assets.views.ajax import CategoryDependencyView, ModelDependencyView
+from ralph_assets.views.data_import import XlsUploadView
+from ralph_assets.views.sam import (
     AddLicence,
+    DeleteLicence,
     EditLicence,
     HistoryLicence,
     LicenceList,
+    LicenceBulkEdit,
     SoftwareCategoryList,
 )
-from ralph_assets.views_invoice_report import (
+from ralph_assets.views.support import (
+    SupportList,
+    AddSupportView,
+    EditSupportView,
+    DeleteSupportView,
+    HistorySupport,
+)
+from ralph_assets.views.invoice_report import (
     AssetInvoiceReport,
     LicenceInvoiceReport,
 )
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
-from ralph_assets.views_transition import (
+from ralph_assets.views.transition import (
     TransitionView,
     TransitionHistoryFileHandler,
 )
@@ -75,6 +76,14 @@ for r in (
     WarehouseResource,
 ):
     v09_api.register(r())
+
+
+def normalize_asset_mode(mode):
+    modes = {
+        'data_center': 'dc',
+    }
+    normalized_mode = modes.get(mode, mode)
+    return normalized_mode
 
 
 urlpatterns = patterns(
@@ -117,7 +126,7 @@ urlpatterns = patterns(
         login_required(HistoryAsset.as_view()),
         name='part_history'),
     url(r'(?P<mode>(back_office|dc))/bulkedit/$',
-        login_required(BulkEdit.as_view()),
+        login_required(AssetBulkEdit.as_view()),
         name='bulkedit'),
     url(r'(?P<mode>(back_office|dc))/delete/asset/$',
         login_required(DeleteAsset.as_view()),
@@ -141,7 +150,12 @@ urlpatterns = patterns(
         name='transition',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license|support))/$',  # noqa
+        login_required(AddAttachment.as_view()),
+        name='add_attachment'
+    ),
+    url(
+        r'add_attachment/(?P<parent>(asset|license))/$',  # noqa
         login_required(AddAttachment.as_view()),
         name='add_attachment'
     ),
@@ -161,9 +175,9 @@ urlpatterns = patterns(
         name='licence_list',
     ),
     url(
-        r'sam/licences/$',
-        login_required(LicenceList.as_view()),
-        name='licence_list',
+        r'sam/licences/bulkedit/',
+        login_required(LicenceBulkEdit.as_view()),
+        name='licence_bulkedit',
     ),
     url(
         r'sam/add_licence/$',
@@ -171,9 +185,35 @@ urlpatterns = patterns(
         name='add_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/edit_licence/(?P<licence_id>[0-9]+)$',
+        r'sam/edit_licence/(?P<licence_id>[0-9]+)$',
         login_required(EditLicence.as_view()),
         name='edit_licence',
+    ),
+    url(
+        r'sup/supports/$',
+        login_required(SupportList.as_view()),
+        name='support_list',
+    ),
+    url(
+        r'sup/add_support/$',
+        login_required(AddSupportView.as_view()),
+        name='add_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sup/edit_support/'
+        r'(?P<support_id>[0-9]+)$',
+        login_required(EditSupportView.as_view()),
+        name='edit_support',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/history/support/(?P<support_id>[0-9]+)/$',
+        login_required(HistorySupport.as_view()),
+        name='support_history',
+    ),
+    url(
+        r'(?P<mode>(back_office|dc))/sup/delete/$',
+        login_required(DeleteSupportView.as_view()),
+        name='delete_support',
     ),
     url(
         r'(?P<mode>(back_office|dc))/sam/delete/$',
@@ -181,7 +221,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/delete/(?P<parent>(asset|license))/attachment/$',  # noqa
+        r'(?P<mode>(back_office|dc|administration|other))/delete/(?P<parent>(asset|license|support))/attachment/$',  # noqa
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),
@@ -201,7 +241,7 @@ urlpatterns = patterns(
         name='user_view',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/history/licence/(?P<licence_id>[0-9]+)/$',
+        r'history/licence/(?P<licence_id>[0-9]+)/$',
         login_required(HistoryLicence.as_view()),
         name='licence_history',
     ),

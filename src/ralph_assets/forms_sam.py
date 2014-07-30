@@ -22,7 +22,10 @@ from django_search_forms.fields import (
     RelatedSearchField,
     TextSearchField,
 )
-from django_search_forms.fields_ajax import RelatedAjaxSearchField
+from django_search_forms.fields_ajax import (
+    RelatedAjaxSearchField,
+    AjaxTextSearch,
+)
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
@@ -73,17 +76,20 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets', 'remarks', 'service_name',
+                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
+                'license_details',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
-                'number_bought', 'accounting_id'
+                'number_bought', 'accounting_id', 'budget_info',
             ]),
         ])
         widgets = {
             'invoice_date': DateWidget,
-            'valid_thru': DateWidget,
+            'license_details': forms.Textarea(attrs={'rows': 3}),
             'remarks': forms.Textarea(attrs={'rows': 3}),
+            'sn': forms.Textarea(attrs={'rows': 3}),
+            'valid_thru': DateWidget,
         }
 
     parent = AutoCompleteSelectField(
@@ -91,19 +97,13 @@ class LicenceForm(forms.ModelForm):
         required=False,
         label=_('Parent licence'),
     )
-
-    def __init__(self, mode, *args, **kwargs):
-        self.mode = mode
-        super(LicenceForm, self).__init__(*args, **kwargs)
-
     software_category = SoftwareCategoryField(
-        ('ralph_assets.models_sam', 'SoftwareCategoryLookup'),
+        ('ralph_assets.models', 'SoftwareCategoryLookup'),
         widget=SoftwareCategoryWidget,
         plugin_options=dict(
             add_link='/admin/ralph_assets/softwarecategory/add/?name=',
         )
     )
-
     manufacturer = AutoCompleteSelectField(
         ('ralph_assets.models', 'ManufacturerLookup'),
         widget=AutoCompleteWidget,
@@ -112,10 +112,23 @@ class LicenceForm(forms.ModelForm):
         ),
         required=False,
     )
-
+    budget_info = AutoCompleteSelectField(
+        LOOKUPS['budget_info'],
+        required=False,
+        plugin_options=dict(
+            add_link='/admin/ralph_assets/budgetinfo/add/',
+        )
+    )
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset'], required=False, label=_('Assigned Assets')
     )
+    users = AutoCompleteSelectMultipleField(
+        LOOKUPS['asset_user'], required=False, label=_('Assigned Users')
+    )
+
+    def __init__(self, mode, *args, **kwargs):
+        self.mode = mode
+        super(LicenceForm, self).__init__(*args, **kwargs)
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
@@ -144,9 +157,11 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         fields = (
             'accounting_id',
             'asset_type',
+            'budget_info',
             'invoice_date',
             'invoice_no',
             'licence_type',
+            'license_details',
             'manufacturer',
             'niw',
             'number_bought',
@@ -164,6 +179,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
 
     sn = MultilineField(
         db_field_path='sn',
+        reject_duplicates=False,
         label=_('Licence key'),
         required=True,
         widget=forms.Textarea(attrs={'rows': 25}),
@@ -187,12 +203,14 @@ class EditLicenceForm(LicenceForm):
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
         fields = (
-            # common fields with add view
             'accounting_id',
             'asset_type',
+            'assets',
+            'budget_info',
             'invoice_date',
             'invoice_no',
             'licence_type',
+            'license_details',
             'manufacturer',
             'niw',
             'number_bought',
@@ -205,8 +223,8 @@ class EditLicenceForm(LicenceForm):
             'service_name',
             'sn',
             'software_category',
+            'users',
             'valid_thru',
-            'assets',
         )
 
     sn = forms.CharField(widget=forms.Textarea, label=_('Licence key'))
@@ -223,6 +241,7 @@ class LicenceSearchForm(SearchForm):
     class Meta(object):
         Model = models_sam.Licence
         fields = []
+
     niw = MultiSearchField(label=_('NIW'))
     sn = TextSearchField(label=_('SN'))
     remarks = TextSearchField(label=_('Additional remarks'))
@@ -239,4 +258,42 @@ class LicenceSearchForm(SearchForm):
     invoice_date = DateRangeSearchField()
     order_no = ExactSearchField()
     order_date = DateRangeSearchField()
+    budget_info = AjaxTextSearch(
+        '__name', LOOKUPS['budget_info'], required=False,
+    )
     id = MultiSearchField(widget=forms.HiddenInput())
+
+
+class BulkEditLicenceForm(LicenceForm):
+
+    class Meta(LicenceForm.Meta):
+        model = models_sam.Licence
+        fields = (
+            'asset_type',
+            'manufacturer',
+            'licence_type',
+            'property_of',
+            'software_category',
+            'number_bought',
+            'parent',
+            'invoice_date',
+            'valid_thru',
+            'order_no',
+            'price',
+            'accounting_id',
+            'provider',
+            'invoice_no',
+            'niw',
+            'service_name',
+            'sn',
+            'remarks',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super(BulkEditLicenceForm, self).__init__(None, *args, **kwargs)
+        classes = "span12 fillable"
+        banned_fillables = set(['sn', 'niw', 'barcode', 'imei'])
+        for field_name in self.fields:
+            if field_name in banned_fillables:
+                classes = "span12"
+            self.fields[field_name].widget.attrs.update({'class': classes})

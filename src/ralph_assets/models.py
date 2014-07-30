@@ -37,6 +37,7 @@ from ralph_assets.models_sam import (
     SoftwareCategory,
 )
 from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.models_support import Support  # noqa
 from ralph_assets.models_transition import (
     Action,
     Transition,
@@ -68,17 +69,22 @@ class DeviceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class='asset-model'>%s</span>
-            <span class='asset-barcode'>%s</span>
-            <span class='asset-sn'>%s</span>
-        </li>
-        """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
     def get_base_objects(self):
         return self.model.objects
@@ -127,20 +133,22 @@ class FreeLicenceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
+        free = str(obj.number_bought - obj.assets.count() - obj.users.count())
         return """
-        <li class='asset-container'>
-            <span>{}</span>
-            <span class="licence-niw">{}</span>
-            <span>({} free)</span>
-        </li>
+        <span>{name}</span>
+        <span class="licence-niw">{niw}</span>
+        <span>({free} free)</span>
         """.format(
-            escape(str(obj)),
-            obj.niw,
-            str(obj.number_bought - obj.assets.count() - obj.users.count())
+            name=escape(str(obj)),
+            niw=obj.niw,
+            free=free,
         )
 
 
@@ -161,24 +169,54 @@ class LicenceLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        element = """
-            <span class='licence-bought'>%s</span>
-            <span class='licence-name'>%s</span>
-            <span class='licence-niw'>(%s)</span>
-        """ % (
-            escape(obj.number_bought),
-            escape(obj.software_category.name or ''),
-            escape(obj.niw),
-        )
         return """
-            <li class='asset-container'>
-                %s
-            </li>
-            """ % (element,)
+            <span class="licence-bought">{bought}</span>
+            <span class="licence-name">{name}</span>
+            <span class="licence-niw">({niw})</span>
+        """.format(
+            bought=escape(obj.number_bought),
+            name=escape(obj.software_category.name or ''),
+            niw=escape(obj.niw),
+        )
+
+    def get_base_objects(self):
+        return self.model.objects
+
+
+class SupportLookup(RestrictedLookupChannel):
+    model = Support
+
+    def get_query(self, q, request):
+        query = Q(
+            Q(name__istartswith=q) |
+            Q(contract_id__istartswith=q)
+        )
+        return self.get_base_objects().filter(query).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.id
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return """
+            <span class='support-contract_id'>{contract_id}</span>
+            <span class='support-name'>{name}</span>
+        """.format(
+            contract_id=escape(obj.contract_id),
+            name=escape(obj.name),
+        )
+
+    def get_item_url(self, obj):
+        return obj.url
 
     def get_base_objects(self):
         return self.model.objects
@@ -206,15 +244,17 @@ class RalphDeviceLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class='asset-model'>%s</span>
-            <span class='asset-barcode'>%s</span>
-            <span class='asset-sn'>%s</span>
-        </li>
-        """ % (escape(obj.model), escape(obj.barcode or ''), escape(obj.sn))
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
 
-class AssetLookup(RestrictedLookupChannel):
+class AssetLookupBase(RestrictedLookupChannel):
     model = Asset
 
     def get_query(self, q, request):
@@ -226,11 +266,35 @@ class AssetLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return obj.url
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return '{}'.format(escape(unicode(obj)))
+
+
+class AssetLookup(AssetLookupBase):
+
+    def get_query(self, q, request):
+        return Asset.objects.filter(
+            Q(model__name__icontains=q) |
+            Q(barcode__icontains=q) |
+            Q(sn__icontains=q)
+        ).order_by('sn', 'barcode')[:10]
+
+    def format_item_display(self, obj):
+        return """
+        <span class="asset-model">{model}</span>
+        <span class="asset-barcode">{barcode}</span>
+        <span class="asset-sn">{sn}</span>
+        """.format(
+            model=escape(obj.model),
+            barcode=escape(obj.barcode or ''),
+            sn=escape(obj.sn),
+        )
 
 
 class AssetModelLookup(RestrictedLookupChannel):
@@ -254,13 +318,11 @@ class AssetModelLookup(RestrictedLookupChannel):
     def format_item_display(self, obj):
         manufacturer = getattr(obj, 'manufacturer', None) or '-'
         category = getattr(obj, 'category', None) or '-'
-        return '''
-        <li>
-            <span>{model}</span>
-            <span class='auto-complete-blue'>({manufacturer})</span>
-            <span class='asset-category'>({category})</span>
-        </li>
-        '''.format(
+        return """
+        <span>{model}</span>
+        <span class="auto-complete-blue">({manufacturer})</span>
+        <span class="asset-category">({category})</span>
+        """.format(
             model=escape(obj.name),
             manufacturer=escape(manufacturer),
             category=escape(category),
@@ -304,17 +366,26 @@ class ManufacturerLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.name
 
+    def format_item_display(self, obj):
+        return "<span>{name}</span>".format(name=obj.name)
+
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
 
     def get_query(self, q, request):
-        return self.model.objects.filter(Q(name__icontains=q)).order_by(
-            'name'
-        )[:10]
+        return SoftwareCategory.objects.filter(
+            name__icontains=q
+        ).order_by('name')[:10]
 
     def get_result(self, obj):
         return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return "<span>{name}</span>".format(name=obj.name)
 
 
 class WarehouseLookup(RestrictedLookupChannel):
@@ -345,7 +416,7 @@ class BODeviceLookup(DeviceLookup):
         return Asset.objects_bo
 
 
-class AssetLookupFuzzy(AssetLookup):
+class AssetLookupFuzzy(AssetLookupBase):
     def get_query(self, query, request):
         dev_ids = Device.objects.filter(
             model__type=DeviceType.unknown,
@@ -406,15 +477,16 @@ class UserLookup(RestrictedLookupChannel):
     def get_result(self, obj):
         return obj.id
 
+    def get_item_url(self, obj):
+        return reverse('user_view', args=(obj.username,))
+
     def format_match(self, obj):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
         return """
-        <li class='asset-container'>
-            <span class=''>{first_name} {last_name}</span>
-            <span class='asset-user-department'>{department}</span>
-        </li>
+        <span>{first_name} {last_name}</span>
+        <span class="asset-user-department">{department}</span>
          """.format(
             first_name=obj.first_name,
             last_name=obj.last_name,

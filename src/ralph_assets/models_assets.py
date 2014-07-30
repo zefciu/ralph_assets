@@ -14,8 +14,10 @@ import os
 
 from dateutil.relativedelta import relativedelta
 
+from dj.choices import Country
 from django.contrib.auth.models import User
 from lck.django.choices import Choices
+from lck.django.common import nested_commit_on_success
 from lck.django.common.models import (
     EditorTrackable,
     Named,
@@ -30,25 +32,58 @@ from mptt.models import MPTTModel
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.db.utils import DatabaseError
 from django.dispatch import receiver
+from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.models_util import WithForm
+from ralph_assets.utils import iso2_to_iso3
 
 
 logger = logging.getLogger(__name__)
 
 SAVE_PRIORITY = 0
+ASSET_HOSTNAME_TEMPLATE = getattr(settings, 'ASSET_HOSTNAME_TEMPLATE', None)
+if not ASSET_HOSTNAME_TEMPLATE:
+    raise ImproperlyConfigured('"ASSET_HOSTNAME_TEMPLATE" must be specified.')
+HOSTNAME_FIELD_HELP_TIP = getattr(settings, 'HOSTNAME_FIELD_HELP_TIP', '')
+
+
+def _replace_empty_with_none(obj, fields):
+    # XXX: replace '' with None, because null=True on model doesn't work
+    for field in fields:
+        value = getattr(obj, field, None)
+        if value == '':
+            setattr(obj, field, None)
+
+
+def get_user_iso3_country_name(user):
+    """
+    :param user: instance of django.contrib.auth.models.User which has profile
+        with country attribute
+    """
+    country_name = Country.name_from_id(user.get_profile().country).upper()
+    iso3_country_name = iso2_to_iso3[country_name]
+    return iso3_country_name
 
 
 class LicenseAndAsset(object):
+
+    def latest_attachments(self):
+        attachments = self.attachments.all().order_by('-created')
+        for attachment in attachments:
+            yield attachment
+
+
+class SupportAndAsset(object):
 
     def latest_attachments(self):
         attachments = self.attachments.all().order_by('-created')
@@ -102,13 +137,12 @@ class AssetType(Choices):
 MODE2ASSET_TYPE = {
     'dc': AssetType.data_center,
     'back_office': AssetType.back_office,
+    'administration': AssetType.administration,
+    'other': AssetType.other,
 }
 
 
-ASSET_TYPE2MODE = {
-    AssetType.data_center: 'dc',
-    AssetType.back_office: 'back_office',
-}
+ASSET_TYPE2MODE = {v: k for k, v in MODE2ASSET_TYPE.items()}
 
 
 class AssetPurpose(Choices):
@@ -225,6 +259,7 @@ class AssetCategory(
     type = models.PositiveIntegerField(
         verbose_name=_("type"), choices=AssetCategoryType(),
     )
+    code = models.CharField(max_length=4, blank=True, default='')
     is_blade = models.BooleanField()
     parent = TreeForeignKey(
         'self',
@@ -304,6 +339,58 @@ class Attachment(SavingUser, TimeTrackable):
 class Service(Named, TimeTrackable):
     profit_center = models.CharField(max_length=1024, blank=True)
     cost_center = models.CharField(max_length=1024, blank=True)
+
+
+class BudgetInfo(
+    TimeTrackable,
+    EditorTrackable,
+    Named,
+    WithConcurrentGetOrCreate,
+    CreatableFromString,
+):
+    """
+    Info pointing source of money (budget) for *assets* and *licenses*.
+    """
+    def __unicode__(self):
+        return self.name
+
+    @classmethod
+    def create_from_string(cls, asset_type, string):
+        return cls(name=string)
+
+
+class AssetLastHostname(models.Model):
+    prefix = models.CharField(max_length=8, db_index=True)
+    counter = models.PositiveSmallIntegerField(default=1)
+    postfix = models.CharField(max_length=8, db_index=True)
+
+    class Meta:
+        unique_together = ('prefix', 'postfix')
+
+    def __unicode__(self):
+        return self.formatted_hostname()
+
+    def formatted_hostname(self, fill=5):
+        return '{prefix}{counter:0{fill}}{postfix}'.format(
+            prefix=self.prefix,
+            counter=int(self.counter),
+            fill=fill,
+            postfix=self.postfix,
+        )
+
+    @classmethod
+    def increment_hostname(cls, prefix, postfix=''):
+        obj, created = cls.objects.get_or_create(
+            prefix=prefix,
+            postfix=postfix,
+        )
+        if not created:
+            # F() avoid race condition problem
+            obj.counter = models.F('counter') + 1
+            obj.save()
+            return cls.objects.get(pk=obj.pk)
+        else:
+            return obj
 
 
 class Asset(
@@ -427,6 +514,22 @@ class Asset(
         max_length=1024,
         blank=True,
     )
+    budget_info = models.ForeignKey(
+        BudgetInfo,
+        blank=True,
+        default=None,
+        null=True,
+        on_delete=models.PROTECT,
+    )
+    hostname = models.CharField(
+        blank=True,
+        default=None,
+        max_length=16,
+        null=True,
+        unique=True,
+        help_text=HOSTNAME_FIELD_HELP_TIP,
+    )
+    required_support = models.BooleanField(default=False)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
@@ -487,10 +590,18 @@ class Asset(
         else:
             return 'device'
 
+    def _try_assign_hostname(self, commit):
+        if self.can_generate_hostname:
+            if not self.hostname:
+                self.generate_hostname(commit)
+            else:
+                user_country = get_user_iso3_country_name(self.owner)
+                different_country = user_country not in self.hostname
+                if different_country:
+                    self.generate_hostname(commit)
+
     def save(self, commit=True, *args, **kwargs):
-        if self.source == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.source = None
+        _replace_empty_with_none(self, ['source', 'hostname'])
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 
@@ -592,6 +703,40 @@ class Asset(
             'mode': ASSET_TYPE2MODE[self.type],
             'asset_id': self.id,
         })
+
+    @property
+    def country_code(self):
+        iso2 = Country.name_from_id(self.owner.profile.country).upper()
+        return iso2_to_iso3.get(iso2, 'POL')
+
+    @property
+    def can_generate_hostname(self):
+        return bool(
+            self.owner and self.model.category and self.model.category.code
+        )
+
+    @nested_commit_on_success
+    def generate_hostname(self, commit=True):
+        if not self.can_generate_hostname:
+            return
+
+        def render_template(template, **kwargs):
+            template = Template(template)
+            context = Context(kwargs)
+            return template.render(context)
+        prefix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('prefix', ''),
+            object=self,
+        )
+        postfix = render_template(
+            ASSET_HOSTNAME_TEMPLATE.get('postfix', ''),
+            object=self,
+        )
+        counter_length = ASSET_HOSTNAME_TEMPLATE.get('counter_length', 5)
+        last_hostname = AssetLastHostname.increment_hostname(prefix, postfix)
+        self.hostname = last_hostname.formatted_hostname(fill=counter_length)
+        if commit:
+            self.save()
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
@@ -701,9 +846,7 @@ class OfficeInfo(TimeTrackable, SavingUser, SoftDeletable):
         return AssetPurpose.from_id(self.purpose).raw if self.purpose else None
 
     def save(self, commit=True, *args, **kwargs):
-        if self.purpose == '':
-            # XXX: replace '' with null, bec. null=True on model doesn't work
-            self.purpose = None
+        _replace_empty_with_none(self, ['purpose'])
         instance = super(OfficeInfo, self).save(commit=commit, *args, **kwargs)
         return instance
 
