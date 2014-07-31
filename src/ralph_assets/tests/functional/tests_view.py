@@ -952,6 +952,10 @@ class TestAttachments(BaseViewsTest):
             add_attachment_url,
             urlencode({'select': obj.id for obj in [parent]}),
         )
+
+        asset = parent_class.objects.get(pk=parent.id)
+        self.assertEqual(asset.attachments.count(), 0)
+
         with tempfile.TemporaryFile() as test_file:
             saved_filename = test_file.name
             test_file.write(file_content)
@@ -963,6 +967,7 @@ class TestAttachments(BaseViewsTest):
                 "form-0-file": test_file,
             }
             response = self.client.post(full_url, data, follow=True)
+
         self.assertEqual(response.status_code, 200)
         asset = parent_class.objects.get(pk=parent.id)
         self.assertEqual(asset.attachments.count(), 1)
