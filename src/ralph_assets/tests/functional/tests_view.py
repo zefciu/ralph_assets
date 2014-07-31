@@ -9,10 +9,12 @@ import base64
 import cPickle
 import datetime
 import json
+import tempfile
 import uuid
 from decimal import Decimal
-from dj.choices import Country
+from urllib import urlencode
 
+from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
@@ -862,6 +864,112 @@ class TestSupportsView(BaseViewsTest):
                 kwargs={'mode': mode, 'support_id': support.id},
             )
             self._assert_field_in_form(form_url, required_fields)
+
+
+class TestAttachments(BaseViewsTest):
+    """This test case concern all attachments views."""
+
+    def setUp(self):
+        self.client = login_as_su()
+
+    def test_cant_add_empty_attachment(self):
+        """
+        create asset a1
+        send post with blank file
+        assert that message about blank error exists
+        """
+        parent = BOAssetFactory()
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'mode': 'back_office',
+            'parent': 'asset',
+        })
+        full_url = "{}?{}".format(
+            add_attachment_url,
+            urlencode({'select': obj.id for obj in [parent]}),
+        )
+        with tempfile.TemporaryFile() as test_file:
+            data = {
+                "form-TOTAL_FORMS": 1,
+                "form-INITIAL_FORMS": 1,
+                "form-MAX_NUM_FORMS": 1,
+                "form-0-file": test_file,
+            }
+            response = self.client.post(full_url, data, follow=True)
+        self.assertIn(
+            'The submitted file is empty.',
+            response.context['formset'][0].errors['file'],
+        )
+
+    def test_add_bo_asset_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'mode': 'back_office',
+            'parent': 'asset',
+        })
+        parent_class = models_assets.Asset
+        self.add_attachment(
+            parent_class, BOAssetFactory(), add_attachment_url,
+        )
+
+    def test_add_dc_asset_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'mode': 'dc',
+            'parent': 'asset',
+        })
+        parent_class = models_assets.Asset
+        self.add_attachment(
+            parent_class, DCAssetFactory(), add_attachment_url,
+        )
+
+    def test_add_license_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'mode': 'back_office',  # TODO: to rm if modes are cleaned
+            'parent': 'license',
+        })
+        parent_class = models_sam.Licence
+        self.add_attachment(
+            parent_class, LicenceFactory(), add_attachment_url
+        )
+
+    def test_add_support_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'mode': 'back_office',  # TODO: to rm if modes are cleaned
+            'parent': 'support',
+        })
+        parent_class = models_support.Support
+        self.add_attachment(
+            parent_class,
+            support_utils.BOSupportFactory(),
+            add_attachment_url,
+        )
+
+    def add_attachment(self, parent_class, parent, add_attachment_url):
+        """
+        Checks if attachment can be added to *parent_class* (like: Asset,
+        Licence, Support)
+        """
+        file_content = 'anything'
+        full_url = "{}?{}".format(
+            add_attachment_url,
+            urlencode({'select': obj.id for obj in [parent]}),
+        )
+        with tempfile.TemporaryFile() as test_file:
+            saved_filename = test_file.name
+            test_file.write(file_content)
+            test_file.seek(0)
+            data = {
+                "form-TOTAL_FORMS": 1,
+                "form-INITIAL_FORMS": 1,
+                "form-MAX_NUM_FORMS": 1,
+                "form-0-file": test_file,
+            }
+            response = self.client.post(full_url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        asset = parent_class.objects.get(pk=parent.id)
+        self.assertEqual(asset.attachments.count(), 1)
+        attachment = asset.attachments.all()[0]
+        self.assertEqual(attachment.original_filename, saved_filename)
+        with attachment.file as attachment_file:
+            self.assertEqual(attachment_file.read(), file_content)
 
 
 class DeviceEditViewTest(TestCase):
