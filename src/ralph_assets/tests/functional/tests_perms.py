@@ -11,9 +11,11 @@ from django.test import TestCase
 from ralph.account.models import BoundPerm, Perm
 from ralph.ui.tests.global_utils import (
     login_as_su,
+)
+from ralph_assets.tests.utils import (
+    UserFactory,
     login_as_user,
 )
-from ralph_assets.tests.utils import UserFactory
 
 
 class ACLInheritanceTest(TestCase):
