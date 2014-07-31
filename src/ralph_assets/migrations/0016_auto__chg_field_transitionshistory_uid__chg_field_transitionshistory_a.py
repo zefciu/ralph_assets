@@ -3,7 +3,9 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+from django.contrib.auth.models import User
 
+from ralph_assets.models_support import SupportType
 
 class Migration(SchemaMigration):
 
@@ -26,16 +28,20 @@ class Migration(SchemaMigration):
     def backwards(self, orm):
 
         # User chose to not deal with backwards NULL issues for 'TransitionsHistory.uid'
-        raise RuntimeError("Cannot reverse this migration. 'TransitionsHistory.uid' and its values cannot be restored.")
+        db.alter_column('ralph_assets_transitionshistory', 'uid', self.gf('django.db.models.fields.CharField')(default='', max_length=36))
 
-        # User chose to not deal with backwards NULL issues for 'TransitionsHistory.affected_user'
-        raise RuntimeError("Cannot reverse this migration. 'TransitionsHistory.affected_user' and its values cannot be restored.")
+        default_affected_user, null = User.objects.get_or_create(
+            username='technical user',
+        )
+        db.alter_column('ralph_assets_transitionshistory', 'affected_user_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_affected_user.id, to=orm['auth.User']))
+
         # Deleting field 'Transition.required_report'
         db.delete_column('ralph_assets_transition', 'required_report')
 
-
-        # User chose to not deal with backwards NULL issues for 'Support.support_type'
-        raise RuntimeError("Cannot reverse this migration. 'Support.support_type' and its values cannot be restored.")
+        default_support_type, null = SupportType.objects.get_or_create(
+            name='unassigned',
+        )
+        db.alter_column('ralph_assets_support', 'support_type_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_support_type.id, to=orm['ralph_assets.SupportType'], on_delete=models.PROTECT))
 
     models = {
         'account.profile': {
