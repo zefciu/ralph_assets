@@ -34,11 +34,17 @@ class UnassignedDCDeviceLookup(DCDeviceLookup):
         ).distinct().order_by('sn')[:10]
 
 
-def get_asset(device_id):
-    try:
-        asset = Asset.objects.get(device_info__ralph_device_id=device_id)
-    except Asset.DoesNotExist:
-        return
+def get_asset_supports(asset):
+    supports = []
+    for support in asset.supports.all():
+        supports.append({
+            'name': support.name,
+            'url': support.url,
+        })
+    return supports
+
+
+def _create_asset_dict(asset):
     manufacturer_name = ''
     if asset.model.manufacturer:
         manufacturer_name = asset.model.manufacturer.name
@@ -48,6 +54,7 @@ def get_asset(device_id):
         asset_source = None
     return {
         'asset_id': asset.id,
+        'device_id': asset.device_info.ralph_device_id,
         'model': asset.model.name,
         'manufacturer': manufacturer_name,
         'source': asset_source,
@@ -79,7 +86,28 @@ def get_asset(device_id):
         'u_level': asset.device_info.u_level,
         'u_height': asset.device_info.u_height,
         'rack': asset.device_info.rack,
+        'required_support': asset.required_support,
+        'supports': get_asset_supports(asset),
+        'url': asset.url,
     }
+
+
+def get_asset(device_id):
+    try:
+        asset = Asset.objects.get(device_info__ralph_device_id=device_id)
+    except Asset.DoesNotExist:
+        return
+    return _create_asset_dict(asset)
+
+
+def get_asset_by_sn_or_barcode(identity):
+    try:
+        asset = Asset.objects.get(
+            Q(sn=identity) | Q(barcode=identity)
+        )
+    except Asset.DoesNotExist:
+        return
+    return _create_asset_dict(asset)
 
 
 def is_asset_assigned(asset_id, exclude_devices=[]):
