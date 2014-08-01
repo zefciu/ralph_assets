@@ -30,18 +30,21 @@ class Migration(SchemaMigration):
         # User chose to not deal with backwards NULL issues for 'TransitionsHistory.uid'
         db.alter_column('ralph_assets_transitionshistory', 'uid', self.gf('django.db.models.fields.CharField')(default='', max_length=36))
 
-        default_affected_user, null = User.objects.get_or_create(
-            username='technical user',
-        )
-        db.alter_column('ralph_assets_transitionshistory', 'affected_user_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_affected_user.id, to=orm['auth.User']))
+
+        if not db.dry_run:
+            default_affected_user, null = orm['auth.User'].objects.get_or_create(
+                username='technical user',
+            )
+            db.alter_column('ralph_assets_transitionshistory', 'affected_user_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_affected_user.id, to=orm['auth.User']))
 
         # Deleting field 'Transition.required_report'
         db.delete_column('ralph_assets_transition', 'required_report')
 
-        default_support_type, null = SupportType.objects.get_or_create(
-            name='unassigned',
-        )
-        db.alter_column('ralph_assets_support', 'support_type_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_support_type.id, to=orm['ralph_assets.SupportType'], on_delete=models.PROTECT))
+        if not db.dry_run:
+            default_support_type, null = orm['ralph_assets.SupportType'].objects.get_or_create(
+                name='unassigned',
+            )
+            db.alter_column('ralph_assets_support', 'support_type_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_support_type.id, to=orm['ralph_assets.SupportType'], on_delete=models.PROTECT))
 
     models = {
         'account.profile': {
