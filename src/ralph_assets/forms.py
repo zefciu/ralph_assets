@@ -65,7 +65,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of', 'hostname',
+        'service_name', 'property_of',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -82,7 +82,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'no_support_assigned',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -114,8 +114,8 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
 asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
-            'barcode', 'sn', 'model', 'manufacturer', 'warehouse', 'hostname',
-            'required_support', 'no_support_assigned',
+            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
+            'required_support', 'support_assigned',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -151,7 +151,7 @@ LOOKUPS = {
     'asset_bomodel': ('ralph_assets.models', 'BOAssetModelLookup'),
     'asset_dcdevice': ('ralph_assets.models', 'DCDeviceLookup'),
     'asset_dcmodel': ('ralph_assets.models', 'DCAssetModelLookup'),
-    'asset_manufacturer': ('ralph_assets.models', 'AssetManufacturerLookup'),
+    'manufacturer': ('ralph_assets.models', 'ManufacturerLookup'),
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
@@ -161,7 +161,6 @@ LOOKUPS = {
     'ralph_device': ('ralph_assets.models', 'RalphDeviceLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
-    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
 }
 
 
@@ -371,14 +370,6 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         LOOKUPS['asset_user'],
         required=False,
     )
-    hostname = CharField(
-        max_length=10, required=False,
-        widget=SimpleReadOnlyWidget(),
-    )
-
-    def clean_hostname(self):
-        # make field readonly
-        return self.instance.hostname or None
 
     def clean(self):
         invoice_no = self.cleaned_data.get('invoice_no', False)
@@ -412,29 +403,44 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
                 ])
         return barcode
 
+    def _update_field_css_class(self, field_name):
+        if field_name not in self.banned_fillables:
+            classes = "span12 fillable"
+        elif field_name == 'support_void_reporting':
+            classes = ""
+        else:
+            classes = "span12"
+        self.fields[field_name].widget.attrs.update({'class': classes})
+
     def __init__(self, *args, **kwargs):
         super(BulkEditAssetForm, self).__init__(*args, **kwargs)
-        banned_fillables = set(['hostname', 'sn', 'barcode', 'imei'])
+        self.banned_fillables = set(['sn', 'barcode', 'imei'])
         for field_name in self.fields:
-            if field_name not in banned_fillables:
-                classes = "span12 fillable"
-            elif field_name == 'support_void_reporting':
-                classes = ""
-            else:
-                classes = "span12"
-            self.fields[field_name].widget.attrs.update({'class': classes})
+            self._update_field_css_class(field_name)
 
 
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
-            'type', 'status', 'barcode', 'model', 'user', 'owner', 'warehouse',
-            'sn', 'property_of', 'purpose', 'remarks', 'service_name',
-            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
-            'office_info', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date', 'hostname',
+            'type', 'status', 'barcode', 'hostname', 'model', 'user', 'owner',
+            'warehouse', 'sn', 'property_of', 'purpose', 'remarks',
+            'service_name', 'invoice_no', 'invoice_date', 'price', 'provider',
+            'task_url', 'office_info', 'deprecation_rate', 'order_no',
+            'source', 'deprecation_end_date',
         )
 
+    def __init__(self, *args, **kwargs):
+        super(BackOfficeBulkEditAssetForm, self).__init__(*args, **kwargs)
+        self.banned_fillables.add('hostname')
+        self._update_field_css_class('hostname')
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname or None
+
+    hostname = CharField(
+        required=False, widget=SimpleReadOnlyWidget(),
+    )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_bomodel'],
         required=True,
@@ -462,7 +468,6 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
             'property_of', 'remarks', 'service_name', 'invoice_no',
             'invoice_date', 'price', 'provider', 'task_url',
             'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
-            'hostname',
         )
 
     model = AutoCompleteSelectField(
@@ -766,7 +771,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
-            'hostname',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -803,7 +807,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         widgets = {
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
@@ -919,9 +922,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
 
-    def clean_hostname(self):
-        return self.cleaned_data['hostname'] or None
-
 
 class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
     '''
@@ -940,7 +940,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'department',
             'deprecation_end_date',
             'deprecation_rate',
-            'hostname',
             'employee_id',
             'force_deprecation',
             'imei',
@@ -980,7 +979,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'barcode': Textarea(attrs={'rows': 1}),
             'delivery_date': DateWidget(),
             'deprecation_end_date': DateWidget(),
-            'hostname': SimpleReadOnlyWidget(),
             'invoice_date': DateWidget(),
             'loan_end_date': DateWidget(),
             'note': Textarea(attrs={'rows': 3}),
@@ -1099,10 +1097,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
 
     def clean_imei(self):
         return self.cleaned_data['imei'] or None
-
-    def clean_hostname(self):
-        # make field readonly
-        return self.instance.hostname or None
 
     def clean(self):
         self.cleaned_data = super(BaseEditAssetForm, self).clean()
@@ -1253,6 +1247,14 @@ class EditDeviceForm(BaseEditAssetForm):
 
 class BackOfficeEditDeviceForm(EditDeviceForm):
 
+    class Meta(BaseEditAssetForm.Meta):
+        fields = BaseEditAssetForm.Meta.fields + (
+            'hostname',
+        )
+
+    hostname = CharField(
+        required=False, widget=SimpleReadOnlyWidget(),
+    )
     purpose = ChoiceField(
         choices=[('', '----')] + models_assets.AssetPurpose(),
         label=_('Purpose'),
@@ -1264,9 +1266,14 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
         for after, field in (
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
+            ('property_of', 'hostname'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
+
+    def clean_hostname(self):
+        # make field readonly
+        return self.instance.hostname or None
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
@@ -1287,7 +1294,7 @@ class SearchAssetForm(Form):
     :returns Form
     """
     manufacturer = AutoCompleteField(
-        LOOKUPS['asset_manufacturer'],
+        LOOKUPS['manufacturer'],
         required=False,
         help_text=None,
         plugin_options={'disable_confirm': True}
@@ -1478,13 +1485,15 @@ class SearchAssetForm(Form):
     budget_info = AutoCompleteField(
         LOOKUPS['budget_info'], required=False,
     )
-    required_support = BooleanField(
+    required_support = ChoiceField(
         required=False,
-        label=_('Required support:'),
+        choices=[('', '----'), ('yes', 'yes'), ('no', 'no')],
+        label=_('Required support'),
     )
-    no_support_assigned = BooleanField(
+    support_assigned = ChoiceField(
         required=False,
-        label=_('Without support:'),
+        choices=[('', '----'), ('any', 'any'), ('none', 'none')],
+        label=_('Assigned supports'),
     )
 
     def __init__(self, *args, **kwargs):

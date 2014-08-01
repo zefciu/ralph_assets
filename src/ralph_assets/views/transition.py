@@ -9,9 +9,7 @@ import datetime
 import logging
 import uuid
 
-from inkpy.api import generate_pdf
-from lck.django.common import nested_commit_on_success
-
+from dj.choices import Country
 from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -20,16 +18,25 @@ from django.http import Http404, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
+from inkpy.api import generate_pdf
+from lck.django.common import nested_commit_on_success
 
-from ralph_assets.views.base import get_return_link
-from ralph_assets.views.search import _AssetSearch
+from ralph_assets import signals
 from ralph_assets.forms_transitions import TransitionForm
-from ralph_assets.views.base import ACLGateway
-from ralph_assets.views.invoice_report import generate_pdf_response
 from ralph_assets.models import ReportOdtSource, Transition, TransitionsHistory
+from ralph_assets.utils import iso2_to_iso3
+from ralph_assets.views.base import ACLGateway
+from ralph_assets.views.base import get_return_link
+from ralph_assets.views.invoice_report import generate_pdf_response
+from ralph_assets.views.search import _AssetSearch
 
 
 logger = logging.getLogger(__name__)
+
+
+class PostTransitionException(Exception):
+    """General exception to be thrown in *post_transition* signal receivers.
+    Exception message is used to inform user."""
 
 
 class TransitionDispatcher(object):
@@ -52,6 +59,7 @@ class TransitionDispatcher(object):
         template_file=None,
         warehouse=None,
         loan_end_date=None,
+        **kwargs
     ):
         self.instance = instance
         self.transition = transition
@@ -62,6 +70,8 @@ class TransitionDispatcher(object):
         self.warehouse = warehouse
         self.loan_end_date = loan_end_date
         self.report_file_patch = None
+        self.uid = None
+        self.kwargs = kwargs
 
     def _action_assign_user(self):
         for asset in self.assets:
@@ -153,6 +163,18 @@ class TransitionDispatcher(object):
             report_file_path=self.report_file_patch,
         )
 
+    def _action_change_hostname(self):
+        for asset in self.assets:
+            country_id = self.kwargs['request'].POST.get('country')
+            country_name = Country.name_from_id(int(country_id)).upper()
+            iso3_country_name = iso2_to_iso3[country_name]
+            template_vars = {
+                'code': asset.model.category.code,
+                'country_code': iso3_country_name,
+            }
+            asset.generate_hostname(template_vars=template_vars)
+            asset.save(user=self.logged_user)
+
     def get_transition_history_object(self):
         return self.transition_history
 
@@ -188,13 +210,22 @@ class TransitionDispatcher(object):
             self._action_release_report()
         elif 'return_report' in actions:
             self._action_return_report()
+        elif 'change_hostname' in actions:
+            self._action_change_hostname()
         self._save_history()
+        signals.post_transition.send(
+            sender=self,
+            user=self.logged_user,
+            assets=self.assets,
+            transition=self.instance.transition_object,
+        )
 
 
 class TransitionView(_AssetSearch):
     template_name = 'assets/transitions.html'
     report_file_path = None
     transition_history = None
+    transition_ended = None
 
     def get_return_link(self, *args, **kwargs):
         if self.ids:
@@ -226,6 +257,8 @@ class TransitionView(_AssetSearch):
             form.fields.pop('warehouse')
         if not self.assign_loan_end_date:
             form.fields.pop('loan_end_date')
+        if not self.change_hostname:
+            form.fields.pop('country')
         return form
 
     def get_assets(self, *args, **kwargs):
@@ -250,26 +283,31 @@ class TransitionView(_AssetSearch):
         return affected_user
 
     def get_report_file_link(self, *args, **kwargs):
-        if self.transition_history:
+        if self.transition_history and self.transition_history.report_file:
             return reverse(
                 'transition_history_file',
                 kwargs={'history_id': self.transition_history.id},
             )
 
     def check_reports_template_exists(self, *args, **kwargs):
-        try:
-            self.template_file = ReportOdtSource.objects.get(
-                slug=settings.ASSETS_REPORTS[self.transition_type.upper()][
-                    'SLUG'
-                ],
-            )
-            error = False
-        except ReportOdtSource.DoesNotExist:
-            messages.error(self.request, _("Odt template does not exist!"))
-            error = True
+        error = False
+        self.template_file = None
+        if self.transition_object.required_report:
+            try:
+                self.template_file = ReportOdtSource.objects.get(
+                    slug=settings.ASSETS_REPORTS[self.transition_type.upper()][
+                        'SLUG'
+                    ],
+                )
+                error = False
+            except ReportOdtSource.DoesNotExist:
+                messages.error(self.request, _("Odt template does not exist!"))
+                error = True
         return error
 
     def base_error_handler(self, *args, **kwargs):
+        not_required_user_transitions = ['change-hostname']
+        required_user_transitions = ['return-asset']
         error = False
         self.assign_user = None
         if not settings.ASSETS_TRANSITIONS['ENABLE']:
@@ -277,7 +315,7 @@ class TransitionView(_AssetSearch):
             error = True
         self.transition_type = self.request.GET.get('transition_type')
         if self.transition_type not in [
-            'release-asset', 'return-asset', 'loan-asset',
+            'release-asset', 'return-asset', 'loan-asset', 'change-hostname',
         ]:
             messages.error(self.request, _("Unsupported transition type"))
             error = True
@@ -295,7 +333,26 @@ class TransitionView(_AssetSearch):
             self.assign_loan_end_date = (
                 'assign_loan_end_date' in self.transition_object.actions_names
             )
-        if self.transition_type == 'return-asset' or not self.assign_user:
+            self.change_hostname = (
+                'change_hostname' in self.transition_object.actions_names
+            )
+
+        if (
+            self.change_hostname
+            and self.assets.filter(model__category__code='').count() > 0
+        ):
+            messages.error(
+                self.request, _("Asset has no assigned category with code"),
+            )
+            error = True
+        # check assets has assigned user
+        if (
+            self.transition_type in required_user_transitions
+            or (
+                not self.assign_user
+                and self.transition_type not in not_required_user_transitions
+            )
+        ):
             assets = self.assets.values('user__username').distinct()
             assets_count = assets.annotate(cnt=Count('user')).count()
             if assets_count not in (0, 1):
@@ -348,16 +405,24 @@ class TransitionView(_AssetSearch):
                 self.template_file,
                 self.get_warehouse(),
                 loan_end_date=self.request.POST.get('loan_end_date'),
+                request=self.request,
             )
-            dispatcher.run()
-            self.report_file_path = dispatcher.report_file_patch
-            self.report_file_name = dispatcher.get_report_file_name
-            self.transition_history = dispatcher.get_transition_history_object()  # noqa
-            messages.success(
-                self.request,
-                _("Transitions performed successfully"),
-            )
-            return super(TransitionView, self).get(*args, **kwargs)
+            try:
+                dispatcher.run()
+            except PostTransitionException as e:
+                self.transition_ended = False
+                messages.error(self.request, _(e.message))
+            else:
+                self.report_file_path = dispatcher.report_file_patch
+                self.report_file_name = dispatcher.get_report_file_name
+                self.transition_history = dispatcher.get_transition_history_object()  # noqa
+                messages.success(
+                    self.request,
+                    _("Transitions performed successfully"),
+                )
+                self.transition_ended = True
+            finally:
+                return super(TransitionView, self).get(*args, **kwargs)
         messages.error(self.request, _('Please correct errors.'))
         return super(TransitionView, self).get(*args, **kwargs)
 
@@ -369,6 +434,8 @@ class TransitionView(_AssetSearch):
             'transition_form': self.form,
             'transition_type': self.transition_type.replace('-', ' ').title(),
             'actions_names': self.transition_object.actions_names,
+            'required_report': self.transition_object.required_report,
+            'transition_ended': self.transition_ended,
         })
         return ret
 

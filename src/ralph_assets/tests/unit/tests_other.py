@@ -206,6 +206,16 @@ class TestHostnameGenerator(TestCase):
         self.asset1 = BOAssetFactory()
         self.asset2 = BOAssetFactory()
 
+    def _check_hostname_not_generated(self, asset):
+        asset._try_assign_hostname(True)
+        changed_asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertEqual(changed_asset.hostname, None)
+
+    def _check_hostname_is_generated(self, asset):
+        asset._try_assign_hostname(True)
+        changed_asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertTrue(len(changed_asset.hostname) > 0)
+
     def test_generate_first_hostname(self):
         """Scenario:
          - none of assets has hostname
@@ -214,7 +224,11 @@ class TestHostnameGenerator(TestCase):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC00001')
 
     def test_generate_next_hostname(self):
@@ -224,29 +238,33 @@ class TestHostnameGenerator(TestCase):
         BOAssetFactory(owner=self.user_pl, hostname='POLSW00003')
         models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
         models_assets.AssetLastHostname.increment_hostname(prefix='POLPC')
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC00003')
 
     def test_cant_generate_hostname_for_model_without_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_can_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl)
-        self.assertTrue(asset.can_generate_hostname)
+        self._check_hostname_is_generated(asset)
 
     def test_cant_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
         asset = BOAssetFactory(model=model, owner=None, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_cant_generate_hostname_for_model_without_user_and_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=None, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_generate_next_hostname_out_of_range(self):
         category = AssetCategoryFactory(code='PC')
@@ -255,7 +273,11 @@ class TestHostnameGenerator(TestCase):
         models_assets.AssetLastHostname.objects.create(
             prefix='POLPC', counter=99999
         )
-        asset.generate_hostname()
+        template_vars = {
+            'code': asset.model.category.code,
+            'country_code': asset.country_code,
+        }
+        asset.generate_hostname(template_vars=template_vars)
         self.assertEqual(asset.hostname, 'POLPC100000')
 
     def test_convert_iso2_to_iso3(self):

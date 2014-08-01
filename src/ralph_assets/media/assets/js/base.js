@@ -2,8 +2,34 @@
 (function(){
     "use strict";
 
+    var Report = function () {};
     var Bulk = function () {};
     var TableListing = function () {};
+
+    Report.prototype.prepare = function() {
+        $('.report').find('li:has(ul)')
+            .click(function(event) {
+                if (this == event.target) {
+                    $(this).children('ul').toggle();
+                    $(this).toggleClass('expanded collapsed');
+                }
+                return false;
+            })
+    };
+
+    Report.prototype.expand_all = function() {
+        $('.report').find('li')
+            .removeClass('collapsed')
+            .addClass('expanded')
+            .children('ul').show();
+    };
+
+    Report.prototype.collapse_all = function() {
+        $('.report').find('li')
+            .removeClass('expanded')
+            .addClass('collapsed')
+            .children('ul').hide();
+    };
 
     TableListing.prototype.toggleChildDisplay = function(){
         var trigger = this;
@@ -74,12 +100,12 @@
 
         if (selected_all_pages &&
             params.length &&
-            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset', 'change-hostname']) != -1
         ) {
              window.location.href = 'transition' + params + '&from_query=1&transition_type=' + type;
         } else if (
             ids.length &&
-            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset']) != -1
+            $.inArray(type, ['release-asset', 'return-asset', 'loan-asset', 'change-hostname']) != -1
         ) {
             window.location.href = 'transition?select=' + ids.join('&select=') + '&transition_type=' + type;
         }
@@ -116,8 +142,17 @@
     };
 
     $(document).ready(function() {
+        var report = new Report();
         var bulk = new Bulk();
         var tableListing = new TableListing();
+
+        report.prepare();
+        $('.report .expand-all').click(function(){
+            report.expand_all();
+        });
+        $('.report .collapse-all').click(function(){
+            report.collapse_all();
+        });
 
         $('#post_edit_all').click(function() {
             bulk.edit_selected();

@@ -60,6 +60,7 @@
                 <th>{% trans "Sn" %}</th>
                 <th>{% trans "Barcode" %}</th>
                 <th>{% trans "Additional remarks" %}</th>
+                <th>{% trans "Status" %}</th>
                 <th>{% trans "Link" %}</th>
             </tr>
         </thead>
@@ -73,6 +74,7 @@
                 <td>{{ asset.sn }}</td>
                 <td>{{ asset.barcode }}</td>
                 <td>{{ asset.remarks }}</td>
+                <td>{{ asset.get_status_display }}</td>
                 <td>
                     <a href="{% url device_edit mode='back_office' asset_id=asset.id %}">{% trans "go to asset" %}</a>
                 </td>

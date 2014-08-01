@@ -56,7 +56,7 @@ class AssetsSearchQueryableMixin(object):
             'manufacturer',
             'model',
             'niw',
-            'no_support_assigned',
+            'support_assigned',
             'order_no',
             'owner',
             'part_info',
@@ -234,9 +234,11 @@ class AssetsSearchQueryableMixin(object):
                 elif field == 'service_name':
                     all_q &= Q(service_name=field_value)
                 elif field == 'required_support':
-                    all_q &= Q(required_support=True)
-                elif field == 'no_support_assigned':
-                    all_q &= Q(supports=None)
+                    user_choice = True if field_value == 'yes' else False
+                    all_q &= Q(required_support=user_choice)
+                elif field == 'support_assigned':
+                    user_choice = True if field_value == 'none' else False
+                    all_q &= Q(supports__isnull=user_choice)
                 elif field == 'purpose':
                     all_q &= Q(office_info__purpose=field_value)
                 elif field == 'budget_info':
@@ -379,7 +381,7 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True),
             _('Category', field='model__category',
               sort_expression='model__category', bob_tag=True,
-              show_conditions=show_back_office),
+              show_conditions=show_back_office, export=True),
             _('Manufacturer', field='model__manufacturer__name',
               sort_expression='model__manufacturer__name',
               bob_tag=True, export=True, show_conditions=show_back_office),
@@ -397,9 +399,8 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
             _('Property of', field='property_of__name',
               sort_expression='property_of__name', bob_tag=True, export=True,
               show_conditions=show_back_office),
-            _('Purpose', field='office_info__purpose',
-              sort_expression='office_info__purpose', bob_tag=True,
-              export=True, show_conditions=show_back_office),
+            _('Hostname', field='hostname', sort_expression='hostname',
+              bob_tag=True, export=True, show_conditions=show_back_office),
             _('Service name', field='service_name__name',
               sort_expression='service_name__name', bob_tag=True, export=True,
               show_conditions=show_back_office),
@@ -414,8 +415,8 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
               show_conditions=show_back_office),
             _('Price', field='price', sort_expression='price',
               bob_tag=True, export=True, show_conditions=show_dc),
-            _('Venture', field='venture', sort_expression='venture',
-              bob_tag=True, export=True, show_conditions=show_dc),
+            _('Venture', field='venture', bob_tag=True, export=True,
+              show_conditions=show_dc),
             _('Discovered', bob_tag=True, field='is_discovered', export=True,
               foreign_field_name='is_discovered', show_conditions=show_dc),
             _('Actions', bob_tag=True,

@@ -15,6 +15,7 @@ ASSETS_TRANSITIONS = {
         'RELEASE-ASSET': 'release-asset',
         'LOAN-ASSET': 'loan-asset',
         'RETURN-ASSET': 'return-asset',
+        'CHANGE-HOSTNAME': 'change-hostname',
     }
 }
 
@@ -24,8 +25,7 @@ ASSET_HIDE_ACTION_SEARCH = False
 GENERATED_DOCS_LOCALE = None
 
 ASSET_HOSTNAME_TEMPLATE = {
-    'prefix': '{{ object.country_code|upper }}'
-              '{{ object.model.category.code|upper }}',
+    'prefix': '{{ country_code|upper }}{{ code|upper }}',
     'postfix': '',
     'counter_length': 5,
 }

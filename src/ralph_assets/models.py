@@ -11,6 +11,7 @@ import difflib
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
+from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
 from ralph_assets.models_assets import (
@@ -210,9 +211,12 @@ class SupportLookup(RestrictedLookupChannel):
         return """
             <span class='support-contract_id'>{contract_id}</span>
             <span class='support-name'>{name}</span>
+            <span class='support-end'>({expired}: {end})</span>
         """.format(
             contract_id=escape(obj.contract_id),
             name=escape(obj.name),
+            expired=_('expired'),
+            end=obj.get_natural_end_support(),
         )
 
     def get_item_url(self, obj):
@@ -335,24 +339,6 @@ class DCAssetModelLookup(AssetModelLookup):
 
 class BOAssetModelLookup(AssetModelLookup):
     type = AssetType.back_office
-
-
-class AssetManufacturerLookup(RestrictedLookupChannel):
-    model = AssetModel
-
-    def get_query(self, q, request):
-        return AssetModel.objects.filter(
-            Q(manufacturer__name__icontains=q)
-        ).order_by('manufacturer__name')[:10]
-
-    def get_result(self, obj):
-        return obj.manufacturer.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
-    def format_item_display(self, obj):
-        return '{}'.format(escape(obj.manufacturer.name))
 
 
 class ManufacturerLookup(RestrictedLookupChannel):
