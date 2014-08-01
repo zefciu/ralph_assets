@@ -3,7 +3,9 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+from django.contrib.auth.models import User
 
+from ralph_assets.models_support import SupportType
 
 class Migration(SchemaMigration):
 
@@ -20,16 +22,29 @@ class Migration(SchemaMigration):
                       keep_default=False)
 
 
+        # Changing field 'Support.support_type'
+        db.alter_column('ralph_assets_support', 'support_type_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.SupportType'], null=True, on_delete=models.PROTECT))
+
     def backwards(self, orm):
 
-        # Changing field 'TransitionsHistory.uid'
+        # User chose to not deal with backwards NULL issues for 'TransitionsHistory.uid'
         db.alter_column('ralph_assets_transitionshistory', 'uid', self.gf('django.db.models.fields.CharField')(default='', max_length=36))
 
-        # Changing field 'TransitionsHistory.affected_user'
-        db.alter_column('ralph_assets_transitionshistory', 'affected_user_id', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['auth.User']))
+
+        if not db.dry_run:
+            default_affected_user, null = orm['auth.User'].objects.get_or_create(
+                username='technical user',
+            )
+            db.alter_column('ralph_assets_transitionshistory', 'affected_user_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_affected_user.id, to=orm['auth.User']))
+
         # Deleting field 'Transition.required_report'
         db.delete_column('ralph_assets_transition', 'required_report')
 
+        if not db.dry_run:
+            default_support_type, null = orm['ralph_assets.SupportType'].objects.get_or_create(
+                name='unassigned',
+            )
+            db.alter_column('ralph_assets_support', 'support_type_id', self.gf('django.db.models.fields.related.ForeignKey')(default=default_support_type.id, to=orm['ralph_assets.SupportType'], on_delete=models.PROTECT))
 
     models = {
         'account.profile': {
@@ -114,7 +129,7 @@ class Migration(SchemaMigration):
             'invoice_no': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '128', 'null': 'True', 'blank': 'True'}),
             'loan_end_date': ('django.db.models.fields.DateField', [], {'default': 'None', 'null': 'True', 'blank': 'True'}),
             'location': ('django.db.models.fields.CharField', [], {'max_length': '128', 'null': 'True', 'blank': 'True'}),
-            'model': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetModel']", 'on_delete': 'models.PROTECT'}),
+            'model': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'assets'", 'on_delete': 'models.PROTECT', 'to': "orm['ralph_assets.AssetModel']"}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'modified_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
             'niw': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '200', 'null': 'True', 'blank': 'True'}),
@@ -198,7 +213,7 @@ class Migration(SchemaMigration):
         'ralph_assets.assetmodel': {
             'Meta': {'object_name': 'AssetModel'},
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
-            'category': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.AssetCategory']", 'null': 'True', 'blank': 'True'}),
+            'category': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "u'models'", 'null': 'True', 'to': "orm['ralph_assets.AssetCategory']"}),
             'cores_count': ('django.db.models.fields.IntegerField', [], {'default': '0', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'+'", 'on_delete': 'models.SET_NULL', 'default': 'None', 'to': "orm['account.Profile']", 'blank': 'True', 'null': 'True'}),
@@ -393,7 +408,7 @@ class Migration(SchemaMigration):
             'sla_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
             'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '1'}),
             'supplier': ('django.db.models.fields.CharField', [], {'max_length': '100', 'blank': 'True'}),
-            'support_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['ralph_assets.SupportType']", 'on_delete': 'models.PROTECT'})
+            'support_type': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['ralph_assets.SupportType']", 'null': 'True', 'on_delete': 'models.PROTECT', 'blank': 'True'})
         },
         'ralph_assets.supporthistorychange': {
             'Meta': {'object_name': 'SupportHistoryChange'},
@@ -425,12 +440,12 @@ class Migration(SchemaMigration):
         },
         'ralph_assets.transitionshistory': {
             'Meta': {'ordering': "[u'-created']", 'object_name': 'TransitionsHistory'},
-            'affected_user': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'related_name': "u'affected user'", 'null': 'True', 'blank': 'True', 'to': "orm['auth.User']"}),
+            'affected_user': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'related_name': "u'affected_user_transition_histories'", 'null': 'True', 'blank': 'True', 'to': "orm['auth.User']"}),
             'assets': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['ralph_assets.Asset']", 'symmetrical': 'False'}),
             'cache_version': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'logged_user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'logged user'", 'to': "orm['auth.User']"}),
+            'logged_user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'logged_user_transition_histories'", 'to': "orm['auth.User']"}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'report_file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
             'report_filename': ('django.db.models.fields.CharField', [], {'max_length': '256', 'null': 'True', 'blank': 'True'}),
