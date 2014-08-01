@@ -1,0 +1,33 @@
+{% extends 'assets/base.html' %}
+{% load cache i18n %}
+
+{% block content %}
+<h1>{{ report.name }}</h1>
+  {% spaceless %}
+  <div class="report">
+    <div class="pagination">
+      <ul>
+        <li><a class="expand-all" href="#">{% trans 'Expand all' %}</a></li>
+        <li><a class="collapse-all" href="#">{% trans 'Collapse all' %}</a></li>
+      </ul>
+    </div>
+    <div class="pagination">
+      <ul>
+        {% for report_mode in modes %}
+          <li{% if mode == report_mode.name %} class="active"{% endif %}><a href="{% url report_detail report_mode.name slug %}">{{ report_mode.verbose_name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% cache 3600 report cache_key %}
+      <p>{% trans 'Last update:' %} {% now "SHORT_DATETIME_FORMAT" %}</p>
+      <ul class="report-list">
+        {%for node in result %}
+          {% with level=0 %}
+            {%include "assets/report_tree.html" %}
+          {% endwith %}
+        {%endfor%}
+      </ul>
+    {% endcache %}
+  </div>
+  {% endspaceless %}
+{% endblock %}

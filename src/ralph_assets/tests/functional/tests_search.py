@@ -13,7 +13,7 @@ from django.core.urlresolvers import reverse
 
 
 from ralph_assets.tests.util import create_model
-from ralph_assets.tests.utils import supports as supports_utils
+from ralph_assets.tests.utils import sam
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     BOAssetFactory,
@@ -26,6 +26,7 @@ from ralph_assets.models_assets import (
     AssetStatus,
 )
 from ralph.ui.tests.global_utils import login_as_su
+from ralph_assets.tests.utils import supports
 
 
 class TestSearchForm(TestCase):
@@ -583,6 +584,7 @@ class TestSearchEngine(TestCase):
             manu = AssetManufacturerFactory(name=manufacturer)
             AssetFactory(model__manufacturer=manu)
             BOAssetFactory(model__manufacturer=manu)
+            sam.LicenceFactory(manufacturer=manu)
 
         for unique in ['123456', '456123']:
             AssetFactory(barcode=unique, sn=unique, niw=unique)
@@ -598,7 +600,7 @@ class TestSearchEngine(TestCase):
             field_query = ''
         url = '{}?{}'.format(url, field_query)
         response = self.client.get(url)
-        return response.context['bob_page'].object_list
+        return response.context['bob_page'].paginator.object_list
 
     def _check_results_length(self, url, field_name, value, expected):
         results = self._search_results(url, field_name, urllib.quote(value))
@@ -663,16 +665,20 @@ class TestSearchEngine(TestCase):
             self._check_results_length(url, field_name, '404', 0)
 
     def test_manufacturer_exact(self):
+        urls = self.testing_urls.copy()
+        urls['license'] = reverse('licence_list')
         field_name = 'manufacturer'
-        for _, url in self.testing_urls.items():
+        for url in urls.values():
             self._check_results_length(url, field_name, '"Sony"', 1)
             self._check_results_length(url, field_name, '"Apple"', 1)
             self._check_results_length(url, field_name, '"Sony Ericsson"', 1)
             self._check_results_length(url, field_name, '"Manu 404"', 0)
 
     def test_manufacturer_icontains(self):
+        urls = self.testing_urls.copy()
+        urls['license'] = reverse('licence_list')
         field_name = 'manufacturer'
-        for _, url in self.testing_urls.items():
+        for url in urls.values():
             self._check_results_length(url, field_name, 'Sony', 2)
             self._check_results_length(url, field_name, 'pp', 1)
             self._check_results_length(url, field_name, 'o', 3)
@@ -720,42 +726,64 @@ class TestSearchEngine(TestCase):
             (self.testing_urls['bo'], field_name, 'none', 0),
         ])
 
-    def test_required_support(self):
+    def test_support_requirement(self):
         """
         - add asset a1 with required_support=True
-            - send request with checked
-                - assert found a1
-            - send request without checked
-                - assert found all assets
+        - add asset a2 with required_support=False
+        - send request without param *required_support*
+            - assert found: all-assets
+        - send request with required_support=yes
+            - assert found: 1
+        - send request with required_support=no
+            - assert found: (all-assets - 1)
         """
         DCAssetFactory(**{'required_support': True})
+        DCAssetFactory(**{'required_support': False})
+
+        assets_count = Asset.objects.filter(
+            type=AssetType.data_center.id
+        ).count()
         self._check_results_length(
-            self.testing_urls['dc'], 'required_support', 'checked', 1,
+            self.testing_urls['dc'], 'required_support', '', assets_count,
         )
         self._check_results_length(
-            self.testing_urls['dc'], '', '',
-            Asset.objects.filter(type=AssetType.data_center.id).count(),
+            self.testing_urls['dc'], 'required_support', 'yes', 1,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'],
+            'required_support',
+            'no',
+            assets_count - 1,
         )
 
-    def test_has_no_support(self):
+    def test_support_assignment(self):
         """
-        - add asset a1
-        - add supports s1, s2
-        - add s1, s2 to a1
-            - send request with checked *no_support_assigned*
-                - assert found: (all-assets - 1)
-            - send request without checked *no_support_assigned*
-                - assert found: 1
+        - add asset a1 without supports
+        - add asset a2 with support s1
+        - send request without param *support_assigned*
+            - assert found: all-assets
+        - send request with support_assigned=any
+            - assert found: 1
+        - send request with support_assigned=false
+            - assert found: (all-assets - 1)
         """
-        asset_with_support = DCAssetFactory()
-        for support in range(2):
-            support = supports_utils.DCSupportFactory()
-            asset_with_support.supports.add(support)
-        asset_with_support.save()
+        DCAssetFactory()
+        DCAssetFactory(**dict(
+            supports=(supports.DCSupportFactory(),),
+        ))
 
+        assets_count = Asset.objects.filter(
+            type=AssetType.data_center.id
+        ).count()
         self._check_results_length(
-            self.testing_urls['dc'], 'no_support_assigned', 'checked',
-            Asset.objects.filter(
-                type=AssetType.data_center.id, supports=None
-            ).count(),
+            self.testing_urls['dc'], 'support_assigned', '', assets_count,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'], 'support_assigned', 'any', 1,
+        )
+        self._check_results_length(
+            self.testing_urls['dc'],
+            'support_assigned',
+            'none',
+            assets_count - 1,
         )

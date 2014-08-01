@@ -206,6 +206,16 @@ class TestHostnameGenerator(TestCase):
         self.asset1 = BOAssetFactory()
         self.asset2 = BOAssetFactory()
 
+    def _check_hostname_not_generated(self, asset):
+        asset._try_assign_hostname(True)
+        changed_asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertEqual(changed_asset.hostname, None)
+
+    def _check_hostname_is_generated(self, asset):
+        asset._try_assign_hostname(True)
+        changed_asset = models_assets.Asset.objects.get(pk=asset.id)
+        self.assertTrue(len(changed_asset.hostname) > 0)
+
     def test_generate_first_hostname(self):
         """Scenario:
          - none of assets has hostname
@@ -238,23 +248,23 @@ class TestHostnameGenerator(TestCase):
     def test_cant_generate_hostname_for_model_without_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=self.user_pl, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_can_generate_hostname_for_model_with_hostname(self):
         category = AssetCategoryFactory(code='PC')
         model = AssetModelFactory(category=category)
         asset = BOAssetFactory(model=model, owner=self.user_pl)
-        self.assertTrue(asset.can_generate_hostname)
+        self._check_hostname_is_generated(asset)
 
     def test_cant_generate_hostname_for_model_without_user(self):
         model = AssetModelFactory()
         asset = BOAssetFactory(model=model, owner=None, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_cant_generate_hostname_for_model_without_user_and_category(self):
         model = AssetModelFactory(category=None)
         asset = BOAssetFactory(model=model, owner=None, hostname='')
-        self.assertFalse(asset.can_generate_hostname)
+        self._check_hostname_not_generated(asset)
 
     def test_generate_next_hostname_out_of_range(self):
         category = AssetCategoryFactory(code='PC')

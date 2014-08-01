@@ -1,0 +1,12 @@
+<li class="{% if node.children %}icon collapsed{% else %}zero{% endif %}">
+  {{ node.name }} <span class="count">{{ node.count }}</span>
+  {% if node.children %}
+    <ul class="level-{{level|add:1}}">
+    {% for ch in node.children %}
+      {% with node=ch level=level|add:1 template_name="assets/report_tree.html" %}
+          {% include template_name %}
+      {% endwith %}
+    {% endfor %}
+    </ul>
+  {% endif %}
+</li>
