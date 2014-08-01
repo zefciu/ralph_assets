@@ -16,13 +16,14 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
+from django.views.generic import TemplateView
 
 from ralph.account.models import Perm
+from ralph_assets import VERSION
 from ralph_assets import forms as assets_forms
 from ralph_assets.models_assets import AssetType
 from ralph_assets.models import Asset
 from ralph_assets.forms import OfficeForm
-from ralph.ui.views.common import Base
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def get_return_link(mode):
     return "/assets/%s/" % mode
 
 
-class ACLGateway(Base):
+class ACLGateway(object):
     """
     Assets module class which mainly checks user access to page.
     """
@@ -42,7 +43,122 @@ class ACLGateway(Base):
         return super(ACLGateway, self).dispatch(request, *args, **kwargs)
 
 
-class AssetsBase(ACLGateway):
+class Base(TemplateView):
+    columns = []
+    status = ''
+    section = None
+
+    def get_mainmenu_items(self):
+        mainmenu = [
+            MenuItem(
+                fugue_icon='fugue-building',
+                href=reverse('asset_search', kwargs={'mode': 'dc'}),
+                label=_('Data center'),
+                name='dc',
+            ),
+            MenuItem(
+                fugue_icon='fugue-printer',
+                href=reverse('asset_search', kwargs={'mode': 'back_office'}),
+                label=_('BackOffice'),
+                name='back_office',
+            ),
+            MenuItem(
+                fugue_icon='fugue-lifebuoy',
+                href=reverse('support_list'),
+                label=_('Supports'),
+                name='supports',
+            ),
+            MenuItem(
+                fugue_icon='fugue-user-green-female',
+                href=reverse('user_list'),
+                label=_('User list'),
+                name='user list',
+            ),
+            MenuItem(
+                fugue_icon='fugue-cheque',
+                href=reverse('licence_list'),
+                label=_('Licences'),
+                name='licences',
+            ),
+            MenuItem(
+                fugue_icon='fugue-table',
+                href=reverse('reports'),
+                label=_('Reports'),
+                name='reports',
+            ),
+        ]
+        return mainmenu
+
+    def get_footer_items(self, details):
+        footer_items = []
+        if settings.BUGTRACKER_URL:
+            footer_items.append(
+                MenuItem(
+                    fugue_icon='fugue-bug',
+                    href=settings.BUGTRACKER_URL,
+                    label=_('Report a bug'),
+                    pull_right=True,
+                )
+            )
+        footer_items.append(
+            MenuItem(
+                fugue_icon='fugue-document-number',
+                href=settings.ASSETS_CHANGELOG_URL,
+                label=_(
+                    "Version {version}".format(
+                        version='.'.join((str(part) for part in VERSION)),
+                    ),
+                ),
+            )
+        )
+        if self.request.user.is_staff:
+            footer_items.append(
+                MenuItem(
+                    fugue_icon='fugue-toolbox',
+                    href='/admin',
+                    label=_('Admin'),
+                )
+            )
+        footer_items.append(
+            MenuItem(
+                fugue_icon='fugue-user',
+                href=reverse('user_preference', args=[]),
+                label=_('{user} (preference)'.format(user=self.request.user)),
+                pull_right=True,
+                view_args=[details or 'info', ''],
+                view_name='preference',
+            )
+        )
+        footer_items.append(
+            MenuItem(
+                fugue_icon='fugue-door-open-out',
+                href=settings.LOGOUT_URL,
+                label=_('logout'),
+                pull_right=True,
+                view_args=[details or 'info', ''],
+                view_name='logout',
+            )
+        )
+        return footer_items
+
+    def get_context_data(self, **kwargs):
+        conetext = super(Base, self).get_context_data(**kwargs)
+        details = self.kwargs.get('details', 'info')
+        profile = self.request.user.get_profile()
+        conetext.update({
+            'columns': self.columns,
+            'details': details,
+            'footer_items': self.get_footer_items(details),
+            'mainmenu_items': self.get_mainmenu_items(),
+            'search_url': reverse('search', args=[details, '']),
+            'show_bulk': profile.has_perm(Perm.bulk_edit),
+            'url_query': self.request.GET,
+            'user': self.request.user,
+        })
+        return conetext
+
+
+class AssetsBase(ACLGateway, Base):
     template_name = "assets/base.html"
     sidebar_selected = None
     mainmenu_selected = None
@@ -65,47 +181,6 @@ class AssetsBase(ACLGateway):
             'asset_reports_enable': settings.ASSETS_REPORTS['ENABLE'],
         })
         return ret
-
-    def get_mainmenu_items(self):
-        mainmenu = [
-            MenuItem(
-                label=_('Data center'),
-                name='dc',
-                fugue_icon='fugue-building',
-                href='/assets/dc',
-            ),
-            MenuItem(
-                label=_('BackOffice'),
-                fugue_icon='fugue-printer',
-                name='back_office',
-                href='/assets/back_office',
-            ),
-            MenuItem(
-                label=_('Licences'),
-                fugue_icon='fugue-cheque',
-                name='licences',
-                href=reverse('licence_list'),
-            ),
-            MenuItem(
-                label=_('User list'),
-                fugue_icon='fugue-user-green-female',
-                name='user list',
-                href=reverse('user_list'),
-            ),
-            MenuItem(
-                label='Supports',
-                fugue_icon='fugue-lifebuoy',
-                name=_('supports'),
-                href=reverse('support_list'),
-            ),
-            MenuItem(
-                label='Reports',
-                fugue_icon='fugue-table',
-                name=_('reports'),
-                href=reverse('reports'),
-            ),
-        ]
-        return mainmenu
 
     def get_sidebar_items(self, base_sidebar_caption):
         if self.mode in ('back_office', 'dc'):
