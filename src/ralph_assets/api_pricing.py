@@ -40,7 +40,12 @@ def get_assets(date):
             logger.error('Asset {0} have no model'.format(asset.id))
             continue
 
-        device_info = asset.device_info
+        hostname = None
+        if asset.device_info:
+            ralph_device = asset.device_info.get_ralph_device()
+            if ralph_device:
+                hostname = ralph_device.name
+
         yield {
             'service_ci_uid': asset.service.ci_uid,
             'warehouse_id': asset.warehouse.id,
@@ -53,7 +58,7 @@ def get_assets(date):
             'depreciation_rate': asset.deprecation_rate,
             'is_depreciated': asset.is_deprecated(date=date),
             'price': asset.price,
-            'asset_name': asset.hostname
+            'asset_name': hostname,
         }
 
 
