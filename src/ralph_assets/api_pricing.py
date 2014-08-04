@@ -39,12 +39,15 @@ def get_assets(date):
         if not asset.model:
             logger.error('Asset {0} have no model'.format(asset.id))
             continue
-
-        hostname = None
-        if asset.device_info:
-            ralph_device = asset.device_info.get_ralph_device()
-            if ralph_device:
-                hostname = ralph_device.name
+        if not asset.device_info:
+            logger.error('Asset {0} have no device'.format(asset.id))
+            continue
+        else:
+            hostname = None
+            if asset.device_info:
+                ralph_device = asset.device_info.get_ralph_device()
+                if ralph_device:
+                    hostname = ralph_device.name
 
         yield {
             'service_ci_uid': asset.service.ci_uid,
