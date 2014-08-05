@@ -5,10 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import datetime
-import json
 import tempfile
 import uuid
 from decimal import Decimal
@@ -18,7 +15,6 @@ from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.test.client import Client
 from django.test.utils import override_settings
 
 from ralph_assets import models_assets
@@ -905,7 +901,6 @@ class TestAttachments(BaseViewsTest):
             'mode': 'back_office',
             'parent': 'asset',
         })
-        parent_class = models_assets.Asset
         self.add_attachment(BOAssetFactory(), add_attachment_url)
 
     def test_add_dc_asset_attachment(self):
@@ -913,7 +908,6 @@ class TestAttachments(BaseViewsTest):
             'mode': 'dc',
             'parent': 'asset',
         })
-        parent_class = models_assets.Asset
         self.add_attachment(DCAssetFactory(), add_attachment_url)
 
     def test_add_license_attachment(self):
@@ -921,7 +915,6 @@ class TestAttachments(BaseViewsTest):
             'mode': 'back_office',  # TODO: to rm if modes are cleaned
             'parent': 'license',
         })
-        parent_class = models_sam.Licence
         self.add_attachment(LicenceFactory(), add_attachment_url)
 
     def test_add_support_attachment(self):
@@ -929,7 +922,6 @@ class TestAttachments(BaseViewsTest):
             'mode': 'back_office',  # TODO: to rm if modes are cleaned
             'parent': 'support',
         })
-        parent_class = models_support.Support
         self.add_attachment(
             support_utils.BOSupportFactory(),
             add_attachment_url,
@@ -1118,52 +1110,6 @@ class DeviceEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, msg_error)
         self.assertContains(response, part)
-
-
-class LookupsTest(TestCase):
-
-    def setUp(self):
-        self.client = login_as_su()
-
-    def _generate_url(self, *lookup):
-        channel = base64.b64encode(cPickle.dumps(lookup))
-        return reverse('ajax_lookup', kwargs={'channel': channel})
-
-    def test_unlogged_user_lookup_permission(self):
-        """
-        - send request
-        - check for 403
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        client = Client()
-        response = client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 403)
-
-    def test_logged_user_lookup_permission(self):
-        """
-        - sign in
-        - send request
-        - check for 200
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        response = self.client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 200)
-
-    def test_lookups_bo_and_dc(self):
-        """
-        - user type 'Model' in some ajax-selects field
-        - user get assets with DC and BO type
-        """
-        number_of_assets = 3
-        for _ in xrange(number_of_assets):
-            BOAssetFactory()
-            DCAssetFactory()
-
-        url = self._generate_url('ralph_assets.models', 'AssetLookup')
-        response = self.client.get(url + '?term=Model')
-        self.assertEqual(
-            len(json.loads(response.content)), number_of_assets * 2
-        )
 
 
 class TestImport(TestCase):
