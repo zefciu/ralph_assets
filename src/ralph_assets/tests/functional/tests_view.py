@@ -1013,54 +1013,6 @@ class DeviceEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, msg_error)
         self.assertContains(response, part)
-
-
-class LookupsTest(TestCase):
-
-    def setUp(self):
-        self.client = login_as_su()
-
-    def _generate_url(self, *lookup):
-        channel = base64.b64encode(cPickle.dumps(lookup))
-        return reverse('ajax_lookup', kwargs={'channel': channel})
-
-    def test_unlogged_user_lookup_permission(self):
-        """
-        - send request
-        - check for 403
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        client = Client()
-        response = client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 403)
-
-    def test_logged_user_lookup_permission(self):
-        """
-        - sign in
-        - send request
-        - check for 200
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        response = self.client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 200)
-
-    def test_lookups_bo_and_dc(self):
-        """
-        - user type 'Model' in some ajax-selects field
-        - user get assets with DC and BO type
-        """
-        number_of_assets = 3
-        for _ in xrange(number_of_assets):
-            BOAssetFactory()
-            DCAssetFactory()
-
-        url = self._generate_url('ralph_assets.models', 'AssetLookup')
-        response = self.client.get(url + '?term=Model')
-        self.assertEqual(
-            len(json.loads(response.content)), number_of_assets * 2
-        )
-
-
 class ACLInheritanceTest(TestCase):
 
     def test_all_views_inherits_acls(self):
