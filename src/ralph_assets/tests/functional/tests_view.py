@@ -5,10 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import datetime
-import json
 import uuid
 from decimal import Decimal
 from dj.choices import Country
@@ -16,7 +13,6 @@ from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.test.client import Client
 from django.test.utils import override_settings
 
 from ralph_assets import models_assets
@@ -1013,6 +1009,8 @@ class DeviceEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, msg_error)
         self.assertContains(response, part)
+
+
 class ACLInheritanceTest(TestCase):
 
     def test_all_views_inherits_acls(self):
