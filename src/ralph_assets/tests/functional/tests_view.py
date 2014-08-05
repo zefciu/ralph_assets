@@ -906,9 +906,7 @@ class TestAttachments(BaseViewsTest):
             'parent': 'asset',
         })
         parent_class = models_assets.Asset
-        self.add_attachment(
-            parent_class, BOAssetFactory(), add_attachment_url,
-        )
+        self.add_attachment(BOAssetFactory(), add_attachment_url)
 
     def test_add_dc_asset_attachment(self):
         add_attachment_url = reverse('add_attachment', kwargs={
@@ -916,9 +914,7 @@ class TestAttachments(BaseViewsTest):
             'parent': 'asset',
         })
         parent_class = models_assets.Asset
-        self.add_attachment(
-            parent_class, DCAssetFactory(), add_attachment_url,
-        )
+        self.add_attachment(DCAssetFactory(), add_attachment_url)
 
     def test_add_license_attachment(self):
         add_attachment_url = reverse('add_attachment', kwargs={
@@ -926,9 +922,7 @@ class TestAttachments(BaseViewsTest):
             'parent': 'license',
         })
         parent_class = models_sam.Licence
-        self.add_attachment(
-            parent_class, LicenceFactory(), add_attachment_url
-        )
+        self.add_attachment(LicenceFactory(), add_attachment_url)
 
     def test_add_support_attachment(self):
         add_attachment_url = reverse('add_attachment', kwargs={
@@ -937,15 +931,13 @@ class TestAttachments(BaseViewsTest):
         })
         parent_class = models_support.Support
         self.add_attachment(
-            parent_class,
             support_utils.BOSupportFactory(),
             add_attachment_url,
         )
 
-    def add_attachment(self, parent_class, parent, add_attachment_url):
+    def add_attachment(self, parent, add_attachment_url):
         """
-        Checks if attachment can be added to *parent_class* (like: Asset,
-        Licence, Support)
+        Checks if attachment can be added.
         """
         file_content = 'anything'
         full_url = "{}?{}".format(
@@ -953,7 +945,7 @@ class TestAttachments(BaseViewsTest):
             urlencode({'select': obj.id for obj in [parent]}),
         )
 
-        asset = parent_class.objects.get(pk=parent.id)
+        asset = parent.__class__.objects.get(pk=parent.id)
         self.assertEqual(asset.attachments.count(), 0)
 
         with tempfile.TemporaryFile() as test_file:
@@ -969,7 +961,7 @@ class TestAttachments(BaseViewsTest):
             response = self.client.post(full_url, data, follow=True)
 
         self.assertEqual(response.status_code, 200)
-        asset = parent_class.objects.get(pk=parent.id)
+        asset = parent.__class__.objects.get(pk=parent.id)
         self.assertEqual(asset.attachments.count(), 1)
         attachment = asset.attachments.all()[0]
         self.assertEqual(attachment.original_filename, saved_filename)
@@ -1172,35 +1164,6 @@ class LookupsTest(TestCase):
         self.assertEqual(
             len(json.loads(response.content)), number_of_assets * 2
         )
-
-
-class ACLInheritanceTest(TestCase):
-
-    def test_all_views_inherits_acls(self):
-        """
-        - get all views from url.py except these urls:
-            - api (until it clarifies)
-            - redirections
-        - assert if each view has ACLClass in mro
-        """
-        from ralph_assets import urls
-        from ralph_assets.views.base import ACLGateway
-        excluded_urls_by_regexp = [
-            '^api/'  # skip it until api authen./author. is resolved
-        ]
-        for urlpattern in urls.urlpatterns:
-            if urlpattern._regex in excluded_urls_by_regexp:
-                continue
-            elif urlpattern.callback.func_name == 'RedirectView':
-                continue
-            module_name = urlpattern._callback.__module__
-            class_name = urlpattern._callback.__name__
-            imported_module = __import__(module_name, fromlist=[class_name])
-            found_class = getattr(imported_module, class_name)
-            msg = "View '{}' doesn't inherit from acl class".format(
-                '.'.join([module_name, class_name])
-            )
-            self.assertIn(ACLGateway, found_class.__mro__, msg)
 
 
 class TestImport(TestCase):
