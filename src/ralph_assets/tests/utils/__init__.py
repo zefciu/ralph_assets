@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from functools import partial
+
 from factory import (
     Sequence,
     lazy_attribute,
@@ -63,8 +65,6 @@ class MessagesTestMixin(object):
                 )
             )
 
-from functools import partial
-
 
 class AjaxClient(Client):
     """
@@ -81,10 +81,6 @@ class AjaxClient(Client):
 
 
 class ClientMixin(object):
-
-    def setUp(self):
-        self.client = AjaxClient()
-        super(ClientMixin, self).setUp()
 
     def login_as_user(self, user=None, password='ralph', *args, **kwargs):
         if not user:

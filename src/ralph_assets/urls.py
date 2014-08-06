@@ -192,9 +192,9 @@ urlpatterns = patterns(
         name='edit_licence',
     ),
     url(
-        r'sam/count_licence/$',
+        r'sam/count_licences/$',
         login_required(CountLicence.as_view()),
-        name='count_licence',
+        name='count_licences',
     ),
     url(
         r'sup/supports/$',

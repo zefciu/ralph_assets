@@ -21,7 +21,7 @@ from django.test.utils import override_settings
 from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets import models_sam
-from ralph_assets.tests.utils import UserFactory, ClientMixin
+from ralph_assets.tests.utils import UserFactory, AjaxClient, ClientMixin
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
 from ralph_assets.tests.utils import supports as support_utils
@@ -106,6 +106,11 @@ def check_fields(testcase, correct_data, object_to_check):
 
 
 class BaseViewsTest(ClientMixin, TestCase):
+    client_class = AjaxClient
+
+    def setUp(self):
+        self.login_as_superuser()
+        super(BaseViewsTest, self).setUp()
 
     def _assert_field_in_form(self, form_url, fields_names):
         check_strings = ('name="{}"'.format(f) for f in fields_names)
@@ -146,7 +151,7 @@ class TestDataDisplay(ClientMixin, TestCase):
         self.assertEqual(self.asset, first_table_row)
 
 
-class TestDevicesView(TestCase):
+class TestDevicesView(ClientMixin, TestCase):
     """
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
@@ -294,7 +299,6 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
-        self.login_as_superuser()
         self.asset_factory = DCAssetFactory
         self.mode = 'dc'
         self.asset_data = get_asset_data()
@@ -409,7 +413,6 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
-        self.login_as_superuser()
         self.asset_factory = BOAssetFactory
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
@@ -594,7 +597,6 @@ class TestLicencesView(BaseViewsTest):
 
     def setUp(self):
         super(TestLicencesView, self).setUp()
-        self.login_as_superuser()
         self.license_data = {
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
@@ -749,18 +751,24 @@ class TestLicencesView(BaseViewsTest):
         self.assertEqual(response.status_code, 302)
 
     def test_licence_count_simple(self):
+        number_of_users = 5
+        number_of_assets = 5
         licences = [LicenceFactory() for idx in xrange(5)]
-        licences[0].assets.add(*[BOAssetFactory() for _ in xrange(10)])
-        licences[0].users.add(*[UserFactory() for _ in xrange(5)])
-        url = reverse('count_licence')
+        licences[0].assets.add(
+            *[BOAssetFactory() for _ in xrange(number_of_assets)]
+        )
+        licences[0].users.add(
+            *[UserFactory() for _ in xrange(number_of_users)]
+        )
+        url = reverse('count_licences')
         url += '?id={}'.format(licences[0].id)
         response = self.client.ajax_get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             json.loads(response.content),
             {
-                'used_by_users': 5,
-                'used_by_assets': 10,
+                'used_by_users': number_of_users,
+                'used_by_assets': number_of_assets,
                 'total': licences[0].number_bought,
             },
         )
@@ -770,13 +778,15 @@ class TestLicencesView(BaseViewsTest):
         total = sum(models_sam.Licence.objects.values_list(
             'number_bought', flat=True)
         )
-        [lic.assets.add(
-            *[BOAssetFactory() for _ in xrange(5)]
-        ) for lic in licences]
-        [lic.users.add(
-            *[UserFactory() for _ in xrange(5)]
-        ) for lic in licences]
-        url = reverse('count_licence')
+        for lic in licences:
+            lic.assets.add(
+                *[BOAssetFactory() for _ in xrange(5)]
+            )
+        for lic in licences:
+            lic.users.add(
+                *[UserFactory() for _ in xrange(5)]
+            )
+        url = reverse('count_licences')
         response = self.client.ajax_get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -793,7 +803,7 @@ class TestSupportsView(BaseViewsTest):
     """This test case concern all supports views."""
 
     def setUp(self):
-        self.login_as_superuser()
+        super(TestSupportsView, self).setUp()
         support_utils.SupportTypeFactory().id
         self.support_data = dict(
             additional_notes="Additional notes",
@@ -906,9 +916,6 @@ class TestSupportsView(BaseViewsTest):
 
 class TestAttachments(BaseViewsTest):
     """This test case concern all attachments views."""
-
-    def setUp(self):
-        self.login_as_superuser()
 
     def test_cant_add_empty_attachment(self):
         """
@@ -1202,8 +1209,6 @@ class TestImport(ClientMixin, TestCase):
 
 
 class TestColumnsInSearch(BaseViewsTest):
-    def setUp(self):
-        self.login_as_superuser()
 
     def get_cols_by_mode(self, bob_cols, mode):
         mode_cols = set()

@@ -154,8 +154,8 @@
                 $('.alert.alert-info').parent().prepend(
                     '<div class="alert alert-success summary">'+
                         data.total + ' licences in total.<br/>' +
-                        data.used_by_users + ' licences consumed by users.<br/>' +
-                        data.used_by_assets + ' licences consumed by assets.' +
+                        data.used_by_users + ' licences assigned to users.<br/>' +
+                        data.used_by_assets + ' licences assigned to assets.' +
                     '</div>'
                 );
             })
