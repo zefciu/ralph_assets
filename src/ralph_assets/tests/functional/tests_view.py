@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import json
 import tempfile
 import uuid
 from decimal import Decimal
@@ -20,7 +21,7 @@ from django.test.utils import override_settings
 from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets import models_sam
-from ralph_assets.tests.utils import UserFactory
+from ralph_assets.tests.utils import UserFactory, ClientMixin
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
 from ralph_assets.tests.utils import supports as support_utils
@@ -33,7 +34,6 @@ from ralph_assets.tests.utils.assets import (
 )
 from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
 from ralph_assets.tests.utils.sam import LicenceFactory
-from ralph.ui.tests.global_utils import login_as_su
 
 
 def update(_dict, obj, keys):
@@ -105,7 +105,7 @@ def check_fields(testcase, correct_data, object_to_check):
         testcase.assertEqual(object_value, expected, msg)
 
 
-class BaseViewsTest(TestCase):
+class BaseViewsTest(ClientMixin, TestCase):
 
     def _assert_field_in_form(self, form_url, fields_names):
         check_strings = ('name="{}"'.format(f) for f in fields_names)
@@ -123,11 +123,11 @@ class BaseViewsTest(TestCase):
         return form.__dict__['initial']
 
 
-class TestDataDisplay(TestCase):
+class TestDataDisplay(ClientMixin, TestCase):
     """Test check if data from database are displayed on screen"""
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         asset_fields = dict(
             barcode='123456789',
             invoice_no='Invoice #1',
@@ -152,6 +152,7 @@ class TestDevicesView(TestCase):
     """
 
     def setUp(self):
+        self.login_as_superuser()
         self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
             'deprecation_end_date', 'deprecation_rate', 'invoice_date',
@@ -293,7 +294,7 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.asset_factory = DCAssetFactory
         self.mode = 'dc'
         self.asset_data = get_asset_data()
@@ -408,7 +409,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.asset_factory = BOAssetFactory
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
@@ -592,7 +593,8 @@ class TestLicencesView(BaseViewsTest):
     """This test case concern all licences views."""
 
     def setUp(self):
-        self.client = login_as_su()
+        super(TestLicencesView, self).setUp()
+        self.login_as_superuser()
         self.license_data = {
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
@@ -746,12 +748,52 @@ class TestLicencesView(BaseViewsTest):
         response = self.client.post(url, request_data)
         self.assertEqual(response.status_code, 302)
 
+    def test_licence_count_simple(self):
+        licences = [LicenceFactory() for idx in xrange(5)]
+        licences[0].assets.add(*[BOAssetFactory() for _ in xrange(10)])
+        licences[0].users.add(*[UserFactory() for _ in xrange(5)])
+        url = reverse('count_licence')
+        url += '?id={}'.format(licences[0].id)
+        response = self.client.ajax_get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'used_by_users': 5,
+                'used_by_assets': 10,
+                'total': licences[0].number_bought,
+            },
+        )
+
+    def test_licence_count_all(self):
+        licences = [LicenceFactory() for idx in xrange(5)]
+        total = sum(models_sam.Licence.objects.values_list(
+            'number_bought', flat=True)
+        )
+        [lic.assets.add(
+            *[BOAssetFactory() for _ in xrange(5)]
+        ) for lic in licences]
+        [lic.users.add(
+            *[UserFactory() for _ in xrange(5)]
+        ) for lic in licences]
+        url = reverse('count_licence')
+        response = self.client.ajax_get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'used_by_users': 25,
+                'used_by_assets': 25,
+                'total': total,
+            },
+        )
+
 
 class TestSupportsView(BaseViewsTest):
     """This test case concern all supports views."""
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         support_utils.SupportTypeFactory().id
         self.support_data = dict(
             additional_notes="Additional notes",
@@ -862,11 +904,12 @@ class TestSupportsView(BaseViewsTest):
             self._assert_field_in_form(form_url, required_fields)
 
 
+# <<<<<<< HEAD
 class TestAttachments(BaseViewsTest):
     """This test case concern all attachments views."""
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
 
     def test_cant_add_empty_attachment(self):
         """
@@ -961,10 +1004,13 @@ class TestAttachments(BaseViewsTest):
             self.assertEqual(attachment_file.read(), file_content)
 
 
-class DeviceEditViewTest(TestCase):
+# class DeviceEditViewTest(TestCase):
+# =======
+class DeviceEditViewTest(ClientMixin, TestCase):
+# >>>>>>> added summary to search licence view
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.asset_src = AssetFactory(sn='123-456-789')
         self.asset_dest = AssetFactory(sn='987-832-668')
 
@@ -1112,9 +1158,88 @@ class DeviceEditViewTest(TestCase):
         self.assertContains(response, part)
 
 
-class TestImport(TestCase):
+# <<<<<<< HEAD
+# class TestImport(TestCase):
+# =======
+# class LookupsTest(ClientMixin, TestCase):
+
+#     def setUp(self):
+#         self.login_as_superuser()
+
+#     def _generate_url(self, *lookup):
+#         channel = base64.b64encode(cPickle.dumps(lookup))
+#         return reverse('ajax_lookup', kwargs={'channel': channel})
+
+#     def test_unlogged_user_lookup_permission(self):
+#         """
+#         - send request
+#         - check for 403
+#         """
+#         url = self._generate_url('ralph_assets.models', 'DeviceLookup')
+#         client = Client()
+#         response = client.get(url + '?term=test')
+#         self.assertEqual(response.status_code, 403)
+
+#     def test_logged_user_lookup_permission(self):
+#         """
+#         - sign in
+#         - send request
+#         - check for 200
+#         """
+#         url = self._generate_url('ralph_assets.models', 'DeviceLookup')
+#         response = self.client.get(url + '?term=test')
+#         self.assertEqual(response.status_code, 200)
+
+#     def test_lookups_bo_and_dc(self):
+#         """
+#         - user type 'Model' in some ajax-selects field
+#         - user get assets with DC and BO type
+#         """
+#         number_of_assets = 3
+#         for _ in xrange(number_of_assets):
+#             BOAssetFactory()
+#             DCAssetFactory()
+
+#         url = self._generate_url('ralph_assets.models', 'AssetLookup')
+#         response = self.client.get(url + '?term=Model')
+#         self.assertEqual(
+#             len(json.loads(response.content)), number_of_assets * 2
+#         )
+
+
+# class ACLInheritanceTest(TestCase):
+
+#     def test_all_views_inherits_acls(self):
+#         """
+#         - get all views from url.py except these urls:
+#             - api (until it clarifies)
+#             - redirections
+#         - assert if each view has ACLClass in mro
+#         """
+#         from ralph_assets import urls
+#         from ralph_assets.views.base import ACLGateway
+#         excluded_urls_by_regexp = [
+#             '^api/'  # skip it until api authen./author. is resolved
+#         ]
+#         for urlpattern in urls.urlpatterns:
+#             if urlpattern._regex in excluded_urls_by_regexp:
+#                 continue
+#             elif urlpattern.callback.func_name == 'RedirectView':
+#                 continue
+#             module_name = urlpattern._callback.__module__
+#             class_name = urlpattern._callback.__name__
+#             imported_module = __import__(module_name, fromlist=[class_name])
+#             found_class = getattr(imported_module, class_name)
+#             msg = "View '{}' doesn't inherit from acl class".format(
+#                 '.'.join([module_name, class_name])
+#             )
+#             self.assertIn(ACLGateway, found_class.__mro__, msg)
+
+
+class TestImport(ClientMixin, TestCase):
+# >>>>>>> added summary to search licence view
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.url = reverse('xls_upload')
 
     def _update_asset_by_csv(self, asset, field, value):
@@ -1161,7 +1286,7 @@ class TestImport(TestCase):
 
 class TestColumnsInSearch(BaseViewsTest):
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
 
     def get_cols_by_mode(self, bob_cols, mode):
         mode_cols = set()
@@ -1207,7 +1332,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'User', 'Warehouse',
         ])
         mode = 'back_office'
-        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        search_url = reverse('asset_search', kwargs={'mode': mode})
         self.check_cols_presence(search_url, correct_col_names, mode)
 
     def test_dc_cols_presence(self):
@@ -1218,7 +1343,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'Type', 'Venture', 'Warehouse',
         ])
         mode = 'dc'
-        search_url = reverse('asset_search',  kwargs={'mode': mode})
+        search_url = reverse('asset_search', kwargs={'mode': mode})
         self.check_cols_presence(search_url, correct_col_names, mode)
 
     def test_license_cols_presence(self):
