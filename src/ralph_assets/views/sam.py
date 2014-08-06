@@ -178,7 +178,6 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
 
 class LicenceFormView(LicenceBaseView):
     """Base view that displays licence form."""
-
     template_name = 'assets/add_licence.html'
 
     def _get_form(self, data=None, **kwargs):
@@ -244,7 +243,7 @@ class AddLicence(LicenceFormView):
 
 class EditLicence(LicenceFormView):
     """Edit licence"""
-
+    detect_changes = True
     caption = _('Edit Licence')
     message = _('Licence changed')
     Form = EditLicenceForm

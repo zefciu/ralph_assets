@@ -141,6 +141,7 @@
         }
     };
 
+
     $(document).ready(function() {
         var report = new Report();
         var bulk = new Bulk();
@@ -224,6 +225,17 @@
         });
 
         $('.toggle-child-display').click(tableListing.toggleChildDisplay);
+
+        var detectedChanges = false;
+
+        $('.detect-changes :input').change(function(){
+            detectedChanges = true;
+        })
+
+        window.onbeforeunload = function() {
+            if(detectedChanges)
+                return 'Detected unsaved changes on form.';
+        }
     });
 
 })();
