@@ -904,7 +904,6 @@ class TestSupportsView(BaseViewsTest):
             self._assert_field_in_form(form_url, required_fields)
 
 
-# <<<<<<< HEAD
 class TestAttachments(BaseViewsTest):
     """This test case concern all attachments views."""
 
@@ -1004,10 +1003,7 @@ class TestAttachments(BaseViewsTest):
             self.assertEqual(attachment_file.read(), file_content)
 
 
-# class DeviceEditViewTest(TestCase):
-# =======
 class DeviceEditViewTest(ClientMixin, TestCase):
-# >>>>>>> added summary to search licence view
 
     def setUp(self):
         self.login_as_superuser()
