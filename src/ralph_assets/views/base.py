@@ -6,10 +6,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
+import json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import (
     TemplateView,
@@ -315,3 +317,20 @@ class BulkEditBase(BobBulkEditBase):
         else:
             query = Q(pk__in=self.get_items_ids())
         return query
+
+
+class AjaxMixin(object):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.is_ajax():
+            return HttpResponseBadRequest()
+        return super(AjaxMixin, self).dispatch(request, *args, **kwargs)
+
+
+class JsonResponseMixin(object):
+    content_type = 'application/json'
+
+    def render_json_response(self, context_data, status=200):
+        content = json.dumps(context_data)
+        return HttpResponse(
+            content, content_type=self.content_type, status=status
+        )
