@@ -60,6 +60,7 @@ class AssetsBase(ACLGateway, TemplateView):
     mode = None
     mainmenu_selected = None
     sidebar_selected = None
+    detect_changes = False
     template_name = "assets/base.html"
 
     def dispatch(self, request, mode=None, *args, **kwargs):
@@ -98,6 +99,7 @@ class AssetsBase(ACLGateway, TemplateView):
             'sidebar_selected': self.sidebar_selected,
             'url_query': self.request.GET,
             'user': self.request.user,
+            'detect_changes': self.detect_changes,
         })
         return context
 
