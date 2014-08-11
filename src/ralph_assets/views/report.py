@@ -96,7 +96,7 @@ class ReportContainer(list):
         new_node.count = count
         if parent:
             if not isinstance(parent, ReportNode):
-                parent, _ = self.get_or_create(parent)
+                parent, __ = self.get_or_create(parent)
         if created:
             parent.add_child(new_node)
         new_node.link = link
@@ -182,7 +182,7 @@ class CategoryModelStatusReport(BaseReport):
         for item in queryset:
             parent = item['model__category__name'] or 'Without category'
             name = item['model__name']
-            node, _ = self.report.add(
+            node, __ = self.report.add(
                 name=name,
                 parent=parent,
             )
@@ -212,7 +212,7 @@ class ManufacturerCategoryModelReport(BaseReport):
 
         for item in queryset:
             manufacturer = item['manufacturer__name'] or 'Without manufacturer'
-            node, _ = self.report.add(
+            node, __ = self.report.add(
                 name=item['category__name'],
                 parent=manufacturer,
             )
