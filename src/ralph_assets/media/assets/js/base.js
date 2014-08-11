@@ -8,7 +8,6 @@
 
     function collapse_all_children(parent_uid) {
             var children = $('[data-parent='+parent_uid+']');
-            console.log(parent_uid);
             while(children !== undefined && children.length){
                 children.css('display', 'none');
                 var uid = $(children[0]).data('uid')
@@ -280,7 +279,6 @@
         })
 
         window.onbeforeunload = function(e) {
-            console.log(e);
             if(detectedChanges)
                 return 'Detected unsaved changes on form.';
         }
