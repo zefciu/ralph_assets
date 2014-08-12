@@ -155,5 +155,4 @@ class TestReportLinked(TestCase):
 
         report = LinkedDevicesReport()
         results = report.execute(None)
-        print([result.to_dict()for result in results])
         self.assertEqual(len(results), 3)

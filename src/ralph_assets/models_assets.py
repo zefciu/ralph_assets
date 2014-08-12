@@ -539,6 +539,14 @@ class Asset(
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
 
     @property
+    def linked_device(self):
+        try:
+            device = self.device_info.get_ralph_device()
+        except AttributeError:
+            device = None
+        return device
+
+    @property
     def venture(self):
         if not self.device_info or not self.device_info.ralph_device_id:
             return None
