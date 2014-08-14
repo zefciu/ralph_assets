@@ -22,9 +22,9 @@ from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets import models_sam
 from ralph_assets.tests.utils import UserFactory, AjaxClient, ClientMixin
+from ralph_assets.tests.utils import AttachmentFactory, UserFactory
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
-from ralph_assets.tests.utils import supports as support_utils
 from ralph_assets.tests.utils.assets import (
     BOAssetFactory,
     AssetFactory,
@@ -34,6 +34,12 @@ from ralph_assets.tests.utils.assets import (
 )
 from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
 from ralph_assets.tests.utils.sam import LicenceFactory
+from ralph_assets.tests.utils.supports import (
+    BOSupportFactory,
+    DCSupportFactory,
+    SupportTypeFactory,
+)
+from ralph.ui.tests.global_utils import login_as_su
 
 
 def update(_dict, obj, keys):
@@ -187,8 +193,8 @@ class TestDevicesView(ClientMixin, TestCase):
 
     def _update_with_supports(self, _dict):
         supports = [
-            support_utils.DCSupportFactory().id,
-            support_utils.BOSupportFactory().id,
+            DCSupportFactory().id,
+            BOSupportFactory().id,
         ]
         supports_value = '|{}|'.format('|'.join(map(str, supports)))
         _dict.update(dict(supports=supports_value))
@@ -804,7 +810,7 @@ class TestSupportsView(BaseViewsTest):
 
     def setUp(self):
         super(TestSupportsView, self).setUp()
-        support_utils.SupportTypeFactory().id
+        SupportTypeFactory().id
         self.support_data = dict(
             additional_notes="Additional notes",
             # asset='',  # button, skip it
@@ -826,7 +832,7 @@ class TestSupportsView(BaseViewsTest):
             sla_type='Sla type',
             status=models_support.SupportStatus.new.id,
             supplier='Supplier',
-            support_type=support_utils.SupportTypeFactory().id,
+            support_type=SupportTypeFactory().id,
         )
         self.visible_add_form_fields = [
             'additional_notes', 'asset', 'asset_type', 'contract_id',
@@ -882,7 +888,7 @@ class TestSupportsView(BaseViewsTest):
 
         self.new_support_data = self.support_data.copy()
         assets = self._update_with_supports(self.new_support_data)
-        support = support_utils.BOSupportFactory()
+        support = BOSupportFactory()
         url = reverse('edit_support', kwargs={
             'mode': 'back_office',
             'support_id': support.id,
@@ -903,8 +909,8 @@ class TestSupportsView(BaseViewsTest):
     def test_license_edit_form_show_fields(self):
         required_fields = self.visible_edit_form_fields[:]
         test_data = (
-            ('dc', support_utils.DCSupportFactory()),
-            ('back_office', support_utils.BOSupportFactory()),
+            ('dc', DCSupportFactory()),
+            ('back_office', BOSupportFactory()),
         )
         for mode, support in test_data:
             form_url = reverse(
@@ -972,7 +978,7 @@ class TestAttachments(BaseViewsTest):
             'parent': 'support',
         })
         self.add_attachment(
-            support_utils.BOSupportFactory(),
+            BOSupportFactory(),
             add_attachment_url,
         )
 
@@ -1008,6 +1014,135 @@ class TestAttachments(BaseViewsTest):
         self.assertEqual(attachment.original_filename, saved_filename)
         with attachment.file as attachment_file:
             self.assertEqual(attachment_file.read(), file_content)
+
+    def test_delete_one_bo_asset_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='asset',
+            parents=[BOAssetFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_bo_licence_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='license',
+            parents=[LicenceFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_bo_support_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='support',
+            parents=[BOSupportFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_all_bo_asset_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='asset',
+            parents=[BOAssetFactory(), BOAssetFactory(), BOAssetFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_bo_licence_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='license',
+            parents=[LicenceFactory(), LicenceFactory(), LicenceFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_bo_support_attachment(self):
+        self.delete_attachment_check(
+            mode='back_office',
+            parent_name='support',
+            parents=[
+                BOSupportFactory(), BOSupportFactory(), BOSupportFactory(),
+            ],
+            delete_type='from_all',
+        )
+
+    def test_delete_one_dc_asset_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='asset',
+            parents=[DCAssetFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_dc_licence_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='license',
+            parents=[LicenceFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_dc_support_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='support',
+            parents=[DCSupportFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_all_dc_asset_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='asset',
+            parents=[DCAssetFactory(), DCAssetFactory(), DCAssetFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_dc_licence_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='license',
+            parents=[LicenceFactory(), LicenceFactory(), LicenceFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_dc_support_attachment(self):
+        self.delete_attachment_check(
+            mode='dc',
+            parent_name='support',
+            parents=[
+                DCSupportFactory(), DCSupportFactory(), DCSupportFactory(),
+            ],
+            delete_type='from_all',
+        )
+
+    def delete_attachment_check(
+        self, mode, parent_name, parents, delete_type
+    ):
+        attachment = AttachmentFactory()
+        for parent in parents:
+            parent.attachments.add(attachment)
+            parent.save()
+
+        parent = parents[0]  # each one is suitable, so take the first
+        full_url = reverse('delete_attachment', kwargs={
+            'mode': mode,
+            'parent': parent_name,
+        })
+        data = {
+            'parent_id': parent.id,
+            'attachment_id': attachment.id,
+            'delete_type': delete_type,
+        }
+
+        for parent in parents:
+            self.assertIn(attachment, parent.attachments.all())
+        response = self.client.post(full_url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        for parent in parents:
+            self.assertNotIn(
+                attachment,
+                parent.attachments.filter(pk=attachment.id),
+            )
 
 
 class DeviceEditViewTest(ClientMixin, TestCase):
@@ -1279,7 +1414,7 @@ class TestColumnsInSearch(BaseViewsTest):
         self.check_cols_presence(search_url, correct_col_names, mode=None)
 
     def test_supports_cols_presence(self):
-        support_utils.DCSupportFactory()
+        DCSupportFactory()
         correct_col_names = set([
             'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
             'Price',
