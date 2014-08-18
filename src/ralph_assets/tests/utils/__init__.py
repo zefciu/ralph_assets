@@ -9,12 +9,15 @@ from functools import partial
 
 from factory import (
     Sequence,
+    SubFactory,
     lazy_attribute,
 )
-from factory.django import DjangoModelFactory
+from factory.django import DjangoModelFactory, FileField
 
 from django.contrib.auth.models import User
 from django.test.client import Client
+
+from ralph_assets.models_assets import Attachment
 
 
 def login_as_user(user=None, password='ralph', *args, **kwargs):
@@ -45,6 +48,16 @@ class UserFactory(DjangoModelFactory):
         user.set_password('ralph')
         user.save()
         return user
+
+
+class AttachmentFactory(DjangoModelFactory):
+    FACTORY_FOR = Attachment
+
+    original_filename = Sequence(lambda n: 'original_filename'.format(n))
+    file = FileField(
+        data=b'uploaded_file_content', filename='uploaded_filename.txt',
+    )
+    uploaded_by = SubFactory(UserFactory)
 
 
 class AdminFactory(UserFactory):
