@@ -270,7 +270,7 @@
 
         var detectedChanges = false;
 
-        $('.detect-changes :input').change(function(){
+        $('.detect-changes :input').not('[type=hidden]').change(function(){
             detectedChanges = true;
         })
 
