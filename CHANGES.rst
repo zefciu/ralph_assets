@@ -6,7 +6,7 @@ Change Log
 Released on August 19, 2014
 
 * Assets in license forms are autocompleted by device's hostname,
-* Added *additional notes* field to license search,
+* Added *additional notes* field to supports search,
 * Added popup with information about unsaved changes on the form,
 * UI improvement in reports,
 
