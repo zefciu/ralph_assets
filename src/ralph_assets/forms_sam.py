@@ -13,6 +13,7 @@ from ajax_select.fields import (
 )
 from collections import OrderedDict
 from django import forms
+from django.forms import ChoiceField
 from django.utils.translation import ugettext_lazy as _
 from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
@@ -30,6 +31,7 @@ from django_search_forms.fields_ajax import (
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
 from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
+from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
 
@@ -92,6 +94,14 @@ class LicenceForm(forms.ModelForm):
             'valid_thru': DateWidget,
         }
 
+    asset_type = ChoiceField(
+        required=True,
+        choices=[('', '----')] + [
+            (choice.id, choice.name) for choice in [
+                AssetType.back_office, AssetType.data_center
+            ]
+        ],
+    )
     parent = AutoCompleteSelectField(
         ('ralph_assets.models', 'LicenceLookup'),
         required=False,
