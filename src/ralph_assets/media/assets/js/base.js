@@ -147,6 +147,22 @@
         var tableListing = new TableListing();
 
         report.prepare();
+
+        $('.ajax.summary').click(function(){
+            $.get($(this).attr('href'), function(data){
+                $('.alert.summary').remove();
+                $('.alert.alert-info').parent().prepend(
+                    '<div class="alert alert-success summary">'+
+                        data.total + ' licences in total.<br/>' +
+                        data.used_by_users + ' licences assigned to users.<br/>' +
+                        data.used_by_assets + ' licences assigned to assets.' +
+                    '</div>'
+                );
+                window.scrollTo(0,0);
+            })
+            return false;
+        });
+
         $('.report .expand-all').click(function(){
             report.expand_all();
         });

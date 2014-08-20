@@ -7,8 +7,6 @@ from __future__ import unicode_literals
 
 import logging
 
-from bob.menu import MenuItem, MenuHeader
-from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
@@ -17,6 +15,7 @@ from ralph_assets.views.base import AssetsBase
 from ralph_assets.models_assets import (
     Asset,
     AssetModel,
+    AssetCategory,
     AssetStatus,
     MODE2ASSET_TYPE,
 )
@@ -230,8 +229,90 @@ class StatusModelReport(BaseReport):
             )
 
 
+class LinkedDevicesReport(BaseReport):
+    slug = 'asset-device'
+    name = _('Asset - device')
+    with_modes = False
+    links = True
+
+    def prepare(self, mode=None):
+        assets = Asset.objects.raw("""
+        SELECT a.*
+        FROM
+            ralph_assets_asset a
+        JOIN
+            ralph_assets_deviceinfo di ON di.id=a.device_info_id
+        JOIN
+            discovery_device e on a.sn=e.sn or a.barcode=e.barcode
+        WHERE
+            di.ralph_device_id IS NULL
+            OR di.ralph_device_id=0
+            AND a.deleted=0
+        """)
+
+        ids = []
+        root = None
+        for asset in assets:
+            ids.append(str(asset.id))
+            link = {
+                'label': 'go to asset',
+                'url': asset.url,
+            }
+
+            node, root = self.report.add(
+                parent=_('Matched SN or barcode but without linked device'),
+                name='SN: %s, barcode: %s' % (asset.sn, asset.barcode),
+                count=1,
+                link=link,
+                unique=False,
+            )
+        if root:
+            root.link = {
+                'label': 'go to search',
+                'url': '/assets/dc/search?id={}'.format(','.join(ids)),
+            }
+
+        assets = Asset.objects.raw("""
+        SELECT a.*
+        FROM
+            ralph_assets_asset a
+        JOIN
+            ralph_assets_deviceinfo di ON di.id=a.device_info_id
+        WHERE
+            di.ralph_device_id IS NULL
+            AND a.deleted=0
+        """)
+        ids = []
+        for asset in assets:
+            ids.append(str(asset.id))
+            link = {
+                'label': 'go to asset',
+                'url': asset.url,
+            }
+            node, root = self.report.add(
+                parent=_('Assets without linked device'),
+                name='SN: %s, barcode: %s' % (asset.sn, asset.barcode),
+                count=1,
+                link=link,
+                unique=False,
+            )
+
+    def execute(self, mode):
+        queryset = AssetCategory.objects.filter(parent=None)
+        result = []
+        # aggr = defaultdict(int)
+        for row in queryset:
+            result.append({
+                'count': row.assetmodel_set.count(),
+                'name': row.name,
+                'extra': row.get_ancestors(),
+            })
+
+        return result
+
+
 class ReportViewBase(AssetsBase):
-    mainmenu_selected = 'reports'
+    submodule_name = 'assets_reports'
     reports = [
         CategoryModelReport,
         CategoryModelStatusReport,
@@ -253,23 +334,6 @@ class ReportViewBase(AssetsBase):
         },
     ]
 
-    def get_sidebar_items(self, base_sidebar_caption):
-        sidebar_menu = []
-        sidebar_menu += [MenuHeader(_('Reports'))]
-        sidebar_menu += [
-            MenuItem(
-                label=r.name, href=reverse('report_detail', kwargs={
-                    'mode': 'all',
-                    'slug': r.slug,
-                })
-            )
-            for r in self.reports
-        ]
-        sidebar_menu.extend(super(ReportViewBase, self).get_sidebar_items(
-            base_sidebar_caption
-        ))
-        return sidebar_menu
-
 
 class ReportsList(ReportViewBase):
     template_name = 'assets/report_list.html'
@@ -277,6 +341,10 @@ class ReportsList(ReportViewBase):
 
 class ReportDetail(ReportViewBase):
     template_name = 'assets/report_detail.html'
+
+    @property
+    def active_sidebar_item(self):
+        return self.report.name
 
     def get_report(self, slug):
         for report in self.reports:
