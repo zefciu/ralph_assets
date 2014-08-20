@@ -202,18 +202,17 @@ urlpatterns = patterns(
         name='add_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sup/edit_support/'
-        r'(?P<support_id>[0-9]+)$',
+        r'sup/edit_support/(?P<support_id>[0-9]+)$',
         login_required(EditSupportView.as_view()),
         name='edit_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/history/support/(?P<support_id>[0-9]+)/$',
+        r'history/support/(?P<support_id>[0-9]+)/$',
         login_required(HistorySupport.as_view()),
         name='support_history',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sup/delete/$',
+        r'sup/delete/$',
         login_required(DeleteSupportView.as_view()),
         name='delete_support',
     ),

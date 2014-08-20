@@ -30,7 +30,7 @@ class BaseAttachment(AssetsBase):
         elif parent == 'licence':
             url = reverse('edit_licence', args=(parent_id))
         elif parent == 'support':
-            url = reverse('edit_support', args=(self.mode, parent_id))
+            url = reverse('edit_support', args=(parent_id))
         return url
 
     def get_parent_mode(self, parent, parent_pk):

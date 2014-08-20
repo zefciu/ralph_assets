@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 from ajax_select.fields import AutoCompleteSelectMultipleField
 from collections import OrderedDict
 from django import forms
+from django.forms import ChoiceField
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
 
@@ -22,6 +23,7 @@ from django_search_forms.form import SearchForm
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS
+from ralph_assets.models import AssetType
 from ralph_assets.models_support import SupportType
 
 
@@ -72,9 +74,14 @@ class SupportForm(forms.ModelForm):
             'support_type',
         )
 
-    def __init__(self, mode, *args, **kwargs):
-        self.mode = mode
-        super(SupportForm, self).__init__(*args, **kwargs)
+    asset_type = ChoiceField(
+        required=True,
+        choices=[('', '----')] + [
+            (choice.id, choice.name) for choice in [
+                AssetType.back_office, AssetType.data_center
+            ]
+        ],
+    )
 
     def clean(self, *args, **kwargs):
         result = super(SupportForm, self).clean(*args, **kwargs)

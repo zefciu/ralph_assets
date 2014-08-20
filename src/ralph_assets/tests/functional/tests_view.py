@@ -893,7 +893,6 @@ class TestSupportsView(BaseViewsTest):
         assets = self._update_with_supports(self.new_support_data)
         support = BOSupportFactory()
         url = reverse('edit_support', kwargs={
-            'mode': 'back_office',
             'support_id': support.id,
         })
         response = self.client.post(url, self.new_support_data)
@@ -918,7 +917,7 @@ class TestSupportsView(BaseViewsTest):
         for mode, support in test_data:
             form_url = reverse(
                 'edit_support',
-                kwargs={'mode': mode, 'support_id': support.id},
+                kwargs={'support_id': support.id},
             )
             self._assert_field_in_form(form_url, required_fields)
 
