@@ -16,7 +16,7 @@ from django.http import HttpResponseRedirect
 from ralph_assets import models as assets_models
 from ralph_assets.forms import AttachmentForm
 from ralph_assets.models_assets import Attachment, ASSET_TYPE2MODE
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import AssetsBase
 
 
 logger = logging.getLogger(__name__)
@@ -24,14 +24,13 @@ logger = logging.getLogger(__name__)
 
 class BaseAttachment(AssetsBase):
 
-    def get_back_url(self, parent, mode, parent_id):
-        if parent == 'asset':
-            url = reverse('device_edit', args=(self.mode, parent_id))
-        elif parent == 'licence':
-            url = reverse('edit_licence', args=(parent_id,))
-        elif parent == 'support':
-            url = reverse('edit_support', args=(parent_id,))
-        return url
+    def get_back_url(self, parent_name):
+        mapping = {
+            'asset': 'dc',
+            'licence': 'licence_list',
+            'support': 'support_list',
+        }
+        return reverse(mapping[parent_name])
 
     def get_parent_mode(self, parent, parent_pk):
         parent_obj = parent.objects.get(pk=parent_pk)
@@ -86,7 +85,7 @@ class AddAttachment(BaseAttachment):
         )
         if not self.selected_parents.exists():
             messages.warning(self.request, _("Nothing to edit."))
-            return HttpResponseRedirect(get_return_link(self.mode))
+            return HttpResponseRedirect(self.get_back_url(self.parent_name))
 
         AttachmentFormset = formset_factory(
             form=AttachmentForm, extra=1,
@@ -113,7 +112,7 @@ class AddAttachment(BaseAttachment):
                 for parent in self.selected_parents:
                     parent.attachments.add(attachment)
             messages.success(self.request, _("Changes saved."))
-            return HttpResponseRedirect(get_return_link(self.mode))
+            return HttpResponseRedirect(self.get_back_url(self.parent_name))
         messages.error(self.request, _("Please correct the errors."))
         return super(AddAttachment, self).get(*args, **kwargs)
 
@@ -122,9 +121,6 @@ class DeleteAttachment(BaseAttachment):
 
     def post(self, *args, **kwargs):
         parent_id = self.request.POST.get('parent_id')
-        self.back_url = self.get_back_url(
-            self.parent_name, self.mode, parent_id,
-        )
         attachment_id = self.request.POST.get('attachment_id')
         try:
             attachment = Attachment.objects.get(pk=attachment_id)
@@ -132,7 +128,7 @@ class DeleteAttachment(BaseAttachment):
             messages.error(
                 self.request, _("Selected attachment doesn't exists.")
             )
-            return HttpResponseRedirect(self.back_url)
+            return HttpResponseRedirect(self.get_back_url(self.parent_name))
         try:
             self.parent = self.Parent.objects.get(pk=parent_id)
         except self.Parent.DoesNotExist:
@@ -140,7 +136,7 @@ class DeleteAttachment(BaseAttachment):
                 self.request,
                 _("Selected {} doesn't exists.").format(self.parent_name),
             )
-            return HttpResponseRedirect(self.back_url)
+            return HttpResponseRedirect(self.parent.url)
         delete_type = self.request.POST.get('delete_type')
         if delete_type == 'from_one':
             if attachment in self.parent.attachments.all():
@@ -161,4 +157,4 @@ class DeleteAttachment(BaseAttachment):
         else:
             msg = "Unknown delete type: {}".format(delete_type)
             messages.error(self.request, _(msg))
-        return HttpResponseRedirect(self.back_url)
+        return HttpResponseRedirect(self.parent.url)

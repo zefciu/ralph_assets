@@ -1,8 +1,11 @@
 quicktest:
 	DJANGO_SETTINGS_PROFILE=test-assets ralph test ralph_assets
 
-test-with-coveralls:
+test-unittests:
 	DJANGO_SETTINGS_PROFILE=test-assets coverage run --source=ralph_assets --omit='*migrations*,*tests*,*__init__*' '$(VIRTUAL_ENV)/bin/ralph' test ralph_assets
+
+test-doc:
+	cd ./doc && make html
 
 coverage:
 	make test-with-coveralls
@@ -14,3 +17,5 @@ flake:
 
 runserver:
 	ralph runserver
+
+test-with-coveralls: test-doc test-unittests
