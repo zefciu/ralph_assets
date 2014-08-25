@@ -26,7 +26,6 @@ from ralph_assets.models_assets import (
     AssetType,
     Asset,
     AssetOwner,
-    ASSET_TYPE2MODE,
 )
 
 
@@ -105,7 +104,6 @@ class Support(
     def url(self):
         return reverse('edit_support', kwargs={
             'support_id': self.id,
-            'mode': ASSET_TYPE2MODE[self.asset_type],
         })
 
     def get_natural_end_support(self):

@@ -22,7 +22,7 @@
       {% include 'assets/attachment_table.html' with attachment_parent=support parent_name='support' %}
       {% if support %}
         <h6>
-          <a href="{% url support_history mode support.id %}">
+          <a href="{% url support_history support.id %}">
             {% trans "Support history"%}
           </a>
         </h6>
