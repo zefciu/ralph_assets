@@ -16,13 +16,23 @@ from django.http import HttpResponseRedirect
 from ralph_assets import models as assets_models
 from ralph_assets.forms import AttachmentForm
 from ralph_assets.models_assets import Attachment
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import (
+    AssetsBase,
+    ActiveSubmoduleByAssetMixin,
+    get_return_link
+)
 
 
 logger = logging.getLogger(__name__)
 
 
-class AddAttachment(AssetsBase):
+class AttachmentMixin(ActiveSubmoduleByAssetMixin):
+
+    def get_object_class(self):
+        return self.Parent
+
+
+class AddAttachment(AttachmentMixin, AssetsBase):
     """
     Adding attachments to Parent.
     Parent can be one of these models: License, Asset, Support.
@@ -86,7 +96,7 @@ class AddAttachment(AssetsBase):
         return super(AddAttachment, self).get(*args, **kwargs)
 
 
-class DeleteAttachment(AssetsBase):
+class DeleteAttachment(AttachmentMixin, AssetsBase):
 
     parent2url_name = {
         'licence': 'edit_licence',
