@@ -248,6 +248,14 @@
             });
         });
 
+        require(['reports'], function(reports) {
+            reports.setup({
+                trigger: $('[data-role="async-report"]'),
+                progressBar: '#async-progress',
+                etaEl: '#eta'
+            });
+        });
+
         bulk.append_bob_select_item();
 
         $('.bob-select-all-pages').click(function() {
