@@ -365,7 +365,7 @@ class AssetRelationsReport(BaseRelationsReport):
 
     def get_result(self, *args, **kwargs):
         filter_type = kwargs.get('mode')
-        return [data for data in get_assets_rows(filter_type=filter_type)]
+        return list(get_assets_rows(filter_type=filter_type))
 
 
 class LicenceRelationsReport(BaseRelationsReport):
