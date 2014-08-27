@@ -71,6 +71,7 @@ asset_fieldset = lambda: OrderedDict([
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
         'deprecation_rate', 'source', 'request_date', 'provider_order_date',
         'delivery_date', 'deprecation_end_date', 'budget_info',
+        'force_deprecation',
     ]),
     ('User Info', [
         'user', 'owner', 'employee_id', 'company', 'department', 'manager',
@@ -936,6 +937,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'deprecation_end_date',
             'deprecation_rate',
             'employee_id',
+            'force_deprecation',
             'imei',
             'invoice_date',
             'invoice_no',
