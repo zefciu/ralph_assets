@@ -607,8 +607,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
         self._test_mulitvalues_behaviour()
 
     def test_save_without_changes(self):
-        """Assets must be the same values after dry save.
-        """
+        """Assets must be the same values after dry save."""
         original_asset = BOAssetFactory(force_deprecation=True)
         exclude = [
             'assethistorychange',

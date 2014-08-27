@@ -963,7 +963,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'sn',
             'source',
             'status',
-            'support_period',
             'task_url',
             'type',
             'user',
