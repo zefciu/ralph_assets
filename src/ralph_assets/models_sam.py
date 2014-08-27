@@ -208,7 +208,7 @@ class BudgetInfoLookup(RestrictedLookupChannel):
         return self.format_item_display(obj)
 
     def format_item_display(self, obj):
-        return escape(obj.name)
+        return "<span>{name}</span>".format(name=obj.name)
 
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):

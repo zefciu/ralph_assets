@@ -300,13 +300,18 @@ class BulkEditLicenceForm(LicenceForm):
             'service_name',
             'sn',
             'remarks',
+            'budget_info',
+            'assets',
+            'users',
         )
+    sn = forms.CharField(label=_('Licence key'))
+    remarks = forms.CharField(label=_('Additional remarks'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(BulkEditLicenceForm, self).__init__(None, *args, **kwargs)
-        classes = "span12 fillable"
-        banned_fillables = set(['sn', 'niw', 'barcode', 'imei'])
+        banned_fillables = set(['niw', 'assets', 'users'])
         for field_name in self.fields:
+            classes = "span12 fillable"
             if field_name in banned_fillables:
                 classes = "span12"
             self.fields[field_name].widget.attrs.update({'class': classes})
