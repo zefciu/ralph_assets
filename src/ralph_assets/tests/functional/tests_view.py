@@ -262,8 +262,14 @@ class TestDevicesView(ClientMixin, TestCase):
         })
         response = self.client.get(url)
         form = response.context['asset_form']
-        update_dict = form.__dict__['initial']
-        update_dict.update(**kwargs)
+        initial_dict = form.initial
+        update_dict = {}
+        for fieldset, fields in form.fieldsets.items():
+            for field in fields:
+                val = initial_dict.get(field, None)
+                if val:
+                    update_dict[field] = val
+        update_dict.update(kwargs)
         response = self.client.post(url, update_dict, follow=True)
         return response, models_assets.Asset.objects.get(id=asset_id)
 
@@ -599,6 +605,43 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_mulitvalues_behaviour(self):
         self._test_mulitvalues_behaviour()
+
+    def test_save_without_changes(self):
+        """Assets must be the same values after dry save.
+        """
+        original_asset = BOAssetFactory(force_deprecation=True)
+        exclude = [
+            'assethistorychange',
+            'attachments',
+            'cache_version',
+            'device',
+            'licence',
+            'created',
+            'modified',
+            'source_device',
+            'supports',
+            'support_void_reporting',
+            'support_period',
+            'transitionshistory',
+        ]
+
+        constant_fields = [
+            field for field in original_asset._meta.get_all_field_names()
+            if field not in exclude
+        ]
+        response, asset = self.update_asset(
+            original_asset.id,
+            asset=True,
+        )
+        for field in constant_fields:
+            self.assertEqual(
+                getattr(original_asset, field),
+                getattr(asset, field),
+                'Value of field "{}" is diffrent after save! '
+                'Before: {}; after: {}'
+                .format(field, getattr(original_asset, field),
+                        getattr(asset, field))
+            )
 
 
 class TestLicencesView(BaseViewsTest):

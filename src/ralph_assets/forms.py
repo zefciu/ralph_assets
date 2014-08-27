@@ -407,8 +407,6 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
     def _update_field_css_class(self, field_name):
         if field_name not in self.banned_fillables:
             classes = "span12 fillable"
-        elif field_name == 'support_void_reporting':
-            classes = ""
         else:
             classes = "span12"
         self.fields[field_name].widget.attrs.update({'class': classes})
@@ -797,9 +795,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'slots',
             'source',
             'status',
-            'support_period',
-            'support_type',
-            'support_void_reporting',
             'task_url',
             'type',
             'user',
@@ -814,7 +809,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'provider_order_date': DateWidget(),
             'remarks': Textarea(attrs={'rows': 3}),
             'request_date': DateWidget(),
-            'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -942,7 +936,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'deprecation_end_date',
             'deprecation_rate',
             'employee_id',
-            'force_deprecation',
             'imei',
             'invoice_date',
             'invoice_no',
@@ -969,8 +962,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'source',
             'status',
             'support_period',
-            'support_type',
-            'support_void_reporting',
             'task_url',
             'type',
             'user',
@@ -987,7 +978,6 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'remarks': Textarea(attrs={'rows': 3}),
             'request_date': DateWidget(),
             'sn': Textarea(attrs={'rows': 1, 'readonly': '1'}),
-            'support_type': Textarea(attrs={'rows': 5}),
         }
     model = AutoCompleteSelectField(
         LOOKUPS['asset_model'],
@@ -1562,8 +1552,7 @@ class SplitDevice(ModelForm):
         model = Asset
         fields = (
             'id', 'delete', 'model_proposed', 'model_user', 'invoice_no',
-            'order_no', 'sn', 'barcode', 'price', 'support_period',
-            'support_type', 'support_void_reporting', 'provider', 'source',
+            'order_no', 'sn', 'barcode', 'price', 'provider', 'source',
             'status', 'request_date', 'delivery_date', 'invoice_date',
             'provider_order_date', 'warehouse',
         )
@@ -1585,14 +1574,11 @@ class SplitDevice(ModelForm):
             'model_user', 'device_info', 'invoice_no', 'order_no',
             'request_date', 'delivery_date', 'invoice_date',
             'production_use_date', 'provider_order_date',
-            'provider_order_date', 'support_period', 'support_type',
-            'provider', 'source', 'status', 'warehouse',
+            'provider_order_date', 'provider', 'source', 'status', 'warehouse',
         ]
         for field_name in self.fields:
             if field_name in fillable_fields:
                 classes = "span12 fillable"
-            elif field_name == 'support_void_reporting':
-                classes = ""
             else:
                 classes = "span12"
             self.fields[field_name].widget.attrs = {'class': classes}
