@@ -6,6 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
+from django.contrib.contenttypes.models import ContentType
+
+
 ISO_3166 = (
     ('AF', 'AFG'), ('AX', 'ALA'), ('AL', 'ALB'), ('DZ', 'DZA'), ('AS', 'ASM'),
     ('AD', 'AND'), ('AO', 'AGO'), ('AI', 'AIA'), ('AQ', 'ATA'), ('AG', 'ATG'),
@@ -61,3 +64,25 @@ ISO_3166 = (
 
 iso2_to_iso3 = {k: v for k, v in ISO_3166}
 iso3_to_iso2 = {v: k for k, v in ISO_3166}
+
+
+class ContentTypeMixin(object):
+    content_type_id_kwarg_name = 'content_type'
+    object_id_kwarg_name = 'object_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.content_type_id = kwargs[self.content_type_id_kwarg_name]
+        self.content_type = ContentType.objects.get(pk=self.content_type_id)
+        self.model = self.content_type.model_class()
+        self.object_id = kwargs[self.object_id_kwarg_name]
+        return super(ContentTypeMixin, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ContentTypeMixin, self).get_context_data(**kwargs)
+        context.update({
+            'content_type': self.content_type,
+            'content_type_id': self.content_type_id,
+            'object_id': self.object_id,
+            'content_object': self.model.objects.get(pk=self.object_id),
+        })
+        return context

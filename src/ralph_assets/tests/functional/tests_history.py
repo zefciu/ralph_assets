@@ -15,7 +15,7 @@ from ralph_assets.models_assets import (
     SAVE_PRIORITY,
     AssetType
 )
-from ralph_assets.models_history import AssetHistoryChange
+from ralph_assets.history.models import History
 from ralph_assets.tests.utils.assets import (
     AssetCategoryFactory,
     AssetManufacturerFactory,
@@ -109,8 +109,10 @@ class HistoryAssetsView(TestCase):
 
     def test_change_status(self):
         """Test check the recording Asset status change in asset history"""
-        asset_history = AssetHistoryChange.objects.get(
-            asset=self.asset, field_name='status'
+        asset_history = History.objects.get_history_for_this_object(
+            obj=self.asset
+        ).get(
+            field_name='status'
         )
         self.assertListEqual(
             [asset_history.old_value, asset_history.new_value],
@@ -119,8 +121,10 @@ class HistoryAssetsView(TestCase):
 
     def test_change_barcode(self):
         """Test check the recording Asset barcode change in asset history"""
-        asset_history = AssetHistoryChange.objects.filter(
-            asset=self.asset, field_name='barcode'
+        asset_history = History.objects.get_history_for_this_object(
+            obj=self.asset
+        ).get(
+            field_name='barcode'
         )
         self.assertListEqual(
             [asset_history[0].old_value, asset_history[0].new_value],
@@ -141,10 +145,7 @@ class HistoryAssetsView(TestCase):
             'asset': True,
         })
         response = self.client.post(url, update_dict)
-        url = reverse('device_history', kwargs={
-            'mode': 'back_office',
-            'asset_id': asset.id,
-        })
+        url = History.get_history_url_for_object(asset)
         response = self.client.get(url)
         self.assertContains(response, 'required_support')
 

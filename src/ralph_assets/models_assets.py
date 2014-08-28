@@ -44,6 +44,7 @@ from django.utils.translation import ugettext_lazy as _
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
+from ralph_assets import history
 from ralph_assets.models_util import WithForm
 from ralph_assets.utils import iso2_to_iso3
 
@@ -752,6 +753,7 @@ class Asset(
     @property
     def asset_type(self):
         return self.type
+history.register(Asset, exclude=['all'])
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')
