@@ -734,7 +734,7 @@ class TestLicencesView(BaseViewsTest):
         """
         - get add license request data d1
 
-        - add licence with duplicated inv. nb. in data
+        - add licence with duplicated inv.-nb. in data
         - assert error occured
 
         - edit licence with duplicated sn in data
@@ -806,6 +806,24 @@ class TestLicencesView(BaseViewsTest):
                 'total': total,
             },
         )
+
+    def test_allow_duplicated_sns(self):
+        """
+        add license by factory with sn sn1
+        add by form with sn sn1
+        assert 200
+        """
+        existing_license = LicenceFactory()
+        license_data = self.get_license_form_data()
+        license_data.update({
+            'sn': existing_license.sn,
+            'parent': '',
+        })
+        add_license_url = reverse('add_licence')
+        response = self.client.post(
+            add_license_url, license_data, follow=True,
+        )
+        self.assertContains(response, '1 licences added')
 
 
 class TestSupportsView(BaseViewsTest):

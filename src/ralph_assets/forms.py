@@ -167,7 +167,28 @@ LOOKUPS = {
 
 class MultivalFieldForm(ModelForm):
     """A form that has several multiline fields that need to have the
-    same number of entries."""
+    same number of entries.
+
+    :param multival_fields: list of form fields which require the same item
+    count
+    :param allow_duplicates: list of fields, if particular multivalue field
+    allows duplicates, append it to this list
+    """
+
+    multival_fields = []
+    allow_duplicates = []
+
+    def __init__(self, *args, **kwargs):
+        bad_fields = set(self.allow_duplicates).difference(
+            set(self.multival_fields)
+        )
+        if len(bad_fields):
+            raise Exception(
+                "This field(s) is(are) not multival_fields: {}".format(
+                    bad_fields,
+                )
+            )
+        super(MultivalFieldForm, self).__init__(*args, **kwargs)
 
     def different_multival_counters(self, cleaned_data):
         """Adds a validation error if if form's multivalues fields have
@@ -184,12 +205,14 @@ class MultivalFieldForm(ModelForm):
                     )
                     self.errors.setdefault(field, []).append(msg)
 
-    def unique_multival_fields(self, data):
+    def unique_multival_fields(self, request_data):
         for field_name in self.multival_fields:
+            if field_name in self.allow_duplicates:
+                continue
             try:
                 self[field_name].field.check_field_uniqueness(
                     self._meta.model,
-                    data.get(field_name, [])
+                    request_data.get(field_name, [])
                 )
             except ValidationError as err:
                 self._errors.setdefault(field_name, [])
@@ -1118,6 +1141,8 @@ class AddPartForm(BaseAddAssetForm, MultivalFieldForm):
         Add new part for device
     '''
 
+    multival_fields = ['sn']
+
     sn = MultilineField(
         db_field_path='sn', label=_('SN/SNs'), required=True,
         widget=Textarea(attrs={'rows': 25}),
@@ -1128,13 +1153,14 @@ class AddPartForm(BaseAddAssetForm, MultivalFieldForm):
         super(AddPartForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Basic Info'].remove('barcode')
-        self.multival_fields = ['sn']
 
 
 class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
     '''
         Add new device form
     '''
+    multival_fields = ['sn', 'barcode', 'imei']
+
     sn = MultilineField(
         db_field_path='sn', label=_('SN/SNs'), required=False,
         widget=Textarea(attrs={'rows': 25}), validators=[validate_snbcs]
@@ -1149,10 +1175,6 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         widget=Textarea(attrs={'rows': 25}),
         validators=[validate_imeis],
     )
-
-    def __init__(self, *args, **kwargs):
-        super(AddDeviceForm, self).__init__(*args, **kwargs)
-        self.multival_fields = ['sn', 'barcode', 'imei']
 
     def clean(self):
         """
