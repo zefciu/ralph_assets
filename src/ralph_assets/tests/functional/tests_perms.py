@@ -7,15 +7,15 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from pluggableapp import PluggableApp
 
 from ralph.account.models import BoundPerm, Perm
 from ralph.ui.tests.global_utils import (
     login_as_su,
 )
-from ralph_assets.tests.utils import (
-    UserFactory,
-    login_as_user,
-)
+from ralph.ui.tests.global_utils import login_as_user
+from ralph.ui.tests.functional.tests_view import LoginRedirectTest
+from ralph_assets.tests.utils import UserFactory
 
 
 class ACLInheritanceTest(TestCase):
@@ -82,3 +82,19 @@ class TestAssetModulePerms(TestCase):
         client = login_as_user(user_with_access)
         response = client.get(self.assets_module_url, follow=True)
         self.assertEqual(response.status_code, 200)
+
+
+class LoginRedirectTest(LoginRedirectTest):
+
+    def test_hierarchy(self):
+        """
+        user with asset perms -> show asset
+        user with core perms -> show core
+        """
+        hierarchy_data = [
+            (Perm.has_assets_access,
+             PluggableApp.apps['ralph_assets'].home_url),
+            (Perm.has_core_access, reverse('search', args=('info', ''))),
+        ]
+
+        self.check_redirection(hierarchy_data)

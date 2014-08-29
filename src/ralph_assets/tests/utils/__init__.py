@@ -10,44 +10,13 @@ from functools import partial
 from factory import (
     Sequence,
     SubFactory,
-    lazy_attribute,
 )
 from factory.django import DjangoModelFactory, FileField
 
-from django.contrib.auth.models import User
 from django.test.client import Client
 
+from ralph.ui.tests.global_utils import UserFactory
 from ralph_assets.models_assets import Attachment
-
-
-def login_as_user(user=None, password='ralph', *args, **kwargs):
-    if not user:
-        user = UserFactory(*args, **kwargs)
-        user.set_password(password)
-        user.save()
-    client = Client()
-    client.login(username=user.username, password=password)
-    return client
-
-
-class UserFactory(DjangoModelFactory):
-    """
-    User *password* is 'ralph'.
-    """
-    FACTORY_FOR = User
-
-    username = Sequence(lambda n: 'user_%d' % n)
-
-    @lazy_attribute
-    def email(self):
-        return '%s@example.com' % self.username
-
-    @classmethod
-    def _generate(cls, create, attrs):
-        user = super(UserFactory, cls)._generate(create, attrs)
-        user.set_password('ralph')
-        user.save()
-        return user
 
 
 class AttachmentFactory(DjangoModelFactory):
