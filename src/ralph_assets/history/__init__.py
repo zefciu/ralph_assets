@@ -7,23 +7,27 @@ from __future__ import unicode_literals
 
 from django.db.models import signals
 
-from ralph_assets.history.receivers import post_save, pre_save
+from ralph_assets.history.receivers import m2m_changed, post_save, pre_save
 
 
 registry = {}
+registry_m2m = {}
 
 
-def register(model, exclude=None):
+def register(model, exclude=None, m2m=False):
     """Register model to history observer."""
-    return
-    if exclude is None:
-        raise TypeError('Please specified fields or exclude argument.')
+    if exclude is None and not m2m:
+        raise TypeError('Please specified exclude argument.')
 
-    if model in registry:
-        raise Exception('{} is arleady registered.')
-    registry[model] = exclude
+    if (model in registry and not m2m) or (model in registry_m2m and m2m):
+        raise Exception('{} is arleady registered.'.format(model))
 
-    print('register pre_save', model)
-    signals.pre_save.connect(pre_save, sender=model)
-    print('register post_save', model)
-    signals.post_save.connect(post_save, sender=model)
+    if not m2m:
+        fields = set([field.name for field in model._meta.fields])
+        fields.difference_update(set(exclude))
+        registry[model] = fields
+        signals.pre_save.connect(pre_save, sender=model)
+        signals.post_save.connect(post_save, sender=model)
+    else:
+        registry_m2m[model] = True
+        signals.m2m_changed.connect(m2m_changed, sender=model)

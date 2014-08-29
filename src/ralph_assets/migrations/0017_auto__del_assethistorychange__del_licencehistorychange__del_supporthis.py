@@ -4,7 +4,6 @@ from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
-# TODO: remove tables!!!!!
 
 class Migration(SchemaMigration):
 
@@ -78,60 +77,18 @@ class Migration(SchemaMigration):
                         )
                         history.save()
 
-        # # Deleting model 'AssetHistoryChange'
-        # db.delete_table('ralph_assets_assethistorychange')
+        # Deleting model 'AssetHistoryChange'
+        db.delete_table('ralph_assets_assethistorychange')
 
         # # Deleting model 'LicenceHistoryChange'
-        # db.delete_table('ralph_assets_licencehistorychange')
+        db.delete_table('ralph_assets_licencehistorychange')
 
         # # Deleting model 'SupportHistoryChange'
-        # db.delete_table('ralph_assets_supporthistorychange')
+        db.delete_table('ralph_assets_supporthistorychange')
 
 
     def backwards(self, orm):
-        pass
-        # # Adding model 'AssetHistoryChange'
-        # db.create_table('ralph_assets_assethistorychange', (
-        #     ('comment', self.gf('django.db.models.fields.TextField')(null=True)),
-        #     ('part_info', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.PartInfo'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('user', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['auth.User'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-        #     ('new_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        #     ('field_name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=64)),
-        #     ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        #     ('old_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        #     ('device_info', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.DeviceInfo'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('office_info', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.OfficeInfo'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('asset', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.Asset'], null=True, on_delete=models.SET_NULL, blank=True)),
-        # ))
-        # db.send_create_signal('ralph_assets', ['AssetHistoryChange'])
-
-        # # Adding model 'LicenceHistoryChange'
-        # db.create_table('ralph_assets_licencehistorychange', (
-        #     ('user', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['auth.User'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('licence', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.Licence'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-        #     ('new_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        #     ('field_name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=64)),
-        #     ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        #     ('old_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        # ))
-        # db.send_create_signal('ralph_assets', ['LicenceHistoryChange'])
-
-        # # Adding model 'SupportHistoryChange'
-        # db.create_table('ralph_assets_supporthistorychange', (
-        #     ('user', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['auth.User'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-        #     ('new_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        #     ('support', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['ralph_assets.Support'], null=True, on_delete=models.SET_NULL, blank=True)),
-        #     ('field_name', self.gf('django.db.models.fields.CharField')(default=u'', max_length=64)),
-        #     ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-        #     ('old_value', self.gf('django.db.models.fields.CharField')(default=u'', max_length=255)),
-        # ))
-        # db.send_create_signal('ralph_assets', ['SupportHistoryChange'])
-
-        # Deleting model 'History'
-        db.delete_table('ralph_assets_history')
+         raise RuntimeError("Cannot reverse this migration.")
 
 
     models = {

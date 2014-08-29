@@ -35,7 +35,7 @@ from ralph_assets.models_util import (
     WithForm,
 )
 from ralph.discovery.models_util import SavingUser
-from ralph_assets import history
+from ralph_assets.history.models import HistoryMixin
 
 
 class LicenceType(Named):
@@ -60,6 +60,7 @@ class SoftwareCategory(Named, CreatableFromString):
 
 
 class Licence(
+    HistoryMixin,
     LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
@@ -192,7 +193,7 @@ class Licence(
     @used.setter
     def used(self, value):
         self._used = value
-# history.register(Licence, exclude=['all'])
+
 
 class BudgetInfoLookup(RestrictedLookupChannel):
     model = BudgetInfo
@@ -228,18 +229,3 @@ class SoftwareCategoryLookup(RestrictedLookupChannel):
 
     def format_item_display(self, obj):
         return escape(obj.name)
-
-
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Licence, dispatch_uid='ralph.history_licenceDUPA')
-def licence_post_save(sender, instance, raw, using, **kwargs):
-    print('post')  # DETELE THIS
-    print(instance)  # DETELE THIS
-
-
-@receiver(pre_save, sender=Licence, dispatch_uid='ralph.history_licencesDUPAPRE')
-def licence_pre_save(sender, instance, raw, using, **kwargs):
-    print('pre')  # DETELE THIS
-    print(instance)  # DETELE THIS

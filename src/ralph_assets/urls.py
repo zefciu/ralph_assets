@@ -242,5 +242,8 @@ urlpatterns = patterns(
         login_required(ReportDetail.as_view()),
         name='report_detail',
     ),
-    url(r'^history/', include('ralph_assets.history.urls', app_name='history')),
+    url(
+        r'^history/',
+        include('ralph_assets.history.urls', app_name='history')
+    ),
 )

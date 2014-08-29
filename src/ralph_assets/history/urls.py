@@ -18,19 +18,4 @@ urlpatterns = patterns(
         HistoryListForModel.as_view(),
         name='history_for_model',
     ),
-    # url(
-    #     _(r'^abuses/(?P<pk>[-\d]+)/$'),
-    #     AbuseDetail.as_view(),
-    #     name='abuse_detail'
-    # ),
-    # url(
-    #     _(r'^abuses/(?P<pk>[-\d]+)/change_state/$'),
-    #     AbuseChangeState.as_view(),
-    #     name='abuse_change_state'
-    # ),
-    # url(
-    #     _(r'^abuses/create/(?P<content_type>[-\d]+)/(?P<object_id>[-\d]+)/$'),
-    #     AbuseCreate.as_view(),
-    #     name='abuse_create'
-    # ),
 )
