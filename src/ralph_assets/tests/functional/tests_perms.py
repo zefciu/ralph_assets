@@ -94,7 +94,7 @@ class LoginRedirectTest(LoginRedirectTest):
         hierarchy_data = [
             (Perm.has_assets_access,
              PluggableApp.apps['ralph_assets'].home_url),
-            (Perm.has_core_access, '/ui/search/info/'),
+            (Perm.has_core_access, reverse('search', args=('info', ''))),
         ]
 
         self.check_redirection(hierarchy_data)
