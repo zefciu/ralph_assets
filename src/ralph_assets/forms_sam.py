@@ -158,9 +158,8 @@ class LicenceForm(forms.ModelForm):
 class AddLicenceForm(LicenceForm, MultivalFieldForm):
     """Class for adding a licence or multiple licences."""
 
-    def __init__(self, *args, **kwargs):
-        super(AddLicenceForm, self).__init__(*args, **kwargs)
-        self.multival_fields = ['sn', 'niw']
+    multival_fields = ['sn', 'niw']
+    allow_duplicates = ['sn']
 
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
