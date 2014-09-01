@@ -254,7 +254,7 @@ urlpatterns = patterns(
     url(
         r'reports/$',
         login_required(ReportsList.as_view()),
-        name='reports',
+        name='assets_reports',
     ),
     url(
         r'reports/(?P<mode>\S+)/(?P<slug>\S+)$',
