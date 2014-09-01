@@ -264,7 +264,7 @@ class TestDevicesView(ClientMixin, TestCase):
         form = response.context['asset_form']
         initial_dict = form.initial
         update_dict = {}
-        for fieldset, fields in form.fieldsets.items():
+        for fieldset, fields in form.fieldsets.iteritems():
             for field in fields:
                 val = initial_dict.get(field, None)
                 if val:
@@ -624,10 +624,8 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             'transitionshistory',
         ]
 
-        constant_fields = [
-            field for field in original_asset._meta.get_all_field_names()
-            if field not in exclude
-        ]
+        constant_fields = set(original_asset._meta.get_all_field_names())
+        constant_fields.difference_update(exclude)
         response, asset = self.update_asset(
             original_asset.id,
             asset=True,
