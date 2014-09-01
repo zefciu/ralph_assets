@@ -230,7 +230,7 @@ class AssetsBase(ACLGateway, TemplateView):
             ),
             MenuItem(
                 fugue_icon='fugue-table',
-                href=reverse('reports'),
+                href=reverse('assets_reports'),
                 label=_('Reports'),
                 name='reports',
             ),
