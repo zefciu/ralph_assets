@@ -8,15 +8,18 @@ from __future__ import unicode_literals
 from functools import partial
 
 from factory import (
+    lazy_attribute,
     Sequence,
     SubFactory,
 )
 from factory.django import DjangoModelFactory, FileField
 
 from django.test.client import Client
+from django.template.defaultfilters import slugify
 
 from ralph.ui.tests.global_utils import UserFactory
 from ralph_assets.models_assets import Attachment
+from ralph_assets.models import ReportOdtSource
 
 
 class AttachmentFactory(DjangoModelFactory):
@@ -27,6 +30,18 @@ class AttachmentFactory(DjangoModelFactory):
         data=b'uploaded_file_content', filename='uploaded_filename.txt',
     )
     uploaded_by = SubFactory(UserFactory)
+
+
+class ReportOdtSourceFactory(DjangoModelFactory):
+    FACTORY_FOR = ReportOdtSource
+    name = Sequence(lambda n: 'Report ODT #%s' % n)
+    template = FileField(
+        data=b'uploaded_file_content', filename='uploaded_filename.txt',
+    )
+
+    @lazy_attribute
+    def slug(self):
+        return slugify(self.name)
 
 
 class AdminFactory(UserFactory):
