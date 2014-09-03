@@ -180,6 +180,12 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
             field='valid_thru',
             sort_expression='valid_thru',
         ),
+        DataTableColumn(
+            _('Created'),
+            bob_tag=True,
+            field='created',
+            sort_expression='created',
+        ),
     ]
 
     def get_context_data(self, **kwargs):

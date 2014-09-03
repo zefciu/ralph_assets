@@ -30,7 +30,12 @@ from django_search_forms.fields_ajax import (
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_sam
-from ralph_assets.forms import LOOKUPS, MultilineField, MultivalFieldForm
+from ralph_assets.forms import (
+    LOOKUPS,
+    MultilineField,
+    MultivalFieldForm,
+    ReadOnlyFieldsMixin,
+)
 from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 from ralph_assets.models_sam import AssetOwner, LicenceType
@@ -206,16 +211,32 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
         return data
 
 
-class EditLicenceForm(LicenceForm):
+class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
     """Form for licence edit."""
+
+    readonly_fields = ('created',)
 
     class Meta(LicenceForm.Meta):
         model = models_sam.Licence
+        fieldset = OrderedDict([
+            ('Basic info', [
+                'asset_type', 'manufacturer', 'licence_type',
+                'software_category', 'parent', 'niw', 'sn', 'property_of',
+                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
+                'license_details', 'created',
+            ]),
+            ('Financial info', [
+                'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+                'number_bought', 'accounting_id', 'budget_info',
+            ]),
+        ])
+
         fields = (
             'accounting_id',
             'asset_type',
             'assets',
             'budget_info',
+            'created',
             'invoice_date',
             'invoice_no',
             'licence_type',

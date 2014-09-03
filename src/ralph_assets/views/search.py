@@ -413,6 +413,8 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
             _('Additional remarks', field='remarks',
               sort_expression='remarks', bob_tag=True, export=True,
               show_conditions=show_back_office),
+            _('Created', field='created', sort_expression='created',
+              bob_tag=True, show_conditions=show_back_office),
             _('Price', field='price', sort_expression='price',
               bob_tag=True, export=True, show_conditions=show_dc),
             _('Venture', field='venture', bob_tag=True, export=True,

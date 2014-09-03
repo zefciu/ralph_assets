@@ -166,6 +166,25 @@ LOOKUPS = {
 }
 
 
+class ReadOnlyFieldsMixin(object):
+    readonly_fields = ()
+
+    def __init__(self, *args, **kwargs):
+        super(ReadOnlyFieldsMixin, self).__init__(*args, **kwargs)
+        for field in (
+            field for name, field in self.fields.iteritems()
+            if name in self.readonly_fields
+        ):
+            field.widget.attrs['disabled'] = 'true'
+            field.required = False
+
+    def clean(self):
+        cleaned_data = super(ReadOnlyFieldsMixin, self).clean()
+        for field in self.readonly_fields:
+            cleaned_data[field] = getattr(self.instance, field)
+        return cleaned_data
+
+
 class MultivalFieldForm(ModelForm):
     """A form that has several multiline fields that need to have the
     same number of entries.
@@ -1259,11 +1278,13 @@ class EditDeviceForm(BaseEditAssetForm):
         return cleaned_data
 
 
-class BackOfficeEditDeviceForm(EditDeviceForm):
+class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
+
+    readonly_fields = ('created',)
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
-            'hostname',
+            'hostname', 'created',
         )
 
     hostname = CharField(
@@ -1281,6 +1302,7 @@ class BackOfficeEditDeviceForm(EditDeviceForm):
             ('sn', 'imei'),
             ('loan_end_date', 'purpose'),
             ('property_of', 'hostname'),
+            ('hostname', 'created'),
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
