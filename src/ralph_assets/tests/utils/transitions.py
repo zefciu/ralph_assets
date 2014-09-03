@@ -28,7 +28,6 @@ class TransitionsHistoryFactory(DjangoModelFactory):
     FACTORY_FOR = TransitionsHistory
 
     transition = SubFactory(TransitionFactory)
-    # assets =
     logged_user = SubFactory(UserFactory)
     affected_user = SubFactory(UserFactory)
     report_filename = Sequence(lambda n: 'report'.format(n))
