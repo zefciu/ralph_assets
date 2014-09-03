@@ -31,6 +31,9 @@ from ralph_assets.views.search import AssetsSearchQueryableMixin, GenericSearch
 
 logger = logging.getLogger(__name__)
 
+# ugly hack to mock it in tests
+generate_pdf = generate_pdf
+
 
 def generate_pdf_response(pdf_data, file_name):
     response = HttpResponse(
@@ -107,7 +110,7 @@ class BaseInvoiceReport(GenericSearch):
             return HttpResponseRedirect(self.get_return_link())
         # generate invoice report
         pdf_data, file_name = self.get_pdf_content()
-        if not any((pdf_data, file_name)):
+        if not all((pdf_data, file_name)):
             return HttpResponseRedirect(self.get_return_link())
         return generate_pdf_response(pdf_data, file_name)
 
