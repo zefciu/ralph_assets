@@ -184,6 +184,10 @@ class BaseAssetFactory(DjangoModelFactory):
     FACTORY_FOR = Asset
 
     budget_info = SubFactory(BudgetInfoFactory)
+    created = fuzzy.FuzzyNaiveDateTime(
+        datetime.datetime(2008, 1, 1),
+        force_microsecond=0,
+    )
     delivery_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     deprecation_rate = fuzzy.FuzzyInteger(0, 100)

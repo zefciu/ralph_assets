@@ -20,7 +20,7 @@ from django_search_forms.fields import (
 )
 from django_search_forms.form import SearchForm
 
-from ralph.ui.widgets import DateWidget, SimpleReadOnlyWidget
+from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS, ReadOnlyFieldsMixin
 from ralph_assets.models import AssetType
