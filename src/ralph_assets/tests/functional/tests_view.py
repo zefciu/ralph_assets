@@ -1426,7 +1426,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'Additional remarks', 'Barcode', 'Category', 'Dropdown',
             'Hostname', 'IMEI', 'Invoice date', 'Invoice no.', 'Manufacturer',
             'Model', 'Property of', 'SN', 'Service name', 'Status', 'Type',
-            'User', 'Warehouse',
+            'User', 'Warehouse', 'Created',
         ])
         mode = 'back_office'
         search_url = reverse('asset_search', kwargs={'mode': mode})
@@ -1449,6 +1449,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'Dropdown', 'Inventory number', 'Invoice date', 'Invoice no.',
             'Licence Type', 'Manufacturer', 'Number of purchased items',
             'Property of', 'Software Category', 'Type', 'Used', 'Valid thru',
+            'Created',
         ])
         search_url = reverse('licence_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)
@@ -1457,7 +1458,7 @@ class TestColumnsInSearch(BaseViewsTest):
         DCSupportFactory()
         correct_col_names = set([
             'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
-            'Price',
+            'Price', 'Created',
         ])
         search_url = reverse('support_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)

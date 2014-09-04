@@ -22,7 +22,7 @@ from django_search_forms.form import SearchForm
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
-from ralph_assets.forms import LOOKUPS
+from ralph_assets.forms import LOOKUPS, ReadOnlyFieldsMixin
 from ralph_assets.models import AssetType
 from ralph_assets.models_support import SupportType
 
@@ -92,8 +92,10 @@ class AddSupportForm(SupportForm):
     """Support add form for supports."""
 
 
-class EditSupportForm(SupportForm):
+class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
     """Support edit form for supports."""
+
+    readonly_fields = ('created',)
 
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset_all'], required=False
@@ -107,6 +109,7 @@ class EditSupportForm(SupportForm):
                 'escalation_path', 'contract_terms', 'additional_notes',
                 'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
                 'invoice_date', 'period_in_months', 'property_of', 'assets',
+                'created',
             ]),
         ])
         fields = (
@@ -115,6 +118,7 @@ class EditSupportForm(SupportForm):
             'assets',
             'contract_id',
             'contract_terms',
+            'created',
             'date_from',
             'date_to',
             'description',
