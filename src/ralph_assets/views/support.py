@@ -6,15 +6,11 @@ from ralph_assets.forms_support import (
     SupportSearchForm,
 )
 from ralph_assets.models_support import Support
-from ralph_assets.views.base import AssetsBase, get_return_link
+from ralph_assets.views.base import AssetsBase
 from ralph_assets.views.search import GenericSearch
 from ralph_assets.views.asset import HISTORY_PAGE_SIZE, MAX_PAGE_SIZE
 from bob.data_table import DataTableColumn
-from ralph_assets.models_assets import (
-    MODE2ASSET_TYPE,
-    Asset,
-    ASSET_TYPE2MODE,
-)
+from ralph_assets.models_assets import Asset
 from django.utils.translation import ugettext_lazy as _
 from django.contrib import messages
 from django.http import HttpResponseRedirect
@@ -39,10 +35,12 @@ class SupportView(AssetsBase):
 
     submodule_name = 'supports'
     template_name = 'assets/add_support.html'
+    mainmenu_selected = 'supports'
+    sidebar_selected = None
 
     def _get_form(self, data=None, **kwargs):
         self.form = self.form_class(
-            mode=self.mode, data=data, **kwargs
+            data=data, **kwargs
         )
 
     def get_context_data(self, **kwargs):
@@ -53,15 +51,12 @@ class SupportView(AssetsBase):
             'edit_mode': False,
             'caption': self.caption,
             'support': getattr(self, 'support', None),
-            'mode': self.mode,
         })
         return ret
 
     def _save(self, request, *args, **kwargs):
         try:
             support = self.form.save(commit=False)
-            if support.asset_type is None:
-                support.asset_type = MODE2ASSET_TYPE[self.mode]
             support.save(user=self.request.user)
             self.form.save_m2m()
             messages.success(self.request, self.message)
@@ -89,8 +84,6 @@ class AddSupportView(SupportView):
         if self.form.is_valid():
             self.form.instance.pk = None
             support = self.form.save(commit=False)
-            if support.asset_type is None:
-                support.asset_type = MODE2ASSET_TYPE[self.mode]
             support.save(user=self.request.user)
             messages.success(self.request, self.message)
             return HttpResponseRedirect(reverse('support_list'))
@@ -146,18 +139,19 @@ class SupportList(GenericSearch):
             field='price',
             sort_expression='price',
         ),
+        DataTableColumn(
+            _('Created'),
+            bob_tag=True,
+            field='created',
+            sort_expression='created',
+        ),
     ]
 
     def get_context_data(self, *args, **kwargs):
         data = super(SupportList, self).get_context_data(
             *args, **kwargs
         )
-        if self.mode:
-            data['supports'] = Support.objects.filter(
-                asset_type=MODE2ASSET_TYPE[self.mode],
-            )
-        else:
-            data['supports'] = Support.objects.all()
+        data['supports'] = Support.objects.all()
         return data
 
 
@@ -166,6 +160,7 @@ class EditSupportView(SupportView):
     caption = _('Edit Support')
     message = _('Support changed')
     Form = EditSupportForm
+    detect_changes = True
 
     def __init__(self, *args, **kwargs):
         self.form_class = EditSupportForm
@@ -184,18 +179,16 @@ class EditSupportView(SupportView):
 
 class DeleteSupportView(AssetsBase):
     """Delete a support."""
+    mainmenu_selected = 'supports'
 
     def post(self, *args, **kwargs):
         record_id = self.request.POST.get('record_id')
+        self.back_to = reverse('support_list')
         try:
             support = Support.objects.get(pk=record_id)
         except Asset.DoesNotExist:
             messages.error(self.request, _("Selected asset doesn't exists."))
-            return HttpResponseRedirect(get_return_link(self.mode))
-        self.back_to = reverse(
-            'support_list',
-            kwargs={'mode': ASSET_TYPE2MODE[support.asset_type]},
-        )
+            return HttpResponseRedirect(self.back_to)
         support.delete(user=self.request.user)
         return HttpResponseRedirect(self.back_to)
 
@@ -232,7 +225,6 @@ class HistorySupport(AssetsBase):
                 'edit_support',
                 kwargs={
                     'support_id': support.id,
-                    'mode': self.mode,
                 }
             ),
             'title': _('History support'),

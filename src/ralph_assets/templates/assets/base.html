@@ -33,8 +33,9 @@
 {% endblock %}
 
 {% block contentarea %}
-    {% block content %}
-    {% endblock %}
+    <div class="content{% if detect_changes %} detect-changes{% endif %}">
+        {% block content %}{% endblock %}
+    </div>
 {% endblock %}
 
 {% block sidebar %}

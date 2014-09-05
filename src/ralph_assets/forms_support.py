@@ -8,18 +8,22 @@ from __future__ import unicode_literals
 
 from ajax_select.fields import AutoCompleteSelectMultipleField
 from collections import OrderedDict
+from django import forms
+from django.forms import ChoiceField
+from django.forms.widgets import Textarea
+from django.utils.translation import ugettext_lazy as _
+
 from django_search_forms.fields import (
     DateRangeSearchField,
     RelatedSearchField,
     TextSearchField,
 )
-from django import forms
-from django.forms.widgets import Textarea
 from django_search_forms.form import SearchForm
 
 from ralph.ui.widgets import DateWidget
 from ralph_assets import models_support
-from ralph_assets.forms import LOOKUPS
+from ralph_assets.forms import LOOKUPS, ReadOnlyFieldsMixin
+from ralph_assets.models import AssetType
 from ralph_assets.models_support import SupportType
 
 
@@ -70,9 +74,14 @@ class SupportForm(forms.ModelForm):
             'support_type',
         )
 
-    def __init__(self, mode, *args, **kwargs):
-        self.mode = mode
-        super(SupportForm, self).__init__(*args, **kwargs)
+    asset_type = ChoiceField(
+        required=True,
+        choices=[('', '----')] + [
+            (choice.id, choice.name) for choice in [
+                AssetType.back_office, AssetType.data_center
+            ]
+        ],
+    )
 
     def clean(self, *args, **kwargs):
         result = super(SupportForm, self).clean(*args, **kwargs)
@@ -83,8 +92,10 @@ class AddSupportForm(SupportForm):
     """Support add form for supports."""
 
 
-class EditSupportForm(SupportForm):
+class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
     """Support edit form for supports."""
+
+    readonly_fields = ('created',)
 
     assets = AutoCompleteSelectMultipleField(
         LOOKUPS['asset_all'], required=False
@@ -98,6 +109,7 @@ class EditSupportForm(SupportForm):
                 'escalation_path', 'contract_terms', 'additional_notes',
                 'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
                 'invoice_date', 'period_in_months', 'property_of', 'assets',
+                'created',
             ]),
         ])
         fields = (
@@ -106,6 +118,7 @@ class EditSupportForm(SupportForm):
             'assets',
             'contract_id',
             'contract_terms',
+            'created',
             'date_from',
             'date_to',
             'description',
@@ -135,3 +148,7 @@ class SupportSearchForm(SearchForm):
     description = TextSearchField()
     date_from = DateRangeSearchField()
     date_to = DateRangeSearchField()
+    additional_notes = TextSearchField()
+    assets = TextSearchField(
+        filter_field='assets__sn', label=_('by sn (of assigned asset)'),
+    )

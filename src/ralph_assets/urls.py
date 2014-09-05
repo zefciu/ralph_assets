@@ -37,6 +37,7 @@ from ralph_assets.views.ajax import CategoryDependencyView, ModelDependencyView
 from ralph_assets.views.data_import import XlsUploadView
 from ralph_assets.views.sam import (
     AddLicence,
+    CountLicence,
     DeleteLicence,
     EditLicence,
     HistoryLicence,
@@ -97,7 +98,7 @@ urlpatterns = patterns(
         name='dc'),
     url(r'back_office/$',
         RedirectView.as_view(url='/assets/back_office/search'),
-        name='dc'),
+        name='bo'),
 
     url(r'(?P<mode>(back_office|dc))/search',
         login_required(AssetSearch.as_view()),
@@ -151,12 +152,7 @@ urlpatterns = patterns(
         name='transition',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/add_attachment/(?P<parent>(asset|license|support))/$',  # noqa
-        login_required(AddAttachment.as_view()),
-        name='add_attachment'
-    ),
-    url(
-        r'add_attachment/(?P<parent>(asset|license))/$',  # noqa
+        r'add_attachment/(?P<parent>(asset|license|support))/$',
         login_required(AddAttachment.as_view()),
         name='add_attachment'
     ),
@@ -191,28 +187,32 @@ urlpatterns = patterns(
         name='edit_licence',
     ),
     url(
-        r'sup/supports/$',
+        r'sam/count_licences/$',
+        login_required(CountLicence.as_view()),
+        name='count_licences',
+    ),
+    url(
+        r'support/$',
         login_required(SupportList.as_view()),
         name='support_list',
     ),
     url(
-        r'sup/add_support/$',
+        r'support/add/$',
         login_required(AddSupportView.as_view()),
         name='add_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sup/edit_support/'
-        r'(?P<support_id>[0-9]+)$',
+        r'support/edit/(?P<support_id>[0-9]+)$',
         login_required(EditSupportView.as_view()),
         name='edit_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/history/support/(?P<support_id>[0-9]+)/$',
+        r'support/history/(?P<support_id>[0-9]+)/$',
         login_required(HistorySupport.as_view()),
         name='support_history',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sup/delete/$',
+        r'support/delete/$',
         login_required(DeleteSupportView.as_view()),
         name='delete_support',
     ),
@@ -222,7 +222,7 @@ urlpatterns = patterns(
         name='delete_licence',
     ),
     url(
-        r'(?P<mode>(back_office|dc|administration|other))/delete/(?P<parent>(asset|license|support))/attachment/$',  # noqa
+        r'delete/(?P<parent>(asset|license|support))/attachment/$',
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),

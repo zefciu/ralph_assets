@@ -340,7 +340,8 @@ class Attachment(SavingUser, TimeTrackable):
     uploaded_by = models.ForeignKey(User, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        self.original_filename = self.file.name
+        filename = getattr(self.file, 'name') or 'unknown'
+        self.original_filename = filename
         super(Attachment, self).save(*args, **kwargs)
 
 
@@ -516,7 +517,12 @@ class Asset(
     user = models.ForeignKey(
         User, null=True, blank=True, related_name="user",
     )
-    attachments = models.ManyToManyField(Attachment, null=True, blank=True)
+    attachments = models.ManyToManyField(
+        Attachment,
+        null=True,
+        blank=True,
+        related_name='parents',
+    )
     loan_end_date = models.DateField(
         null=True, blank=True, default=None, verbose_name=_('Loan end date'),
     )
@@ -556,6 +562,14 @@ class Asset(
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.model, self.sn, self.barcode)
+
+    @property
+    def linked_device(self):
+        try:
+            device = self.device_info.get_ralph_device()
+        except AttributeError:
+            device = None
+        return device
 
     @property
     def venture(self):
@@ -767,6 +781,10 @@ class Asset(
         self.hostname = last_hostname.formatted_hostname(fill=counter_length)
         if commit:
             self.save()
+
+    @property
+    def asset_type(self):
+        return self.type
 
 
 @receiver(post_save, sender=Asset, dispatch_uid='ralph.create_asset')

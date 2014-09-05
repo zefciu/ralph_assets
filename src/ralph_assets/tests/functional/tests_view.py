@@ -5,28 +5,31 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import base64
-import cPickle
 import datetime
 import json
+import tempfile
 import uuid
 from decimal import Decimal
-from dj.choices import Country
+from urllib import urlencode
 
+from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.test.client import Client
 from django.test.utils import override_settings
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
 from ralph_assets import models_sam
 from ralph_assets.models_assets import Asset, SAVE_PRIORITY
-from ralph_assets.tests.utils import UserFactory
+from ralph_assets.tests.utils import (
+    AjaxClient,
+    AttachmentFactory,
+    ClientMixin,
+    UserFactory,
+)
 from ralph_assets.tests.utils import assets as assets_utils
 from ralph_assets.tests.utils import sam as sam_utils
-from ralph_assets.tests.utils import supports as support_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     AssetModelFactory,
@@ -43,6 +46,11 @@ from ralph.cmdb.tests.utils import (
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.ui.tests.global_utils import login_as_su
+from ralph_assets.tests.utils.supports import (
+    BOSupportFactory,
+    DCSupportFactory,
+    SupportTypeFactory,
+)
 
 
 def update(_dict, obj, keys):
@@ -116,7 +124,12 @@ def check_fields(testcase, correct_data, object_to_check):
         testcase.assertEqual(object_value, expected, msg)
 
 
-class BaseViewsTest(TestCase):
+class BaseViewsTest(ClientMixin, TestCase):
+    client_class = AjaxClient
+
+    def setUp(self):
+        self.login_as_superuser()
+        super(BaseViewsTest, self).setUp()
 
     def _assert_field_in_form(self, form_url, fields_names):
         check_strings = ('name="{}"'.format(f) for f in fields_names)
@@ -136,11 +149,11 @@ class BaseViewsTest(TestCase):
         return form_data
 
 
-class TestDataDisplay(TestCase):
+class TestDataDisplay(ClientMixin, TestCase):
     """Test check if data from database are displayed on screen"""
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         asset_fields = dict(
             barcode='123456789',
             invoice_no='Invoice #1',
@@ -165,6 +178,7 @@ class TestDevicesView(BaseViewsTest):
     """
 
     def setUp(self):
+        self.login_as_superuser()
         self._visible_add_form_fields = [
             'asset', 'barcode', 'budget_info', 'category', 'delivery_date',
             'deprecation_end_date', 'deprecation_rate', 'device_environment',
@@ -195,8 +209,8 @@ class TestDevicesView(BaseViewsTest):
 
     def _update_with_supports(self, _dict):
         supports = [
-            support_utils.DCSupportFactory().id,
-            support_utils.BOSupportFactory().id,
+            DCSupportFactory().id,
+            BOSupportFactory().id,
         ]
         supports_value = '|{}|'.format('|'.join(map(str, supports)))
         _dict.update(dict(supports=supports_value))
@@ -261,8 +275,14 @@ class TestDevicesView(BaseViewsTest):
         })
         response = self.client.get(url)
         form = response.context['asset_form']
-        update_dict = form.__dict__['initial']
-        update_dict.update(**kwargs)
+        initial_dict = form.initial
+        update_dict = {}
+        for fieldset, fields in form.fieldsets.iteritems():
+            for field in fields:
+                val = initial_dict.get(field, None)
+                if val:
+                    update_dict[field] = val
+        update_dict.update(kwargs)
         response = self.client.post(url, update_dict, follow=True)
         return response, models_assets.Asset.objects.get(id=asset_id)
 
@@ -307,7 +327,6 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
-        self.client = login_as_su()
         self.asset_factory = DCAssetFactory
         self.mode = 'dc'
         self.asset_data = get_asset_data()
@@ -422,7 +441,6 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
-        self.client = login_as_su()
         self.asset_factory = BOAssetFactory
         self.mode = 'back_office'
         self.asset_data = get_asset_data()
@@ -601,12 +619,46 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
     def test_mulitvalues_behaviour(self):
         self._test_mulitvalues_behaviour()
 
+    def test_save_without_changes(self):
+        """Assets must be the same values after dry save."""
+        original_asset = BOAssetFactory(force_deprecation=True)
+        exclude = [
+            'assethistorychange',
+            'attachments',
+            'cache_version',
+            'device',
+            'licence',
+            'created',
+            'modified',
+            'source_device',
+            'supports',
+            'support_void_reporting',
+            'support_period',
+            'transitionshistory',
+        ]
+
+        constant_fields = set(original_asset._meta.get_all_field_names())
+        constant_fields.difference_update(exclude)
+        response, asset = self.update_asset(
+            original_asset.id,
+            asset=True,
+        )
+        for field in constant_fields:
+            self.assertEqual(
+                getattr(original_asset, field),
+                getattr(asset, field),
+                'Value of field "{}" is diffrent after save! '
+                'Before: {}; after: {}'
+                .format(field, getattr(original_asset, field),
+                        getattr(asset, field))
+            )
+
 
 class TestLicencesView(BaseViewsTest):
     """This test case concern all licences views."""
 
     def setUp(self):
-        self.client = login_as_su()
+        super(TestLicencesView, self).setUp()
         self.license_data = {
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
@@ -735,7 +787,7 @@ class TestLicencesView(BaseViewsTest):
         """
         - get add license request data d1
 
-        - add licence with duplicated inv. nb. in data
+        - add licence with duplicated inv.-nb. in data
         - assert error occured
 
         - edit licence with duplicated sn in data
@@ -760,13 +812,79 @@ class TestLicencesView(BaseViewsTest):
         response = self.client.post(url, request_data)
         self.assertEqual(response.status_code, 302)
 
+    def test_licence_count_simple(self):
+        number_of_users = 5
+        number_of_assets = 5
+        licences = [LicenceFactory() for idx in xrange(5)]
+        licences[0].assets.add(
+            *[BOAssetFactory() for _ in xrange(number_of_assets)]
+        )
+        licences[0].users.add(
+            *[UserFactory() for _ in xrange(number_of_users)]
+        )
+        url = reverse('count_licences')
+        url += '?id={}'.format(licences[0].id)
+        response = self.client.ajax_get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'used_by_users': number_of_users,
+                'used_by_assets': number_of_assets,
+                'total': licences[0].number_bought,
+            },
+        )
+
+    def test_licence_count_all(self):
+        licences = [LicenceFactory() for idx in xrange(5)]
+        total = sum(models_sam.Licence.objects.values_list(
+            'number_bought', flat=True)
+        )
+        for lic in licences:
+            lic.assets.add(
+                *[BOAssetFactory() for _ in xrange(5)]
+            )
+        for lic in licences:
+            lic.users.add(
+                *[UserFactory() for _ in xrange(5)]
+            )
+        url = reverse('count_licences')
+        response = self.client.ajax_get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                'used_by_users': 25,
+                'used_by_assets': 25,
+                'total': total,
+            },
+        )
+
+    def test_allow_duplicated_sns(self):
+        """
+        add license by factory with sn sn1
+        add by form with sn sn1
+        assert 200
+        """
+        existing_license = LicenceFactory()
+        license_data = self.get_license_form_data()
+        license_data.update({
+            'sn': existing_license.sn,
+            'parent': '',
+        })
+        add_license_url = reverse('add_licence')
+        response = self.client.post(
+            add_license_url, license_data, follow=True,
+        )
+        self.assertContains(response, '1 licences added')
+
 
 class TestSupportsView(BaseViewsTest):
     """This test case concern all supports views."""
 
     def setUp(self):
-        self.client = login_as_su()
-        support_utils.SupportTypeFactory().id
+        super(TestSupportsView, self).setUp()
+        SupportTypeFactory().id
         self.support_data = dict(
             additional_notes="Additional notes",
             # asset='',  # button, skip it
@@ -788,7 +906,7 @@ class TestSupportsView(BaseViewsTest):
             sla_type='Sla type',
             status=models_support.SupportStatus.new.id,
             supplier='Supplier',
-            support_type=support_utils.SupportTypeFactory().id,
+            support_type=SupportTypeFactory().id,
         )
         self.visible_add_form_fields = [
             'additional_notes', 'asset', 'asset_type', 'contract_id',
@@ -844,9 +962,8 @@ class TestSupportsView(BaseViewsTest):
 
         self.new_support_data = self.support_data.copy()
         assets = self._update_with_supports(self.new_support_data)
-        support = support_utils.BOSupportFactory()
+        support = BOSupportFactory()
         url = reverse('edit_support', kwargs={
-            'mode': 'back_office',
             'support_id': support.id,
         })
         response = self.client.post(url, self.new_support_data)
@@ -865,21 +982,226 @@ class TestSupportsView(BaseViewsTest):
     def test_license_edit_form_show_fields(self):
         required_fields = self.visible_edit_form_fields[:]
         test_data = (
-            ('dc', support_utils.DCSupportFactory()),
-            ('back_office', support_utils.BOSupportFactory()),
+            ('dc', DCSupportFactory()),
+            ('back_office', BOSupportFactory()),
         )
         for mode, support in test_data:
             form_url = reverse(
                 'edit_support',
-                kwargs={'mode': mode, 'support_id': support.id},
+                kwargs={'support_id': support.id},
             )
             self._assert_field_in_form(form_url, required_fields)
 
 
-class DeviceEditViewTest(TestCase):
+class TestAttachments(BaseViewsTest):
+    """This test case concern all attachments views."""
+
+    def test_cant_add_empty_attachment(self):
+        """
+        create asset a1
+        send post with blank file
+        assert that message about blank error exists
+        """
+        parent = BOAssetFactory()
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'parent': 'asset',
+        })
+        full_url = "{}?{}".format(
+            add_attachment_url,
+            urlencode({'select': obj.id for obj in [parent]}),
+        )
+        with tempfile.TemporaryFile() as test_file:
+            data = {
+                "form-TOTAL_FORMS": 1,
+                "form-INITIAL_FORMS": 1,
+                "form-MAX_NUM_FORMS": 1,
+                "form-0-file": test_file,
+            }
+            response = self.client.post(full_url, data, follow=True)
+        self.assertIn(
+            'The submitted file is empty.',
+            response.context['formset'][0].errors['file'],
+        )
+
+    def test_add_bo_asset_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'parent': 'asset',
+        })
+        self.add_attachment(BOAssetFactory(), add_attachment_url)
+
+    def test_add_dc_asset_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'parent': 'asset',
+        })
+        self.add_attachment(DCAssetFactory(), add_attachment_url)
+
+    def test_add_license_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'parent': 'license',
+        })
+        self.add_attachment(LicenceFactory(), add_attachment_url)
+
+    def test_add_support_attachment(self):
+        add_attachment_url = reverse('add_attachment', kwargs={
+            'parent': 'support',
+        })
+        self.add_attachment(
+            BOSupportFactory(),
+            add_attachment_url,
+        )
+
+    def add_attachment(self, parent, add_attachment_url):
+        """
+        Checks if attachment can be added.
+        """
+        file_content = 'anything'
+        full_url = "{}?{}".format(
+            add_attachment_url,
+            urlencode({'select': obj.id for obj in [parent]}),
+        )
+
+        asset = parent.__class__.objects.get(pk=parent.id)
+        self.assertEqual(asset.attachments.count(), 0)
+
+        with tempfile.TemporaryFile() as test_file:
+            saved_filename = test_file.name
+            test_file.write(file_content)
+            test_file.seek(0)
+            data = {
+                "form-TOTAL_FORMS": 1,
+                "form-INITIAL_FORMS": 1,
+                "form-MAX_NUM_FORMS": 1,
+                "form-0-file": test_file,
+            }
+            response = self.client.post(full_url, data, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        asset = parent.__class__.objects.get(pk=parent.id)
+        self.assertEqual(asset.attachments.count(), 1)
+        attachment = asset.attachments.all()[0]
+        self.assertEqual(attachment.original_filename, saved_filename)
+        with attachment.file as attachment_file:
+            self.assertEqual(attachment_file.read(), file_content)
+
+    def test_delete_one_bo_asset_attachment(self):
+        self.delete_attachment_check(
+            parent_name='asset',
+            parents=[BOAssetFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_bo_licence_attachment(self):
+        self.delete_attachment_check(
+            parent_name='license',
+            parents=[LicenceFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_bo_support_attachment(self):
+        self.delete_attachment_check(
+            parent_name='support',
+            parents=[BOSupportFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_all_bo_asset_attachment(self):
+        self.delete_attachment_check(
+            parent_name='asset',
+            parents=[BOAssetFactory(), BOAssetFactory(), BOAssetFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_bo_licence_attachment(self):
+        self.delete_attachment_check(
+            parent_name='license',
+            parents=[LicenceFactory(), LicenceFactory(), LicenceFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_bo_support_attachment(self):
+        self.delete_attachment_check(
+            parent_name='support',
+            parents=[
+                BOSupportFactory(), BOSupportFactory(), BOSupportFactory(),
+            ],
+            delete_type='from_all',
+        )
+
+    def test_delete_one_dc_asset_attachment(self):
+        self.delete_attachment_check(
+            parent_name='asset',
+            parents=[DCAssetFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_dc_licence_attachment(self):
+        self.delete_attachment_check(
+            parent_name='license',
+            parents=[LicenceFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_one_dc_support_attachment(self):
+        self.delete_attachment_check(
+            parent_name='support',
+            parents=[DCSupportFactory()],
+            delete_type='from_one',
+        )
+
+    def test_delete_all_dc_asset_attachment(self):
+        self.delete_attachment_check(
+            parent_name='asset',
+            parents=[DCAssetFactory(), DCAssetFactory(), DCAssetFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_dc_licence_attachment(self):
+        self.delete_attachment_check(
+            parent_name='license',
+            parents=[LicenceFactory(), LicenceFactory(), LicenceFactory()],
+            delete_type='from_all',
+        )
+
+    def test_delete_all_dc_support_attachment(self):
+        self.delete_attachment_check(
+            parent_name='support',
+            parents=[
+                DCSupportFactory(), DCSupportFactory(), DCSupportFactory(),
+            ],
+            delete_type='from_all',
+        )
+
+    def delete_attachment_check(self, parent_name, parents, delete_type):
+        attachment = AttachmentFactory()
+        for parent in parents:
+            parent.attachments.add(attachment)
+            parent.save()
+
+        parent = parents[0]  # each one is suitable, so take the first
+        full_url = reverse('delete_attachment', kwargs={
+            'parent': parent_name,
+        })
+        data = {
+            'parent_id': parent.id,
+            'attachment_id': attachment.id,
+            'delete_type': delete_type,
+        }
+
+        for parent in parents:
+            self.assertIn(attachment, parent.attachments.all())
+        response = self.client.post(full_url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        for parent in parents:
+            self.assertNotIn(
+                attachment,
+                parent.attachments.filter(pk=attachment.id),
+            )
+
+
+class DeviceEditViewTest(ClientMixin, TestCase):
 
     def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.asset_src = AssetFactory(sn='123-456-789')
         self.asset_dest = AssetFactory(sn='987-832-668')
 
@@ -1027,84 +1349,9 @@ class DeviceEditViewTest(TestCase):
         self.assertContains(response, part)
 
 
-class LookupsTest(TestCase):
-
+class TestImport(ClientMixin, TestCase):
     def setUp(self):
-        self.client = login_as_su()
-
-    def _generate_url(self, *lookup):
-        channel = base64.b64encode(cPickle.dumps(lookup))
-        return reverse('ajax_lookup', kwargs={'channel': channel})
-
-    def test_unlogged_user_lookup_permission(self):
-        """
-        - send request
-        - check for 403
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        client = Client()
-        response = client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 403)
-
-    def test_logged_user_lookup_permission(self):
-        """
-        - sign in
-        - send request
-        - check for 200
-        """
-        url = self._generate_url('ralph_assets.models', 'DeviceLookup')
-        response = self.client.get(url + '?term=test')
-        self.assertEqual(response.status_code, 200)
-
-    def test_lookups_bo_and_dc(self):
-        """
-        - user type 'Model' in some ajax-selects field
-        - user get assets with DC and BO type
-        """
-        number_of_assets = 3
-        for _ in xrange(number_of_assets):
-            BOAssetFactory()
-            DCAssetFactory()
-
-        url = self._generate_url('ralph_assets.models', 'AssetLookup')
-        response = self.client.get(url + '?term=Model')
-        self.assertEqual(
-            len(json.loads(response.content)), number_of_assets * 2
-        )
-
-
-class ACLInheritanceTest(TestCase):
-
-    def test_all_views_inherits_acls(self):
-        """
-        - get all views from url.py except these urls:
-            - api (until it clarifies)
-            - redirections
-        - assert if each view has ACLClass in mro
-        """
-        from ralph_assets import urls
-        from ralph_assets.views.base import ACLGateway
-        excluded_urls_by_regexp = [
-            '^api/'  # skip it until api authen./author. is resolved
-        ]
-        for urlpattern in urls.urlpatterns:
-            if urlpattern._regex in excluded_urls_by_regexp:
-                continue
-            elif urlpattern.callback.func_name == 'RedirectView':
-                continue
-            module_name = urlpattern._callback.__module__
-            class_name = urlpattern._callback.__name__
-            imported_module = __import__(module_name, fromlist=[class_name])
-            found_class = getattr(imported_module, class_name)
-            msg = "View '{}' doesn't inherit from acl class".format(
-                '.'.join([module_name, class_name])
-            )
-            self.assertIn(ACLGateway, found_class.__mro__, msg)
-
-
-class TestImport(TestCase):
-    def setUp(self):
-        self.client = login_as_su()
+        self.login_as_superuser()
         self.url = reverse('xls_upload')
 
     def _update_asset_by_csv(self, asset, field, value):
@@ -1150,8 +1397,6 @@ class TestImport(TestCase):
 
 
 class TestColumnsInSearch(BaseViewsTest):
-    def setUp(self):
-        self.client = login_as_su()
 
     def get_cols_by_mode(self, bob_cols, mode):
         mode_cols = set()
@@ -1194,7 +1439,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'Additional remarks', 'Barcode', 'Category', 'Dropdown',
             'Hostname', 'IMEI', 'Invoice date', 'Invoice no.', 'Manufacturer',
             'Model', 'Property of', 'SN', 'Service name', 'Status', 'Type',
-            'User', 'Warehouse',
+            'User', 'Warehouse', 'Created',
         ])
         mode = 'back_office'
         search_url = reverse('asset_search', kwargs={'mode': mode})
@@ -1217,15 +1462,16 @@ class TestColumnsInSearch(BaseViewsTest):
             'Dropdown', 'Inventory number', 'Invoice date', 'Invoice no.',
             'Licence Type', 'Manufacturer', 'Number of purchased items',
             'Property of', 'Software Category', 'Type', 'Used', 'Valid thru',
+            'Created',
         ])
         search_url = reverse('licence_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)
 
     def test_supports_cols_presence(self):
-        support_utils.DCSupportFactory()
+        DCSupportFactory()
         correct_col_names = set([
             'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
-            'Price',
+            'Price', 'Created',
         ])
         search_url = reverse('support_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)
