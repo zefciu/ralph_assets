@@ -130,6 +130,7 @@ def assign_asset(device_id, asset_id=None):
     else:
         previous_asset.device_info.ralph_device_id = None
         previous_asset.device_info.save()
+        previous_asset.save()
     if asset_id:
         try:
             new_asset = Asset.objects.get(pk=asset_id)
@@ -137,6 +138,7 @@ def assign_asset(device_id, asset_id=None):
             return False
         new_asset.device_info.ralph_device_id = device_id
         new_asset.device_info.save()
+        new_asset.save()
     return True
 
 
