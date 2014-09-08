@@ -113,6 +113,7 @@ class AddPart(SubmoduleModeMixin, AssetsBase):
 
 
 class EditPart(SubmoduleModeMixin, AssetsBase):
+    detect_changes = True
     template_name = 'assets/edit_part.html'
 
     def initialize_vars(self):

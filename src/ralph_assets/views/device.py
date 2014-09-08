@@ -132,6 +132,7 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
 
 
 class EditDevice(SubmoduleModeMixin, AssetsBase):
+    detect_changes = True
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
 

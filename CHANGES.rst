@@ -1,11 +1,36 @@
 Change Log
 ----------
 
+
 DEV:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~
 To be announced
 
 * added two fields to asset forms ('service catalog', 'environment')
+
+
+2.2.0
+~~~~~~~~~
+Released on August 19, 2014
+
+* Assets in license forms are autocompleted by device's hostname,
+* Added *additional notes* field to supports search,
+* Added popup with information about unsaved changes on the form,
+* UI improvement in reports,
+
+
+2.1.0
+~~~~~~~~~
+Released on August 1, 2014
+
+* Added new reports feature,
+* New change-hostname transition,
+* Transitions send signals,
+* Updated documentation,
+* Updated api_ralph (assigned supports),
+* Expired information in support lookup,
+* Removed useless fields from BackOffice edit form,
+* Bugfix - wrong order in exported CSV in Assets,
 
 
 2.0.2-rc3

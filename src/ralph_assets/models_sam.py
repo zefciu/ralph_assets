@@ -195,6 +195,20 @@ class Licence(
 class BudgetInfoLookup(RestrictedLookupChannel):
     model = BudgetInfo
 
+    def get_query(self, q, request):
+        return BudgetInfo.objects.filter(
+            name__icontains=q,
+        ).order_by('name')[:10]
+
+    def get_result(self, obj):
+        return obj.name
+
+    def format_match(self, obj):
+        return self.format_item_display(obj)
+
+    def format_item_display(self, obj):
+        return "<span>{name}</span>".format(name=obj.name)
+
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
