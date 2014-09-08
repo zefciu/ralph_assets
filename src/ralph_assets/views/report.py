@@ -22,7 +22,6 @@ from ralph_assets.others import get_assets_rows, get_licences_rows
 from ralph_assets.models_assets import (
     Asset,
     AssetModel,
-    AssetCategory,
     AssetStatus,
     DeviceInfo,
     MODE2ASSET_TYPE,
