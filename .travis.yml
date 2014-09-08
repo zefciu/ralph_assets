@@ -10,7 +10,7 @@ install:
     - pip install git+https://github.com/allegro/ralph@synergy  --use-mirrors --allow-all-external --allow-unverified ipaddr --allow-unverified postmarkup --allow-unverified python-graph-core --allow-unverified pysphere
     - pip install coveralls
     - pip install . --use-mirrors
-before_script:
+before_install:
   make flake
 script:
   make test-with-coveralls
