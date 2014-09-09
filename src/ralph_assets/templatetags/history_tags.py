@@ -27,6 +27,8 @@ def get_context(obj, history, limit, full_history_button, title):
 @register.inclusion_tag('assets/templatetags/short_history.html')
 def short_history(obj, limit=5, full_history_button=True):
     """Render a short history table."""
+    if not obj:
+        return {}
     history = obj.get_history()
     if not history:
         return {}
@@ -42,6 +44,8 @@ def short_history(obj, limit=5, full_history_button=True):
 @register.inclusion_tag('assets/templatetags/short_history.html')
 def status_history(obj, limit=5, full_history_button=True):
     """Render a short history table only for status changes."""
+    if not obj:
+        return {}
     history = obj.get_history(field_name='status')
     if not history:
         return {}
