@@ -19,7 +19,7 @@ def register(model, exclude=None, m2m=False):
     if exclude is None and not m2m:
         raise TypeError('Please specified exclude argument.')
 
-    if (model in registry and not m2m) or (model in registry_m2m and m2m):
+    if (not m2m and model in registry) or (m2m and model in registry_m2m):
         raise Exception('{} is arleady registered.'.format(model))
 
     if not m2m:

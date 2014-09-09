@@ -45,6 +45,7 @@ from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.models_util import SavingUser
 from ralph_assets.history.models import HistoryMixin
+from ralph_assets.history.utils import field_changes
 from ralph_assets.models_util import WithForm
 from ralph_assets.utils import iso2_to_iso3
 
@@ -902,9 +903,6 @@ class PartInfo(TimeTrackable, SavingUser, SoftDeletable):
 class ReportOdtSource(Named, SavingUser, TimeTrackable):
     slug = models.SlugField(max_length=100, unique=True, blank=False)
     template = models.FileField(upload_to=_get_file_path, blank=False)
-
-
-from ralph_assets.history.utils import field_changes
 
 
 @receiver(pre_save, sender=Asset, dispatch_uid='ralph_assets.views.device')

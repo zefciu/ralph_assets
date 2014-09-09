@@ -27,11 +27,11 @@ def field_changes(instance, ignore=('id', 'ralph_device_id')):
             continue
         field_object = None
         try:
-            field_object, _, _, _ = instance._meta.get_field_by_name(field)
+            field_object = instance._meta.get_field_by_name(field)[0]
         except FieldDoesNotExist:
             try:
                 field = field[:-3]
-                field_object, _, _, _ = instance._meta.get_field_by_name(field)
+                field_object = instance._meta.get_field_by_name(field)[0]
             except FieldDoesNotExist:
                 continue
         if isinstance(field_object, RelatedField):
@@ -129,8 +129,8 @@ class HistoryContext(object):
         for field in fields_diff:
             old_value = self.past_snapshot[field]
             new_value = current_snapshot[field]
-            old_field, _, _, _ = self.pre_obj._meta.get_field_by_name(field)
-            new_field, _, _, _ = self.obj._meta.get_field_by_name(field)
+            old_field = self.pre_obj._meta.get_field_by_name(field)[0]
+            new_field = self.obj._meta.get_field_by_name(field)[0]
             if isinstance(new_field, RelatedField):
                 old_value = str(getattr(self.pre_obj, field))
                 new_value = str(getattr(self.obj, field))

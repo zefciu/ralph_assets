@@ -24,10 +24,10 @@ DEFAULT_HISTORY_FIELD_EXCLUDE = ('created', 'modified', 'invoice_date',
 
 serializer = serializers.get_serializer("python")()
 
-
-Snapshot = namedtuple('Snapshot',
-                      ['current', 'previous', 'added', 'deleted', 'changed',
-                       'obj', 'field_name'])
+Snapshot = namedtuple(
+    'Snapshot',
+    ['current', 'previous', 'added', 'deleted', 'changed', 'obj', 'field_name'],  # noqa
+)
 
 
 class HistoryManager(models.Manager):
@@ -130,18 +130,21 @@ class HistoryMixin(object):
     def get_snapshot(self, obj, manager, field_name):
         """Method returns snapshot from current state of object."""
         snapshot = serializer.serialize(manager.all(), fields=())
-        history = None
-        for history in History.objects.get_history_for_this_object(
-            obj, field_name
-        ):
-            break
-        prev = getattr(history, 'new_value', None)
-        prev = prev and json.loads(prev) or []
-        curr = [s['pk'] for s in snapshot]
-        deleted = set(prev) - set(curr)
-        added = set(curr) - set(prev)
-        changed = not set(curr) == set(prev)
-        return Snapshot(curr, prev, added, deleted, changed, obj, field_name)
+        try:
+            history = History.objects.get_history_for_this_object(
+                obj, field_name
+            )[0]
+        except IndexError:
+            history = None
+        previous = getattr(history, 'new_value', None)
+        previous = previous and json.loads(previous) or []
+        current = [s['pk'] for s in snapshot]
+        deleted = set(previous) - set(current)
+        added = set(current) - set(previous)
+        changed = not set(current) == set(previous)
+        return Snapshot(
+            current, previous, added, deleted, changed, obj, field_name
+        )
 
     def save_history_from_snapshot(self, snapshot):
         if snapshot.changed:
