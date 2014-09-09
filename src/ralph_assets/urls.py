@@ -244,6 +244,6 @@ urlpatterns = patterns(
     ),
     url(
         r'^history/',
-        include('ralph_assets.history.urls', app_name='history')
+        include('ralph_assets.history.urls', app_name='history'),
     ),
 )

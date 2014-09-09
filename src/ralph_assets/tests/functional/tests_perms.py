@@ -28,6 +28,9 @@ class ACLInheritanceTest(TestCase):
         - assert if each view has ACLClass in mro
         """
         def check(urlpattern):
+            """Check class view contains ACLGateway in __mro__. Class view
+            is from specified urlpattern.
+            """
             module_name = urlpattern._callback.__module__
             class_name = urlpattern._callback.__name__
             imported_module = __import__(module_name, fromlist=[class_name])

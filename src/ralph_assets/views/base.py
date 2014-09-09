@@ -349,8 +349,10 @@ class PaginateMixin(object):
 
     def get_paginate_queryset(self):
         if not self.paginate_queryset:
-            raise Exception('Please specified ``paginate_queryset`` or '
-                            'override ``get_paginate_queryset`` method.')
+            raise Exception(
+                'Please specified ``paginate_queryset`` or '
+                'override ``get_paginate_queryset`` method.',
+            )
         return self.paginate_queryset
 
     def get_context_data(self, **kwargs):

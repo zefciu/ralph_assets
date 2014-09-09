@@ -117,11 +117,7 @@ class HistoryAssetsView(TestCase):
 
     def test_change_status(self):
         """Test check the recording Asset status change in asset history"""
-        asset_history = History.objects.get_history_for_this_object(
-            obj=self.asset
-        ).get(
-            field_name='status'
-        )
+        asset_history = self.asset.get_history(field_name='status')[0]
         self.assertListEqual(
             [asset_history.old_value, asset_history.new_value],
             [AssetStatus.new.name, AssetStatus.damaged.name]
@@ -129,11 +125,7 @@ class HistoryAssetsView(TestCase):
 
     def test_change_barcode(self):
         """Test check the recording Asset barcode change in asset history"""
-        asset_history = History.objects.get_history_for_this_object(
-            obj=self.asset
-        ).get(
-            field_name='barcode'
-        )
+        asset_history = self.asset.get_history(field_name='barcode')[0]
         self.assertListEqual(
             [asset_history.old_value, asset_history.new_value],
             [self.asset_params['barcode'], self.asset_change_params['barcode']]
@@ -142,11 +134,7 @@ class HistoryAssetsView(TestCase):
     def test_change_licences(self):
         """Test check the recording Asset licence set change
         in asset history"""
-        asset_history = History.objects.get_history_for_this_object(
-            obj=self.asset
-        ).get(
-            field_name='licence_set'
-        )
+        asset_history = self.asset.get_history(field_name='licence_set')[0]
         self.assertListEqual(
             [asset_history.old_value, asset_history.new_value],
             [
@@ -156,11 +144,7 @@ class HistoryAssetsView(TestCase):
         )
 
         for licence in self.licences:
-            licence_history = History.objects.get_history_for_this_object(
-                obj=licence
-            ).get(
-                field_name='assets'
-            )
+            licence_history = licence.get_history(field_name='assets')[0]
             self.assertEqual(licence_history.old_value, '[]')
             self.assertEqual(
                 licence_history.new_value, '[{}]'.format(self.asset.id)

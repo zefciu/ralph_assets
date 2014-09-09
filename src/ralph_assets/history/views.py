@@ -29,9 +29,7 @@ class HistoryBase(AssetsBase):
 
     def get_context_data(self, **kwargs):
         context = super(HistoryBase, self).get_context_data(**kwargs)
-        context.update({
-            'section': self.get_section(),
-        })
+        context.update({'section': self.get_section()})
         return context
 
 

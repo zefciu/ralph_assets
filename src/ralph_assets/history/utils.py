@@ -94,13 +94,8 @@ class HistoryContext(object):
         kwargs = {}
         fields = self.registry.get(objs[0].__class__, [])
         if fields:
-            kwargs.update({
-                'fields': fields
-            })
-        return self.serializer.serialize(
-            objs,
-            **kwargs
-        )
+            kwargs.update({'fields': fields})
+        return self.serializer.serialize(objs, **kwargs)
 
     @property
     def registry(self):
@@ -123,7 +118,8 @@ class HistoryContext(object):
         current_snapshot = self.get_fields_snapshot([self.obj])[0]['fields']
 
         fields_diff = DictDiffer(
-            current_snapshot, self.past_snapshot).changed()
+            current_snapshot, self.past_snapshot
+        ).changed()
 
         diff_data = []
         for field in fields_diff:

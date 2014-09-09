@@ -11,7 +11,6 @@ from django.test import TestCase
 from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
-from ralph_assets.history.models import History
 from ralph_assets.models_assets import PartInfo
 from ralph_assets.tests.utils.assets import (
     AssetSubCategoryFactory,
@@ -168,7 +167,7 @@ class TestModelHistory(TestCase):
 
     def test_asset(self):
         asset = AssetFactory(pk=123)
-        history = History.objects.get_history_for_this_object(obj=asset)
+        history = asset.get_history()
         self.assertEqual(0, history.count())
 
         asset.sn = '123'
@@ -180,7 +179,7 @@ class TestModelHistory(TestCase):
         self.assertEqual(2, history.count())
 
         licence = LicenceFactory()
-        history = History.objects.get_history_for_this_object(obj=licence)
+        history = licence.get_history()
         licence.save()
         licence.save()
         self.assertEqual(0, history.count())

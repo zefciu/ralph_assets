@@ -14,10 +14,6 @@ from ralph_assets.history.models import History
 register = template.Library()
 
 
-def get_history_queryset(obj):
-    return History.objects.get_history_for_this_object(obj=obj)
-
-
 def get_context(obj, history, limit, full_history_button, title):
     return {
         'full_history_button': full_history_button,
@@ -31,7 +27,7 @@ def get_context(obj, history, limit, full_history_button, title):
 @register.inclusion_tag('assets/templatetags/short_history.html')
 def short_history(obj, limit=5, full_history_button=True):
     """Render a short history table."""
-    history = get_history_queryset(obj)
+    history = obj.get_history()
     if not history:
         return {}
     return get_context(
@@ -46,12 +42,12 @@ def short_history(obj, limit=5, full_history_button=True):
 @register.inclusion_tag('assets/templatetags/short_history.html')
 def status_history(obj, limit=5, full_history_button=True):
     """Render a short history table only for status changes."""
-    history = get_history_queryset(obj)
+    history = obj.get_history(field_name='status')
     if not history:
         return {}
     return get_context(
         obj,
-        history.filter(field_name__exact='status').order_by('date'),
+        history.order_by('date'),
         limit,
         full_history_button,
         _('Status history')

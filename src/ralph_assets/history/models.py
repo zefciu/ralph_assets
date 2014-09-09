@@ -127,13 +127,17 @@ class HistoryMixin(object):
             for field in self._meta.get_all_related_many_to_many_objects():
                 register(field.field.rel.through, m2m=True)
 
+    def get_history(self, field_name=None):
+        return History.objects.get_history_for_this_object(
+            obj=self,
+            field_name=field_name,
+        )
+
     def get_snapshot(self, obj, manager, field_name):
         """Method returns snapshot from current state of object."""
         snapshot = serializer.serialize(manager.all(), fields=())
         try:
-            history = History.objects.get_history_for_this_object(
-                obj, field_name
-            )[0]
+            history = obj.get_history(field_name=field_name)[0]
         except IndexError:
             history = None
         previous = getattr(history, 'new_value', None)

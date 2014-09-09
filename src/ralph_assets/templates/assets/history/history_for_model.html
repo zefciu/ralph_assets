@@ -10,10 +10,13 @@
     <p>
     {% if show_status_button %}
         {% if status %}
-            <a class="btn" href="?status=">{% icon 'fugue-user-silhouette' %}
-                {% trans "Show all changes." %}</a>
+            <a class="btn" href="?status=">
+                {% icon 'fugue-user-silhouette' %}{% trans "Show all changes." %}
+            </a>
         {% else %}
-            <a class="btn" href="?status=1">{% icon 'fugue-user-silhouette-question' %} {% trans "Show only status changes." %}</a>
+            <a class="btn" href="?status=1">
+                {% icon 'fugue-user-silhouette-question' %} {% trans "Show only status changes." %}
+            </a>
         {% endif %}
     {% endif %}
     </p>
