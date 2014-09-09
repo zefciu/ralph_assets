@@ -68,7 +68,7 @@ def get_choices(instance, field, id):
 
 
 class DictDiffer(object):
-    """Based on stack overflow answer."""
+    """Two dicts compared for detect changes."""
     def __init__(self, current_dict, past_dict):
         self.current_dict, self.past_dict = current_dict, past_dict
         self.set_current = set(current_dict.keys())
