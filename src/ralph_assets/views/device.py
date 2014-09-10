@@ -114,6 +114,7 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
                     self.additional_info.cleaned_data,
                     self.mode,
                 )
+                device.save()
                 ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]

@@ -14,9 +14,11 @@ from urllib import urlencode
 
 from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import resolve, reverse
 from django.test import TestCase
 from django.test.utils import override_settings
+from ralph.discovery.models import Device
+from ralph.discovery.tests.util import DeviceFactory
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
@@ -177,6 +179,8 @@ class TestDevicesView(BaseViewsTest):
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
 
+    asset_factory = None
+
     def setUp(self):
         self.login_as_superuser()
         self._visible_add_form_fields = [
@@ -193,16 +197,34 @@ class TestDevicesView(BaseViewsTest):
             'licences_text', 'supports_text',
         ])
 
-    def get_asset_form_data(self):
+    def get_asset_form_data(self, factory_data=None):
         from ralph_assets import urls
-        asset = self.asset_factory()
+        if not factory_data:
+            factory_data = {}
+        asset = self.asset_factory(**factory_data)
         url = reverse('device_edit', kwargs={
             'mode': urls.normalize_asset_mode(asset.type.name),
             'asset_id': asset.id,
         })
         form_data = self.get_object_form_data(url, ['asset_form'])
+        if asset.device_info:
+            asset.device_info.delete()
+        elif asset.office_info:
+            asset.office_info.delete()
         asset.delete()
         return form_data
+
+    def add_asset_by_form(self, form_data):
+        add_asset_url = reverse(
+            'add_device',
+            kwargs={
+                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
+            },
+        )
+        response = self.client.post(add_asset_url, form_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
+        return models_assets.Asset.objects.get(pk=asset_id)
 
     def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
         update(new_asset_data, asset, readonly_fields)
@@ -1566,3 +1588,50 @@ class TestSyncFieldMixin(TestDevicesView):
         self.assertEqual(device.service, asset.service)
         self.assertNotEqual(asset.device_environment, None)
         self.assertEqual(device.device_environment, asset.device_environment)
+
+
+class AssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
+
+    asset_factory = DCAssetFactory
+
+    def _check_fields(self, obj, correct_data):
+        for field, correct_value in correct_data.iteritems():
+            self.assertEqual(getattr(obj, field), correct_value)
+
+    def test_asset_clones_fields_to_new_device(self):
+        """
+        - add asset without ralph_device_id
+        - check each field (dc, device_environment, name, remarks, service)
+        is copied to device from asset
+        """
+        form_data = self.get_asset_form_data({'device_info': None})  # else factory creates core:device
+        form_data['ralph_device_id'] = ''
+        asset = self.add_asset_by_form(form_data)
+        correct_value = {
+            'dc': asset.warehouse.name,
+            'device_environment': asset.device_environment,
+            'name': asset.model.name,
+            'remarks': asset.order_no,
+            'service': asset.service,
+        }
+        device = Device.objects.get(sn=asset.sn)
+        self._check_fields(device, correct_value)
+
+    def test_asset_spares_existing_device_fields(self):
+        """
+        - create ralph-core device *core_device*
+        - add asset with ralph_device_id = core_device.id
+        - check each field (name, remark, dc) is unchanged
+        """
+        old_value = {
+            'dc': 'device dc',
+            'name': 'device name',
+            'remarks': 'device remarks',
+        }
+        device = DeviceFactory(**old_value)
+        self._check_fields(device, old_value)
+        form_data = self.get_asset_form_data()
+        form_data['ralph_device_id'] = device.id
+        self.add_asset_by_form(form_data)
+        device = Device.objects.get(pk=device.id)
+        self._check_fields(device, old_value)
