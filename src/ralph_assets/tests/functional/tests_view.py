@@ -17,7 +17,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import resolve, reverse
 from django.test import TestCase
 from django.test.utils import override_settings
-from ralph.discovery.models import Device
 from ralph.discovery.tests.util import DeviceFactory
 
 from ralph_assets import models_assets
@@ -1590,7 +1589,7 @@ class TestSyncFieldMixin(TestDevicesView):
         self.assertEqual(device.device_environment, asset.device_environment)
 
 
-class AssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
+class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
 
     asset_factory = DCAssetFactory
 
