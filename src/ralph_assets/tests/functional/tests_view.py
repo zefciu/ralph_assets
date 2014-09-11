@@ -1603,7 +1603,8 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         - check each field (dc, device_environment, name, remarks, service)
         is copied to device from asset
         """
-        form_data = self.get_asset_form_data({'device_info': None})  # else factory creates core:device
+        # set device_info=None to prevent creation of device
+        form_data = self.get_asset_form_data({'device_info': None})
         form_data['ralph_device_id'] = ''
         asset = self.add_asset_by_form(form_data)
         correct_value = {
