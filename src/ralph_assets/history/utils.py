@@ -143,7 +143,7 @@ class HistoryContext(object):
                     self.obj, 'get_{}_display'.format(field)
                 )()
 
-            if str(old_value) != str(new_value):
+            if old_value != new_value:
                 diff_data.append(
                     {
                         'field': field,

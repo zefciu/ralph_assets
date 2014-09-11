@@ -19,7 +19,7 @@ in model which is registered.
 Features:
 	* one history view for all models,
 	* simple API,
-	* stored information from all field types (e.g. ``ForeignKey``, ``ManyToManyField``),
+	* stored information from all field types included ``ForeignKey`` and ``ManyToManyField``,
 	* bulk create for many changes,
 	* based on Django's content types.
 
@@ -33,7 +33,7 @@ Add ``HistoryMixin`` to model. That's all.
 API
 ~~~
 
-Manually added history::
+Add to history::
 
 	from ralph_assets.history import History
 
