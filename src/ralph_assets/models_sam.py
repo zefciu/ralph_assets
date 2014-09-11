@@ -35,6 +35,7 @@ from ralph_assets.models_util import (
     WithForm,
 )
 from ralph.discovery.models_util import SavingUser
+from ralph_assets.history.models import HistoryMixin
 
 
 class LicenceType(Named):
@@ -59,6 +60,7 @@ class SoftwareCategory(Named, CreatableFromString):
 
 
 class Licence(
+    HistoryMixin,
     LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
