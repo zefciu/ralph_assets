@@ -668,8 +668,22 @@ class Asset(
         else:
             raise UserWarning('Unknown asset data type!')
 
+    @property
+    def type_is_data_center(self):
+        return self.type == AssetType.data_center
+
+    def can_be_matched(self):
+        if not self.type_is_data_center or not self.barcode:
+            return False
+        try:
+            device = Device.objects.get(barcode=self.barcode)
+            device_id = device.id
+        except Device.DoesNotExist:
+            device_id = False
+        return device_id
+
     def create_stock_device(self):
-        if not self.type == AssetType.data_center:
+        if not self.type_is_data_center:
             return
         if not self.device_info.ralph_device_id:
             try:
@@ -802,7 +816,12 @@ def create_asset_post_save(sender, instance, created, **kwargs):
             pass
         else:
             if not ralph_device_id:
-                instance.create_stock_device()
+                device_id = instance.can_be_matched()
+                if device_id:
+                    instance.device_info.ralph_device_id = device_id
+                    instance.device_info.save()
+                else:
+                    instance.create_stock_device()
 
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):

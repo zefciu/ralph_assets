@@ -1597,16 +1597,21 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         for field, correct_value in correct_data.iteritems():
             self.assertEqual(getattr(obj, field), correct_value)
 
+    def _get_asset_with_dummy_device(self, asset_data=None):
+        # set device_info=None to prevent creation of device
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data['ralph_device_id'] = ''
+        form_data.update(asset_data or {})
+        asset = self.add_asset_by_form(form_data)
+        return asset
+
     def test_asset_clones_fields_to_new_device(self):
         """
         - add asset without ralph_device_id
         - check each field (dc, device_environment, name, remarks, service)
         is copied to device from asset
         """
-        # set device_info=None to prevent creation of device
-        form_data = self.get_asset_form_data({'device_info': None})
-        form_data['ralph_device_id'] = ''
-        asset = self.add_asset_by_form(form_data)
+        asset = self._get_asset_with_dummy_device()
         correct_value = {
             'dc': asset.warehouse.name,
             'device_environment': asset.device_environment,
@@ -1635,3 +1640,14 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         self.add_asset_by_form(form_data)
         device = Device.objects.get(pk=device.id)
         self._check_fields(device, old_value)
+
+    def test_device_is_assigned_by_barcode(self):
+        """
+        - create device with barcode
+        - create asset with barcode device.barcode by form
+        - check asset.device_info.ralph_device_id = device.id
+        """
+        device = DeviceFactory()
+        asset = self._get_asset_with_dummy_device({'barcode': device.barcode})
+        device = Device.objects.get(barcode=device.barcode)
+        self.assertEqual(asset.device_info.ralph_device_id, device.id)
