@@ -76,7 +76,7 @@ class AssetsBase(ACLGateway, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(AssetsBase, self).get_context_data(**kwargs)
-        self.mainmenu_selected = self.mainmenu_selected or self.mode
+        self.mainmenu_selected = self.mainmenu_selected or 'hardware'
         if self.mode == 'back_office':
             base_sidebar_caption = _('Back office actions')
         elif self.mode == 'dc':
@@ -204,16 +204,10 @@ class AssetsBase(ACLGateway, TemplateView):
     def get_mainmenu_items(self):
         mainmenu = [
             MenuItem(
-                fugue_icon='fugue-building',
+                fugue_icon='fugue-computer',
                 href=reverse('asset_search', kwargs={'mode': 'dc'}),
-                label=_('Data center'),
-                name='dc',
-            ),
-            MenuItem(
-                fugue_icon='fugue-printer',
-                href=reverse('asset_search', kwargs={'mode': 'back_office'}),
-                label=_('BackOffice'),
-                name='back_office',
+                label=_('Hardware'),
+                name='hardware',
             ),
             MenuItem(
                 fugue_icon='fugue-lifebuoy',

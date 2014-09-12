@@ -1,3 +1,9 @@
+.switch {
+  float:right;
+}
+.with-switch {
+  float:left;
+}
 .auto-complete-blue {
     color: blue;
 }
