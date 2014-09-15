@@ -1,8 +1,8 @@
-<div class="btn-group switch">
-    <a href="/assets/dc/search" class="btn{% if mode == 'dc'%} active{% endif %}">
+<div class="btn-group pull-right">
+    <a href="{% url 'dc' %}" class="btn{% if mode == 'dc'%} active{% endif %}">
         <i class="fugue-icon fugue-building"></i> Data center
     </a>
-    <a href="/assets/back_office/search" class="btn{% if mode == 'back_office'%} active{% endif %}">
+    <a href="{% url 'bo' %}" class="btn{% if mode == 'back_office'%} active{% endif %}">
         <i class="fugue-icon fugue-printer"></i> Back office
     </a>
 </div>
