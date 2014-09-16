@@ -44,7 +44,7 @@ LICENCE_PAGE_SIZE = 10
 
 
 class LicenseSelectedMixin(object):
-    mainmenu_selected = 'licences'
+    submodule_name = 'licences'
 
 
 class LicenceBaseView(LicenseSelectedMixin, AssetsBase):
@@ -102,7 +102,9 @@ class CheckBoxColumn(DataTableColumn):
 class LicenceList(LicenseSelectedMixin, GenericSearch):
     """Displays a list of licences."""
 
+    active_sidebar_item = 'search'
     template_name = 'assets/licence_list.html'
+
     Model = Licence
     Form = LicenceSearchForm
     columns = [
@@ -224,7 +226,7 @@ class LicenceFormView(LicenceBaseView):
 
 class AddLicence(LicenceFormView):
     """Add a new licence"""
-
+    active_sidebar_item = 'add licence'
     caption = _('Add Licence')
     message = _('Licence added')
     Form = AddLicenceForm
