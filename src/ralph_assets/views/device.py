@@ -81,11 +81,34 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
         self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
+    def found_device_by_barcode(self):
+        barcodes = self.asset_form.cleaned_data['barcode']
+        if barcodes:
+            found = Device.objects.filter(barcode__in=barcodes).all()
+        else:
+            found = []
+        return found
+
     def post(self, *args, **kwargs):
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
         self._set_additional_info_form()
         if self.asset_form.is_valid() and self.additional_info.is_valid():
+
+
+            # TODO:: wrap it?
+            force_unlink = self.additional_info.cleaned_data.get(
+                'force_unlike', None,
+            )
+            if not force_unlink or self.found_device_by_barcode():
+                msg = _(
+                    "Device with barcode already exist, check"
+                    " 'force unlink' option to relink it."
+                )
+                messages.error(self.request, msg)
+                return super(AddDevice, self).get(*args, **kwargs)
+
+
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():

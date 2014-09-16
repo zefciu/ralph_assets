@@ -1605,23 +1605,7 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = self.add_asset_by_form(form_data)
         return asset
 
-    def test_asset_clones_fields_to_new_device(self):
-        """
-        - add asset without ralph_device_id
-        - check each field (dc, device_environment, name, remarks, service)
-        is copied to device from asset
-        """
-        asset = self._get_asset_with_dummy_device()
-        correct_value = {
-            'dc': asset.warehouse.name,
-            'device_environment': asset.device_environment,
-            'name': asset.model.name,
-            'remarks': asset.order_no,
-            'service': asset.service,
-        }
-        device = Device.objects.get(sn=asset.sn)
-        self._check_fields(device, correct_value)
-
+    #TODO:: move it to bottom?
     def test_asset_spares_existing_device_fields(self):
         """
         - create ralph-core device *core_device*
@@ -1641,13 +1625,86 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         device = Device.objects.get(pk=device.id)
         self._check_fields(device, old_value)
 
-    def test_device_is_assigned_by_barcode(self):
+    #TODO:: rm duplicates with test_adding_assets_creates_dummy_device
+    def test_asset_clones_fields_to_new_device(self):
+        """
+        - add asset without ralph_device_id
+        - check each field (dc, device_environment, name, remarks, service)
+        is copied to dummy device from asset
+        """
+        asset = self._get_asset_with_dummy_device()
+        correct_value = {
+            'dc': asset.warehouse.name,
+            'device_environment': asset.device_environment,
+            'name': asset.model.name,
+            'remarks': asset.order_no,
+            'service': asset.service,
+        }
+        device = Device.objects.get(sn=asset.sn)
+        self._check_fields(device, correct_value)
+
+    def test_adding_assets_creates_dummy_device(self):
+        """
+        - add asset without ralph_device_id
+        - check each field (dc, device_environment, name, remarks, service)
+        is copied to dummy device from asset
+        """
+        asset = self._get_asset_with_dummy_device()
+        correct_value = {
+            'dc': asset.warehouse.name,
+            'device_environment': asset.device_environment,
+            'name': asset.model.name,
+        }
+        device = Device.objects.get(sn=asset.sn)
+        self._check_fields(device, correct_value)
+
+    def test_adding_asset_match_device_by_barcode(self):
         """
         - create device with barcode
-        - create asset with barcode device.barcode by form
+        - create asset with barcode == device.barcode by form
         - check asset.device_info.ralph_device_id = device.id
         """
         device = DeviceFactory()
         asset = self._get_asset_with_dummy_device({'barcode': device.barcode})
         device = Device.objects.get(barcode=device.barcode)
         self.assertEqual(asset.device_info.ralph_device_id, device.id)
+
+    def test_adding_asset_doesnt_link_device_if_already_linked(self):
+        '''
+        - add asset linked to device (both have same barcode)
+        - changed asset barcode (link still exists)
+        - add new asset with barcode == device.barcode by form
+        - check validation error
+        '''
+        asset_with_device = DCAssetFactory()
+        asset_with_device.barcode = 'changed-barcode'
+        asset_with_device.save()
+
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'barcode': asset_with_device.get_ralph_device().barcode,
+        })
+        add_asset_url = reverse(
+            'add_device',
+            kwargs={
+                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
+            },
+        )
+        response = self.client.post(add_asset_url, form_data, follow=True)
+        msg = unicode(response.context['messages']._loaded_messages[0])
+        self.assertEqual(
+            msg,
+            "Device with barcode already exist, check 'force unlink' "
+            "option to relink it.",
+        )
+
+    def test_adding_asset_force_relink_device(self):
+        '''
+        - add asset (with barcode b1) linked to device (with barcode b2)
+        - add new asset with barcode b2 and *force-unlike* checked
+        - check old-asset has blank ralph_device_id
+        - check new-asset.office_inforalph_device_id == device-id
+        '''
+        #4. z barcode b1 + istnieje juz device o barcode b1 + JEST ZLINKOWANY z innym assetem + zaznaczone 'force unlink' -> usuwa link do starego asseta + dodaje link do nowego asseta
+        raise Exception("TODO::")
