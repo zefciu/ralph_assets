@@ -42,13 +42,7 @@ def get_assets(date):
     for asset in Asset.objects_dc.filter(
         Q(invoice_date=None) | Q(invoice_date__lte=date),
         part_info=None,
-    ).select_related('model', 'service', 'device_info'):
-        if not asset.warehouse_id:
-            logger.error('Asset {0} has no warehouse'.format(asset.id))
-            continue
-        if not asset.model_id:
-            logger.error('Asset {0} has no model'.format(asset.id))
-            continue
+    ).select_related('model', 'device_info'):
         if not asset.device_info_id:
             logger.error('Asset {0} has no device'.format(asset.id))
             continue
@@ -69,7 +63,7 @@ def get_assets(date):
             'asset_id': asset.id,
             'device_id': device_info.ralph_device_id if device_info else None,
             'asset_name': hostname,
-            'service_ci_uid': asset.service.uid,
+            'service_id': asset.service_id,
             'environment_id': asset.device_environment_id,
             'sn': asset.sn,
             'barcode': asset.barcode,
@@ -82,21 +76,3 @@ def get_assets(date):
             'price': asset.price,
             'model_id': asset.model_id,
         }
-
-
-def get_asset_parts():
-    """Yields dicts describing parts of assets"""
-    for asset in Asset.objects_dc.all():
-        for part in asset.get_parts():
-            device_info = asset.device_info
-            yield {
-                'asset_id': part.id,
-                'barcode': asset.barcode,
-                'is_deprecated': part.is_deprecated(),
-                'model': part.model.name if part.model else None,
-                'price': part.price,
-                'ralph_id': device_info.ralph_device_id if device_info else None,  # noqa
-                'sn': asset.sn,
-                'deprecation_rate': asset.deprecation_rate,
-                'is_deprecated': part.is_deprecated(),
-            }
