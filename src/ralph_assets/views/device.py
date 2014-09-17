@@ -16,6 +16,7 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import get_object_or_404
 
+from ralph.discovery.models_device import Device
 from ralph.util.api_assets import get_device_components
 from ralph_assets.forms import (
     AddDeviceForm,
@@ -81,10 +82,16 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
         self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
-    def found_device_by_barcode(self):
+    def validate_barcodes(self):
+        """
+        Checks if barcodes are used in device which are linked to assets.
+        """
         barcodes = self.asset_form.cleaned_data['barcode']
         if barcodes:
             found = Device.objects.filter(barcode__in=barcodes).all()
+            found = Asset.objects.filter(
+                device_info__ralph_device_id__in=found,
+            ).all()
         else:
             found = []
         return found
@@ -97,10 +104,11 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
 
 
             # TODO:: wrap it?
+            #print('unlink', self.additional_info.cleaned_data)
             force_unlink = self.additional_info.cleaned_data.get(
-                'force_unlike', None,
+                'force_unlink', None,
             )
-            if not force_unlink or self.found_device_by_barcode():
+            if self.validate_barcodes() and not force_unlink:
                 msg = _(
                     "Device with barcode already exist, check"
                     " 'force unlink' option to relink it."
@@ -192,6 +200,7 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
             self.asset = _update_device_info(
                 modifier, self.asset, self.additional_info.cleaned_data
             )
+            # TODO:: perhaps to be removed with form field too
             if self.additional_info.cleaned_data.get('create_stock'):
                 self.asset.create_stock_device()
         elif self.asset.type in AssetType.BO.choices:
@@ -280,11 +289,23 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
                 self.additional_info.is_valid(),
             )):
                 modifier_profile = self.request.user.get_profile()
+
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
-                self._update_additional_info(modifier_profile.user)
+
+
+                from ralph_assets.models import DeviceInfo
+                if not self.asset.device_info:
+                    self.asset.device_info = DeviceInfo()
+                #self._update_additional_info(modifier_profile.user)
+
+
+                #print('dev info', self.asset.device_info.ralph_device_id)
                 self.asset.save(user=self.request.user)
+                #print('dev info after', Asset.objects.get(pk=self.asset.id).device_info)
+
+
                 self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []

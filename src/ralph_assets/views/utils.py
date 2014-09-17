@@ -25,8 +25,14 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
         device_info = DeviceInfo()
         for field in ['ralph_device_id', 'u_level', 'u_height']:
             setattr(device_info, field, cleaned_additional_info[field])
-        device_info.save(user=creator_profile.user)
+        device_info.save(
+            user=creator_profile.user,
+        )
         asset.device_info = device_info
+        asset.save(
+            user=creator_profile.user,
+            force_unlink=cleaned_additional_info['force_unlink'],
+        )
     elif mode == 'back_office':
         _move_data(asset_data, cleaned_additional_info, ['purpose'])
         asset = Asset(created_by=creator_profile, **asset_data)
@@ -35,7 +41,7 @@ def _create_device(creator_profile, asset_data, cleaned_additional_info, mode):
         office_info.coa_oem_os = cleaned_additional_info['coa_oem_os']
         office_info.save(user=creator_profile.user)
         asset.office_info = office_info
-    asset.save(user=creator_profile.user)
+        asset.save(user=creator_profile.user)
     return asset
 
 

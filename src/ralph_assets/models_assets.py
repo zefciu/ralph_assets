@@ -662,51 +662,60 @@ class Asset(
         return self.pk is None
 
     #TODO:: change name
-    def create_asset_post_save(self):
+    def create_asset_post_save(self, force_unlink):
         """When a new DC asset without a device linked to it is created, try to
         match it with an existing device or create a dummy (stock) device and
         match with it instead. Note: it does not apply to assets created with
         'add part' button.
         """
-        if self.is_new_instance:
-            try:
-                ralph_device_id = self.device_info.ralph_device_id
-            except AttributeError:
-                # asset created with 'add part'
-                pass
-            else:
-                if not ralph_device_id:
-                    device_id = self.can_be_matched()
-                    if device_id:
-                        self.device_info.ralph_device_id = device_id
-                        self.device_info.save()
-                    else:
-                        self.create_stock_device()
+        #TODO:: merge it with docstring
+        # read it like: "in -> out"
+        # asset + no device -> add asset + dummy device
+        # asset + free barcode -> add asset + link device
+        # asset + used barcode -> error
+        # asset + used barcode + unlink -> add asset relink
 
-    def save(self, commit=True, sync=True, *args, **kwargs):
+
+        #edit asset when:
+        # no devcie -> edit asset + dummy device
+        # no devcie + free barcode -> edit + link device
+        # no devcie + used barcode -> error
+        # no devcie + used barcode + unlink -> edit + relink
+
+        # device -> edit
+        # device + free barcode -> edit + link device
+        # device + used barcode -> error
+        # device + used barcode + force unlink -> edit i relink
+        try:
+            ralph_device_id = self.device_info.ralph_device_id
+        except AttributeError:
+            # asset created with 'add part'
+            pass
+        else:
+            if not ralph_device_id:
+                device = self.can_be_matched()
+                if device:
+                    if force_unlink:
+                        asset = device.get_asset()
+                        # print('dddd', asset.device_info.ralph_device_id)
+                        asset.device_info.ralph_device_id = None
+                        asset.device_info.save()
+                        # device = Device.objects.get(barcode=self.barcode)
+                        # print('dddd', device.get_asset())
+                    self.device_info.ralph_device_id = device.id
+                    self.device_info.save()
+                else:
+                    self.create_stock_device()
+
+    def save(
+        self, commit=True, sync=True, force_unlink=False, *args, **kwargs
+    ):
         _replace_empty_with_none(self, ['source', 'hostname'])
         if sync:
             SyncFieldMixin.save(self, *args, **kwargs)
 
 
-        #TODO:: add fancy and saving code here ;P
-        #Po ustaleniach z Wojtkiem ralph ma sie zachowywac nastepujaco:
-        #Scenariusze:
-        #0: dodaje asset:
-        #1. (brak device) -> add asset + add kadlubek device
-        #2. z barcode b1 + istnieje juz device o barcode b1 -> dodaje asset + linkuje asset z device
-        #3. z barcode b1 + istnieje juz device o barcode b1 + JEST ZLINKOWANY z innym assetem -> rzuca validation error
-        #4. z barcode b1 + istnieje juz device o barcode b1 + JEST ZLINKOWANY z innym assetem + zaznaczone 'force unlink' -> usuwa link do starego asseta + dodaje link do nowego asseta
-
-        #0: edytuje asset
-        #1: edytuj asset + ma device -> wyedytuj
-        #2: edytuj asset + ma device + create-stock-device OFF -> wyedytuj
-        #3: edytuj asset + ma device + create-stock-device ON -> wg algorytmu
-            #-. (brak device) -> edit asset + add kadlubek device
-            #-. z barcode b1 + istnieje juz device o barcode b1 -> dodaje asset + linkuje asset z device
-            #-. z barcode b1 + istnieje juz device o barcode b1 + JEST ZLINKOWANY z innym assetem -> rzuca validation error
-            #-. z barcode b1 + istnieje juz device o barcode b1 + JEST ZLINKOWANY z innym assetem + zaznaczone 'force unlink' -> usuwa link do starego asseta + dodaje link do nowego asseta
-        self.create_asset_post_save()
+        self.create_asset_post_save(force_unlink)
 
 
 
@@ -730,10 +739,9 @@ class Asset(
             return False
         try:
             device = Device.objects.get(barcode=self.barcode)
-            device_id = device.id
         except Device.DoesNotExist:
-            device_id = False
-        return device_id
+            device = False
+        return device
 
     def create_stock_device(self):
         if not self.type_is_data_center:
