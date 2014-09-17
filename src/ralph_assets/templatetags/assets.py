@@ -58,7 +58,7 @@ def object_list_search(object_instance, field):
 
 @register.inclusion_tag(
     'assets/templatetags/mode_switch.html',
-    takes_context=True
+    takes_context=True,
 )
 def mode_switch(context):
     return {'mode': context['mode']}
