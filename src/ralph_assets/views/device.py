@@ -16,7 +16,6 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import get_object_or_404
 
-from ralph.discovery.models_device import Device
 from ralph.util.api_assets import get_device_components
 from ralph_assets.forms import (
     AddDeviceForm,
