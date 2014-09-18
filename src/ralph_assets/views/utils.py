@@ -79,12 +79,13 @@ def _update_office_info(user, asset, office_info_data):
 
 @transaction.commit_on_success
 def _update_device_info(user, asset, device_info_data):
-    if not asset.device_info:
-        asset.device_info = DeviceInfo()
-    asset.device_info.__dict__.update(
-        **device_info_data
-    )
-    asset.device_info.save(user=user)
+    device_info = asset.device_info
+    if not device_info:
+        device_info = DeviceInfo()
+    for key, value in device_info_data.iteritems():
+        setattr(device_info, key, value)
+    device_info.save(user=user)
+    asset.device_info = device_info
     return asset
 
 

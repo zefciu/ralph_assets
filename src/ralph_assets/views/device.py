@@ -82,41 +82,23 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
         self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
-    def validate_barcodes(self):
-        """
-        Checks if barcodes are used in device which are linked to assets.
-        """
-        barcodes = self.asset_form.cleaned_data['barcode']
-        if barcodes:
-            found = Device.objects.filter(barcode__in=barcodes).all()
-            found = Asset.objects.filter(
-                device_info__ralph_device_id__in=found,
-            ).all()
-        else:
-            found = []
-        return found
-
     def post(self, *args, **kwargs):
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(self.request.POST, mode=self.mode)
         self._set_additional_info_form()
         if self.asset_form.is_valid() and self.additional_info.is_valid():
-
-
-            # TODO:: wrap it?
-            #print('unlink', self.additional_info.cleaned_data)
             force_unlink = self.additional_info.cleaned_data.get(
                 'force_unlink', None,
             )
-            if self.validate_barcodes() and not force_unlink:
+            if self.validate_barcodes(
+                self.asset_form.cleaned_data['barcode'],
+            ) and not force_unlink:
                 msg = _(
                     "Device with barcode already exist, check"
                     " 'force unlink' option to relink it."
                 )
                 messages.error(self.request, msg)
                 return super(AddDevice, self).get(*args, **kwargs)
-
-
             creator_profile = self.request.user.get_profile()
             asset_data = {}
             for f_name, f_value in self.asset_form.cleaned_data.items():
@@ -144,7 +126,7 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
                     self.additional_info.cleaned_data,
                     self.mode,
                 )
-                device.save()
+                device.save(force_unlink=force_unlink)
                 ids.append(device.id)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
@@ -200,7 +182,6 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
             self.asset = _update_device_info(
                 modifier, self.asset, self.additional_info.cleaned_data
             )
-            # TODO:: perhaps to be removed with form field too
             if self.additional_info.cleaned_data.get('create_stock'):
                 self.asset.create_stock_device()
         elif self.asset.type in AssetType.BO.choices:
@@ -288,24 +269,26 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
                 self.asset_form.is_valid(),
                 self.additional_info.is_valid(),
             )):
+                force_unlink = self.additional_info.cleaned_data.get(
+                    'force_unlink', None,
+                )
+                if self.validate_barcodes(
+                    [self.asset_form.cleaned_data['barcode']]
+                ) and not force_unlink:
+                    msg = _(
+                        "Device with barcode already exist, check"
+                        " 'force unlink' option to relink it."
+                    )
+                    messages.error(self.request, msg)
+                    return super(EditDevice, self).get(*args, **kwargs)
                 modifier_profile = self.request.user.get_profile()
-
                 self.asset = _update_asset(
                     modifier_profile, self.asset, self.asset_form.cleaned_data
                 )
-
-
-                from ralph_assets.models import DeviceInfo
-                if not self.asset.device_info:
-                    self.asset.device_info = DeviceInfo()
-                #self._update_additional_info(modifier_profile.user)
-
-
-                #print('dev info', self.asset.device_info.ralph_device_id)
-                self.asset.save(user=self.request.user)
-                #print('dev info after', Asset.objects.get(pk=self.asset.id).device_info)
-
-
+                self._update_additional_info(modifier_profile.user)
+                self.asset.save(
+                    user=self.request.user, force_unlink=force_unlink,
+                )
                 self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []

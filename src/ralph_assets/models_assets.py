@@ -661,31 +661,24 @@ class Asset(
         """Check if object is a new db record"""
         return self.pk is None
 
-    #TODO:: change name
-    def create_asset_post_save(self, force_unlink):
-        """When a new DC asset without a device linked to it is created, try to
-        match it with an existing device or create a dummy (stock) device and
-        match with it instead. Note: it does not apply to assets created with
-        'add part' button.
+    def handle_device_linkage(self, force_unlink):
+        """When try to match it with an existing device or create a dummy
+        (stock) device and then match with it instead.
+        Note: it does not apply to assets created with 'add part' button.
+
+        Cases:
+        when adding asset:
+            no barcode -> add asset + create dummy device
+            set barcode from unlinked device -> add asset + link device
+            set barcode from linked device -> error
+            set barcode from linked device + force unlink -> add + relink
+
+        when adding asset:
+            no barcode -> edit asset + create dummy device
+            set barcode from unlinked device -> edit asset + link device
+            set barcode from linked device -> error
+            set barcode from linked device + force unlink -> edit + relink
         """
-        #TODO:: merge it with docstring
-        # read it like: "in -> out"
-        # asset + no device -> add asset + dummy device
-        # asset + free barcode -> add asset + link device
-        # asset + used barcode -> error
-        # asset + used barcode + unlink -> add asset relink
-
-
-        #edit asset when:
-        # no devcie -> edit asset + dummy device
-        # no devcie + free barcode -> edit + link device
-        # no devcie + used barcode -> error
-        # no devcie + used barcode + unlink -> edit + relink
-
-        # device -> edit
-        # device + free barcode -> edit + link device
-        # device + used barcode -> error
-        # device + used barcode + force unlink -> edit i relink
         try:
             ralph_device_id = self.device_info.ralph_device_id
         except AttributeError:
@@ -697,11 +690,8 @@ class Asset(
                 if device:
                     if force_unlink:
                         asset = device.get_asset()
-                        # print('dddd', asset.device_info.ralph_device_id)
                         asset.device_info.ralph_device_id = None
                         asset.device_info.save()
-                        # device = Device.objects.get(barcode=self.barcode)
-                        # print('dddd', device.get_asset())
                     self.device_info.ralph_device_id = device.id
                     self.device_info.save()
                 else:
@@ -713,12 +703,7 @@ class Asset(
         _replace_empty_with_none(self, ['source', 'hostname'])
         if sync:
             SyncFieldMixin.save(self, *args, **kwargs)
-
-
-        self.create_asset_post_save(force_unlink)
-
-
-
+        self.handle_device_linkage(force_unlink)
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
 

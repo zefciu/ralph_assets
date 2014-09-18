@@ -214,12 +214,7 @@ class TestDevicesView(BaseViewsTest):
         return form_data
 
     def add_asset_by_form(self, form_data):
-        add_asset_url = reverse(
-            'add_device',
-            kwargs={
-                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
-            },
-        )
+        add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
         self.assertEqual(response.status_code, 200)
         asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
@@ -263,12 +258,7 @@ class TestDevicesView(BaseViewsTest):
         })
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        edit_data = {}
-        asset_form = response.context['asset_form']
-        for field_name, field_value in asset_form.fields.items():
-            raw_field_value = asset_form[field_name].value()
-            field_value = str(raw_field_value) if raw_field_value else ''
-            edit_data[field_name] = field_value
+        edit_data = self.get_asset_form_data()
         edit_data.update(extra_data)
         self.assertIsNone(asset.hostname)
         url = reverse('device_edit', kwargs={
@@ -1592,6 +1582,25 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
 
     asset_factory = DCAssetFactory
 
+    def _get_add_url(self, asset_type):
+        url = reverse(
+            'add_device',
+            kwargs={
+                'mode': models_assets.ASSET_TYPE2MODE[asset_type],
+            },
+        )
+        return url
+
+    def _get_edit_url(self, asset_id, asset_type):
+        url = reverse(
+            'device_edit',
+            kwargs={
+                'mode': models_assets.ASSET_TYPE2MODE[asset_type],
+                'asset_id': asset_id,
+            },
+        )
+        return url
+
     def _check_fields(self, obj, correct_data):
         for field, correct_value in correct_data.iteritems():
             self.assertEqual(getattr(obj, field), correct_value)
@@ -1604,7 +1613,6 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = self.add_asset_by_form(form_data)
         return asset
 
-    # TODO:: move it to bottom?
     def test_asset_spares_existing_device_fields(self):
         """
         - create ralph-core device *core_device*
@@ -1624,11 +1632,8 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         device = Device.objects.get(pk=device.id)
         self._check_fields(device, old_value)
 
-    # TODO:: rm duplicates with test_adding_assets_creates_dummy_device
     def test_asset_clones_fields_to_new_device(self):
-        """
-        TODO:: docstring?
-        """
+        """Checks if required fields are cloned to dummy device."""
         asset = self._get_asset_with_dummy_device()
         correct_value = {
             'dc': asset.warehouse.name,
@@ -1649,58 +1654,39 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = self._get_asset_with_dummy_device()
         correct_value = {
             'dc': asset.warehouse.name,
-            'device_environment': asset.device_environment,
             'name': asset.model.name,
+            'remarks': asset.order_no,
         }
         device = Device.objects.get(sn=asset.sn)
-        self._check_fields(device, correct_value)
         self.assertEqual(asset.device_info.ralph_device_id, device.id)
+        self._check_fields(device, correct_value)
 
     def test_editing_assets_creates_dummy_device(self):
         """
         edit asset when:
             no devcie -> edit asset + dummy device
 
+        steps:
         - add asset without device
         - edit asset
         - check edited asset is linked to dummy device
         - dummy device has values copied from edited asset
         """
         asset = DCAssetFactory(device_info=None)
-        self.assertEqual(asset.device_info, None)
-
         form_data = self.get_asset_form_data({'device_info': None})
         form_data.update({
             'ralph_device_id': '',
             'asset': '',
         })
-        edit_url = reverse(
-            'device_edit',
-            kwargs={
-                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
-                'asset_id': asset.id,
-            },
-        )
-
-
-        from ralph_assets.models_assets import DeviceInfo
-        print(Device.objects.all())
-        print(DeviceInfo.objects.all())
-        print(models_assets.Asset.objects.all())
-        response = self.client.post(edit_url, form_data, follow=True)
-        print(Device.objects.all())
-        print(DeviceInfo.objects.all())
-        print(models_assets.Asset.objects.all())
-
-
-        #TODO:: device = Device.objects.get(sn=asset.sn)
+        edit_url = self._get_edit_url(asset.id, form_data['type'])
+        self.client.post(edit_url, form_data, follow=True)
+        device = Device.objects.get(sn=asset.sn)
         asset = Asset.objects.get(pk=asset.id)
-        device = Device.objects.all()[0]
         self.assertEqual(asset.device_info.ralph_device_id, device.id)
         correct_value = {
             'dc': asset.warehouse.name,
-            'device_environment': asset.device_environment,
             'name': asset.model.name,
+            'remarks': asset.order_no,
         }
         self._check_fields(device, correct_value)
 
@@ -1714,6 +1700,39 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = self._get_asset_with_dummy_device({'barcode': device.barcode})
         device = Device.objects.get(barcode=device.barcode)
         self.assertEqual(asset.device_info.ralph_device_id, device.id)
+
+    def test_editing_asset_links_device_by_barcode(self):
+        """
+        edit asset when:
+            - no devcie linked
+            - set barcode from an unlinked device -> edit asset + link to
+            device
+
+        steps:
+        - add asset without device
+        - edit asset by form
+        - check edited asset is linked to device
+        - device has the same values as before linking
+        """
+        device = DeviceFactory()
+        asset = DCAssetFactory(device_info=None)
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'asset': '',
+            'barcode': device.barcode,
+        })
+        edit_url = self._get_edit_url(asset.id, form_data['type'])
+        values_before_linking = {
+            'dc': device.dc,
+            'name': device.name,
+            'remarks': device.remarks,
+        }
+        self.client.post(edit_url, form_data, follow=True)
+        device = Device.objects.get(pk=device.id)
+        asset = Asset.objects.get(pk=asset.id)
+        self.assertEqual(asset.device_info.ralph_device_id, device.id)
+        self._check_fields(device, values_before_linking)
 
     def test_adding_asset_doesnt_link_device_if_already_linked(self):
         '''
@@ -1731,13 +1750,40 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
             'ralph_device_id': '',
             'barcode': asset_with_device.get_ralph_device().barcode,
         })
-        add_asset_url = reverse(
-            'add_device',
-            kwargs={
-                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
-            },
-        )
+        add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
+        msg = unicode(response.context['messages']._loaded_messages[0])
+        self.assertEqual(
+            msg,
+            "Device with barcode already exist, check 'force unlink' "
+            "option to relink it.",
+        )
+
+    def test_editing_asset_doesnt_link_device_if_already_linked(self):
+        """
+        edit asset when:
+            - no devcie linked
+            - set barcode from already linked device -> error
+
+        steps:
+        - add asset with device
+        - edit asset by form, set barcode from linked device
+        - check error is shown
+        """
+        first_asset = DCAssetFactory()
+        first_asset.barcode = 'changed-barcode'
+        first_asset.save()
+
+        second_asset = DCAssetFactory(device_info=None)
+        self.assertTrue(first_asset.linked_device)
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'asset': '',
+            'barcode': first_asset.linked_device.barcode,
+        })
+        edit_url = self._get_edit_url(second_asset.id, form_data['type'])
+        response = self.client.post(edit_url, form_data, follow=True)
         msg = unicode(response.context['messages']._loaded_messages[0])
         self.assertEqual(
             msg,
@@ -1755,7 +1801,6 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         - check old-asset has blank ralph_device_id
         - check new-asset.office_inforalph_device_id == device-id
         '''
-        # TODO:: clean it
         first_asset = DCAssetFactory()
         first_asset.barcode = 'changed-barcode'
         first_asset.save()
@@ -1766,18 +1811,13 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
             'barcode': first_asset.get_ralph_device().barcode,
             'force_unlink': 'true',
         })
-        add_asset_url = reverse(
-            'add_device',
-            kwargs={
-                'mode': models_assets.ASSET_TYPE2MODE[form_data['type']],
-            },
-        )
+        add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
         asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
         second_asset = models_assets.Asset.objects.get(pk=asset_id)
 
         linked_device = Device.objects.get(pk=first_asset.id)
-        first_asset = first_asset.__class__.objects.get(pk=first_asset.id)
+        first_asset = Asset.objects.get(pk=first_asset.id)
         self.assertEqual(
             first_asset.device_info.ralph_device_id, None,
         )
@@ -1785,4 +1825,43 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
             second_asset.device_info.ralph_device_id, linked_device.id,
         )
         self.assertEqual(second_asset.barcode, linked_device.barcode)
-#############
+
+    def test_editing_asset_force_relink_device(self):
+        """
+        edit asset when:
+            - no devcie linked
+            - set barcode from already linked device
+            - checked 'force_unlink' option -> edit asset + relink device
+
+        steps:
+        - add asset a1 with device d1
+        - edit asset a2 by form,
+            - set barcode from linked device
+            - set force_unlink option
+        - check a1 is not linked
+        - check a2 is linked to device d1
+        """
+        first_asset = DCAssetFactory()
+        first_asset.barcode = 'changed-barcode'
+        first_asset.save()
+
+        self.assertTrue(first_asset.linked_device)
+        linked_device = first_asset.linked_device
+        second_asset = DCAssetFactory(device_info=None)
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'asset': '',
+            'barcode': first_asset.linked_device.barcode,
+            'force_unlink': 'true',
+        })
+        edit_url = self._get_edit_url(second_asset.id, form_data['type'])
+        self.client.post(edit_url, form_data, follow=True)
+
+        first_asset = Asset.objects.get(pk=first_asset.id)
+        second_asset = Asset.objects.get(pk=second_asset.id)
+        self.assertFalse(first_asset.linked_device)
+        self.assertEqual(
+            second_asset.device_info.ralph_device_id, linked_device.id,
+        )
+        self.assertEqual(second_asset.barcode, linked_device.barcode)
