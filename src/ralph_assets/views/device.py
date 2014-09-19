@@ -28,7 +28,7 @@ from ralph_assets.models import Asset, AssetModel, PartInfo
 from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import AssetsBase, SubmoduleModeMixin
 from ralph_assets.views.utils import (
-    _create_device,
+    _create_assets,
     _move_data,
     _update_office_info,
     _update_asset,
@@ -98,35 +98,16 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
                 )
                 messages.error(self.request, msg)
                 return super(AddDevice, self).get(*args, **kwargs)
-            creator_profile = self.request.user.get_profile()
-            asset_data = {}
-            for f_name, f_value in self.asset_form.cleaned_data.items():
-                if f_name not in {
-                    "barcode", "category", "company", "cost_center",
-                    "department", "employee_id", "imei", "licences", "manager",
-                    "sn", "profit_center", "supports",
-                }:
-                    asset_data[f_name] = f_value
-            sns = self.asset_form.cleaned_data.get('sn', [])
-            barcodes = self.asset_form.cleaned_data.get('barcode', [])
-            imeis = (
-                self.asset_form.cleaned_data.pop('imei')
-                if 'imei' in self.asset_form.cleaned_data else None
-            )
-            ids = []
-            for index in range(len(sns or barcodes)):
-                asset_data['sn'] = sns[index] if sns else None
-                asset_data['barcode'] = barcodes[index] if barcodes else None
-                if imeis:
-                    self.additional_info.cleaned_data['imei'] = imeis[index]
-                device = _create_device(
-                    creator_profile,
-                    asset_data,
-                    self.additional_info.cleaned_data,
-                    self.mode,
+            try:
+                ids = _create_assets(
+                    self.request.user.get_profile(),
+                    self.asset_form,
+                    self.additional_info,
+                    self.mode
                 )
-                device.save(force_unlink=force_unlink)
-                ids.append(device.id)
+            except ValueError as e:
+                messages.error(self.request, e.message)
+                return super(AddDevice, self).get(*args, **kwargs)
             messages.success(self.request, _("Assets saved."))
             cat = self.request.path.split('/')[2]
             if len(ids) == 1:

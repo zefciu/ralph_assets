@@ -15,7 +15,7 @@ from urllib import urlencode
 from dj.choices import Country
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import resolve, reverse
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from ralph.discovery.tests.util import DeviceFactory
 
@@ -125,7 +125,7 @@ def check_fields(testcase, correct_data, object_to_check):
         testcase.assertEqual(object_value, expected, msg)
 
 
-class BaseViewsTest(ClientMixin, TestCase):
+class BaseViewsTest(ClientMixin, TransactionTestCase):
     client_class = AjaxClient
 
     def setUp(self):
@@ -445,6 +445,36 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_mulitvalues_behaviour(self):
         self._test_mulitvalues_behaviour()
+
+    def test_blacklisted_sns_bahviour(self):
+        """
+        steps
+        - add dc-asset with 3 assets by form
+        - second one is blacklisted
+        - we got error message
+        - assets was not saved
+        """
+        form_data = self.get_asset_form_data()
+        sns = [form_data['sn'], '1234567890']
+        form_data.update({
+            'sn': ','.join(sns),
+            'barcode': ','.join(
+                [assets_utils.generate_barcode() for i in xrange(2)],
+            ),
+            'ralph_device_id': '',
+        })
+        add_asset_url = reverse(
+            'add_device',
+            kwargs={'mode': models_assets.ASSET_TYPE2MODE[form_data['type']]},
+        )
+        response = self.client.post(add_asset_url, form_data, follow=True)
+        error_msg = unicode(response.context['messages']._loaded_messages[0])
+        self.assertEqual(
+            error_msg,
+            'You have provided `sn` which is blacklisted.'
+            ' Please use a different one.'
+        )
+        self.assertFalse(Asset.objects.filter(sn__in=sns).all())
 
 
 class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):

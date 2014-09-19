@@ -673,7 +673,7 @@ class Asset(
             set barcode from linked device -> error
             set barcode from linked device + force unlink -> add + relink
 
-        when adding asset:
+        when editing asset:
             no barcode -> edit asset + create dummy device
             set barcode from unlinked device -> edit asset + link device
             set barcode from linked device -> error
@@ -686,7 +686,7 @@ class Asset(
             pass
         else:
             if not ralph_device_id:
-                device = self.can_be_matched()
+                device = self.find_device_to_link()
                 if device:
                     if force_unlink:
                         asset = device.get_asset()
@@ -719,7 +719,7 @@ class Asset(
     def type_is_data_center(self):
         return self.type == AssetType.data_center
 
-    def can_be_matched(self):
+    def find_device_to_link(self):
         if not self.type_is_data_center or not self.barcode:
             return False
         try:
