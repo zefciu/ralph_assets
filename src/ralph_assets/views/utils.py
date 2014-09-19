@@ -28,7 +28,7 @@ def _create_assets(creator_profile, asset_form, additional_form, mode):
             "sn", "profit_center", "supports",
         }:
             asset_data[f_name] = f_value
-    force_unlink = additional_info.cleaned_data.get('force_unlink', None)
+    force_unlink = additional_form.cleaned_data.get('force_unlink', None)
     sns = asset_form.cleaned_data.get('sn', [])
     barcodes = asset_form.cleaned_data.get('barcode', [])
     imeis = (
