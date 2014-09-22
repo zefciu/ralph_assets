@@ -685,17 +685,18 @@ class Asset(
             # asset created with 'add part'
             pass
         else:
-            if not ralph_device_id:
-                device = self.find_device_to_link()
-                if device:
-                    if force_unlink:
-                        asset = device.get_asset()
-                        asset.device_info.ralph_device_id = None
-                        asset.device_info.save()
-                    self.device_info.ralph_device_id = device.id
-                    self.device_info.save()
-                else:
-                    self.create_stock_device()
+            if self.is_new_instance:
+                if not ralph_device_id:
+                    device = self.find_device_to_link()
+                    if device:
+                        if force_unlink:
+                            asset = device.get_asset()
+                            asset.device_info.ralph_device_id = None
+                            asset.device_info.save()
+                        self.device_info.ralph_device_id = device.id
+                        self.device_info.save()
+                    else:
+                        self.create_stock_device()
 
     def save(
         self, commit=True, sync=True, force_unlink=False, *args, **kwargs
