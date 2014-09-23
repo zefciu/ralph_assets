@@ -43,7 +43,7 @@ from ralph_assets.views.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AddDevice(SubmoduleModeMixin, AssetsBase):
+class AddDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
     active_sidebar_item = 'add device'
     template_name = 'assets/add_device.html'
 

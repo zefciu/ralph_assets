@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import resolve, reverse
 from django.utils.translation import ugettext_lazy as _
 
 from bob.menu import MenuItem
@@ -24,7 +24,8 @@ class AssetMenu(Menu):
 
     def __init__(self, *args, **kwargs):
         super(AssetMenu, self).__init__(*args, **kwargs)
-        self.mode = self.request.session.get('mode', 'dc')
+        url = self.request.META['PATH_INFO']
+        self.mode = resolve(url).kwargs.get('mode', 'dc')
 
     def get_submodules(self):
         return [

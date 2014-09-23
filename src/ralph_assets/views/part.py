@@ -22,6 +22,7 @@ from ralph_assets.forms import (
 from ralph_assets.models import Asset
 from ralph_assets.views.base import (
     AssetsBase,
+    HardwareModeMixin,
     SubmoduleModeMixin,
     get_return_link,
 )
@@ -37,7 +38,7 @@ from ralph_assets.views.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AddPart(SubmoduleModeMixin, AssetsBase):
+class AddPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
     active_sidebar_item = 'add part'
     template_name = 'assets/add_part.html'
 
@@ -111,7 +112,7 @@ class AddPart(SubmoduleModeMixin, AssetsBase):
         return super(AddPart, self).get(*args, **kwargs)
 
 
-class EditPart(SubmoduleModeMixin, AssetsBase):
+class EditPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
     detect_changes = True
     template_name = 'assets/edit_part.html'
 

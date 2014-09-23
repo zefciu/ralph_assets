@@ -72,11 +72,6 @@ class AssetSearch(Report, HardwareModeMixin, AssetSearchDataTable):
     """The main-screen search form for all type of assets."""
     active_sidebar_item = 'search'
 
-    def set_mode(self, mode):
-        super(AssetSearch, self).set_mode(mode)
-        if mode:
-            self.request.session['mode'] = mode
-
     @property
     def submodule_name(self):
         return 'hardware'
