@@ -84,13 +84,13 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'support_assigned',
+            'required_support', 'support_assigned',  'service',
+            'device_environment',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
-            'service_name', 'location', 'remarks', 'service',
-            'device_environment',
+            'service_name', 'location', 'remarks',
         ],
     }),
     ('User data', {
@@ -118,12 +118,13 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
-            'required_support', 'support_assigned',
+            'required_support', 'support_assigned', 'service',
+            'device_environment',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
             'loan_end_date_to', 'part_info', 'niw', 'service_name',
-            'location', 'remarks', 'service', 'device_environment',
+            'location', 'remarks',
         ],
     }),
     ('User data', {
