@@ -22,12 +22,16 @@ class AssetMenu(Menu):
         href='/assets/dc/search',
     )
 
+    def __init__(self, *args, **kwargs):
+        super(AssetMenu, self).__init__(*args, **kwargs)
+        self.mode = self.request.session.get('mode', 'dc')
+
     def get_submodules(self):
         return [
             MenuItem(
                 fugue_icon='fugue-computer',
                 view_name='asset_search',
-                view_kwargs={'mode': 'dc'},
+                view_kwargs={'mode': self.mode},
                 label=_('Hardware'),
                 name='hardware',
             ),
@@ -65,7 +69,7 @@ class AssetMenu(Menu):
         ]
 
     def get_sidebar_items(self):
-        hardware = [
+        hardware_dc = [
             {
                 'label': _('Search'),
                 'view_name': 'asset_search',
@@ -140,7 +144,7 @@ class AssetMenu(Menu):
             for report in ReportViewBase.reports
         ]
         return {
-            'hardware_dc': self.generate_menu_items(hardware),
+            'hardware_dc': self.generate_menu_items(hardware_dc),
             'hardware_back_office': self.generate_menu_items(hardware_bo),
             'supports': self.generate_menu_items(supports),
             'licences': self.generate_menu_items(licences),
