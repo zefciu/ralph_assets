@@ -657,7 +657,7 @@ class Asset(
         return [(obj, fields)] if obj else []
 
     @property
-    def is_new_instance(self):
+    def exists(self):
         """Check if object is a new db record"""
         return self.pk is None
 
@@ -674,10 +674,7 @@ class Asset(
             set barcode from linked device + force unlink -> add + relink
 
         when editing asset:
-            no barcode -> edit asset + create dummy device
-            set barcode from unlinked device -> edit asset + link device
-            set barcode from linked device -> error
-            set barcode from linked device + force unlink -> edit + relink
+            do nothing
         """
         try:
             ralph_device_id = self.device_info.ralph_device_id
@@ -685,7 +682,7 @@ class Asset(
             # asset created with 'add part'
             pass
         else:
-            if self.is_new_instance:
+            if self.exists:
                 if not ralph_device_id:
                     device = self.find_device_to_link()
                     if device:
