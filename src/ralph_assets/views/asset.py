@@ -84,7 +84,12 @@ class AssetSearch(Report, HardwareModeMixin, AssetSearchDataTable):
         return context
 
 
-class AssetBulkEdit(ActiveSubmoduleByAssetMixin, BulkEditBase, _AssetSearch):
+class AssetBulkEdit(
+    HardwareModeMixin,
+    ActiveSubmoduleByAssetMixin,
+    BulkEditBase,
+    _AssetSearch,
+):
     model = Asset
     commit_on_valid = False
 
