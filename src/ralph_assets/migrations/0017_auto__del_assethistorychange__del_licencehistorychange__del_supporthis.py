@@ -37,7 +37,7 @@ def create_history_item(orm, Model, content_type, limit=1000):
             orm.History.objects.bulk_create(create_history_item.history)
             create_history_item.history = []
 
-    for index, history in enumerate(Model.objects.all()):
+    for index, history in enumerate(Model.objects.all(), 1):
         if history.field_name in DEFAULT_HISTORY_FIELD_EXCLUDE or not history.obj_id:
             continue
         create_history_item.history.append(
@@ -52,7 +52,7 @@ def create_history_item(orm, Model, content_type, limit=1000):
                 date=history.date,
             )
         )
-        if index and index % limit == 0:
+        if index % limit == 0:
             bulk_create()
     bulk_create()
 
