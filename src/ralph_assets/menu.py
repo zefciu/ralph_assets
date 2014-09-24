@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import resolve, reverse
 from django.utils.translation import ugettext_lazy as _
 
 from bob.menu import MenuItem
@@ -22,12 +22,17 @@ class AssetMenu(Menu):
         href='/assets/dc/search',
     )
 
+    def __init__(self, *args, **kwargs):
+        super(AssetMenu, self).__init__(*args, **kwargs)
+        url = self.request.META['PATH_INFO']
+        self.mode = resolve(url).kwargs.get('mode', 'dc')
+
     def get_submodules(self):
         return [
             MenuItem(
                 fugue_icon='fugue-computer',
                 view_name='asset_search',
-                view_kwargs={'mode': 'dc'},
+                view_kwargs={'mode': self.mode},
                 label=_('Hardware'),
                 name='hardware',
             ),
@@ -65,7 +70,7 @@ class AssetMenu(Menu):
         ]
 
     def get_sidebar_items(self):
-        hardware = [
+        hardware_dc = [
             {
                 'label': _('Search'),
                 'view_name': 'asset_search',
@@ -140,7 +145,7 @@ class AssetMenu(Menu):
             for report in ReportViewBase.reports
         ]
         return {
-            'hardware_dc': self.generate_menu_items(hardware),
+            'hardware_dc': self.generate_menu_items(hardware_dc),
             'hardware_back_office': self.generate_menu_items(hardware_bo),
             'supports': self.generate_menu_items(supports),
             'licences': self.generate_menu_items(licences),

@@ -26,7 +26,11 @@ from ralph_assets.forms import (
 )
 from ralph_assets.models import Asset, AssetModel, PartInfo
 from ralph_assets.models_assets import AssetType
-from ralph_assets.views.base import AssetsBase, SubmoduleModeMixin
+from ralph_assets.views.base import (
+    AssetsBase,
+    HardwareModeMixin,
+    SubmoduleModeMixin,
+)
 from ralph_assets.views.utils import (
     _create_assets,
     _move_data,
@@ -39,7 +43,7 @@ from ralph_assets.views.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AddDevice(SubmoduleModeMixin, AssetsBase):
+class AddDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
     active_sidebar_item = 'add device'
     template_name = 'assets/add_device.html'
 
@@ -124,7 +128,7 @@ class AddDevice(SubmoduleModeMixin, AssetsBase):
         return super(AddDevice, self).get(*args, **kwargs)
 
 
-class EditDevice(SubmoduleModeMixin, AssetsBase):
+class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
     detect_changes = True
     template_name = 'assets/edit_device.html'
     sidebar_selected = 'edit device'
@@ -145,8 +149,8 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
         self._set_additional_info_form()
 
     def get_context_data(self, **kwargs):
-        ret = super(EditDevice, self).get_context_data(**kwargs)
-        ret.update({
+        context = super(EditDevice, self).get_context_data(**kwargs)
+        context.update({
             'asset_form': self.asset_form,
             'additional_info': self.additional_info,
             'part_form': self.part_form,
@@ -155,7 +159,7 @@ class EditDevice(SubmoduleModeMixin, AssetsBase):
             'parts': self.parts,
             'asset': self.asset,
         })
-        return ret
+        return context
 
     def _update_additional_info(self, modifier):
         if self.asset.type in AssetType.DC.choices:

@@ -174,8 +174,7 @@ class BulkEditBase(BobBulkEditBase):
 
 class ActiveSubmoduleByAssetMixin(object):
     model_mapper = {
-        'asset_dc': 'search_dc',
-        'asset_back_office': 'search_back_office',
+        'asset': 'hardware',
         'support': 'supports',
         'licence': 'licences',
     }
@@ -183,8 +182,6 @@ class ActiveSubmoduleByAssetMixin(object):
     @property
     def active_submodule(self):
         name = self.get_object_class().__name__.lower()
-        if self.mode and name == 'asset':
-            name = '{}_{}'.format(name, self.mode)
         return self.model_mapper[name]
 
     def get_object_class(self):
@@ -195,9 +192,19 @@ class ActiveSubmoduleByAssetMixin(object):
 class SubmoduleModeMixin(object):
     @property
     def active_submodule(self):
-        if self.mode == 'dc':
-            return 'search_dc'
-        return 'search_back_office'
+        return 'hardware'
+
+
+class HardwareModeMixin(object):
+    def get_context_data(self, *args, **kwargs):
+        context = super(HardwareModeMixin, self).get_context_data(
+            *args, **kwargs
+        )
+        sidebars = context['active_menu'].get_sidebar_items()
+        context.update({
+            'sidebar': sidebars['hardware_{}'.format(self.mode)],
+        })
+        return context
 
 
 class AjaxMixin(object):

@@ -18,6 +18,7 @@ from ralph_assets.views.base import (
     ActiveSubmoduleByAssetMixin,
     AssetsBase,
     BulkEditBase,
+    HardwareModeMixin,
     get_return_link,
 )
 from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
@@ -67,24 +68,28 @@ class DeleteAsset(AssetsBase):
             return HttpResponseRedirect(self.back_to)
 
 
-class AssetSearch(Report, AssetSearchDataTable):
+class AssetSearch(Report, HardwareModeMixin, AssetSearchDataTable):
     """The main-screen search form for all type of assets."""
     active_sidebar_item = 'search'
 
     @property
     def submodule_name(self):
-        return 'hardware_{mode}'.format(mode=self.mode)
+        return 'hardware'
 
     def get_context_data(self, *args, **kwargs):
-        ret = super(AssetSearch, self).get_context_data(*args, **kwargs)
-        ret.update({
+        context = super(AssetSearch, self).get_context_data(*args, **kwargs)
+        context.update({
             'url_query': self.request.GET,
-            'active_submodule': 'hardware',  # TODO: stored in session
         })
-        return ret
+        return context
 
 
-class AssetBulkEdit(ActiveSubmoduleByAssetMixin, BulkEditBase, _AssetSearch):
+class AssetBulkEdit(
+    HardwareModeMixin,
+    ActiveSubmoduleByAssetMixin,
+    BulkEditBase,
+    _AssetSearch,
+):
     model = Asset
     commit_on_valid = False
 
