@@ -5,9 +5,69 @@ from south.v2 import SchemaMigration
 from django.db import models
 
 
+DEFAULT_HISTORY_FIELD_EXCLUDE = ('created', 'modified', 'cache_version',
+                                 'rght', 'level', 'lft', 'tree_id')
+
+
+def get_old_history_model(orm, name, model=None):
+    model_name = model or name
+    foreign_name = 'ralph_assets.' + name.capitalize().replace('_', '')
+
+    class OldHistoryChange(models.Model):
+        obj = models.ForeignKey(foreign_name)
+        user = models.ForeignKey(orm['auth.User'])
+        field_name = models.CharField(max_length=64, default='')
+        old_value = models.TextField(default='')
+        new_value = models.TextField(default='')
+        date = models.DateTimeField(default=datetime.datetime.now)
+
+    meta = OldHistoryChange._meta
+    meta.db_table = 'ralph_assets_{}historychange'.format(model_name.lower())
+    meta.fields[1].db_column = '{}_id'.format(name.lower())
+    meta.fields[1].column = '{}_id'.format(name.lower())
+
+    return OldHistoryChange
+
+
+def create_history_item(orm, Model, content_type, limit=1000):
+    create_history_item.history = []
+
+    def bulk_create():
+        if create_history_item.history:
+            orm.History.objects.bulk_create(create_history_item.history)
+            create_history_item.history = []
+
+    for index, history in enumerate(Model.objects.all()):
+        if history.field_name in DEFAULT_HISTORY_FIELD_EXCLUDE or not history.obj_id:
+            continue
+        create_history_item.history.append(
+            orm.History(
+                id=None,
+                object_id=history.obj_id,
+                content_type=content_type,
+                user_id=history.user_id,
+                field_name=history.field_name,
+                old_value=history.old_value,
+                new_value=history.new_value,
+                date=history.date,
+            )
+        )
+        if index and index % limit == 0:
+            bulk_create()
+    bulk_create()
+
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        """
+        Please drop or archive tables manually.
+
+        SQLs for delete old tables:
+            DROP TABLE ralph_assets_supporthistorychange;
+            DROP TABLE ralph_assets_licencehistorychange;
+            DROP TABLE ralph_assets_assethistorychange;
+        """
         # Adding model 'History'
         db.create_table('ralph_assets_history', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -36,59 +96,22 @@ class Migration(SchemaMigration):
                     app_label='ralph_assets',
                     model=model,
                 )
-             # migrate licences and supports histories to content type
+            # migrate licences and supports histories to content type
             for model in ('licence', 'support'):
                 content_type = content_types[model]
-                sql = '''
-                SELECT {model}_id, user_id, field_name, old_value, new_value, date
-                FROM ralph_assets_{model}historychange;'''.format(model=model)
-                result = db.execute(sql)
-                for object_id, user_id, field_name, old_value, new_value, date in result:
-                    if object_id:
-                        history = orm.History(
-                            object_id=object_id,
-                            content_type=content_type,
-                            user_id=user_id,
-                            field_name=field_name,
-                            old_value=old_value,
-                            new_value=new_value,
-                            date=date,
-                        )
-                        history.save()
+                Model = get_old_history_model(orm, model)
+                create_history_item(orm, Model, content_type)
 
-             # migrate assets (and related models) histories to content type
+            # migrate assets (and related models) histories to content type
             for model in ('asset', 'deviceinfo', 'partinfo', 'officeinfo'):
-                field = model_field_mapper[model]
                 content_type = content_types[model]
-                sql = '''
-                SELECT {field}_id, user_id, field_name, old_value, new_value, date
-                FROM ralph_assets_assethistorychange;'''.format(field=field)
-                result = db.execute(sql)
-                for object_id, user_id, field_name, old_value, new_value, date in result:
-                    if object_id:
-                        history = orm.History(
-                            object_id=object_id,
-                            content_type=content_type,
-                            user_id=user_id,
-                            field_name=field_name,
-                            old_value=old_value,
-                            new_value=new_value,
-                            date=date,
-                        )
-                        history.save()
+                Model = get_old_history_model(orm, model_field_mapper[model], 'asset')
+                create_history_item(orm, Model, content_type)
 
-        # Deleting model 'AssetHistoryChange'
-        db.delete_table('ralph_assets_assethistorychange')
-
-        # # Deleting model 'LicenceHistoryChange'
-        db.delete_table('ralph_assets_licencehistorychange')
-
-        # # Deleting model 'SupportHistoryChange'
-        db.delete_table('ralph_assets_supporthistorychange')
-
+            print(self.forwards.__doc__)
 
     def backwards(self, orm):
-         raise RuntimeError("Cannot reverse this migration.")
+        db.delete_table('ralph_assets_history')
 
 
     models = {
