@@ -13,14 +13,10 @@ from ralph_assets.models_assets import ASSET_TYPE2MODE
 
 
 class HistoryBase(AssetsBase):
-    mainmenu_selected = 'unknown'
-    sidebar_selected = None
-
-    def get_section(self):
+    @property
+    def active_submodule(self):
         if str(self.content_type) == 'asset':
-            return ASSET_TYPE2MODE[self.content_type.get_object_for_this_type(
-                id=self.object_id
-            ).type]
+            return 'hardware'
         mapper = {
             'licence': 'licences',
             'support': 'supports',
@@ -29,13 +25,20 @@ class HistoryBase(AssetsBase):
 
     def get_context_data(self, **kwargs):
         context = super(HistoryBase, self).get_context_data(**kwargs)
-        context.update({'section': self.get_section()})
+        obj = self.content_type.get_object_for_this_type(id=self.object_id)
+        mode = getattr(obj, 'type', None)
+        if mode:
+            sidebars = context['active_menu'].get_sidebar_items()
+            context.update({
+                'sidebar': sidebars['hardware_{}'.format(
+                    ASSET_TYPE2MODE[mode])
+                ],
+            })
         return context
 
 
 class HistoryListForModel(PaginateMixin, ContentTypeMixin, HistoryBase):
     """View for history of object."""
-    submodule_name = 'unknown'
     template_name = 'assets/history/history_for_model.html'
 
     def dispatch(self, request, *args, **kwargs):
