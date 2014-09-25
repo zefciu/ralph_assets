@@ -24,14 +24,16 @@ class HistoryBase(AssetsBase):
         return mapper[str(self.content_type)]
 
     def get_context_data(self, **kwargs):
-        mode = ASSET_TYPE2MODE[self.content_type.get_object_for_this_type(
-            id=self.object_id
-        ).type]
         context = super(HistoryBase, self).get_context_data(**kwargs)
-        sidebars = context['active_menu'].get_sidebar_items()
-        context.update({
-            'sidebar': sidebars['hardware_{}'.format(mode)],
-        })
+        obj = self.content_type.get_object_for_this_type(id=self.object_id)
+        mode = getattr(obj, 'type', None)
+        if mode:
+            sidebars = context['active_menu'].get_sidebar_items()
+            context.update({
+                'sidebar': sidebars['hardware_{}'.format(
+                    ASSET_TYPE2MODE[mode])
+                ],
+            })
         return context
 
 
