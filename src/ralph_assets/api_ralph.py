@@ -133,6 +133,6 @@ __all__ = [
     'assign_asset',
     'get_asset',
     'is_asset_assigned',
-    'UnassignedDCDeviceLookup',
+    'AssetLookup',
     'AssetLookupFuzzy',
 ]
