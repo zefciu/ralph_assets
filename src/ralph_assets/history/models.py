@@ -139,7 +139,7 @@ class HistoryMixin(object):
         snapshot = serializer.serialize(manager.all(), fields=())
         try:
             history = obj.get_history(field_name=field_name)[0]
-        except IndexError:
+        except (IndexError, AttributeError):
             history = None
         previous = getattr(history, 'new_value', None)
         previous = previous and json.loads(previous) or []
