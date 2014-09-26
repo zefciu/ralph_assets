@@ -281,6 +281,7 @@ class LicenceBulkEdit(BulkEditBase, LicenceBaseView):
 
 class DeleteLicence(AssetsBase):
     """Delete a licence."""
+    submodule_name = 'licences'
 
     def post(self, *args, **kwargs):
         record_id = self.request.POST.get('record_id')
