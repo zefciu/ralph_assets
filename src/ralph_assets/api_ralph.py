@@ -17,21 +17,8 @@ from ralph_assets.models import (
 )
 
 
-class UnassignedDCDeviceLookup(DCDeviceLookup):
-    def get_query(self, q, request):
-        query = (
-            Q(device_info__gt=0) & (
-                Q(device_info__ralph_device_id__isnull=True) |
-                Q(device_info__ralph_device_id=0)
-            ) & (
-                Q(barcode__istartswith=q) |
-                Q(sn__istartswith=q) |
-                Q(model__name__icontains=q)
-            )
-        )
-        return self.get_base_objects().filter(
-            query,
-        ).distinct().order_by('sn')[:10]
+class AssetLookup(DCDeviceLookup):
+    pass
 
 
 def get_asset_supports(asset):
@@ -146,6 +133,6 @@ __all__ = [
     'assign_asset',
     'get_asset',
     'is_asset_assigned',
-    'UnassignedDCDeviceLookup',
+    'AssetLookup',
     'AssetLookupFuzzy',
 ]
