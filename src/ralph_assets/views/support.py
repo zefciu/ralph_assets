@@ -161,6 +161,7 @@ class EditSupportView(SupportView):
     """Edit support"""
     caption = _('Edit Support')
     message = _('Support changed')
+    submodule_name = 'supports'
     Form = EditSupportForm
     detect_changes = True
 
@@ -181,7 +182,7 @@ class EditSupportView(SupportView):
 
 class DeleteSupportView(AssetsBase):
     """Delete a support."""
-    mainmenu_selected = 'supports'
+    submodule_name = 'supports'
 
     def post(self, *args, **kwargs):
         record_id = self.request.POST.get('record_id')

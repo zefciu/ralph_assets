@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeleteAsset(AssetsBase):
+    submodule_name = 'hardware'
 
     def post(self, *args, **kwargs):
         record_id = self.request.POST.get('record_id')
