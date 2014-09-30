@@ -577,7 +577,7 @@ class Asset(
     @property
     def venture(self):
         try:
-            self.get_ralph_device().venture
+            return self.get_ralph_device().venture
         except AttributeError:
             return None
 
