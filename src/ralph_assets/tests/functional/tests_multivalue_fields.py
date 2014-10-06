@@ -7,13 +7,12 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
+from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph_assets.models_assets import Asset, AssetType, AssetStatus
 from ralph_assets.tests.util import SCREEN_ERROR_MESSAGES
 from ralph_assets.tests.utils.assets import (
     AssetCategoryFactory,
     AssetModelFactory,
-    DeviceEnvironmentFactory,
-    ServiceCatalogFactory,
     WarehouseFactory,
 )
 from ralph.ui.tests.global_utils import login_as_su
@@ -26,16 +25,17 @@ class TestMultivalueFields(TestCase):
         self.category = AssetCategoryFactory()
         self.model = AssetModelFactory(category=self.category)
         self.addform = '/assets/dc/add/device/'
+        ci_relation = CIRelationFactory()
         self.common_test_data = dict(
             asset=True,
             deprecation_rate=0,
-            device_environment=DeviceEnvironmentFactory().id,
+            device_environment=ci_relation.child.id,
             invoice_date='2001-01-02',
             model=self.model.id,
             price='10',
             production_year=2011,
             ralph_device_id='',
-            service=ServiceCatalogFactory().id,
+            service=ci_relation.parent.id,
             size=1,
             slots=1,
             source=1,

@@ -41,6 +41,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
 
+from ralph.cmdb import models_ci
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -636,7 +637,7 @@ class DependencyAssetForm(DependencyForm):
     """
     Containts common solution for adding asset and editing asset section.
     Launches a plugin which depending on the category field gives the
-    opportunity to complete fields such as slots
+    opportunity to complete fields
     """
 
     def __init__(self, *args, **kwargs):
@@ -656,28 +657,12 @@ class DependencyAssetForm(DependencyForm):
     def dependencies(self):
         """
         On the basis of data from the database gives the opportunity
-        to complete fields such as slots
+        to complete fields
 
         :returns object: Logic to test if category is in selected categories
         :rtype object:
         """
         deps = [
-            Dependency(
-                'slots',
-                'category',
-                dependency_conditions.MemberOf(
-                    AssetCategory.objects.filter(is_blade=True).all()
-                ),
-                SHOW,
-            ),
-            Dependency(
-                'slots',
-                'category',
-                dependency_conditions.MemberOf(
-                    AssetCategory.objects.filter(is_blade=True).all()
-                ),
-                REQUIRE,
-            ),
             Dependency(
                 'imei',
                 'category',
@@ -777,10 +762,26 @@ class DependencyAssetForm(DependencyForm):
             yield dep
 
 
-class AddEditAssetMixin(object):
-    """
-    Common code for asset's both type forms (Add & Edit).
-    """
+class BaseAssetForm(ModelForm):
+    class Meta:
+        model = Asset
+
+    def clean(self):
+        cleaned_data = super(BaseAssetForm, self).clean()
+        env_id = cleaned_data.get("device_environment")
+        service_id = cleaned_data.get("service")
+        if env_id and service_id:
+            relation = models_ci.CIRelation.objects.filter(
+                child=env_id, parent=service_id,
+            )
+            if not relation:
+                msg = _(
+                    "This value is not valid anymore for selected "
+                    "'service catalog'."
+                )
+                self._errors["device_environment"] = msg
+                raise ValidationError(msg)
+        return cleaned_data
 
     def customize_fields(self):
         """
@@ -803,7 +804,7 @@ class AddEditAssetMixin(object):
                 (c.id, c.desc) for c in AssetType.BO.choices]
 
 
-class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
+class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
     '''
         Base class to display form used to add new asset
     '''
@@ -840,7 +841,6 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'request_date',
             'required_support',
             'service_name',
-            'slots',
             'source',
             'status',
             'task_url',
@@ -966,7 +966,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         return self.cleaned_data['imei'] or None
 
 
-class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
+class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
     '''
         Base class to display form used to edit asset
     '''
@@ -1242,7 +1242,7 @@ class DataCenterAddDeviceForm(AddDeviceForm):
 
     class Meta(BaseAddAssetForm.Meta):
         fields = BaseAddAssetForm.Meta.fields + (
-            'device_environment', 'service', 'slots',
+            'device_environment', 'service',
         )
     device_environment = ModelChoiceField(
         required=True,
@@ -1258,7 +1258,6 @@ class DataCenterAddDeviceForm(AddDeviceForm):
     def __init__(self, *args, **kwargs):
         super(DataCenterAddDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
-            ('status', 'slots'),
             ('property_of', 'service'),
             ('service', 'device_environment'),
         ):
@@ -1367,7 +1366,7 @@ class DataCenterEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
-            'device_environment', 'service', 'slots',
+            'device_environment', 'service',
         )
     device_environment = ModelChoiceField(
         required=True,
@@ -1383,7 +1382,6 @@ class DataCenterEditDeviceForm(EditDeviceForm):
     def __init__(self, *args, **kwargs):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
-            ('status', 'slots'),
             ('property_of', 'service'),
             ('service', 'device_environment'),
         ):
