@@ -11,7 +11,7 @@
             <a href="{{ asset.url }}" target="_blank">{{ asset }}</a>
             {% if 'unassign_licences' in actions_names %}
             <ul>
-                {% for licence in asset.licence_set.all %}
+                {% for licence in asset.licences.all %}
                 <li><a href="{{ licence.url }}" target="_blank">{{ licence }}</a></li>
                 {% endfor %}
             </ul>
