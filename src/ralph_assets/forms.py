@@ -41,7 +41,6 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
 
-from ralph.cmdb import models_ci
 from ralph_assets.models import (
     Asset,
     AssetCategory,
@@ -768,19 +767,18 @@ class BaseAssetForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(BaseAssetForm, self).clean()
-        env_id = cleaned_data.get("device_environment")
-        service_id = cleaned_data.get("service")
-        if env_id and service_id:
-            relation = models_ci.CIRelation.objects.filter(
-                child=env_id, parent=service_id,
-            )
-            if not relation:
+        env = cleaned_data.get("device_environment")
+        service = cleaned_data.get("service")
+        if env and service:
+            service_envs = service.get_environments()
+            if env not in service_envs:
                 msg = _(
                     "This value is not valid anymore for selected "
-                    "'service catalog'."
+                    "'service catalog'. Valid options: {}".format(
+                        ', '.join([_env.name for _env in service_envs])
+                    )
                 )
                 self._errors["device_environment"] = msg
-                raise ValidationError(msg)
         return cleaned_data
 
     def customize_fields(self):
