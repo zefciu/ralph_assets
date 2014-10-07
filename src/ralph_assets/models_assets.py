@@ -52,7 +52,7 @@ from ralph.discovery.models_util import SavingUser
 from ralph_assets.history.models import HistoryMixin
 from ralph_assets.history.utils import field_changes
 from ralph.util.models import SyncFieldMixin
-from ralph_assets.models_util import WithForm
+from ralph_assets.models_util import Regionalized, WithForm
 from ralph_assets.utils import iso2_to_iso3
 
 
@@ -405,6 +405,7 @@ class AssetLastHostname(models.Model):
 
 
 class Asset(
+    Regionalized,
     HistoryMixin,
     LicenseAndAsset,
     TimeTrackable,
