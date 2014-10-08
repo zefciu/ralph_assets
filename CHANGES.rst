@@ -1,6 +1,15 @@
 Change Log
 ----------
 
+DEV
+~~~
+Released on October X, 2014
+
+* Added quantity to licence model,
+* Created new widget based on formset,
+* Moved licence module to new app structure,
+* Cleaned up urls.py,
+
 
 2.3.0
 ~~~~~

@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block tabular_info %}
+
 {% include 'assets/attachment_table.html' with attachment_parent=asset parent_name='asset'%}
   {% status_history asset %}
   {% transition_history asset %}

@@ -17,7 +17,7 @@ from ralph.cmdb.tests.utils import (
     ServiceCatalogFactory,
 )
 from ralph_assets.tests.util import create_model
-from ralph_assets.tests.utils import sam
+from ralph_assets.tests.utils import licences
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     BOAssetFactory,
@@ -588,7 +588,7 @@ class TestSearchEngine(TestCase):
             manu = AssetManufacturerFactory(name=manufacturer)
             AssetFactory(model__manufacturer=manu)
             BOAssetFactory(model__manufacturer=manu)
-            sam.LicenceFactory(manufacturer=manu)
+            licences.LicenceFactory(manufacturer=manu)
 
         for unique in ['123456', '456123']:
             AssetFactory(barcode=unique, sn=unique, niw=unique)
@@ -670,7 +670,7 @@ class TestSearchEngine(TestCase):
 
     def test_manufacturer_exact(self):
         urls = self.testing_urls.copy()
-        urls['license'] = reverse('licence_list')
+        urls['license'] = reverse('licences_list')
         field_name = 'manufacturer'
         for url in urls.values():
             self._check_results_length(url, field_name, '"Sony"', 1)
@@ -680,7 +680,7 @@ class TestSearchEngine(TestCase):
 
     def test_manufacturer_icontains(self):
         urls = self.testing_urls.copy()
-        urls['license'] = reverse('licence_list')
+        urls['license'] = reverse('licences_list')
         field_name = 'manufacturer'
         for url in urls.values():
             self._check_results_length(url, field_name, 'Sony', 2)

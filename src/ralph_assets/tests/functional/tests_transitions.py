@@ -26,7 +26,7 @@ from ralph_assets.tests.utils.assets import BOAssetFactory, WarehouseFactory
 from ralph_assets.tests.utils.transitions import (
     TransitionFactory, TransitionsHistoryFactory,
 )
-from ralph_assets.tests.utils.sam import LicenceFactory
+from ralph_assets.tests.utils.licences import LicenceFactory
 
 
 ASSETS_TRANSITIONS = {
@@ -204,7 +204,8 @@ class TestTransition(TestCase):
 
     def _assign_licence_to_assets(self):
         for asset in self.assets:
-            asset.licence_set.add(LicenceFactory())
+            lic = LicenceFactory()
+            lic.assign(asset)
 
     def _base_test_transition_form_assign(self, url_params, post_params):
         url_base = reverse('transition', args=('back_office',))
@@ -242,7 +243,7 @@ class TestTransition(TestCase):
         self._base_test_transition_form_assign(url_params, {})
         self.assertEqual(
             Asset.objects.values(
-                'user', 'owner', 'loan_end_date', 'licence',
+                'user', 'owner', 'loan_end_date', 'licences',
             ).distinct().count(),
             1,
         )
