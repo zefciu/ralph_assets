@@ -286,6 +286,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
     sort_variable_name = 'sort'
     export_variable_name = 'export'
     template_name = 'assets/search.html'
+    pre_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
@@ -314,7 +315,10 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
     def handle_search_data(self, request):
         query = self.form.get_query()
-        query_set = self.Model.objects.filter(query)
+        objects = self.Model.objects
+        if self.pre_selected:
+            objects = objects.select_related(*self.pre_selected)
+        query_set = objects.filter(query)
         self.items_count = query_set.count()
         return query_set.all()
 
@@ -328,12 +332,13 @@ class _AssetSearch(AssetsSearchQueryableMixin, AssetsBase):
                 'back_office': 'BO',
             }[mode]
         )
+        pre_selected = ['device_info', 'model', 'warehouse']
         if mode == 'dc':
-            self.objects = Asset.objects_dc
+            self.objects = Asset.objects_dc.select_related(*pre_selected)
             self.admin_objects = Asset.admin_objects_dc
             search_form = DataCenterSearchAssetForm
         elif mode == 'back_office':
-            self.objects = Asset.objects_bo
+            self.objects = Asset.objects_bo.select_related(*pre_selected)
             self.admin_objects = Asset.admin_objects_bo
             search_form = BackOfficeSearchAssetForm
         self.form = search_form(self.request.GET, mode=mode)
