@@ -3,16 +3,25 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
+from django.conf import settings
 
 
 class Migration(SchemaMigration):
 
+
     def forwards(self, orm):
         # Adding field 'Asset.region'
         db.add_column('ralph_assets_asset', 'region',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=1, to=orm['account.Region']),
+                      self.gf('django.db.models.fields.related.ForeignKey')(to=orm['account.Region']),
                       keep_default=False)
 
+        if not db.dry_run:
+            default_region, _ = orm['account.region'].objects.get_or_create(
+                name=settings.DEFAULT_REGION_NAME,
+            )
+            orm['ralph_assets.asset'].objects.all().update(
+                region=default_region,
+            )
 
     def backwards(self, orm):
         # Deleting field 'Asset.region'
@@ -38,15 +47,14 @@ class Migration(SchemaMigration):
             'manager': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
             'nick': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '30', 'blank': 'True'}),
             'profit_center': ('django.db.models.fields.CharField', [], {'max_length': '1024', 'blank': 'True'}),
-            'regions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['account.Region']", 'symmetrical': 'False'}),
             'time_zone': ('django.db.models.fields.FloatField', [], {'default': '1.0'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
         },
         'account.region': {
             'Meta': {'object_name': 'Region'},
-            'default': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'})
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '75', 'db_index': 'True'}),
+            'profile': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['account.Profile']", 'symmetrical': 'False'})
         },
         'auth.group': {
             'Meta': {'object_name': 'Group'},
