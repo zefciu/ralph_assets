@@ -236,7 +236,7 @@ class LicenceResource(ModelResource):
 
 class AssetsResource(ModelResource):
     asset_type = ChoicesField(AssetType, 'type')
-    licences = fields.ToManyField(LicenceResource, 'licence_set', full=True)
+    licences = fields.ToManyField(LicenceResource, 'licences', full=True)
     manufacturer = fields.ForeignKey(
         AssetManufacturerResource, 'manufacturer', null=True,
     )
