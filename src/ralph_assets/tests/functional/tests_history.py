@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import (
     Asset,
@@ -56,6 +57,7 @@ class HistoryAssetsView(TestCase):
             'price': 10,
             'property_of': self.owner.id,
             'provider': 'test_provider',
+            'region': Region.get_default_region().id,
             'remarks': 'test_remarks',
             'size': 1,
             'sn': '666-666-666',
@@ -162,6 +164,7 @@ class HistoryAssetsView(TestCase):
         form = response.context['asset_form']
         update_dict = form.__dict__['initial']
         update_dict.update({
+            'region': Region.get_default_region().id,
             'required_support': 1,
             'asset': True,
         })
@@ -193,6 +196,7 @@ class ConnectAssetWithDevice(TestCase):
             'price': 10,
             'production_year': 2011,
             'provider': 'test_provider',
+            'region': Region.get_default_region().id,
             'remarks': 'test_remarks',
             'service': ServiceCatalogFactory().id,
             'source': 1,
@@ -272,6 +276,7 @@ class TestsStockDevice(TestCase):
             'order_no': 2,
             'price': 10,
             'provider': 'test_provider',
+            'region': Region.get_default_region().id,
             'remarks': 'test_remarks',
             'service': ServiceCatalogFactory().id,
             'sn': 'fake-sn',

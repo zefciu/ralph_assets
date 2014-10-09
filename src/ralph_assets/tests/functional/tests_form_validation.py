@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.test import TestCase
+from ralph.account.models import Region
 
 from ralph_assets import models_assets
 from ralph_assets.tests.utils.assets import (
@@ -170,11 +171,12 @@ class TestValidations(TestCase):
         3. Check that error message about existing SN is shown
         """
         required_part_data = {
-            'type': 101,
-            'model': self.model.id,
-            'warehouse': self.warehouse.id,
-            'sn': 'sn',
             'deprecation_rate': '5',
+            'model': self.model.id,
+            'region': Region.get_default_region().id,
+            'sn': 'sn',
+            'type': 101,
+            'warehouse': self.warehouse.id,
         }
         send_post = self.client.post(
             '/assets/back_office/add/part/',

@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.test import TestCase
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import Asset, AssetType, AssetStatus
 from ralph_assets.tests.util import SCREEN_ERROR_MESSAGES
@@ -35,6 +36,7 @@ class TestMultivalueFields(TestCase):
             price='10',
             production_year=2011,
             ralph_device_id='',
+            region=Region.get_default_region().id,
             service=ServiceCatalogFactory().id,
             size=1,
             slots=1,

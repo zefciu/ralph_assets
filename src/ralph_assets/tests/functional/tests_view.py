@@ -18,7 +18,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import resolve, reverse
 from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
+from ralph.account.models import Region
 from ralph.discovery.tests.util import DeviceFactory
+from ralph.util.tests.utils import (
+    RegionFactory,
+)
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
@@ -91,6 +95,7 @@ def get_asset_data():
         'property_of': assets_utils.AssetOwnerFactory().id,
         'provider': 'Provider #3',
         'provider_order_date': datetime.date(2014, 3, 17),
+        'region': Region.get_default_region().id,
         'remarks': 'Remarks #3',
         'request_date': datetime.date(2014, 6, 9),
         'service': assets_utils.ServiceCatalogFactory().id,
@@ -197,6 +202,21 @@ class TestDevicesView(BaseViewsTest):
             'licences_text', 'supports_text',
         ])
 
+    def _get_add_url(self, type_id=None, mode=None):
+        if (not type_id and not mode) or (type_id and mode):
+            raise Exception("Pass type_id xor mode")
+        if not mode:
+            try:
+                mode = models_assets.ASSET_TYPE2MODE[type_id],
+            except AttributeError:
+                raise Exception("Unknown type_id: {}".format(type_id))
+        url = reverse('add_device', kwargs={'mode': mode})
+        return url
+
+    def get_asset_from_response(self, response):
+        asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
+        return models_assets.Asset.objects.get(pk=asset_id)
+
     def get_asset_form_data(self, factory_data=None):
         from ralph_assets import urls
         if not factory_data:
@@ -218,8 +238,7 @@ class TestDevicesView(BaseViewsTest):
         add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
         self.assertEqual(response.status_code, 200)
-        asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
-        return models_assets.Asset.objects.get(pk=asset_id)
+        return self.get_asset_from_response(response)
 
     def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
         update(new_asset_data, asset, readonly_fields)
@@ -294,6 +313,7 @@ class TestDevicesView(BaseViewsTest):
                 val = initial_dict.get(field, None)
                 if val:
                     update_dict[field] = val
+        kwargs['region'] = Region.get_default_region().id
         update_dict.update(kwargs)
         response = self.client.post(url, update_dict, follow=True)
         return response, models_assets.Asset.objects.get(id=asset_id)
@@ -309,7 +329,9 @@ class TestDevicesView(BaseViewsTest):
         - send add device request with data d1
         - assert asset was added
         '''
-        request_data = self.get_asset_form_data()
+        request_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         request_data.update(dict(
             # required, irrelevant data here
             ralph_device_id='',
@@ -425,8 +447,9 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
     def test_hostname_is_assigned(self):
         extra_data = {
             # required data for this test
-            'ralph_device_id': '',
             'asset': '',  # required button
+            'ralph_device_id': '',
+            'region': Region.get_default_region().id,
             'status': str(TestHostnameAssigning.trigger_status.id),
         }
         self._test_hostname_is_assigned(extra_data)
@@ -455,7 +478,9 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         - we got error message
         - assets was not saved
         """
-        form_data = self.get_asset_form_data()
+        form_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         sns = [form_data['sn'], '1234567890']
         form_data.update({
             'sn': ','.join(sns),
@@ -476,6 +501,50 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
             ' Please use a different one.'
         )
         self.assertFalse(Asset.objects.filter(sn__in=sns).all())
+
+    def test_can_save_correct_region(self):
+        valid_region = self.user.get_profile().get_regions()[0]
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'region': valid_region.id,
+        })
+        url = self._get_add_url(mode='dc')
+        response = self.client.post(url, form_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        asset = Asset.objects.get(sn=form_data['sn'])
+        self.assertEqual(asset.region, valid_region)
+
+    def test_cant_save_invalid_region(self):
+        invalid_region = RegionFactory()
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'region': invalid_region.id,
+        })
+        url = self._get_add_url(mode='dc')
+        response = self.client.post(url, form_data, follow=True)
+        self.assertIn(
+            'Select a valid choice.'
+            ' That choice is not one of the available choices.',
+            response.context['asset_form'].errors['region'],
+        )
+
+    def test_shows_correct_regions(self):
+        region = RegionFactory()
+        self.user.get_profile().region_set.add(region)
+        url = self._get_add_url(mode='dc')
+        response = self.client.get(url, follow=True)
+
+        correct_choices = [
+            (u'', u'---------'),
+            (region.id, region.name),
+        ]
+        for choice, correct_choice in zip(
+            response.context['asset_form'].fields['region'].choices,
+            correct_choices,
+        ):
+            self.assertEqual(choice, correct_choice)
 
 
 class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
@@ -577,6 +646,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             # required data for this test
             'asset': '',  # required button
             'status': str(TestHostnameAssigning.trigger_status.id),
+            'region': Region.get_default_region().id,
         }
         self._test_hostname_is_assigned(extra_data)
 
@@ -662,7 +732,9 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_save_without_changes(self):
         """Assets must be the same values after dry save."""
-        original_asset = BOAssetFactory(force_deprecation=True)
+        original_asset = BOAssetFactory(
+            force_deprecation=True, region=Region.get_default_region(),
+        )
         exclude = [
             'assethistorychange',
             'attachments',
@@ -1256,12 +1328,13 @@ class DeviceEditViewTest(ClientMixin, TestCase):
 
         post_data = {
             'asset': '1',  # submit button
-            'model': model.id,
-            'warehouse': warehouse.id,
-            'device': asset.id,
-            'type': '1',
-            'sn': str(uuid.uuid1()),
             'deprecation_rate': '25',
+            'device': asset.id,
+            'model': model.id,
+            'region': Region.get_default_region().id,
+            'sn': str(uuid.uuid1()),
+            'type': '1',
+            'warehouse': warehouse.id,
         }
         return self.client.post(url, post_data, follow=True)
 
@@ -1544,9 +1617,12 @@ class TestSyncFieldMixin(TestDevicesView):
         service = ServiceCatalogFactory()
         data = self.get_asset_form_data()
         device = self.create_device()
-        data['ralph_device_id'] = device.id
-        data['service'] = service.id
-        data['device_environment'] = device_environment.id
+        data.update({
+            'device_environment': device_environment.id,
+            'ralph_device_id': device.id,
+            'region': Region.get_default_region().id,
+            'service': service.id,
+        })
 
         url = reverse('add_device', kwargs={'mode': 'dc'})
         self.client.post(url, data, follow=True)
@@ -1576,10 +1652,13 @@ class TestSyncFieldMixin(TestDevicesView):
             'device_edit', kwargs={'mode': 'dc', 'asset_id': asset.id},
         )
         data = self.get_object_form_data(url, ['asset_form', 'additional_info'])  # noqa
-        data['ralph_device_id'] = device.id
-        data['service'] = service.id
-        data['device_environment'] = device_environment.id
-        data['asset'] = 1
+        data.update({
+            'asset': 1,
+            'device_environment': device_environment.id,
+            'ralph_device_id': device.id,
+            'region': Region.get_default_region().id,
+            'service': service.id,
+        })
         self.client.post(url, data, follow=True)
 
         asset = Asset.objects.all()[0]
@@ -1638,7 +1717,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
 
     def _get_asset_with_dummy_device(self, asset_data=None):
         # set device_info=None to prevent creation of device
-        form_data = self.get_asset_form_data({'device_info': None})
+        form_data = self.get_asset_form_data({
+            'device_info': None,
+            'region': Region.get_default_region(),
+        })
         form_data['ralph_device_id'] = ''
         form_data.update(asset_data or {})
         asset = self.add_asset_by_form(form_data)
@@ -1657,7 +1739,9 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         }
         device = DeviceFactory(**old_value)
         self._check_fields(device, old_value)
-        form_data = self.get_asset_form_data()
+        form_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         form_data['ralph_device_id'] = device.id
         self.add_asset_by_form(form_data)
         device = Device.objects.get(pk=device.id)
@@ -1706,9 +1790,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = DCAssetFactory(device_info=None)
         form_data = self.get_asset_form_data({'device_info': None})
         form_data.update({
+            'asset': '',
             'create_stock': 'true',
             'ralph_device_id': '',
-            'asset': '',
+            'region': Region.get_default_region().id,
         })
         edit_url = self._get_edit_url(asset.id, form_data['type'])
         self.client.post(edit_url, form_data, follow=True)
@@ -1782,6 +1867,7 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         form_data.update({
             'ralph_device_id': '',
             'barcode': asset_with_device.get_ralph_device().barcode,
+            'region': Region.get_default_region().id,
         })
         add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
@@ -1839,7 +1925,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         first_asset.barcode = 'changed-barcode'
         first_asset.save()
 
-        form_data = self.get_asset_form_data({'device_info': None})
+        form_data = self.get_asset_form_data({
+            'device_info': None,
+            'region': Region.get_default_region(),
+        })
         form_data.update({
             'ralph_device_id': '',
             'barcode': first_asset.get_ralph_device().barcode,
