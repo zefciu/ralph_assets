@@ -19,7 +19,7 @@ def get_actual_regions():
 
 class RequestMiddleware(object):
     def process_request(self, request):
-        if not request.user.is_anonymous():
+        if hasattr(request, 'user') and not request.user.is_anonymous():
             data = {
                 'user_id': request.user.id,
                 'regions': request.user.profile.get_regions(),
@@ -27,6 +27,6 @@ class RequestMiddleware(object):
             _requests[current_thread().name] = data
 
     def process_response(self, request, response):
-        if not request.user.is_anonymous():
+        if hasattr(request, 'user') and not request.user.is_anonymous():
             _requests.pop(current_thread().name, None)
         return response
