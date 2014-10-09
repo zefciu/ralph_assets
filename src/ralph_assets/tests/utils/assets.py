@@ -8,9 +8,10 @@ from __future__ import unicode_literals
 import datetime
 import itertools
 import random
+from uuid import uuid1
 
 import factory
-
+from django.template.defaultfilters import slugify
 from factory import (
     fuzzy,
     lazy_attribute,
@@ -18,14 +19,14 @@ from factory import (
     SubFactory,
 )
 from factory.django import DjangoModelFactory
-from uuid import uuid1
-
-from django.template.defaultfilters import slugify
-
 from ralph.cmdb.tests.utils import (
     DeviceEnvironmentFactory,
     ServiceCatalogFactory,
 )
+from ralph.util.tests.utils import (
+    RegionFactory,
+)
+
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
@@ -186,6 +187,7 @@ class AssetFactory(DjangoModelFactory):
     provider = Sequence(lambda n: 'Provider #%s' % n)
     support_period = 24
     support_type = 'standard'
+    region = SubFactory(RegionFactory)
 
     @lazy_attribute
     def sn(self):
@@ -215,6 +217,7 @@ class BaseAssetFactory(DjangoModelFactory):
     property_of = SubFactory(AssetOwnerFactory)
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    region = SubFactory(RegionFactory)
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     service = SubFactory(ServiceCatalogFactory)

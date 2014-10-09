@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from random import randint
 
 from django.template.defaultfilters import slugify
+from ralph.account.models import Region
 
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
@@ -124,6 +125,7 @@ def create_asset(sn, **kwargs):
         kwargs.update(support_period=24)
     if not kwargs.get('support_type'):
         kwargs.update(support_type='standard')
+    kwargs['region'] = kwargs.get('region', None) or Region.get_default_region()  # noqa
     if not kwargs.get('warehouse'):
         kwargs.update(warehouse=create_warehouse())
     db_object, created = models_assets.Asset.objects.get_or_create(

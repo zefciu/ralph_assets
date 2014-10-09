@@ -1,6 +1,10 @@
 Change Log
 ----------
 
+DEV
+~~~
+
+* Added new field to assets forms: Region
 
 2.3.0
 ~~~~~

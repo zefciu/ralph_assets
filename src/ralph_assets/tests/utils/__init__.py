@@ -84,6 +84,7 @@ class ClientMixin(object):
             user = UserFactory(*args, **kwargs)
             user.set_password(password)
             user.save()
+        self.user = user
         self.client.login(username=user.username, password=password)
 
     def login_as_superuser(self):

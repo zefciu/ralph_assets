@@ -66,7 +66,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of',
+        'service_name', 'property_of', 'region',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -777,7 +777,7 @@ class DependencyAssetForm(DependencyForm):
             yield dep
 
 
-class AddEditAssetMixin(object):
+class BaseAssetForm(ModelForm):
     """
     Common code for asset's both type forms (Add & Edit).
     """
@@ -803,7 +803,7 @@ class AddEditAssetMixin(object):
                 (c.id, c.desc) for c in AssetType.BO.choices]
 
 
-class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
+class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
     '''
         Base class to display form used to add new asset
     '''
@@ -836,6 +836,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'property_of',
             'provider',
             'provider_order_date',
+            'region',
             'remarks',
             'request_date',
             'required_support',
@@ -966,7 +967,7 @@ class BaseAddAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
         return self.cleaned_data['imei'] or None
 
 
-class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
+class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
     '''
         Base class to display form used to edit asset
     '''
@@ -1001,6 +1002,7 @@ class BaseEditAssetForm(DependencyAssetForm, AddEditAssetMixin, ModelForm):
             'property_of',
             'provider',
             'provider_order_date',
+            'region',
             'remarks',
             'request_date',
             'required_support',
@@ -1189,6 +1191,12 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         validators=[validate_imeis],
     )
 
+    def __init__(self, request, *args, **kwargs):
+        super(AddDeviceForm, self).__init__(*args, **kwargs)
+        self.request = request
+        regions = request.user.get_profile().get_regions()
+        self.fields['region'] = ModelChoiceField(queryset=regions)
+
     def clean(self):
         """
         These form requirements:
@@ -1287,7 +1295,7 @@ class EditPartForm(BaseEditAssetForm):
 
 class EditDeviceForm(BaseEditAssetForm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, request, *args, **kwargs):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
@@ -1295,6 +1303,9 @@ class EditDeviceForm(BaseEditAssetForm):
             'required_support',
             'supports',
         ]
+        self.request = request
+        regions = request.user.get_profile().get_regions()
+        self.fields['region'] = ModelChoiceField(queryset=regions)
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
