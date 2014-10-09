@@ -29,6 +29,4 @@ class RequestMiddleware(object):
     def process_response(self, request, response):
         if not request.user.is_anonymous():
             _requests.pop(current_thread().name, None)
-        print(len(_requests))
         return response
-
