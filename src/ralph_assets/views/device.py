@@ -135,7 +135,7 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
 
     def initialize_vars(self, *args, **kwargs):
         self.asset = get_object_or_404(
-            Asset.admin_objects,
+            Asset.objects,
             id=kwargs.get('asset_id'),
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)

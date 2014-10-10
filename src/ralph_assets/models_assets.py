@@ -414,6 +414,7 @@ class AssetLastHostname(models.Model):
 
 class Asset(
 
+    Regionalized,
     HistoryMixin,
     LicenseAndAsset,
     TimeTrackable,
@@ -422,7 +423,6 @@ class Asset(
     SoftDeletable,
     WithForm,
     SyncFieldMixin,
-    Regionalized,
 ):
     '''
     Asset model contain fields with basic information about single asset
