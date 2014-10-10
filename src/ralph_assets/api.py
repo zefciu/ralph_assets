@@ -256,12 +256,12 @@ class AssetsResource(ModelResource):
         field_name='venture', resource_name='venture', null=True,
     )
     service = fields.ForeignKey(
-        'ralph.cmdb.api.CIResource',
+        'ralph.discovery.api.ServiceCatalogResource',
         'service',
         null=True,
     )
     device_environment = fields.ForeignKey(
-        'ralph.cmdb.api.CIResource',
+        'ralph.discovery.api.DeviceEnvironmentResource',
         'device_environment',
         null=True,
     )
