@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 
+from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph_assets.models_assets import (
     Asset,
     AssetStatus,
@@ -22,8 +23,6 @@ from ralph_assets.tests.utils.assets import (
     AssetModelFactory,
     AssetOwnerFactory,
     BOAssetFactory,
-    DeviceEnvironmentFactory,
-    ServiceCatalogFactory,
     WarehouseFactory,
 )
 from ralph_assets.tests.utils.sam import LicenceFactory
@@ -80,7 +79,6 @@ class HistoryAssetsView(TestCase):
         }
         self.dc_asset_params = self.asset_params.copy()
         self.dc_asset_params.update({
-            'slots': 1.0,
             'ralph_device_id': '',
             'production_year': 2011,
         })
@@ -181,11 +179,12 @@ class ConnectAssetWithDevice(TestCase):
             category=self.category,
         )
         self.warehouse = WarehouseFactory()
+        ci_relation = CIRelationFactory()
         self.asset_params = {
             'asset': True,  # Button name
             'barcode': '7777',
             'deprecation_rate': 0,
-            'device_environment': DeviceEnvironmentFactory().id,
+            'device_environment': ci_relation.child.id,
             'invoice_date': '2012-11-29',
             'invoice_no': 666,
             'model': self.model.id,
@@ -194,7 +193,7 @@ class ConnectAssetWithDevice(TestCase):
             'production_year': 2011,
             'provider': 'test_provider',
             'remarks': 'test_remarks',
-            'service': ServiceCatalogFactory().id,
+            'service': ci_relation.parent.id,
             'source': 1,
             'status': AssetStatus.new.id,
             'type': AssetType.data_center.id,
@@ -203,7 +202,6 @@ class ConnectAssetWithDevice(TestCase):
         self.dc_asset_params = self.asset_params.copy()
         self.dc_asset_params.update({
             'ralph_device_id': '',
-            'slots': 0,
         })
         self.asset = None
 
@@ -261,11 +259,12 @@ class TestsStockDevice(TestCase):
             category=self.category,
         )
         self.warehouse = WarehouseFactory()
+        ci_relation = CIRelationFactory()
         self.asset_params = {
             'asset': True,  # Button name
             'barcode': '7777',
             'deprecation_rate': 0,
-            'device_environment': DeviceEnvironmentFactory().id,
+            'device_environment': ci_relation.child.id,
             'invoice_date': '2012-11-29',
             'invoice_no': 00001,
             'model': self.model.id,
@@ -273,7 +272,7 @@ class TestsStockDevice(TestCase):
             'price': 10,
             'provider': 'test_provider',
             'remarks': 'test_remarks',
-            'service': ServiceCatalogFactory().id,
+            'service': ci_relation.parent.id,
             'sn': 'fake-sn',
             'source': 1,
             'status': AssetStatus.new.id,
@@ -284,7 +283,6 @@ class TestsStockDevice(TestCase):
         self.dc_asset_params.update({
             'ralph_device_id': '',
             'production_year': 2011,
-            'slots': 0,
         })
 
     def create_device(self):

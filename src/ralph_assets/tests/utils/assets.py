@@ -23,6 +23,7 @@ from uuid import uuid1
 from django.template.defaultfilters import slugify
 
 from ralph.cmdb.tests.utils import (
+    CIRelationFactory,
     DeviceEnvironmentFactory,
     ServiceCatalogFactory,
 )
@@ -233,6 +234,19 @@ class BaseAssetFactory(DjangoModelFactory):
     @lazy_attribute
     def sn(self):
         return generate_sn()
+
+    @factory.post_generation
+    def device_environment(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            self.device_environment = extracted
+        else:
+            if self.service:
+                ci_relation = CIRelationFactory(parent=self.service)
+                self.device_environment = ci_relation.child
 
     @factory.post_generation
     def supports(self, create, extracted, **kwargs):
