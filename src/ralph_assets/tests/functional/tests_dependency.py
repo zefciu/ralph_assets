@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import (
     Asset,
@@ -46,6 +47,7 @@ class TestDependency(TestCase):
                 'sn': '123456789',
                 'model': self.model_blade.id,
                 'ralph_device_id': '',
+                'region': Region.get_default_region().id,
                 'type': MODE2ASSET_TYPE['dc'].id,
             }
         )
@@ -60,6 +62,7 @@ class TestDependency(TestCase):
                 'device_environment': assets.DeviceEnvironmentFactory().id,
                 'model': self.model_blade.id,
                 'ralph_device_id': '',
+                'region': Region.get_default_region().id,
                 'service': assets.ServiceCatalogFactory().id,
                 'slots': 2,
                 'sn': '123456789',
@@ -79,6 +82,7 @@ class TestDependency(TestCase):
                 'device_environment': assets.DeviceEnvironmentFactory().id,
                 'model': self.model_none_blade.id,
                 'ralph_device_id': '',
+                'region': Region.get_default_region().id,
                 'service': assets.ServiceCatalogFactory().id,
                 'slots': '',
                 'sn': '123456789',
