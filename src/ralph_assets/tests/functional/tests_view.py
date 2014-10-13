@@ -22,7 +22,12 @@ from ralph.discovery.tests.util import DeviceFactory
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
-from ralph_assets import models_sam
+from ralph_assets.licences.models import (
+    AssetType,
+    Licence,
+    LicenceAsset,
+    LicenceUser,
+)
 from ralph_assets.models_assets import Asset, SAVE_PRIORITY
 from ralph_assets.tests.utils import (
     AjaxClient,
@@ -31,7 +36,7 @@ from ralph_assets.tests.utils import (
     UserFactory,
 )
 from ralph_assets.tests.utils import assets as assets_utils
-from ralph_assets.tests.utils import sam as sam_utils
+from ralph_assets.tests.utils import licences as sam_utils
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
     AssetModelFactory,
@@ -40,8 +45,16 @@ from ralph_assets.tests.utils.assets import (
     WarehouseFactory,
 )
 from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
-from ralph_assets.tests.utils.sam import LicenceFactory
 from ralph.cmdb.tests.utils import CIRelationFactory
+from ralph_assets.tests.utils.licences import (
+    LicenceFactory,
+    LicenceAssetFactory,
+    LicenceUserFactory,
+)
+from ralph.cmdb.tests.utils import (
+    DeviceEnvironmentFactory,
+    ServiceCatalogFactory,
+)
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.ui.tests.global_utils import login_as_su
@@ -667,6 +680,8 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             'cache_version',
             'device',
             'licence',
+            'licences',
+            'licenceasset',
             'created',
             'modified',
             'source_device',
@@ -722,11 +737,11 @@ class TestLicencesView(BaseViewsTest):
         }
         self.licence = LicenceFactory()
         self.visible_add_form_fields = [
-            'accounting_id', 'asset', 'asset_type', 'assets', 'budget_info',
+            'accounting_id', 'asset', 'asset_type', 'budget_info',
             'invoice_date', 'invoice_no', 'licence_type', 'license_details',
             'manufacturer', 'niw', 'number_bought', 'order_no', 'parent',
             'price', 'property_of', 'provider', 'remarks', 'service_name',
-            'sn', 'software_category', 'users', 'valid_thru',
+            'sn', 'software_category', 'valid_thru',
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
 
@@ -741,10 +756,10 @@ class TestLicencesView(BaseViewsTest):
         request_data = self.license_data.copy()
         response = self.client.post(reverse('add_licence'), request_data)
         self.assertRedirects(
-            response, reverse('licence_list'), status_code=302,
+            response, reverse('licences_list'), status_code=302,
             target_status_code=200,
         )
-        license = models_sam.Licence.objects.reverse()[0]
+        license = Licence.objects.reverse()[0]
         check_fields(self, request_data.items(), license)
 
     def test_edit_license(self):
@@ -765,7 +780,7 @@ class TestLicencesView(BaseViewsTest):
         self.assertRedirects(
             response, url, status_code=302, target_status_code=200,
         )
-        license = models_sam.Licence.objects.get(pk=license.id)
+        license = Licence.objects.get(pk=license.id)
         check_fields(self, new_license_data.items(), license)
 
     def test_license_add_form_show_fields(self):
@@ -786,7 +801,6 @@ class TestLicencesView(BaseViewsTest):
         fields = [
             'accounting_id',
             'asset_type',
-            'assets',
             'invoice_date',
             'invoice_no',
             'licence_type',
@@ -852,15 +866,16 @@ class TestLicencesView(BaseViewsTest):
         self.assertEqual(response.status_code, 302)
 
     def test_licence_count_simple(self):
+        licences_per_object = 1
         number_of_users = 5
         number_of_assets = 5
         licences = [LicenceFactory() for idx in xrange(5)]
-        licences[0].assets.add(
-            *[BOAssetFactory() for _ in xrange(number_of_assets)]
-        )
-        licences[0].users.add(
-            *[UserFactory() for _ in xrange(number_of_users)]
-        )
+        for _ in xrange(number_of_assets):
+            asset = BOAssetFactory()
+            licences[0].assign(asset, licences_per_object)
+        for _ in xrange(number_of_users):
+            user = UserFactory()
+            licences[0].assign(user, licences_per_object)
         url = reverse('count_licences')
         url += '?id={}'.format(licences[0].id)
         response = self.client.ajax_get(url)
@@ -868,33 +883,37 @@ class TestLicencesView(BaseViewsTest):
         self.assertEqual(
             json.loads(response.content),
             {
-                'used_by_users': number_of_users,
-                'used_by_assets': number_of_assets,
+                'used_by_users': number_of_users * licences_per_object,
+                'used_by_assets': number_of_assets * licences_per_object,
                 'total': licences[0].number_bought,
             },
         )
 
     def test_licence_count_all(self):
-        licences = [LicenceFactory() for idx in xrange(5)]
-        total = sum(models_sam.Licence.objects.values_list(
+        licences_num = 5
+        assets_num = 5
+        users_num = 5
+        licences_per_object = 10
+        licences = [LicenceFactory() for idx in xrange(licences_num)]
+        total = sum(Licence.objects.values_list(
             'number_bought', flat=True)
         )
         for lic in licences:
-            lic.assets.add(
-                *[BOAssetFactory() for _ in xrange(5)]
-            )
+            for _ in xrange(assets_num):
+                asset = BOAssetFactory()
+                lic.assign(asset, licences_per_object)
         for lic in licences:
-            lic.users.add(
-                *[UserFactory() for _ in xrange(5)]
-            )
+            for _ in xrange(users_num):
+                user = UserFactory()
+                lic.assign(user, licences_per_object)
         url = reverse('count_licences')
         response = self.client.ajax_get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
+        self.assertDictEqual(
             json.loads(response.content),
             {
-                'used_by_users': 25,
-                'used_by_assets': 25,
+                'used_by_users': licences_num * assets_num * licences_per_object,  # noqa
+                'used_by_assets': licences_num * assets_num * licences_per_object,  # noqa
                 'total': total,
             },
         )
@@ -1398,7 +1417,7 @@ class TestImport(ClientMixin, TestCase):
         csv_data = '"id","{}"\n"{}","{}"'.format(field, asset.id, value)
 
         step1_post = {
-            'upload-asset_type': models_sam.AssetType.back_office.id,
+            'upload-asset_type': AssetType.back_office.id,
             'upload-model': 'ralph_assets.asset',
             'upload-file': SimpleUploadedFile('test.csv', csv_data),
             'xls_upload_view-current_step': 'upload',
@@ -1503,7 +1522,7 @@ class TestColumnsInSearch(BaseViewsTest):
             'Property of', 'Software Category', 'Type', 'Used', 'Valid thru',
             'Created',
         ])
-        search_url = reverse('licence_list')
+        search_url = reverse('licences_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)
 
     def test_supports_cols_presence(self):
@@ -1901,3 +1920,148 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
             second_asset.device_info.ralph_device_id, linked_device.id,
         )
         self.assertEqual(second_asset.barcode, linked_device.barcode)
+
+
+class TestLicenceConnection(BaseViewsTest):
+
+    def formset_dict(self, rows, initial_forms=0,
+                     total_forms=0):
+        data = {
+            'form-TOTAL_FORMS': total_forms or len(rows),
+            'form-INITIAL_FORMS': initial_forms,
+            'form-MAX_NUM_FORMS': 1000,
+        }
+        for i, row in enumerate(rows):
+            for key, value in row.iteritems():
+                data['form-{}-{}'.format(i, key)] = value
+        return data
+
+    def test_assigned_to_assets_simple_add(self):
+        """
+        assigne asset with licence with custom quantity
+        """
+        licence = LicenceFactory()
+        asset = AssetFactory()
+        self.assertEqual(LicenceAsset.objects.count(), 0)
+
+        rows = [
+            {
+                'licence': licence.id,
+                'id': '',
+                'asset': asset.id,
+                'quantity': 200,
+            },
+        ]
+        url = reverse('licence_connections_assets', args=(licence.id,))
+        form_data = self.formset_dict(rows)
+        response = self.client.post(url, form_data)
+        self.assertEqual(LicenceAsset.objects.count(), 1)
+        self.assertEqual(LicenceAsset.objects.all()[0].quantity, 200)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+
+    def test_assigned_to_assets_update(self):
+        """
+        update licences quantity
+        """
+        licence_asset = LicenceAssetFactory()
+        self.assertEqual(LicenceAsset.objects.count(), 1)
+
+        rows = [
+            {
+                'licence': licence_asset.licence.id,
+                'id': licence_asset.id,
+                'asset': licence_asset.asset.id,
+                'quantity': 200,
+            },
+        ]
+        url = reverse(
+            'licence_connections_assets',
+            args=(licence_asset.licence.id,),
+        )
+        form_data = self.formset_dict(rows, initial_forms=1)
+        response = self.client.post(url, form_data)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+        self.assertEqual(LicenceAsset.objects.count(), 1)
+        self.assertEqual(LicenceAsset.objects.all()[0].quantity, 200)
+
+    def test_assigned_to_assets_delete(self):
+        """
+        delete assigned licences to asset
+        """
+        licence_asset = LicenceAssetFactory()
+        self.assertEqual(LicenceAsset.objects.count(), 1)
+
+        rows = []
+        url = reverse(
+            'licence_connections_assets',
+            args=(licence_asset.licence.id,),
+        )
+        form_data = self.formset_dict(rows, initial_forms=1)
+        response = self.client.post(url, form_data)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+        self.assertEqual(LicenceAsset.objects.count(), 0)
+
+    def test_assigned_to_users_simple_add(self):
+        """
+        assigne user with licence with custom quantity
+        """
+        licence = LicenceFactory()
+        user = UserFactory()
+        self.assertEqual(LicenceUser.objects.count(), 0)
+
+        rows = [
+            {
+                'licence': licence.id,
+                'id': '',
+                'user': user.id,
+                'quantity': 200,
+            },
+        ]
+        url = reverse('licence_connections_users', args=(licence.id,))
+        form_data = self.formset_dict(rows)
+        response = self.client.post(url, form_data)
+        self.assertEqual(LicenceUser.objects.count(), 1)
+        self.assertEqual(LicenceUser.objects.all()[0].quantity, 200)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+
+    def test_assigned_to_users_update(self):
+        """
+        update licences quantity
+        """
+        licence_user = LicenceUserFactory()
+        self.assertEqual(LicenceUser.objects.count(), 1)
+
+        rows = [
+            {
+                'licence': licence_user.licence.id,
+                'id': licence_user.id,
+                'user': licence_user.user.id,
+                'quantity': 200,
+            },
+        ]
+        url = reverse(
+            'licence_connections_users',
+            args=(licence_user.licence.id,),
+        )
+        form_data = self.formset_dict(rows, initial_forms=1)
+        response = self.client.post(url, form_data)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+        self.assertEqual(LicenceUser.objects.count(), 1)
+        self.assertEqual(LicenceUser.objects.all()[0].quantity, 200)
+
+    def test_assigned_to_users_delete(self):
+        """
+        delete assigned licences to user
+        """
+        licence_user = LicenceUserFactory()
+        self.assertEqual(LicenceUser.objects.count(), 1)
+
+        rows = []
+        url = reverse(
+            'licence_connections_users',
+            args=(licence_user.licence.id,),
+        )
+        form_data = self.formset_dict(rows, initial_forms=1)
+        response = self.client.post(url, form_data)
+        self.assertEqual(len(response.context_data['formset'].errors), 0)
+        self.assertEqual(LicenceUser.objects.count(), 0)

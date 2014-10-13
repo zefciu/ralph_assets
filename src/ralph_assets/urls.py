@@ -32,27 +32,18 @@ from ralph_assets.views.asset import (
     AssetBulkEdit,
     DeleteAsset,
 )
-from ralph_assets.views.ajax import CategoryDependencyView, ModelDependencyView
-from ralph_assets.views.data_import import XlsUploadView
-from ralph_assets.views.sam import (
-    AddLicence,
-    CountLicence,
-    DeleteLicence,
-    EditLicence,
-    LicenceList,
-    LicenceBulkEdit,
-    SoftwareCategoryList,
+from ralph_assets.views.ajax import (
+    CategoryDependencyView,
+    ModelDependencyView,
 )
+from ralph_assets.views.data_import import XlsUploadView
 from ralph_assets.views.support import (
     SupportList,
     AddSupportView,
     EditSupportView,
     DeleteSupportView,
 )
-from ralph_assets.views.invoice_report import (
-    AssetInvoiceReport,
-    LicenceInvoiceReport,
-)
+from ralph_assets.views.invoice_report import AssetInvoiceReport
 from ralph_assets.forms_import import XLS_UPLOAD_FORMS
 from ralph_assets.views.transition import (
     TransitionView,
@@ -133,11 +124,6 @@ urlpatterns = patterns(
         name='assets_invoice_report',
     ),
     url(
-        r'sam/licences/invoice_report/$',
-        login_required(LicenceInvoiceReport.as_view()),
-        name='sam_invoice_report',
-    ),
-    url(
         r'(?P<mode>(back_office|dc))/transition/$',
         login_required(TransitionView.as_view()),
         name='transition',
@@ -151,36 +137,6 @@ urlpatterns = patterns(
         r'xls/$',
         login_required(XlsUploadView.as_view(XLS_UPLOAD_FORMS)),
         name='xls_upload',
-    ),
-    url(
-        r'sam/categories/$',
-        login_required(SoftwareCategoryList.as_view()),
-        name='software_categories',
-    ),
-    url(
-        r'sam/licences/$',
-        login_required(LicenceList.as_view()),
-        name='licence_list',
-    ),
-    url(
-        r'sam/licences/bulkedit/',
-        login_required(LicenceBulkEdit.as_view()),
-        name='licence_bulkedit',
-    ),
-    url(
-        r'sam/add_licence/$',
-        login_required(AddLicence.as_view()),
-        name='add_licence',
-    ),
-    url(
-        r'sam/edit_licence/(?P<licence_id>[0-9]+)$',
-        login_required(EditLicence.as_view()),
-        name='edit_licence',
-    ),
-    url(
-        r'sam/count_licences/$',
-        login_required(CountLicence.as_view()),
-        name='count_licences',
     ),
     url(
         r'support/$',
@@ -203,17 +159,12 @@ urlpatterns = patterns(
         name='delete_support',
     ),
     url(
-        r'(?P<mode>(back_office|dc))/sam/delete/$',
-        login_required(DeleteLicence.as_view()),
-        name='delete_licence',
-    ),
-    url(
         r'delete/(?P<parent>(asset|license|support))/attachment/$',
         login_required(DeleteAttachment.as_view()),
         name='delete_attachment',
     ),
     url(
-        r'users/$',
+        r'^users/$',
         login_required(UserList.as_view()),
         name='user_list',
     ),
@@ -245,5 +196,9 @@ urlpatterns = patterns(
     url(
         r'^history/',
         include('ralph_assets.history.urls', app_name='history'),
+    ),
+    url(
+        r'^licences/',
+        include('ralph_assets.licences.urls', app_name='licences'),
     ),
 )

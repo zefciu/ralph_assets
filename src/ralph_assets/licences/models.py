@@ -9,6 +9,9 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Sum
+from django.db.models.loading import get_model
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
     Named,
@@ -18,6 +21,7 @@ from lck.django.common.models import (
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
+from ralph.discovery.models_util import SavingUser
 from ralph.ui.channels import RestrictedLookupChannel
 from ralph_assets.models_assets import (
     Asset,
@@ -25,20 +29,23 @@ from ralph_assets.models_assets import (
     AssetOwner,
     AssetType,
     Attachment,
+    AttachmentMixin,
     BudgetInfo,
     CreatableFromString,
-    LicenseAndAsset,
     Service,
 )
-from ralph_assets.models_util import (
-    WithForm,
-)
-from ralph.discovery.models_util import SavingUser
-from ralph_assets.history.models import HistoryMixin
+from ralph_assets.models_util import WithForm
+from ralph_assets.history.models import History, HistoryMixin
+
+
+class WrongModelError(Exception):
+    pass
 
 
 class LicenceType(Named):
     """The type of a licence"""
+    class Meta:
+        app_label = 'ralph_assets'
 
 
 class SoftwareCategory(Named, CreatableFromString):
@@ -47,6 +54,9 @@ class SoftwareCategory(Named, CreatableFromString):
         choices=AssetType()
     )
 
+    class Meta:
+        app_label = 'ralph_assets'
+
     @classmethod
     def create_from_string(cls, asset_type, s):
         return cls(asset_type=asset_type, name=s)
@@ -54,13 +64,13 @@ class SoftwareCategory(Named, CreatableFromString):
     @property
     def licences(self):
         """Iterate over licences."""
-        for licence in self.licence_set.all():
+        for licence in self.licences.all():
             yield licence
 
 
 class Licence(
+    AttachmentMixin,
     HistoryMixin,
-    LicenseAndAsset,
     MPTTModel,
     TimeTrackable,
     WithConcurrentGetOrCreate,
@@ -139,8 +149,13 @@ class Licence(
     assets = models.ManyToManyField(
         Asset,
         verbose_name=_('Assigned Assets'),
+        through='LicenceAsset',
+        related_name='licences',
     )
-    users = models.ManyToManyField(User)
+    users = models.ManyToManyField(
+        User,
+        through='LicenceUser',
+    )
     attachments = models.ManyToManyField(Attachment, null=True, blank=True)
     provider = models.CharField(max_length=100, null=True, blank=True)
     invoice_no = models.CharField(
@@ -170,6 +185,9 @@ class Licence(
 
     _used = None
 
+    class Meta:
+        app_label = 'ralph_assets'
+
     def __unicode__(self):
         return "{} x {} - {}".format(
             self.number_bought,
@@ -183,15 +201,110 @@ class Licence(
             'licence_id': self.id,
         })
 
-    @property
+    @cached_property
     def used(self):
-        if self._used is not None:
-            return self._used
-        return self.assets.count() + self.users.count()
+        assets_qs = self.assets.through.objects.filter(licence=self)
+        users_qs = self.users.through.objects.filter(licence=self)
 
-    @used.setter
-    def used(self, value):
-        self._used = value
+        def get_sum(qs):
+            return qs.aggregate(sum=Sum('quantity'))['sum'] or 0
+        return sum(map(get_sum, [assets_qs, users_qs]))
+
+    @cached_property
+    def free(self):
+        return self.number_bought - self.used
+
+    def get_model_from_obj(self, obj):
+        name = obj._meta.object_name
+        allowed_models = ('Asset', 'User')
+        if name not in allowed_models:
+            raise WrongModelError('{} model is not allowed.'.format(name))
+        Model = get_model(
+            app_label='ralph_assets',
+            model_name='Licence{}'.format(name)
+        )
+        return Model, name
+
+    def assign(self, obj, quantity=1):
+        if quantity <= 0:
+            raise ValueError('Variable quantity must be greater than zero.')
+        Model, name = self.get_model_from_obj(obj)
+        kwargs = {
+            name.lower(): obj,
+            'licence': self,
+        }
+        assigned_licence, created = Model.objects.get_or_create(**kwargs)
+        old_quantity = assigned_licence.quantity
+        assigned_licence.quantity = quantity
+        assigned_licence.save(update_fields=['quantity'])
+        if not created and old_quantity == quantity:
+            return
+        History.objects.log_changes(
+            obj,
+            getattr(obj, 'saving_user', None),
+            [
+                {
+                    'field': 'assigned_licence_quantity',
+                    'old': '-' if created else old_quantity,
+                    'new': quantity,
+                },
+            ]
+        )
+
+    def detach(self, obj):
+        Model, name = self.get_model_from_obj(obj)
+        kwargs = {
+            name.lower(): obj,
+            'licence': self,
+        }
+        old_value = '-'
+        try:
+            assigned_licence = Model.objects.get(**kwargs)
+            old_value = assigned_licence.quantity
+            assigned_licence.delete()
+        except Model.DoesNotExist:
+            return
+        History.objects.log_changes(
+            obj,
+            getattr(obj, 'saving_user', None),
+            [
+                {
+                    'field': 'assigned_licence_quantity',
+                    'old': old_value,
+                    'new': '-',
+                },
+            ]
+        )
+
+
+class LicenceAsset(models.Model):
+    licence = models.ForeignKey(Licence)
+    asset = models.ForeignKey(Asset)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        app_label = 'ralph_assets'
+        unique_together = ('licence', 'asset')
+
+    def __unicode__(self):
+        return '{} of {} assigned to {}'.format(
+            self.quantity, self.licence, self.asset
+        )
+
+
+class LicenceUser(models.Model):
+    licence = models.ForeignKey(Licence)
+    user = models.ForeignKey(User)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        app_label = 'ralph_assets'
+        unique_together = ('licence', 'user')
+
+    def __unicode__(self):
+        return '{} of {} assigned to {}'.format(
+            self.quantity, self.licence, self.asset
+        )
 
 
 class BudgetInfoLookup(RestrictedLookupChannel):
@@ -202,15 +315,14 @@ class BudgetInfoLookup(RestrictedLookupChannel):
             name__icontains=q,
         ).order_by('name')[:10]
 
-    def get_result(self, obj):
-        return obj.name
-
-    def format_match(self, obj):
-        return self.format_item_display(obj)
-
     def format_item_display(self, obj):
         return "<span>{name}</span>".format(name=obj.name)
 
 
 class SoftwareCategoryLookup(RestrictedLookupChannel):
     model = SoftwareCategory
+
+    def get_query(self, q, request):
+        return SoftwareCategory.objects.filter(
+            name__icontains=q
+        ).order_by('name')[:10]

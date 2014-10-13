@@ -26,6 +26,7 @@ from ralph_assets.forms import (
 )
 from ralph_assets.models import Asset, AssetModel, PartInfo
 from ralph_assets.models_assets import AssetType
+from ralph_assets.licences.models import Licence
 from ralph_assets.views.base import (
     AssetsBase,
     HardwareModeMixin,
@@ -264,11 +265,10 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                 self.asset.save(
                     user=self.request.user, force_unlink=force_unlink,
                 )
-                self.asset.licence_set.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []
                 ):
-                    self.asset.licence_set.add(licence)
+                    Licence.objects.get(pk=licence).assign(self.asset)
                 self.asset.supports.clear()
                 for support in self.asset_form.cleaned_data.get(
                     'supports', []

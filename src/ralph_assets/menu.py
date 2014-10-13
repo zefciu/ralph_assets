@@ -44,8 +44,8 @@ class AssetMenu(Menu):
             ),
             MenuItem(
                 fugue_icon='fugue-cheque',
-                href=reverse('licence_list'),
-                view_name='licence_list',
+                href=reverse('licences_list'),
+                view_name='licences_list',
                 label=_('Licences'),
                 name='licences',
             ),
@@ -125,7 +125,7 @@ class AssetMenu(Menu):
         licences = [
             {
                 'label': _('Search'),
-                'view_name': 'licence_list',
+                'view_name': 'licences_list',
                 'fugue_icon': 'fugue-magnifier',
             },
             {

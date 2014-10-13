@@ -158,7 +158,7 @@ LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
-    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
+    'budget_info': ('ralph_assets.licences.models', 'BudgetInfoLookup'),
     'device_environment': ('ralph.ui.channels', 'DeviceEnvrionment'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'licence': ('ralph_assets.models', 'LicenceLookup'),
@@ -644,7 +644,7 @@ class DependencyAssetForm(DependencyForm):
             initial = kwargs.setdefault('initial', {})
             initial['licences'] = [
                 licence['pk']
-                for licence in kwargs['instance'].licence_set.values('pk')
+                for licence in kwargs['instance'].licences.values('pk')
             ]
             initial['supports'] = [
                 support['pk']
@@ -1739,7 +1739,7 @@ class UserRelationForm(Form):
         initial = kwargs.setdefault('initial', {})
         initial['licences'] = [
             licence['pk']
-            for licence in user.licence_set.values('pk')
+            for licence in user.licences.values('pk')
         ]
         super(UserRelationForm, self).__init__(*args, **kwargs)
 
