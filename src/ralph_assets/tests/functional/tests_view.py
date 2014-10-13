@@ -45,6 +45,7 @@ from ralph_assets.tests.utils.assets import (
     WarehouseFactory,
 )
 from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
+from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph_assets.tests.utils.licences import (
     LicenceFactory,
     LicenceAssetFactory,
@@ -80,6 +81,7 @@ def get_asset_data():
     This can't be a just module dict, becasue these data include factories
     which are not accessible during module import causing error.
     """
+    ci_relation = CIRelationFactory()
     return {
         'asset': '',  # required if asset (instead of *part*) is edited
         'barcode': 'barcode1',
@@ -87,7 +89,7 @@ def get_asset_data():
         'delivery_date': datetime.date(2013, 1, 7),
         'deprecation_end_date': datetime.date(2013, 7, 25),
         'deprecation_rate': 77,
-        'device_environment': assets_utils.DeviceEnvironmentFactory().id,
+        'device_environment': ci_relation.child.id,
         'invoice_date': datetime.date(2009, 2, 23),
         'invoice_no': 'Invoice no #3',
         'loan_end_date': datetime.date(2013, 12, 29),
@@ -102,7 +104,7 @@ def get_asset_data():
         'provider_order_date': datetime.date(2014, 3, 17),
         'remarks': 'Remarks #3',
         'request_date': datetime.date(2014, 6, 9),
-        'service': assets_utils.ServiceCatalogFactory().id,
+        'service': ci_relation.parent.id,
         'service_name': assets_utils.ServiceFactory().id,
         'source': models_assets.AssetSource.shipment.id,
         'status': models_assets.AssetStatus.new.id,
@@ -1555,8 +1557,9 @@ class TestSyncFieldMixin(TestDevicesView):
 
     def test_sync_field_in_asset_and_core_on_add_form(self):
         """Asset has assigned Ralph device, fields will be saved twice"""
-        device_environment = DeviceEnvironmentFactory()
-        service = ServiceCatalogFactory()
+        ci_relation = CIRelationFactory()
+        device_environment = ci_relation.child
+        service = ci_relation.parent
         data = self.get_asset_form_data()
         device = self.create_device()
         data['ralph_device_id'] = device.id
@@ -1577,8 +1580,9 @@ class TestSyncFieldMixin(TestDevicesView):
     def test_sync_field_on_edit_asset(self):
         """Asset created without Ralph device.
         Fields sync when edit form saved."""
-        device_environment = DeviceEnvironmentFactory()
-        service = ServiceCatalogFactory()
+        ci_relation = CIRelationFactory()
+        device_environment = ci_relation.child
+        service = ci_relation.parent
         asset = DCAssetFactory()
         asset.device_info.ralph_device_id = None
         asset.device_info.save()
@@ -1609,8 +1613,9 @@ class TestSyncFieldMixin(TestDevicesView):
     def test_sync_field_from_device_to_asset(self):
         """Asset field changed when device was edited."""
         asset = DCAssetFactory(service=None, device_environment=None)
-        device_environment = DeviceEnvironmentFactory()
-        service = ServiceCatalogFactory()
+        ci_relation = CIRelationFactory()
+        device_environment = ci_relation.child
+        service = ci_relation.parent
 
         device = Device.objects.all()[0]
         device.service = service
