@@ -6,6 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+from random import randint
+from uuid import uuid1
 
 from factory import (
     fuzzy,
@@ -15,8 +17,7 @@ from factory import (
     post_generation,
 )
 from factory.django import DjangoModelFactory
-from random import randint
-from uuid import uuid1
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import AssetType
 from ralph_assets.licences.models import (
@@ -85,6 +86,11 @@ class LicenceFactory(DjangoModelFactory):
     @lazy_attribute
     def sn(self):
         return str(uuid1())
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
 
 
 class LicenceAssetFactory(DjangoModelFactory):

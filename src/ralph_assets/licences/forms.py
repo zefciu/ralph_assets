@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 from ajax_select.fields import AutoCompleteSelectField, AutoCompleteWidget
 from collections import OrderedDict
 from django import forms
-from django.forms import ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.utils.translation import ugettext_lazy as _
 from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
@@ -37,6 +37,7 @@ from ralph_assets.forms import (
     MultivalFieldForm,
     ReadOnlyFieldsMixin,
 )
+from ralph_assets.middleware import get_actual_regions
 from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 
@@ -84,7 +85,7 @@ class LicenceForm(forms.ModelForm):
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
                 'valid_thru', 'remarks', 'service_name',
-                'license_details',
+                'license_details', 'region',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -138,6 +139,9 @@ class LicenceForm(forms.ModelForm):
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
         super(LicenceForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(
+            queryset=get_actual_regions(),
+        )
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
@@ -178,6 +182,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'price',
             'property_of',
             'provider',
+            'region',
             'remarks',
             'service_name',
             'sn',
