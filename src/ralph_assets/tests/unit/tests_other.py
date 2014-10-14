@@ -8,82 +8,71 @@ from __future__ import unicode_literals
 import datetime
 from dj.choices import Country
 
-from django.contrib.auth.models import User
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from ralph.discovery.tests.util import DeviceFactory
-from ralph_assets.models import AssetManufacturer
 from ralph_assets import models_assets
-from ralph_assets.licences.models import (
-    AssetOwner,
-    Licence,
-    LicenceType,
-    SoftwareCategory,
-)
 from ralph_assets.others import get_assets_rows, get_licences_rows
-from ralph_assets.tests.util import (
-    create_asset,
-    create_category,
-    create_model,
-)
 from ralph_assets.tests.utils import UserFactory
 from ralph_assets.tests.utils.assets import (
+    AssetFactory,
     AssetCategoryFactory,
+    AssetManufacturerFactory,
     AssetModelFactory,
     BOAssetFactory,
     DCAssetFactory,
     DeviceInfoFactory,
+    WarehouseFactory,
+)
+from ralph_assets.tests.utils.licences import (
+    LicenceFactory,
+    SoftwareCategoryFactory,
 )
 from ralph_assets.utils import iso2_to_iso3, iso3_to_iso2
 
 
 class TestExportRelations(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('user', 'user@test.local')
-        self.user.is_staff = False
-        self.user.is_superuser = False
-        self.user.first_name = 'Elmer'
-        self.user.last_name = 'Stevens'
-        self.user.save()
+        self.user = UserFactory(
+            username='user',
+            is_staff=False,
+            is_superuser=False,
+            first_name='Elmer',
+            last_name='Stevens',
+        )
+        self.owner = UserFactory(
+            username='owner',
+            is_staff=False,
+            is_superuser=False,
+            first_name='Eric',
+            last_name='Brown',
+        )
 
-        self.owner = User.objects.create_user('owner', 'owner@test.local')
-        self.owner.is_staff = False
-        self.owner.is_superuser = False
-        self.owner.first_name = 'Eric'
-        self.owner.last_name = 'Brown'
-        self.owner.save()
-
-        self.category = create_category()
-        self.model = create_model(category=self.category)
-        self.asset = create_asset(
+        self.category = AssetCategoryFactory(name='Subcategory')
+        self.model = AssetModelFactory(
+            name='Model1',
+            category=self.category,
+            manufacturer=AssetManufacturerFactory(name='Manufacturer1')
+        )
+        self.warehouse = WarehouseFactory(name='Warehouse')
+        self.asset = AssetFactory(
+            order_no='Order No2',
+            invoice_no='invoice-6666',
+            invoice_date=datetime.date(2014, 4, 28),
+            support_type='Support d2d',
             sn='1111-1111-1111-1111',
             model=self.model,
             user=self.user,
             owner=self.owner,
             barcode='br-666',
             niw='niw=666',
+            warehouse=self.warehouse,
         )
 
-        self.software_category = SoftwareCategory(
-            name='soft-cat1', asset_type=models_assets.AssetType.DC
-        )
-        self.software_category.save()
-
-        self.manufacturer = AssetManufacturer(name='test_manufacturer')
-        self.manufacturer.save()
-
-        self.licence_type = LicenceType(name='test_licence_type')
-        self.licence_type.save()
-
-        self.property_of = AssetOwner(name="test_property")
-        self.property_of.save()
-
-        self.licence1 = Licence(
-            licence_type=self.licence_type,
+        self.software_category = SoftwareCategoryFactory(name='soft-cat1')
+        self.licence1 = LicenceFactory(
             software_category=self.software_category,
-            manufacturer=self.manufacturer,
-            property_of=self.property_of,
             number_bought=10,
             sn="test-sn",
             niw="niw-666",
@@ -93,7 +82,6 @@ class TestExportRelations(TestCase):
             provider="test_provider",
             asset_type=models_assets.AssetType.DC,
         )
-        self.licence1.save()
 
     def test_assets_rows(self):
         rows = [item for item in get_assets_rows()]
@@ -107,13 +95,15 @@ class TestExportRelations(TestCase):
                     'user__username', 'user__first_name', 'user__last_name',
                     'owner__username', 'owner__first_name',
                     'owner__last_name', 'status', 'service_name__name',
-                    'property_of', 'warehouse__name',
+                    'property_of', 'warehouse__name', 'invoice_date',
+                    'invoice_no',
                 ],
                 [
                     1, 'niw=666', 'br-666', '1111-1111-1111-1111',
                     'Subcategory', 'Manufacturer1', 'Model1', 'user',
                     'Elmer', 'Stevens', 'owner', 'Eric', 'Brown', 1, None,
-                    None, 'Warehouse',
+                    None, 'Warehouse', datetime.date(2014, 4, 28),
+                    'invoice-6666',
                 ],
             ]
         )
