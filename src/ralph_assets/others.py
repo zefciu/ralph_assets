@@ -44,8 +44,6 @@ LICENCES_ASSETS_COLUMNS = [
     'id',
     'barcode',
     'niw',
-    'invoice_date',
-    'invoice_no',
     'user__username',
     'user__first_name',
     'user__last_name',
