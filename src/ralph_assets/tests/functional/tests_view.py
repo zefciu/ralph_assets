@@ -51,10 +51,6 @@ from ralph_assets.tests.utils.licences import (
     LicenceAssetFactory,
     LicenceUserFactory,
 )
-from ralph.cmdb.tests.utils import (
-    DeviceEnvironmentFactory,
-    ServiceCatalogFactory,
-)
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.ui.tests.global_utils import login_as_su
