@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from datetime import date
 
 from django.test import TestCase
+from ralph.account.models import Region
 
 from ralph_assets import models
 from ralph_assets import api_scrooge
@@ -115,7 +116,7 @@ class TestApiScrooge(TestCase):
         )
 
     def test_get_asset_without_hostname(self):
-        asset = DCAssetFactory()
+        asset = DCAssetFactory(region=Region.get_default_region())
         asset.device_info.ralph_device_id = None
         asset.device_info.save()
         today = date(2013, 11, 12)

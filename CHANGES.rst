@@ -3,13 +3,13 @@ Change Log
 
 DEV
 ~~~
-Released on October X, 2014
+Released on TBA
 
 * Added quantity to licence model,
 * Created new widget based on formset,
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
-
+* Added new field to assets forms: Region,
 
 2.3.0
 ~~~~~

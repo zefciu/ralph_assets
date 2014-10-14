@@ -8,9 +8,10 @@ from __future__ import unicode_literals
 import datetime
 import itertools
 import random
+from uuid import uuid1
 
 import factory
-
+from django.template.defaultfilters import slugify
 from factory import (
     fuzzy,
     lazy_attribute,
@@ -18,15 +19,13 @@ from factory import (
     SubFactory,
 )
 from factory.django import DjangoModelFactory
-from uuid import uuid1
-
-from django.template.defaultfilters import slugify
-
+from ralph.account.models import Region
 from ralph.cmdb.tests.utils import (
     CIRelationFactory,
     DeviceEnvironmentFactory,
     ServiceCatalogFactory,
 )
+
 from ralph_assets import models_assets
 from ralph_assets.models_assets import (
     Asset,
@@ -189,6 +188,11 @@ class AssetFactory(DjangoModelFactory):
     support_type = 'standard'
 
     @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
+
+    @lazy_attribute
     def sn(self):
         return generate_sn()
 
@@ -258,6 +262,11 @@ class BaseAssetFactory(DjangoModelFactory):
             # A list of supports were passed in, use them
             for support in extracted:
                 self.supports.add(support)
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
 
 
 class DCAssetFactory(BaseAssetFactory):

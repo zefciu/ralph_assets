@@ -18,7 +18,6 @@ from django.shortcuts import get_object_or_404
 
 from ralph.util.api_assets import get_device_components
 from ralph_assets.forms import (
-    AddDeviceForm,
     DeviceForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -80,15 +79,16 @@ class AddDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                 self.additional_info = OfficeForm()
 
     def get(self, *args, **kwargs):
-        self.asset_form = AddDeviceForm(mode=self.mode)
         device_form_class = self.form_dispatcher('AddDevice')
-        self.asset_form = device_form_class(mode=self.mode)
+        self.asset_form = device_form_class(self.request, mode=self.mode)
         self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         device_form_class = self.form_dispatcher('AddDevice')
-        self.asset_form = device_form_class(self.request.POST, mode=self.mode)
+        self.asset_form = device_form_class(
+            self.request, self.request.POST, mode=self.mode,
+        )
         self._set_additional_info_form()
         if self.asset_form.is_valid() and self.additional_info.is_valid():
             force_unlink = self.additional_info.cleaned_data.get(
@@ -136,12 +136,13 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
 
     def initialize_vars(self, *args, **kwargs):
         self.asset = get_object_or_404(
-            Asset.admin_objects,
+            Asset.objects,
             id=kwargs.get('asset_id'),
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
+            self.request,
             self.request.POST or None,
             instance=self.asset,
             mode=self.mode,
