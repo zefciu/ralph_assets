@@ -9,6 +9,7 @@ Released on October X, 2014
 * Created new widget based on formset,
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
+* Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
 
 
 2.3.0
