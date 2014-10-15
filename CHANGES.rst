@@ -10,6 +10,7 @@ Released on TBA
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
 * Added new field to assets forms: Region,
+* Added region mechanism to licenses.
 
 2.3.0
 ~~~~~

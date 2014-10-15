@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.functional import cached_property
 
@@ -356,7 +357,7 @@ class EditLicence(LicenceFormView):
     Form = EditLicenceForm
 
     def get(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
+        self.licence = get_object_or_404(Licence, pk=licence_id)
         self._get_form(instance=self.licence)
         return super(EditLicence, self).get(request, *args, **kwargs)
 

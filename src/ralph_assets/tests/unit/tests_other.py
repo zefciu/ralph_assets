@@ -11,8 +11,9 @@ from dj.choices import Country
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.test.utils import override_settings
-
+from ralph.account.models import Region
 from ralph.discovery.tests.util import DeviceFactory
+
 from ralph_assets.models import AssetManufacturer
 from ralph_assets import models_assets
 from ralph_assets.licences.models import (
@@ -80,18 +81,19 @@ class TestExportRelations(TestCase):
         self.property_of.save()
 
         self.licence1 = Licence(
-            licence_type=self.licence_type,
-            software_category=self.software_category,
-            manufacturer=self.manufacturer,
-            property_of=self.property_of,
-            number_bought=10,
-            sn="test-sn",
-            niw="niw-666",
+            asset_type=models_assets.AssetType.DC,
             invoice_date=datetime.date(2014, 4, 28),
             invoice_no="666-999-666",
+            licence_type=self.licence_type,
+            manufacturer=self.manufacturer,
+            niw="niw-666",
+            number_bought=10,
             price=1000.0,
+            property_of=self.property_of,
             provider="test_provider",
-            asset_type=models_assets.AssetType.DC,
+            region=Region.get_default_region(),
+            sn="test-sn",
+            software_category=self.software_category,
         )
         self.licence1.save()
 

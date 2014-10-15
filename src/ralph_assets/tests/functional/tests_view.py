@@ -55,10 +55,6 @@ from ralph_assets.tests.utils.licences import (
     LicenceAssetFactory,
     LicenceUserFactory,
 )
-from ralph.cmdb.tests.utils import (
-    DeviceEnvironmentFactory,
-    ServiceCatalogFactory,
-)
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 from ralph.ui.tests.global_utils import login_as_su
@@ -801,6 +797,7 @@ class TestLicencesView(BaseViewsTest):
             'price': Decimal('100.99'),
             'property_of': assets_utils.AssetOwnerFactory().id,
             'provider': 'Provider',
+            'region': Region.get_default_region().id,
             'remarks': 'Additional remarks',
             'service_name': assets_utils.ServiceFactory().id,
             'sn': 'Licence key',
@@ -831,7 +828,7 @@ class TestLicencesView(BaseViewsTest):
             response, reverse('licences_list'), status_code=302,
             target_status_code=200,
         )
-        license = Licence.objects.reverse()[0]
+        license = Licence.objects.get(sn=request_data['sn'])
         check_fields(self, request_data.items(), license)
 
     def test_edit_license(self):
@@ -1007,6 +1004,39 @@ class TestLicencesView(BaseViewsTest):
             add_license_url, license_data, follow=True,
         )
         self.assertContains(response, '1 licences added')
+
+    def test_show_license_by_user_region_single(self):
+        polish_region = RegionFactory(name='PL')
+        self.user.get_profile().region_set.add(polish_region)
+        dutch_region = RegionFactory(name='NL')
+
+        [LicenceFactory(region=polish_region) for i in xrange(2)]
+        [LicenceFactory(region=dutch_region) for i in xrange(2)]
+
+        url = reverse('licences_list')
+        response = self.client.get(url)
+        self.assertEqual(2, response.context_data['items_count'])
+
+    def test_show_license_by_user_region_double(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(*[polish_region, dutch_region])
+
+        [LicenceFactory(region=polish_region) for i in xrange(2)]
+        [LicenceFactory(region=dutch_region) for i in xrange(2)]
+
+        url = reverse('licences_list')
+        response = self.client.get(url)
+        self.assertEqual(4, response.context_data['items_count'])
+
+    def test_404_on_not_granted_region(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(polish_region)
+        licence = LicenceFactory(region=dutch_region)
+        url = reverse('edit_licence', args=(licence.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
 
 
 class TestSupportsView(BaseViewsTest):
