@@ -15,7 +15,7 @@ from django.db import models
 from lck.django.choices import Choices
 
 from ralph.account.models import Region
-from ralph_assets.middleware import get_actual_regions
+from ralph import middleware
 
 
 class ProblemSeverity(Choices):
@@ -64,7 +64,7 @@ class RegionalizedDBManager(models.Manager):
 
     def get_query_set(self):
         query_set = super(RegionalizedDBManager, self).get_query_set()
-        regions = get_actual_regions()
+        regions = middleware.get_actual_regions()
         query_set = query_set.filter(region__in=regions)
         return query_set
 
@@ -74,6 +74,7 @@ class Regionalized(models.Model):
     defined in ralph.accounts.models.Region"""
 
     objects = RegionalizedDBManager()
+    admin_objects = models.Manager()
 
     region = models.ForeignKey(Region)
 

@@ -79,7 +79,7 @@
                     <a href="{% url device_edit mode='back_office' asset_id=asset.id %}">{% trans "go to asset" %}</a>
                 </td>
             </tr>
-            {% with asset.licence_set.all as licences %}
+            {% with asset.licences.all as licences %}
             {% if licences %}
             <tr>
                 <td colspan="7">

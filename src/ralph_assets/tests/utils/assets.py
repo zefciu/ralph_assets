@@ -19,12 +19,11 @@ from factory import (
     SubFactory,
 )
 from factory.django import DjangoModelFactory
+from ralph.account.models import Region
 from ralph.cmdb.tests.utils import (
+    CIRelationFactory,
     DeviceEnvironmentFactory,
     ServiceCatalogFactory,
-)
-from ralph.util.tests.utils import (
-    RegionFactory,
 )
 
 from ralph_assets import models_assets
@@ -187,7 +186,11 @@ class AssetFactory(DjangoModelFactory):
     provider = Sequence(lambda n: 'Provider #%s' % n)
     support_period = 24
     support_type = 'standard'
-    region = SubFactory(RegionFactory)
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
 
     @lazy_attribute
     def sn(self):
@@ -217,7 +220,6 @@ class BaseAssetFactory(DjangoModelFactory):
     property_of = SubFactory(AssetOwnerFactory)
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
-    region = SubFactory(RegionFactory)
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     service = SubFactory(ServiceCatalogFactory)
@@ -238,6 +240,19 @@ class BaseAssetFactory(DjangoModelFactory):
         return generate_sn()
 
     @factory.post_generation
+    def device_environment(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            self.device_environment = extracted
+        else:
+            if self.service:
+                ci_relation = CIRelationFactory(parent=self.service)
+                self.device_environment = ci_relation.child
+
+    @factory.post_generation
     def supports(self, create, extracted, **kwargs):
         if not create:
             # Simple build, do nothing.
@@ -247,6 +262,11 @@ class BaseAssetFactory(DjangoModelFactory):
             # A list of supports were passed in, use them
             for support in extracted:
                 self.supports.add(support)
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
 
 
 class DCAssetFactory(BaseAssetFactory):

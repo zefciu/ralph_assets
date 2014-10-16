@@ -6,6 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+from random import randint
+from uuid import uuid1
 
 from factory import (
     fuzzy,
@@ -14,17 +16,19 @@ from factory import (
     lazy_attribute,
     post_generation,
 )
-from factory.django import DjangoModelFactory as Factory
-from random import randint
-from uuid import uuid1
+from factory.django import DjangoModelFactory
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import AssetType
-from ralph_assets.models_sam import (
+from ralph_assets.licences.models import (
     Licence,
+    LicenceAsset,
+    LicenceUser,
     LicenceType,
     SoftwareCategory,
 )
 from ralph_assets.tests.utils.assets import (
+    AssetFactory,
     AssetManufacturerFactory,
     AssetOwnerFactory,
     BudgetInfoFactory,
@@ -33,20 +37,20 @@ from ralph_assets.tests.utils.assets import (
 )
 
 
-class LicenceTypeFactory(Factory):
+class LicenceTypeFactory(DjangoModelFactory):
     FACTORY_FOR = LicenceType
 
     name = Sequence(lambda n: 'Licence type #%s' % n)
 
 
-class SoftwareCategoryFactory(Factory):
+class SoftwareCategoryFactory(DjangoModelFactory):
     FACTORY_FOR = SoftwareCategory
 
     name = Sequence(lambda n: 'Software category #%s' % n)
     asset_type = AssetType.BO
 
 
-class LicenceFactory(Factory):
+class LicenceFactory(DjangoModelFactory):
     FACTORY_FOR = Licence
     accounting_id = ''
     asset_type = AssetType.back_office.id
@@ -82,3 +86,22 @@ class LicenceFactory(Factory):
     @lazy_attribute
     def sn(self):
         return str(uuid1())
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
+
+
+class LicenceAssetFactory(DjangoModelFactory):
+    FACTORY_FOR = LicenceAsset
+    licence = SubFactory(LicenceFactory)
+    asset = SubFactory(AssetFactory)
+    quantity = 1
+
+
+class LicenceUserFactory(DjangoModelFactory):
+    FACTORY_FOR = LicenceUser
+    licence = SubFactory(LicenceFactory)
+    user = SubFactory(UserFactory)
+    quantity = 1

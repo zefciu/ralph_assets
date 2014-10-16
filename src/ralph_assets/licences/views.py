@@ -12,30 +12,33 @@ from bob.data_table import DataTableColumn
 
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import cached_property
 
-from ralph_assets.forms_sam import (
+from ralph_assets.forms import LOOKUPS
+from ralph_assets.licences.forms import (
     SoftwareCategorySearchForm,
     LicenceSearchForm,
     AddLicenceForm,
     EditLicenceForm,
     BulkEditLicenceForm,
 )
-from ralph_assets.models_assets import MODE2ASSET_TYPE
-from ralph_assets.models_sam import (
+from ralph_assets.licences.models import (
     Licence,
+    LicenceAsset,
+    LicenceUser,
     SoftwareCategory,
 )
-from ralph_assets.models_assets import ASSET_TYPE2MODE
-from ralph_assets.views.asset import Asset
+from ralph_assets.models_assets import MODE2ASSET_TYPE
+from ralph_assets.utils import assigned_formset_factory
 from ralph_assets.views.base import (
     AssetsBase,
     AjaxMixin,
     BulkEditBase,
     JsonResponseMixin,
-    get_return_link,
 )
 from ralph_assets.views.search import GenericSearch
 
@@ -45,6 +48,97 @@ LICENCE_PAGE_SIZE = 10
 
 class LicenseSelectedMixin(object):
     submodule_name = 'licences'
+
+
+class AssginLicenceMixin(object):
+    template_name = 'assets/licences/object_connections.html'
+    base_model = None
+
+    def get_object(self, *args, **kwargs):
+        raise NotImplementedError('Please override get_object method.')
+
+    def get_base_model(self):
+        if not self.base_model:
+            raise NotImplementedError('Please specified base_model or override'
+                                      ' get_base_model method.')
+        return self.base_model
+
+    def get_base_field(self):
+        if not self.base_field:
+            raise NotImplementedError('Please specified base_field or override'
+                                      ' get_base_field method.')
+        return self.base_field
+
+    @cached_property
+    def queryset(self):
+        query_kwargs = {self.obj.__class__.__name__.lower(): self.obj}
+        return self.get_base_model().objects.filter(**query_kwargs)
+
+    def dispatch(self, request, *args, **kwargs):
+        self.obj = self.get_object(*args, **kwargs)
+        data = None
+        if request.method.lower() == 'post':
+            data = request.POST
+        self.update_formset(data)
+
+        return super(AssginLicenceMixin, self).dispatch(
+            request, *args, **kwargs
+        )
+
+    def update_formset(self, data=None):
+        self.empty_formset = assigned_formset_factory(
+            obj=self.obj,
+            base_model=self.get_base_model(),
+            field=self.get_base_field(),
+            lookup=self.lookup,
+        )(queryset=self.get_base_model().objects.none(), initial=[{'id': 0}])
+
+        self.formset = assigned_formset_factory(
+            obj=self.obj,
+            base_model=self.get_base_model(),
+            field=self.get_base_field(),
+            lookup=self.lookup,
+            extra=0
+        )(data, queryset=self.queryset)
+
+    def get_context_data(self, **kwargs):
+        context = super(AssginLicenceMixin, self).get_context_data(**kwargs)
+        context.update({
+            'formset': self.formset,
+            'empty_formset': self.empty_formset,
+            'obj': self.obj,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if self.formset.is_valid():
+            assigned_objs = set(self.queryset.values_list('id', flat=True))
+            formset_objs = []
+            for item in self.formset.cleaned_data:
+                if not item or not item.get('id', None):
+                    continue
+                formset_objs.append(item['id'].id)
+            diff = assigned_objs.difference(formset_objs)
+            self.formset.save()
+            if diff:
+                self.get_base_model().objects.filter(id__in=diff).delete()
+            self.update_formset()
+            messages.success(request, _('Saved.'))
+        return self.get(request, *args, **kwargs)
+
+
+class AssginToLicenceBase(AssginLicenceMixin, AssetsBase):
+    submodule_name = 'licences'
+
+    def get_context_data(self, **kwargs):
+        context = super(AssginToLicenceBase, self).get_context_data(**kwargs)
+        context.update({
+            'active_tab': self.active_tab,
+        })
+        return context
+
+    def get_object(self, licence_id, *args, **kwargs):
+        return Licence.objects.get(id=licence_id)
 
 
 class LicenceBaseView(LicenseSelectedMixin, AssetsBase):
@@ -59,7 +153,8 @@ class SoftwareCategoryNameColumn(DataTableColumn):
         name = super(
             SoftwareCategoryNameColumn, self
         ).render_cell_content(resource)
-        return '<a href="/assets/sam/licences/?{qs}">{name}</a>'.format(
+        return '<a href="{link}?{qs}">{name}</a>'.format(
+            link=reverse('licences_list'),
             qs=urllib.urlencode({'software_category': resource.id}),
             name=name,
         )
@@ -192,7 +287,7 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
 
 class LicenceFormView(LicenceBaseView):
     """Base view that displays licence form."""
-    template_name = 'assets/add_licence.html'
+    template_name = 'assets/licences/add.html'
 
     def _get_form(self, data=None, **kwargs):
         self.form = self.Form(
@@ -217,7 +312,6 @@ class LicenceFormView(LicenceBaseView):
             if licence.asset_type is None:
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
-            self.form.save_m2m()
             messages.success(self.request, self.message)
             return HttpResponseRedirect(licence.url)
         except ValueError:
@@ -250,7 +344,7 @@ class AddLicence(LicenceFormView):
             messages.success(self.request, '{} licences added'.format(len(
                 self.form.cleaned_data['niw'],
             )))
-            return HttpResponseRedirect(reverse('licence_list'))
+            return HttpResponseRedirect(reverse('licences_list'))
         else:
             return super(AddLicence, self).get(request, *args, **kwargs)
 
@@ -263,7 +357,7 @@ class EditLicence(LicenceFormView):
     Form = EditLicenceForm
 
     def get(self, request, licence_id, *args, **kwargs):
-        self.licence = Licence.objects.get(pk=licence_id)
+        self.licence = get_object_or_404(Licence, pk=licence_id)
         self._get_form(instance=self.licence)
         return super(EditLicence, self).get(request, *args, **kwargs)
 
@@ -279,27 +373,7 @@ class LicenceBulkEdit(BulkEditBase, LicenceBaseView):
     form_bulk = BulkEditLicenceForm
 
 
-class DeleteLicence(AssetsBase):
-    """Delete a licence."""
-    submodule_name = 'licences'
-
-    def post(self, *args, **kwargs):
-        record_id = self.request.POST.get('record_id')
-        try:
-            licence = Licence.objects.get(pk=record_id)
-        except Asset.DoesNotExist:
-            messages.error(self.request, _("Selected asset doesn't exists."))
-            return HttpResponseRedirect(get_return_link(self.mode))
-        self.back_to = reverse(
-            'licence_list',
-            kwargs={'mode': ASSET_TYPE2MODE[licence.asset_type]},
-        )
-        licence.delete()
-        return HttpResponseRedirect(self.back_to)
-
-
 class CountLicence(AjaxMixin, JsonResponseMixin, GenericSearch):
-    mainmenu_selected = 'licences'  # required by AssetBase
     Model = Licence
     Form = LicenceSearchForm
 
@@ -307,10 +381,22 @@ class CountLicence(AjaxMixin, JsonResponseMixin, GenericSearch):
         self.form = self.Form(request.GET)
         qs = self.handle_search_data(request)
         summary = qs.aggregate(total=Sum('number_bought'))
-        summary.update(qs.annotate(assets_count=Count('assets')).aggregate(
-            used_by_assets=Sum('assets_count'),
-        ))
-        summary.update(qs.annotate(users_count=Count('users')).aggregate(
-            used_by_users=Sum('users_count'),
-        ))
+        summary.update(qs.aggregate(
+                       used_by_assets=Sum('licenceasset__quantity')))
+        summary.update(qs.aggregate(
+                       used_by_users=Sum('licenceuser__quantity')))
         return self.render_json_response(summary)
+
+
+class AssginAssetToLicence(AssginToLicenceBase):
+    active_tab = 'assets'
+    base_model = LicenceAsset
+    base_field = 'asset'
+    lookup = LOOKUPS['linked_device']
+
+
+class AssginUserToLicence(AssginToLicenceBase):
+    active_tab = 'users'
+    base_model = LicenceUser
+    base_field = 'user'
+    lookup = LOOKUPS['asset_user']

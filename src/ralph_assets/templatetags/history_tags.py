@@ -14,13 +14,15 @@ from ralph_assets.history.models import History
 register = template.Library()
 
 
-def get_context(obj, history, limit, full_history_button, title):
+def get_context(obj, history, limit, full_history_button, title,
+                show_field_name=True):
     return {
         'full_history_button': full_history_button,
         'history_for_model_url': History.get_history_url_for_object(obj),
-        'history_title': _('Short history'),
+        'history_title': title,
         'limit': limit,
         'history': history[:limit] if history else None,
+        'show_field_name': show_field_name,
     }
 
 
@@ -34,10 +36,10 @@ def short_history(obj, limit=5, full_history_button=True):
         return {}
     return get_context(
         obj,
-        history.order_by('date'),
+        history.order_by('-date'),
         limit,
         full_history_button,
-        _('Short history')
+        _('Short history'),
     )
 
 
@@ -51,8 +53,9 @@ def status_history(obj, limit=5, full_history_button=True):
         return {}
     return get_context(
         obj,
-        history.order_by('date'),
+        history.order_by('-date'),
         limit,
         full_history_button,
-        _('Status history')
+        _('Status history'),
+        False,
     )

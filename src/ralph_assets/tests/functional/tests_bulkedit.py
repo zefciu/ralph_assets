@@ -23,7 +23,7 @@ from ralph_assets.tests.utils.assets import (
     ServiceFactory,
     WarehouseFactory,
 )
-from ralph_assets.tests.utils.sam import LicenceFactory
+from ralph_assets.tests.utils.licences import LicenceFactory
 from ralph_assets.tests.util import get_bulk_edit_post_data
 
 from ralph.ui.tests.global_utils import login_as_su

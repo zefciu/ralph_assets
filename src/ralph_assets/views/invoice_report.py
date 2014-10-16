@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from inkpy.api import generate_pdf
+from inkpy import api
 
 from django.db.models import Sum, Q
 from django.contrib import messages
@@ -18,21 +18,18 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 
-from ralph_assets.forms_sam import LicenceSearchForm
+from ralph_assets.licences.forms import LicenceSearchForm
 from ralph_assets.models import (
     Asset,
     Licence,
     ReportOdtSource,
 )
 from ralph_assets.views.base import get_return_link
-from ralph_assets.views.sam import LicenseSelectedMixin
+from ralph_assets.licences.views import LicenseSelectedMixin
 from ralph_assets.views.search import AssetsSearchQueryableMixin, GenericSearch
 
 
 logger = logging.getLogger(__name__)
-
-# ugly hack to mock it in tests
-generate_pdf = generate_pdf
 
 
 def generate_pdf_response(pdf_data, file_name):
@@ -124,7 +121,7 @@ class BaseInvoiceReport(GenericSearch):
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,
         )
-        generate_pdf(
+        api.generate_pdf(
             self.template_file.template.path, output_path, data,
             settings.GENERATED_DOCS_LOCALE,
         )
@@ -197,10 +194,10 @@ class LicenceInvoiceReport(LicenseSelectedMixin, BaseInvoiceReport):
     def get_return_link(self, *args, **kwargs):
         if self.ids:
             url = "{}?id={}".format(
-                reverse('licence_list'), ",".join(self.ids),
+                reverse('licences_list'), ",".join(self.ids),
             )
         else:
             url = "{}?{}".format(
-                reverse('licence_list'), self.request.GET.urlencode(),
+                reverse('licences_list'), self.request.GET.urlencode(),
             )
         return url

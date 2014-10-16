@@ -6,14 +6,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ajax_select.fields import (
-    AutoCompleteSelectField,
-    AutoCompleteSelectMultipleField,
-    AutoCompleteWidget,
-)
+from ajax_select.fields import AutoCompleteSelectField, AutoCompleteWidget
 from collections import OrderedDict
 from django import forms
-from django.forms import ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.utils.translation import ugettext_lazy as _
 from django_search_forms.form import SearchForm
 from django_search_forms.fields import (
@@ -29,16 +25,21 @@ from django_search_forms.fields_ajax import (
 )
 
 from ralph.ui.widgets import DateWidget
-from ralph_assets import models_sam
+from ralph_assets.licences.models import (
+    AssetOwner,
+    Licence,
+    LicenceType,
+    SoftwareCategory,
+)
 from ralph_assets.forms import (
     LOOKUPS,
     MultilineField,
     MultivalFieldForm,
     ReadOnlyFieldsMixin,
 )
+from ralph.middleware import get_actual_regions
 from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
-from ralph_assets.models_sam import AssetOwner, LicenceType
 
 
 class SoftwareCategoryWidget(AutoCompleteWidget):
@@ -49,10 +50,10 @@ class SoftwareCategoryWidget(AutoCompleteWidget):
             sc_name = value
         else:
             try:
-                sc_name = models_sam.SoftwareCategory.objects.get(
+                sc_name = SoftwareCategory.objects.get(
                     pk=value
                 ).name
-            except models_sam.SoftwareCategory.DoesNotExist:
+            except SoftwareCategory.DoesNotExist:
                 sc_name = ''
         return super(
             SoftwareCategoryWidget, self
@@ -67,10 +68,10 @@ class SoftwareCategoryField(AutoCompleteSelectField):
     def clean(self, value):
         value = super(SoftwareCategoryField, self).clean(value)
         try:
-            return models_sam.SoftwareCategory.objects.get(
+            return SoftwareCategory.objects.get(
                 name=value)
-        except models_sam.SoftwareCategory.DoesNotExist:
-            return models_sam.SoftwareCategory(
+        except SoftwareCategory.DoesNotExist:
+            return SoftwareCategory(
                 name=value
             )
 
@@ -83,8 +84,8 @@ class LicenceForm(forms.ModelForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
-                'license_details',
+                'valid_thru', 'remarks', 'service_name',
+                'license_details', 'region',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -134,16 +135,13 @@ class LicenceForm(forms.ModelForm):
             add_link='/admin/ralph_assets/budgetinfo/add/',
         )
     )
-    assets = AutoCompleteSelectMultipleField(
-        LOOKUPS['linked_device'], required=False, label=_('Assigned Assets')
-    )
-    users = AutoCompleteSelectMultipleField(
-        LOOKUPS['asset_user'], required=False, label=_('Assigned Users')
-    )
 
     def __init__(self, mode, *args, **kwargs):
         self.mode = mode
         super(LicenceForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(
+            queryset=get_actual_regions(),
+        )
 
     def clean(self, *args, **kwargs):
         result = super(LicenceForm, self).clean(*args, **kwargs)
@@ -167,7 +165,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
     allow_duplicates = ['sn']
 
     class Meta(LicenceForm.Meta):
-        model = models_sam.Licence
+        model = Licence
         fields = (
             'accounting_id',
             'asset_type',
@@ -184,6 +182,7 @@ class AddLicenceForm(LicenceForm, MultivalFieldForm):
             'price',
             'property_of',
             'provider',
+            'region',
             'remarks',
             'service_name',
             'sn',
@@ -217,13 +216,13 @@ class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
     readonly_fields = ('created',)
 
     class Meta(LicenceForm.Meta):
-        model = models_sam.Licence
+        model = Licence
         fieldset = OrderedDict([
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'assets', 'users', 'remarks', 'service_name',
-                'license_details', 'created',
+                'valid_thru', 'remarks', 'service_name',
+                'license_details', 'created', 'region',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -234,7 +233,6 @@ class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
         fields = (
             'accounting_id',
             'asset_type',
-            'assets',
             'budget_info',
             'created',
             'invoice_date',
@@ -249,11 +247,11 @@ class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
             'price',
             'property_of',
             'provider',
+            'region',
             'remarks',
             'service_name',
             'sn',
             'software_category',
-            'users',
             'valid_thru',
         )
 
@@ -263,13 +261,13 @@ class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
 
 class SoftwareCategorySearchForm(SearchForm):
     class Meta(object):
-        Model = models_sam.SoftwareCategory
+        Model = SoftwareCategory
         fields = ['name']
 
 
 class LicenceSearchForm(SearchForm):
     class Meta(object):
-        Model = models_sam.Licence
+        Model = Licence
         fields = []
 
     niw = MultiSearchField(label=_('NIW'))
@@ -300,7 +298,7 @@ class LicenceSearchForm(SearchForm):
 class BulkEditLicenceForm(LicenceForm):
 
     class Meta(LicenceForm.Meta):
-        model = models_sam.Licence
+        model = Licence
         fields = (
             'asset_type',
             'manufacturer',
@@ -321,15 +319,13 @@ class BulkEditLicenceForm(LicenceForm):
             'sn',
             'remarks',
             'budget_info',
-            'assets',
-            'users',
         )
     sn = forms.CharField(label=_('Licence key'))
     remarks = forms.CharField(label=_('Additional remarks'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(BulkEditLicenceForm, self).__init__(None, *args, **kwargs)
-        banned_fillables = set(['niw', 'assets', 'users'])
+        banned_fillables = set(['niw', ])
         for field_name in self.fields:
             classes = "span12 fillable"
             if field_name in banned_fillables:

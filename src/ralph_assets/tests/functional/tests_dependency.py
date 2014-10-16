@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph.account.models import Region
 
 from ralph_assets.models_assets import (
@@ -19,7 +20,6 @@ from ralph_assets.tests.utils.assets import (
     WarehouseFactory,
 )
 from ralph.ui.tests.global_utils import login_as_su
-from ralph_assets.tests.utils import assets
 
 
 class TestDependency(TestCase):
@@ -34,36 +34,20 @@ class TestDependency(TestCase):
             category=self.category_non_blade,
         )
         self.warehouse = WarehouseFactory()
+        self.ci_relation = CIRelationFactory()
 
     def test_add_device_with_blade_model(self):
         """Add device when choosen model category is_blade"""
-        response = self.client.post(
-            reverse('add_device', kwargs={'mode': 'dc'}),
-            {
-                'slots': '',
-                'category': self.category_blade.pk,
-                'warehouse': self.warehouse.id,
-                'deprecation_rate': '25',
-                'sn': '123456789',
-                'model': self.model_blade.id,
-                'ralph_device_id': '',
-                'region': Region.get_default_region().id,
-                'type': MODE2ASSET_TYPE['dc'].id,
-            }
-        )
-        self.assertFormError(
-            response, 'asset_form', 'slots', 'This field is required.',
-        )
-        response = self.client.post(
+        self.client.post(
             reverse('add_device', kwargs={'mode': 'dc'}),
             {
                 'category': self.category_blade.pk,
                 'deprecation_rate': '25',
-                'device_environment': assets.DeviceEnvironmentFactory().id,
+                'device_environment': self.ci_relation.child.id,
                 'model': self.model_blade.id,
                 'ralph_device_id': '',
                 'region': Region.get_default_region().id,
-                'service': assets.ServiceCatalogFactory().id,
+                'service': self.ci_relation.parent.id,
                 'slots': 2,
                 'sn': '123456789',
                 'type': MODE2ASSET_TYPE['dc'].id,
@@ -79,11 +63,11 @@ class TestDependency(TestCase):
             {
                 'category': self.category_non_blade.pk,
                 'deprecation_rate': '25',
-                'device_environment': assets.DeviceEnvironmentFactory().id,
+                'device_environment': self.ci_relation.child.id,
                 'model': self.model_none_blade.id,
                 'ralph_device_id': '',
+                'service': self.ci_relation.parent.id,
                 'region': Region.get_default_region().id,
-                'service': assets.ServiceCatalogFactory().id,
                 'slots': '',
                 'sn': '123456789',
                 'type': MODE2ASSET_TYPE['dc'].id,

@@ -158,7 +158,7 @@ LOOKUPS = {
     'asset_model': ('ralph_assets.models', 'AssetModelLookup'),
     'asset_user': ('ralph_assets.models', 'UserLookup'),
     'asset_warehouse': ('ralph_assets.models', 'WarehouseLookup'),
-    'budget_info': ('ralph_assets.models_sam', 'BudgetInfoLookup'),
+    'budget_info': ('ralph_assets.licences.models', 'BudgetInfoLookup'),
     'device_environment': ('ralph.ui.channels', 'DeviceEnvrionment'),
     'free_licences': ('ralph_assets.models', 'FreeLicenceLookup'),
     'licence': ('ralph_assets.models', 'LicenceLookup'),
@@ -636,7 +636,7 @@ class DependencyAssetForm(DependencyForm):
     """
     Containts common solution for adding asset and editing asset section.
     Launches a plugin which depending on the category field gives the
-    opportunity to complete fields such as slots
+    opportunity to complete fields
     """
 
     def __init__(self, *args, **kwargs):
@@ -644,7 +644,7 @@ class DependencyAssetForm(DependencyForm):
             initial = kwargs.setdefault('initial', {})
             initial['licences'] = [
                 licence['pk']
-                for licence in kwargs['instance'].licence_set.values('pk')
+                for licence in kwargs['instance'].licences.values('pk')
             ]
             initial['supports'] = [
                 support['pk']
@@ -656,28 +656,12 @@ class DependencyAssetForm(DependencyForm):
     def dependencies(self):
         """
         On the basis of data from the database gives the opportunity
-        to complete fields such as slots
+        to complete fields
 
         :returns object: Logic to test if category is in selected categories
         :rtype object:
         """
         deps = [
-            Dependency(
-                'slots',
-                'category',
-                dependency_conditions.MemberOf(
-                    AssetCategory.objects.filter(is_blade=True).all()
-                ),
-                SHOW,
-            ),
-            Dependency(
-                'slots',
-                'category',
-                dependency_conditions.MemberOf(
-                    AssetCategory.objects.filter(is_blade=True).all()
-                ),
-                REQUIRE,
-            ),
             Dependency(
                 'imei',
                 'category',
@@ -778,9 +762,24 @@ class DependencyAssetForm(DependencyForm):
 
 
 class BaseAssetForm(ModelForm):
-    """
-    Common code for asset's both type forms (Add & Edit).
-    """
+    class Meta:
+        model = Asset
+
+    def clean(self):
+        cleaned_data = super(BaseAssetForm, self).clean()
+        env = cleaned_data.get("device_environment")
+        service = cleaned_data.get("service")
+        if env and service:
+            service_envs = service.get_environments()
+            if env not in service_envs:
+                msg = _(
+                    "This value is not valid anymore for selected "
+                    "'service catalog'. Valid options: {}".format(
+                        ', '.join([_env.name for _env in service_envs])
+                    )
+                )
+                self._errors["device_environment"] = msg
+        return cleaned_data
 
     def customize_fields(self):
         """
@@ -841,7 +840,6 @@ class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
             'request_date',
             'required_support',
             'service_name',
-            'slots',
             'source',
             'status',
             'task_url',
@@ -1250,7 +1248,7 @@ class DataCenterAddDeviceForm(AddDeviceForm):
 
     class Meta(BaseAddAssetForm.Meta):
         fields = BaseAddAssetForm.Meta.fields + (
-            'device_environment', 'service', 'slots',
+            'device_environment', 'service',
         )
     device_environment = ModelChoiceField(
         required=True,
@@ -1266,7 +1264,6 @@ class DataCenterAddDeviceForm(AddDeviceForm):
     def __init__(self, *args, **kwargs):
         super(DataCenterAddDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
-            ('status', 'slots'),
             ('property_of', 'service'),
             ('service', 'device_environment'),
         ):
@@ -1378,7 +1375,7 @@ class DataCenterEditDeviceForm(EditDeviceForm):
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
-            'device_environment', 'service', 'slots',
+            'device_environment', 'service',
         )
     device_environment = ModelChoiceField(
         required=True,
@@ -1394,7 +1391,6 @@ class DataCenterEditDeviceForm(EditDeviceForm):
     def __init__(self, *args, **kwargs):
         super(DataCenterEditDeviceForm, self).__init__(*args, **kwargs)
         for after, field in (
-            ('status', 'slots'),
             ('property_of', 'service'),
             ('service', 'device_environment'),
         ):
@@ -1754,7 +1750,7 @@ class UserRelationForm(Form):
         initial = kwargs.setdefault('initial', {})
         initial['licences'] = [
             licence['pk']
-            for licence in user.licence_set.values('pk')
+            for licence in user.licences.values('pk')
         ]
         super(UserRelationForm, self).__init__(*args, **kwargs)
 

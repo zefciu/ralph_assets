@@ -19,7 +19,7 @@ from ralph_assets.tests.utils import ReportOdtSourceFactory
 from ralph_assets.tests.utils.assets import (
     BOAssetFactory,
 )
-from ralph_assets.tests.utils.sam import LicenceFactory
+from ralph_assets.tests.utils.licences import LicenceFactory
 
 
 ASSETS_REPORTS_FOR_TESTS = {
@@ -67,7 +67,7 @@ class TestInvoiceReport(TestCase):
         return reverse('assets_invoice_report', args=('back_office',))
 
     def _get_invoice_licence_base_url(self):
-        return reverse('sam_invoice_report')
+        return reverse('licences_invoice_report')
 
     def _get_invoice_url_from_asset(self, assets):
         assets_ids = assets.values_list('id', flat=True)
@@ -118,7 +118,7 @@ class TestInvoiceReport(TestCase):
 
     @override_settings(ASSETS_REPORTS=ASSETS_REPORTS_FOR_TESTS)
     @override_settings(INKPY=INKPY_FOR_TESTS)
-    @patch('ralph_assets.views.invoice_report.generate_pdf')
+    @patch('ralph_assets.views.invoice_report.api')
     def test_asset_invoice_with_report_odt_source_fail(self, generate_pdf):
         generate_pdf.side_effect = mocked_generate_pdf
 
@@ -147,7 +147,7 @@ class TestInvoiceReport(TestCase):
 
     @override_settings(ASSETS_REPORTS=ASSETS_REPORTS_FOR_TESTS)
     @override_settings(INKPY=INKPY_FOR_TESTS)
-    @patch('ralph_assets.views.invoice_report.generate_pdf')
+    @patch('ralph_assets.views.invoice_report.api')
     def test_licence_invoice_with_report_odt_source_fail(self, generate_pdf):
         generate_pdf.side_effect = mocked_generate_pdf
 

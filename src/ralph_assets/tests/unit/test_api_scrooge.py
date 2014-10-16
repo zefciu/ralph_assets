@@ -146,6 +146,7 @@ class TestApiScrooge(TestCase):
 
     def test_get_assets_without_environment(self):
         DCAssetFactory(
+            service=None,
             device_environment=None,
         )
         today = date(2013, 11, 12)
