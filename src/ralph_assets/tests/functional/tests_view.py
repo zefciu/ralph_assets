@@ -53,7 +53,6 @@ from ralph_assets.tests.utils.assets import (
     CoaOemOsFactory,
     DCAssetFactory,
     ServiceFactory,
-    UserFactory,
     WarehouseFactory,
     generate_barcode,
     generate_imei,
