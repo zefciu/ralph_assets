@@ -22,7 +22,7 @@ class TestLicenceRegions(TestCase):
     def setUp(self):
         pass
 
-    @mock.patch('ralph_assets.middleware.get_actual_regions')
+    @mock.patch('ralph.middleware.get_actual_regions')
     def test_db_manger_shows_region(self, mocked_method):
         polish_region = RegionFactory(name='PL')
         dutch_region = RegionFactory(name='NL')
@@ -34,7 +34,7 @@ class TestLicenceRegions(TestCase):
         self.assertEqual(Licence.objects.count(), 2)
         self.assertEqual(Licence.admin_objects.count(), 2)
 
-    @mock.patch('ralph_assets.middleware.get_actual_regions')
+    @mock.patch('ralph.middleware.get_actual_regions')
     def test_db_manger_shows_regions(self, mocked_method):
         polish_region = RegionFactory(name='PL')
         dutch_region = RegionFactory(name='NL')

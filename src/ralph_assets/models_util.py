@@ -15,7 +15,7 @@ from django.db import models
 from lck.django.choices import Choices
 
 from ralph.account.models import Region
-from ralph_assets import middleware
+from ralph import middleware
 
 
 class ProblemSeverity(Choices):

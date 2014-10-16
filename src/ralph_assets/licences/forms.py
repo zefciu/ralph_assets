@@ -37,7 +37,7 @@ from ralph_assets.forms import (
     MultivalFieldForm,
     ReadOnlyFieldsMixin,
 )
-from ralph_assets.middleware import get_actual_regions
+from ralph.middleware import get_actual_regions
 from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
 
