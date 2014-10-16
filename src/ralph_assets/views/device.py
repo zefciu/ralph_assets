@@ -80,15 +80,13 @@ class AddDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
 
     def get(self, *args, **kwargs):
         device_form_class = self.form_dispatcher('AddDevice')
-        self.asset_form = device_form_class(self.request, mode=self.mode)
+        self.asset_form = device_form_class(mode=self.mode)
         self._set_additional_info_form()
         return super(AddDevice, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         device_form_class = self.form_dispatcher('AddDevice')
-        self.asset_form = device_form_class(
-            self.request, self.request.POST, mode=self.mode,
-        )
+        self.asset_form = device_form_class(self.request.POST, mode=self.mode)
         self._set_additional_info_form()
         if self.asset_form.is_valid() and self.additional_info.is_valid():
             force_unlink = self.additional_info.cleaned_data.get(
@@ -142,7 +140,6 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
         self.parts = Asset.objects.filter(part_info__device=self.asset)
         device_form_class = self.form_dispatcher('EditDevice')
         self.asset_form = device_form_class(
-            self.request,
             self.request.POST or None,
             instance=self.asset,
             mode=self.mode,
