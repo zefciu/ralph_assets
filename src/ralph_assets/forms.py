@@ -40,7 +40,6 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from ralph.middleware import get_actual_regions
 
 from ralph_assets.models import (
     Asset,

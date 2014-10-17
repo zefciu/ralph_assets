@@ -37,6 +37,8 @@ from ralph_assets.forms import (
     MultivalFieldForm,
     ReadOnlyFieldsMixin,
 )
+from ralph_assets.forms_utils import RegionRelatedSearchField, RegionSearchForm
+from ralph.account.models import Region
 from ralph.middleware import get_actual_regions
 from ralph_assets.models import AssetType
 from ralph_assets.models_assets import MODE2ASSET_TYPE
@@ -265,7 +267,7 @@ class SoftwareCategorySearchForm(SearchForm):
         fields = ['name']
 
 
-class LicenceSearchForm(SearchForm):
+class LicenceSearchForm(RegionSearchForm):
     class Meta(object):
         Model = Licence
         fields = []
@@ -293,6 +295,7 @@ class LicenceSearchForm(SearchForm):
         '__name', LOOKUPS['manufacturer'], required=False,
     )
     id = MultiSearchField(widget=forms.HiddenInput())
+    region = RegionRelatedSearchField(Model=Region)
 
 
 class BulkEditLicenceForm(LicenceForm):
