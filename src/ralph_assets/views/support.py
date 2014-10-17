@@ -10,6 +10,7 @@ from bob.data_table import DataTableColumn
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
 from ralph_assets.forms_support import (
@@ -172,7 +173,7 @@ class EditSupportView(SupportView):
         super(EditSupportView, self).__init__(*args, **kwargs)
 
     def get(self, request, support_id, *args, **kwargs):
-        self.support = Support.objects.get(pk=support_id)
+        self.support = get_object_or_404(Support, pk=support_id)
         self._get_form(instance=self.support)
         return super(EditSupportView, self).get(request, *args, **kwargs)
 

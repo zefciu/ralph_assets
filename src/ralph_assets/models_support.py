@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from datetime import datetime
+
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -19,14 +20,18 @@ from lck.django.common.models import (
     TimeTrackable,
     WithConcurrentGetOrCreate,
 )
-
 from ralph.discovery.models_util import SavingUser
+
 from ralph_assets import models_assets
 from ralph_assets.history.models import HistoryMixin
 from ralph_assets.models_assets import (
     AssetType,
     Asset,
     AssetOwner,
+)
+from ralph_assets.models_util import (
+    Regionalized,
+    RegionalizedDBManager,
 )
 
 
@@ -41,7 +46,12 @@ class SupportStatus(Choices):
     new = _("new")
 
 
+class SupportManger(RegionalizedDBManager):
+    pass
+
+
 class Support(
+    Regionalized,
     HistoryMixin,
     EditorTrackable,
     Named.NonUnique,
@@ -51,6 +61,7 @@ class Support(
     TimeTrackable,
     WithConcurrentGetOrCreate,
 ):
+    objects = SupportManger()
     contract_id = models.CharField(max_length=50, blank=False)
     description = models.CharField(max_length=100, blank=True)
     attachments = models.ManyToManyField(
