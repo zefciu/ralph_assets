@@ -76,6 +76,7 @@ class AssetsSearchQueryableMixin(object):
             'unlinked',
             'user',
             'warehouse',
+            'region'
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -260,6 +261,8 @@ class AssetsSearchQueryableMixin(object):
                         all_q &= Q(
                             device_environment__name__icontains=field_value,
                         )
+                elif field == 'region':
+                    all_q &= Q(region__id=field_value)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q
