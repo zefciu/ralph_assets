@@ -40,7 +40,6 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
-from ralph.middleware import get_actual_regions
 
 from ralph_assets.models import (
     Asset,
@@ -57,6 +56,7 @@ from ralph_assets.models import (
 )
 from ralph_assets import models_assets
 from ralph.discovery import models_device
+from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
@@ -85,8 +85,8 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'support_assigned',  'service',
-            'device_environment',
+            'required_support', 'support_assigned', 'service',
+            'device_environment', 'region',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -120,7 +120,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
             'required_support', 'support_assigned', 'service',
-            'device_environment',
+            'device_environment', 'region',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -1618,6 +1618,9 @@ class SearchAssetForm(Form):
         # Ajax sources are different for DC/BO, use mode for distinguish
         self.mode = kwargs.pop('mode', None)
         super(SearchAssetForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(
+            queryset=get_actual_regions(), required=False,
+        )
 
 
 class DataCenterSearchAssetForm(SearchAssetForm):

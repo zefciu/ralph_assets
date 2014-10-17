@@ -18,12 +18,14 @@ from django_search_forms.fields import (
     RelatedSearchField,
     TextSearchField,
 )
-from django_search_forms.form import SearchForm
+
+from ralph.account.models import Region
 from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget
 
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS, ReadOnlyFieldsMixin
+from ralph_assets.forms_utils import RegionRelatedSearchField, RegionSearchForm
 from ralph_assets.models import AssetType
 from ralph_assets.models_support import SupportType
 
@@ -147,7 +149,7 @@ class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
         )
 
 
-class SupportSearchForm(SearchForm):
+class SupportSearchForm(RegionSearchForm):
     class Meta(object):
         Model = models_support.Support
         fields = []
@@ -161,3 +163,4 @@ class SupportSearchForm(SearchForm):
     assets = TextSearchField(
         filter_field='assets__sn', label=_('by sn (of assigned asset)'),
     )
+    region = RegionRelatedSearchField(Model=Region)
