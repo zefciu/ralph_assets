@@ -40,6 +40,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from mptt.forms import TreeNodeChoiceField
+from ralph.middleware import get_actual_regions
 
 from ralph_assets.models import (
     Asset,
@@ -1189,11 +1190,9 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         validators=[validate_imeis],
     )
 
-    def __init__(self, request, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(AddDeviceForm, self).__init__(*args, **kwargs)
-        self.request = request
-        regions = request.user.get_profile().get_regions()
-        self.fields['region'] = ModelChoiceField(queryset=regions)
+        self.fields['region'] = ModelChoiceField(queryset=get_actual_regions())
 
     def clean(self):
         """
@@ -1292,7 +1291,7 @@ class EditPartForm(BaseEditAssetForm):
 
 class EditDeviceForm(BaseEditAssetForm):
 
-    def __init__(self, request, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
@@ -1300,9 +1299,7 @@ class EditDeviceForm(BaseEditAssetForm):
             'required_support',
             'supports',
         ]
-        self.request = request
-        regions = request.user.get_profile().get_regions()
-        self.fields['region'] = ModelChoiceField(queryset=regions)
+        self.fields['region'] = ModelChoiceField(queryset=get_actual_regions())
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
