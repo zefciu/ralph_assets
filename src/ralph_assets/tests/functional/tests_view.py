@@ -144,6 +144,49 @@ def check_fields(testcase, correct_data, object_to_check):
         testcase.assertEqual(object_value, expected, msg)
 
 
+class TestRegions(object):
+
+    model_factory = None
+
+    def edit_obj_url(self, obj_id):
+        raise Exception("Implement it")
+
+    def listing_url(self):
+        raise Exception("Implement it")
+
+    def test_show_objects_by_user_region_single(self):
+        polish_region = RegionFactory(name='PL')
+        self.user.get_profile().region_set.add(polish_region)
+        dutch_region = RegionFactory(name='NL')
+
+        [self.model_factory(region=polish_region) for i in xrange(2)]
+        [self.model_factory(region=dutch_region) for i in xrange(2)]
+
+        response = self.client.get(self.listing_url())
+        self.assertEqual(1, response.context['bob_page'].paginator.num_pages)
+        self.assertEqual(2, len(response.context['bob_page'].object_list))
+
+    def test_show_objects_by_user_region_double(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(*[polish_region, dutch_region])
+
+        [self.model_factory(region=polish_region) for i in xrange(2)]
+        [self.model_factory(region=dutch_region) for i in xrange(2)]
+
+        response = self.client.get(self.listing_url())
+        self.assertEqual(1, response.context['bob_page'].paginator.num_pages)
+        self.assertEqual(4, len(response.context['bob_page'].object_list))
+
+    def test_404_on_not_granted_region(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(polish_region)
+        obj = self.model_factory(region=dutch_region)
+        response = self.client.get(self.edit_obj_url(obj.id))
+        self.assertEqual(response.status_code, 404)
+
+
 class BaseViewsTest(ClientMixin, TransactionTestCase):
     client_class = AjaxClient
 
@@ -197,7 +240,14 @@ class TestDevicesView(BaseViewsTest):
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
 
+    mode = None
     asset_factory = None
+
+    def edit_obj_url(self, obj_id):
+        return reverse('device_edit', args=(self.mode, obj_id))
+
+    def listing_url(self):
+        return reverse('asset_search', args=(self.mode,))
 
     def setUp(self):
         self.login_as_superuser()
@@ -370,7 +420,10 @@ class TestDevicesView(BaseViewsTest):
         self.assertEqual(response.status_code, 302)
 
 
-class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
+class TestDataCenterDevicesView(TestDevicesView, TestRegions, BaseViewsTest):
+
+    mode = 'dc'
+    model_factory = DCAssetFactory
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
@@ -560,7 +613,10 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
             self.assertEqual(choice, correct_choice)
 
 
-class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
+class TestBackOfficeDevicesView(TestDevicesView, TestRegions, BaseViewsTest):
+
+    mode = 'back_office'
+    model_factory = BOAssetFactory
 
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
@@ -782,48 +838,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             )
 
 
-class BaseRegion(object):
-
-    model_factory = None
-
-    def edit_obj_url(self, obj_id):
-        raise Exception("Implement it")
-
-    def listing_url(self):
-        raise Exception("Implement it")
-
-    def test_show_objects_by_user_region_single(self):
-        polish_region = RegionFactory(name='PL')
-        self.user.get_profile().region_set.add(polish_region)
-        dutch_region = RegionFactory(name='NL')
-
-        [self.model_factory(region=polish_region) for i in xrange(2)]
-        [self.model_factory(region=dutch_region) for i in xrange(2)]
-
-        response = self.client.get(self.listing_url())
-        self.assertEqual(2, response.context_data['items_count'])
-
-    def test_show_objects_by_user_region_double(self):
-        polish_region = RegionFactory(name='PL')
-        dutch_region = RegionFactory(name='NL')
-        self.user.get_profile().region_set.add(*[polish_region, dutch_region])
-
-        [self.model_factory(region=polish_region) for i in xrange(2)]
-        [self.model_factory(region=dutch_region) for i in xrange(2)]
-
-        response = self.client.get(self.listing_url())
-        self.assertEqual(4, response.context_data['items_count'])
-
-    def test_404_on_not_granted_region(self):
-        polish_region = RegionFactory(name='PL')
-        dutch_region = RegionFactory(name='NL')
-        self.user.get_profile().region_set.add(polish_region)
-        obj = self.model_factory(region=dutch_region)
-        response = self.client.get(self.edit_obj_url(obj.id))
-        self.assertEqual(response.status_code, 404)
-
-
-class TestLicencesView(BaseRegion, BaseViewsTest):
+class TestLicencesView(TestRegions, BaseViewsTest):
     """This test case concern all licences views."""
 
     model_factory = LicenceFactory
@@ -1061,7 +1076,7 @@ class TestLicencesView(BaseRegion, BaseViewsTest):
         self.assertContains(response, '1 licences added')
 
 
-class TestSupportsView(BaseRegion, BaseViewsTest):
+class TestSupportsView(TestRegions, BaseViewsTest):
     """This test case concern all supports views."""
 
     model_factory = DCSupportFactory
