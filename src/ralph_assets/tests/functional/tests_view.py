@@ -756,6 +756,7 @@ class TestLicencesView(BaseViewsTest):
                     request_data[field] = value
         request_data.update(kwargs)
         response = self.client.post(url, request_data, follow=True)
+        self.assertEqual(response.context['form'].errors, {})
         return response, Licence.objects.get(id=licence_id)
 
     def test_add_license(self):
@@ -955,9 +956,11 @@ class TestLicencesView(BaseViewsTest):
         exclude = set([
             'assets',
             'attachments',
+            'cache_version',
             'children',
             'licenceasset',
             'licenceuser',
+            'modified',
             'users',
         ])
         constant_fields = set(original_licence._meta.get_all_field_names())
@@ -965,6 +968,7 @@ class TestLicencesView(BaseViewsTest):
         response, licence = self.update_licence_by_form(
             original_licence.id,
             **{
+                'created': '2014-09-08 13:29:04',  # force correct format
                 'parent': '',
             }
         )
@@ -974,8 +978,8 @@ class TestLicencesView(BaseViewsTest):
                 getattr(licence, field),
                 'Value of field "{}" is diffrent after save! '
                 'Before: {}; after: {}'
-                .format(field, getattr(original_licence, field),
-                        getattr(licence, field))
+                .format(field, repr(getattr(original_licence, field)),
+                        repr(getattr(licence, field)))
             )
 
 
@@ -1033,6 +1037,7 @@ class TestSupportsView(BaseViewsTest):
                     request_data[field] = value
         request_data.update(kwargs)
         response = self.client.post(url, request_data, follow=True)
+        self.assertEqual(response.context['form'].errors, {})
         return response, models_support.Support.objects.get(id=support_id)
 
     def _check_supports_assets(self, support, expected_assets):
@@ -1115,6 +1120,7 @@ class TestSupportsView(BaseViewsTest):
         exclude = set([
             'attachments',
             'assets',
+            'cache_version',
         ])
         constant_fields = set(original_support._meta.get_all_field_names())
         constant_fields.difference_update(exclude)
