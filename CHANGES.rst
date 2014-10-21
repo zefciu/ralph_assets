@@ -10,6 +10,7 @@ Released on October X, 2014
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
 * Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
+* Added new field *segment* to backoffice asset and user-details
 
 
 2.3.0

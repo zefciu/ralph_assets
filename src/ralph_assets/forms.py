@@ -1221,7 +1221,11 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
         label=_('Purpose'),
         required=False,
     )
-    segment = CharField(max_length=256, required=False)
+    segment = CharField(
+        max_length=256,
+        required=False,
+        widget=TextInput(attrs={'readonly': 'readonly'}),
+    )
     service = AutoCompleteSelectField(
         LOOKUPS['service'],
         required=False,
@@ -1237,7 +1241,6 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
         self.fieldsets['User Info'].append('segment')
-        self.fields['segment'].widget = ReadOnlyWidget()
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
@@ -1340,7 +1343,11 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
         label=_('Purpose'),
         required=False,
     )
-    segment = CharField(max_length=256, required=False)
+    segment = CharField(
+        max_length=256,
+        required=False,
+        widget=TextInput(attrs={'readonly': 'readonly'}),
+    )
     service = AutoCompleteSelectField(
         LOOKUPS['service'],
         required=False,
@@ -1360,7 +1367,6 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
         self.fieldsets['User Info'].append('segment')
-        self.fields['segment'].widget = ReadOnlyWidget()
 
     def clean_hostname(self):
         # make field readonly
