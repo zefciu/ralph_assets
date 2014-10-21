@@ -741,6 +741,24 @@ class TestLicencesView(BaseViewsTest):
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
 
+    def update_licence_by_form(self, licence_id, **kwargs):
+        url = reverse('edit_licence', kwargs={'licence_id': licence_id})
+        response = self.client.get(url)
+        form = response.context['form']
+        request_data = {}
+        for fieldset, fields in form.Meta.fieldset.iteritems():
+            for field in fields:
+                try:
+                    value = form.initial[field]
+                except KeyError:
+                    pass
+                else:
+                    request_data[field] = value
+        request_data.update(kwargs)
+        response = self.client.post(url, request_data, follow=True)
+        self.assertEqual(response.context['form'].errors, {})
+        return response, Licence.objects.get(id=licence_id)
+
     def test_add_license(self):
         """
         Add license with all fields filled.
@@ -932,6 +950,38 @@ class TestLicencesView(BaseViewsTest):
         )
         self.assertContains(response, '1 licences added')
 
+    def test_save_without_changes(self):
+        """Licence must be the same values after dry save."""
+        original_licence = LicenceFactory()
+        exclude = set([
+            'assets',
+            'attachments',
+            'cache_version',
+            'children',
+            'licenceasset',
+            'licenceuser',
+            'modified',
+            'users',
+        ])
+        constant_fields = set(original_licence._meta.get_all_field_names())
+        constant_fields.difference_update(exclude)
+        response, licence = self.update_licence_by_form(
+            original_licence.id,
+            **{
+                'created': '2014-09-08 13:29:04',  # force correct format
+                'parent': '',
+            }
+        )
+        for field in constant_fields:
+            self.assertEqual(
+                getattr(original_licence, field),
+                getattr(licence, field),
+                'Value of field "{}" is diffrent after save! '
+                'Before: {}; after: {}'
+                .format(field, repr(getattr(original_licence, field)),
+                        repr(getattr(licence, field)))
+            )
+
 
 class TestSupportsView(BaseViewsTest):
     """This test case concern all supports views."""
@@ -971,6 +1021,24 @@ class TestSupportsView(BaseViewsTest):
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
         self.visible_edit_form_fields.extend(['assets'])
+
+    def update_support_by_form(self, support_id, **kwargs):
+        url = reverse('edit_support', kwargs={'support_id': support_id})
+        response = self.client.get(url)
+        form = response.context['form']
+        request_data = {}
+        for fieldset, fields in form.Meta.fieldset.iteritems():
+            for field in fields:
+                try:
+                    value = form.initial[field]
+                except KeyError:
+                    pass
+                else:
+                    request_data[field] = value
+        request_data.update(kwargs)
+        response = self.client.post(url, request_data, follow=True)
+        self.assertEqual(response.context['form'].errors, {})
+        return response, models_support.Support.objects.get(id=support_id)
 
     def _check_supports_assets(self, support, expected_assets):
         self.assertEqual(
@@ -1045,6 +1113,32 @@ class TestSupportsView(BaseViewsTest):
                 kwargs={'support_id': support.id},
             )
             self._assert_field_in_form(form_url, required_fields)
+
+    def test_save_without_changes(self):
+        """Support must be the same values after dry save."""
+        original_support = DCSupportFactory()
+        exclude = set([
+            'attachments',
+            'assets',
+            'cache_version',
+        ])
+        constant_fields = set(original_support._meta.get_all_field_names())
+        constant_fields.difference_update(exclude)
+        response, support = self.update_support_by_form(
+            original_support.id,
+            **{
+                'created': '2014-09-08 13:29:04',  # force correct format
+            }
+        )
+        for field in constant_fields:
+            self.assertEqual(
+                getattr(original_support, field),
+                getattr(support, field),
+                'Value of field "{}" is diffrent after save! '
+                'Before: {}; after: {}'
+                .format(field, getattr(original_support, field),
+                        getattr(support, field))
+            )
 
 
 class TestAttachments(BaseViewsTest):

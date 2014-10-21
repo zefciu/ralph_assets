@@ -216,8 +216,8 @@ class EditLicenceForm(ReadOnlyFieldsMixin, LicenceForm):
             ('Basic info', [
                 'asset_type', 'manufacturer', 'licence_type',
                 'software_category', 'parent', 'niw', 'sn', 'property_of',
-                'valid_thru', 'remarks', 'service_name',
-                'license_details', 'created',
+                'valid_thru', 'remarks', 'service_name', 'license_details',
+                'created',
             ]),
             ('Financial info', [
                 'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
