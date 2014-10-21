@@ -94,7 +94,7 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
         ],
     }),
     ('User data', {
-        'noncollapsed': ['user', 'owner'],
+        'noncollapsed': ['user', 'owner', 'segment'],
         'collapsed': [
             'company', 'department', 'employee_id', 'cost_center',
             'profit_center',
@@ -730,11 +730,12 @@ class DependencyAssetForm(DependencyForm):
         ]
         ad_fields = (
             'company',
-            'employee_id',
             'cost_center',
-            'profit_center',
             'department',
+            'employee_id',
             'manager',
+            'profit_center',
+            'segment',
         )
         deps.extend(
             [
@@ -1207,7 +1208,7 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
 
     class Meta(BaseAddAssetForm.Meta):
         fields = BaseAddAssetForm.Meta.fields + (
-            'device_environment', 'service',
+            'device_environment', 'service', 'segment',
         )
 
     device_environment = ModelChoiceField(
@@ -1220,6 +1221,7 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
         label=_('Purpose'),
         required=False,
     )
+    segment = CharField(max_length=256, required=False)
     service = AutoCompleteSelectField(
         LOOKUPS['service'],
         required=False,
@@ -1234,6 +1236,8 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
+        self.fieldsets['User Info'].append('segment')
+        self.fields['segment'].widget = ReadOnlyWidget()
 
 
 class DataCenterAddDeviceForm(AddDeviceForm):
@@ -1320,7 +1324,7 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (
             'device_environment', 'hostname', 'service', 'created',
-            'hostname', 'created',
+            'hostname', 'created', 'segment',
         )
 
     device_environment = ModelChoiceField(
@@ -1336,6 +1340,7 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
         label=_('Purpose'),
         required=False,
     )
+    segment = CharField(max_length=256, required=False)
     service = AutoCompleteSelectField(
         LOOKUPS['service'],
         required=False,
@@ -1354,6 +1359,8 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
         ):
             self.fieldsets['Basic Info'].append(field)
             move_after(self.fieldsets['Basic Info'], after, field)
+        self.fieldsets['User Info'].append('segment')
+        self.fields['segment'].widget = ReadOnlyWidget()
 
     def clean_hostname(self):
         # make field readonly
@@ -1656,6 +1663,7 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         label=_('Purpose'),
         required=False,
     )
+    segment = CharField(max_length=256, required=False)
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeSearchAssetForm, self).__init__(*args, **kwargs)

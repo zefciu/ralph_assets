@@ -67,6 +67,7 @@ class AssetsSearchQueryableMixin(object):
             'ralph_device_id',
             'remarks',
             'required_support',
+            'segment',
             'service',
             'service_name',
             'sn',
@@ -180,6 +181,8 @@ class AssetsSearchQueryableMixin(object):
                     all_q &= Q(owner__profile__employee_id=field_value)
                 elif field == 'company':
                     all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'segment':
+                    all_q &= Q(owner__profile__segment__icontains=field_value)
                 elif field == 'profit_center':
                     all_q &= Q(owner__profile__profit_center=field_value)
                 elif field == 'cost_center':

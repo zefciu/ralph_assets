@@ -22,13 +22,14 @@ class CategoryDependencyView(DependencyView, ACLGateway):
             return HttpResponseBadRequest("Incorrect user id")
         values = dict(
             [(name, getattr(profile, name)) for name in (
-                'location',
                 'company',
-                'employee_id',
                 'cost_center',
-                'profit_center',
                 'department',
+                'employee_id',
+                'location',
                 'manager',
+                'profit_center',
+                'segment',
             )]
         )
         return values
