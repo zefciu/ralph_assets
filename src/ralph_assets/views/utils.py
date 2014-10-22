@@ -25,7 +25,7 @@ def _create_assets(creator_profile, asset_form, additional_form, mode):
         if f_name not in {
             "barcode", "category", "company", "cost_center",
             "department", "employee_id", "imei", "licences", "manager",
-            "sn", "profit_center", "supports",
+            "sn", "profit_center", "supports", "segment",
         }:
             asset_data[f_name] = f_value
     force_unlink = additional_form.cleaned_data.get('force_unlink', None)

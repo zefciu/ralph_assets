@@ -78,7 +78,7 @@ class AddPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
             for f_name in {
                 "barcode", "category", "company", "cost_center", "department",
                 "employee_id", "imei", "licences", "manager", "profit_center",
-                "supports",
+                "supports", "segment",
             }:
                 if f_name in asset_data:
                     del asset_data[f_name]
