@@ -24,6 +24,18 @@ def get_amendment_model(mode):
     }[mode]
 
 
+def detect_delimiter(csv_file):
+    # default delimiter (MS Office export)
+    delimiter = ";"
+    header = csv_file.readline()
+    csv_file.seek(0)
+    if header.find(";") != -1:
+        delimiter = ";"
+    if header.find(",") != -1:
+        delimiter = ","
+    return delimiter
+
+
 class DataUploadField(forms.FileField):
     """A field that gets the uploaded XLS or CSV data and returns data
     prepared for add/update."""
@@ -76,7 +88,8 @@ class DataUploadField(forms.FileField):
                     raise forms.ValidationError(
                         'Problems with character encoding. Use UTF-8'
                     )
-        reader = unicode_rows(csv.reader(file_))
+        delimiter = detect_delimiter(file_)
+        reader = unicode_rows(csv.reader(file_, delimiter=str(delimiter)))
         update_per_sheet = {'csv': {}}
         add_per_sheet = {'csv': []}
         name_row = next(reader)
