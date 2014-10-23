@@ -710,12 +710,19 @@ class Asset(
         return self.type == AssetType.data_center
 
     def find_device_to_link(self):
-        if not self.type_is_data_center or not self.barcode:
-            return False
-        try:
-            device = Device.objects.get(barcode=self.barcode)
-        except Device.DoesNotExist:
-            device = False
+        if not self.type_is_data_center or (not self.barcode and not self.sn):
+            return None
+        device = None
+        if self.barcode:
+            try:
+                device = Device.objects.get(barcode=self.barcode)
+            except Device.DoesNotExist:
+                pass
+        if not device and self.sn:
+            try:
+                device = Device.objects.get(sn=self.sn)
+            except Device.DoesNotExist:
+                device = None
         return device
 
     def create_stock_device(self):
