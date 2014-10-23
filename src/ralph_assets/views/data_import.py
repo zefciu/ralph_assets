@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.contrib.formtools.wizard.views import SessionWizardView
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db import transaction
 from django.db.models.fields import (
     CharField,
@@ -22,8 +22,8 @@ from django.db.models.fields import (
 from django.db.models.fields.related import RelatedField, ManyToManyField
 from django.shortcuts import render
 from django.template.defaultfilters import slugify
-
 from lck.django.common.models import Named
+from ralph.discovery.models_device import DeviceEnvironment, ServiceCatalog
 
 from ralph_assets.forms_import import (
     ColumnChoiceField,
@@ -46,6 +46,10 @@ from ralph_assets.models import (
     AssetManufacturer,
     AssetModel,
 )
+
+
+class RequiredFieldError(Exception):
+    pass
 
 
 MODE2ASSET_CATEGORY_TYPE = {
@@ -170,7 +174,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 return []
             elif (
                 isinstance(field, (TextField, CharField)) and
-                field_name not in ('imei', 'sn')
+                field_name not in ('imei', 'sn', 'barcode')
             ):
                 return ''
             else:
@@ -192,13 +196,32 @@ class XlsUploadView(SessionWizardView, AssetsBase):
         if (
             isinstance(value, basestring) and
             isinstance(field, RelatedField) and
-            issubclass(field.rel.to, (Named, Named.NonUnique, User, Sluggy))
+            issubclass(
+                field.rel.to, (
+                    Named, Named.NonUnique, User, Sluggy, DeviceEnvironment,
+                    ServiceCatalog,
+                )
+            )
+
         ):
             try:
                 if issubclass(field.rel.to, User):
                     value = field.rel.to.objects.get(username__iexact=value)
                 elif issubclass(field.rel.to, Sluggy):
                     value = field.rel.to.objects.get(slug=value)
+                elif issubclass(field.rel.to, ServiceCatalog) or issubclass(field.rel.to, DeviceEnvironment):  # noqa
+                    try:
+                        value = field.rel.to.objects.get(name__iexact=value)
+                    except field.rel.to.DoesNotExist:
+                        msg = 'Couldn\'t find value {!r} for key {!r}'.format(
+                            value, field.name,
+                        )
+                        raise RequiredFieldError(msg)
+                    except MultipleObjectsReturned:
+                        msg = 'Not ambiguous value {} for key {}'.format(
+                            value, field.name,
+                        )
+                        raise RequiredFieldError(msg)
                 else:
                     value = field.rel.to.objects.get(name__iexact=value)
             except field.rel.to.DoesNotExist:
@@ -249,6 +272,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             self.AmdModel = get_model_by_name(amd_model)
         else:
             amd_field = amd_model = self.AmdModel = None
+
         for sheet_name, sheet_data in update_per_sheet.items():
             for asset_id, asset_data in sheet_data.items():
                 try:
@@ -280,12 +304,16 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 kwargs = {}
                 amd_kwargs = {}
                 m2m = {}
+
                 for key, value in asset_data.items():
                     field_name = mappings.get(slugify(key))
                     if field_name is None:
                         continue
                     try:
                         value = self._get_field_value(field_name, value)
+                    except RequiredFieldError as exc:
+                        errors[tuple(asset_data.values())] = repr(exc.message)
+                        break
                     except ObjectDoesNotExist:
                         not_found_messages.append(
                             'Cannot find value for {}. '
@@ -295,6 +323,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                             )
                         )
                         value = self._get_field_value(field_name, '')
+
                     if amd_field and field_name.startswith(
                         amd_field + '.'
                     ):
@@ -304,28 +333,39 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         m2m[field_name] = value
                     else:
                         kwargs[field_name] = value
-                try:
-                    asset = self.Model(**kwargs)
-                    if self.AmdModel is not None:
-                        amd_model_object = self.AmdModel(**amd_kwargs)
-                        amd_model_object.save()
-                        setattr(asset, amd_field, amd_model_object)
-                    if isinstance(asset, Asset):
-                        asset.type = MODE2ASSET_TYPE[self.mode]
-                    else:
-                        asset.asset_type = MODE2ASSET_TYPE[self.mode]
-                    asset.save()
-                except Exception as exc:
-                    errors[tuple(asset_data.values())] = repr(exc)
                 else:
-                    for message in not_found_messages:
-                        add_problem(
-                            asset,
-                            ProblemSeverity.correct_me,
-                            message
-                        )
-                    for key, value in m2m.items():
-                        getattr(asset, key).add(*value)
+                    try:
+                        asset = self.Model(**kwargs)
+                        if self.AmdModel is not None:
+                            amd_model_object = self.AmdModel(**amd_kwargs)
+                            amd_model_object.save()
+                            setattr(asset, amd_field, amd_model_object)
+                        if isinstance(asset, Asset):
+                            asset.type = MODE2ASSET_TYPE[self.mode]
+                            device = asset.find_device_to_link()
+                            if not device:
+                                msg = (
+                                    "Unable to match asset nor"
+                                    "'barcode' {!r} nor sn {!r}".format(
+                                        asset.barcode, asset.sn,
+                                    )
+                                )
+                                raise Exception(msg)
+
+                        else:
+                            asset.asset_type = MODE2ASSET_TYPE[self.mode]
+                        asset.save()
+                    except Exception as exc:
+                        errors[tuple(asset_data.values())] = repr(exc)
+                    else:
+                        for message in not_found_messages:
+                            add_problem(
+                                asset,
+                                ProblemSeverity.correct_me,
+                                message
+                            )
+                        for key, value in m2m.items():
+                            getattr(asset, key).add(*value)
         ctx_data = self.get_context_data(None)
         ctx_data['failed_assets'] = failed_assets
         ctx_data['errors'] = errors
