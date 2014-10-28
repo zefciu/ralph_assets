@@ -93,13 +93,15 @@ class DataUploadField(forms.FileField):
         update_per_sheet = {'csv': {}}
         add_per_sheet = {'csv': []}
         name_row = next(reader)
-        update = name_row[0] == 'id'
+        update = 'id' in name_row
         if update:
-            name_row = name_row[1:]
+            id_index = name_row.index('id')
+            del name_row[id_index]
             for row in reader:
-                asset_id = int(row[0])
+                asset_id = int(row[id_index])
                 update_per_sheet['csv'].setdefault(asset_id, {})
-                for key, value in it.izip(name_row, row[1:]):
+                del row[id_index]
+                for key, value in it.izip(name_row, row):
                     update_per_sheet['csv'][asset_id][key] = value
         else:
             for row in reader:

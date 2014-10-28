@@ -163,6 +163,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
+        #if field_name in [ 'valid_thru','invoice_date']: import pudb;pudb.set_trace()
         if '.' in field_name:
             Model = self.AmdModel
             _, field_name = field_name.split('.', 1)
@@ -186,6 +187,9 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             if ' ' in value:
                 # change "2012-5-30 13:23:54" to "2012-5-30"
                 value = value.split()[0]
+            #TODO:: handle dates or raise exception
+            import datetime
+            value = datetime.datetime.strptime(value, "%Y-%m-%d")
         if field.choices:
             value_lower = value.lower().strip()
             for k, v in field.choices:
@@ -287,13 +291,17 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     continue
                 try:
                     for key, value in asset_data.items():
+                        #import pudb;pudb.set_trace()
                         key = key.lower()
+                        print('{!r} {!r}'.format(mappings[key], self._get_field_value(mappings[key], value)))
+                        #if key in [ 'valid_thru','invoice_date']: import pudb;pudb.set_trace()
                         setattr(
                             asset, mappings[key],
                             self._get_field_value(mappings[key], value)
                         )
                     asset.save()
                 except Exception as exc:
+                #except ZeroDivisionError as exc:
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:

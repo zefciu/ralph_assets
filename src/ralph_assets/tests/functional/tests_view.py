@@ -2074,11 +2074,12 @@ class TestDataImporter(object):
     upload_model = None
     upload_asset_type = None
     Model = None
+    ModelFactory = None
+    excluded_fields = set()
 
     def setUp(self):
         self.login_as_superuser()
         self.url = reverse('xls_upload')
-        self.csv_data = self._get_csv_data()
 
     def _fields2choices(self, fields):
         return {'column_choice-{}'.format(f): f for f in fields}
@@ -2093,6 +2094,18 @@ class TestDataImporter(object):
         return csv_string
 
     def _get_csv_data(self):
+        """
+        Return dict, where:
+            *keys* are names of model fields (model is set by
+                self.ModelFactory)
+            *values* are just field values of model, unless field is foreign
+                key. If so then *name* of related object is taken.
+            Example:
+                modelFactory = Asset, field = price:
+                    {'price', Asset.price}
+                modelFactory = Asset, field = warehouse:
+                    {'warehouse', Asset.warehouse.name}
+        """
         csv_data = {}
         obj = self.ModelFactory()
         for field in obj._meta.fields:
@@ -2104,6 +2117,7 @@ class TestDataImporter(object):
                 # foreign key, so get as string
                 field_value = field_value.name
             csv_data[field.name] = field_value
+        obj.delete()
         return csv_data
 
     def _check_form_errors(self, response, step):
@@ -2115,12 +2129,12 @@ class TestDataImporter(object):
 
     def _update_by_csv(self, fields, values):
         self.client.get(self.url)
-        csv_data = self._get_csv_string(fields, values)
+        csv_string = self._get_csv_string(fields, values)
 
         step1_post = {
             'upload-asset_type': self.upload_asset_type,
             'upload-model': self.upload_model,
-            'upload-file': SimpleUploadedFile('test.csv', csv_data),
+            'upload-file': SimpleUploadedFile('test.csv', csv_string),
             'xls_upload_view-current_step': 'upload',
         }
         response = self.client.post(self.url, step1_post)
@@ -2144,12 +2158,20 @@ class TestDataImporter(object):
         self.assertContains(response, 'Import done')
 
     def test_add_by_import(self):
-        self._update_by_csv(self.csv_data.keys(), [self.csv_data.values()])
-        obj = self.Model.objects.latest('id')
-        for field_name, csv_value in self.csv_data.iteritems():
-            obj_value = getattr(obj, field_name)
+        #TODO:: fix it
+        self.excluded_fields = set([
+            'cache_version', 'created', 'id', 'level', 'lft', 'modified',
+            'parent', 'rght', 'saving_user', 'tree_id',
+        ])
+
+
+        csv_data = self._get_csv_data()
+        self._update_by_csv(csv_data.keys(), [csv_data.values()])
+        added_obj = self.Model.objects.latest('id')
+        for field_name, csv_value in csv_data.iteritems():
+            obj_value = getattr(added_obj, field_name)
             if hasattr(obj_value, 'name'):
-                obj_value = getattr(obj, field_name).name
+                obj_value = getattr(added_obj, field_name).name
             msg = 'Incorrect field {!r} value {!r} != {!r}'.format(
                 field_name, obj_value, csv_value,
             )
@@ -2159,8 +2181,30 @@ class TestDataImporter(object):
             self.assertEqual(obj_value, csv_value, msg)
 
     def test_update_by_import(self):
-        raise Exception('code it')
-        pass
+        #TODO:: fix it
+        self.excluded_fields = set([
+            'cache_version', 'created', 'level', 'lft', 'modified',
+            'parent', 'rght', 'saving_user', 'tree_id', #'valid_thru',
+        ])
+
+
+        updated_obj = self.ModelFactory()
+        csv_data = self._get_csv_data()
+        #TODO:: check if old value and csv_value are different
+        csv_data['id'] = updated_obj.id
+
+        self._update_by_csv(csv_data.keys(), [csv_data.values()])
+        updated_obj = self.Model.objects.get(pk=updated_obj.id)
+        for field_name, csv_value in csv_data.iteritems():
+            obj_value = getattr(updated_obj, field_name)
+            if hasattr(obj_value, 'name'):
+                obj_value = getattr(updated_obj, field_name).name
+            msg = 'object value: {!r} != {!r} (csv) for field {!r}'.format(
+                obj_value, csv_value, field_name,
+            )
+            print(field_name)
+            self.assertEqual(obj_value, csv_value, msg)
+
 
 
 class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
@@ -2169,7 +2213,6 @@ class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
     upload_asset_type = AssetType.back_office.id
     Model = Licence
     ModelFactory = LicenceFactory
-    csv_data = {}
     excluded_fields = set([
         'cache_version', 'created', 'id', 'level', 'lft', 'modified',
         'parent', 'rght', 'saving_user', 'tree_id',
