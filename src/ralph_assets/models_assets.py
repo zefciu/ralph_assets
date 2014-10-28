@@ -339,9 +339,13 @@ class Attachment(SavingUser, TimeTrackable):
         super(Attachment, self).save(*args, **kwargs)
 
 
-class Service(Named, TimeTrackable):
+class Service(Named, TimeTrackable, CreatableFromString):
     profit_center = models.CharField(max_length=1024, blank=True)
     cost_center = models.CharField(max_length=1024, blank=True)
+
+    @classmethod
+    def create_from_string(cls, s, *args, **kwargs):
+        return cls(name=s)
 
 
 class BudgetInfo(
@@ -358,8 +362,8 @@ class BudgetInfo(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, string):
-        return cls(name=string)
+    def create_from_string(cls, asset_type, s):
+        return cls(name=s)
 
 
 class AssetLastHostname(models.Model):

@@ -214,6 +214,8 @@ class BaseAssetFactory(DjangoModelFactory):
     owner = SubFactory(UserFactory)
     price = fuzzy.FuzzyDecimal(0, 100)
     property_of = SubFactory(AssetOwnerFactory)
+    production_use_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
@@ -230,6 +232,10 @@ class BaseAssetFactory(DjangoModelFactory):
     @lazy_attribute
     def barcode(self):
         return generate_barcode()
+
+    @lazy_attribute
+    def created_by(self):
+        return UserFactory().get_profile()
 
     @lazy_attribute
     def sn(self):

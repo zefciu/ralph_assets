@@ -42,10 +42,14 @@ class WrongModelError(Exception):
     pass
 
 
-class LicenceType(Named):
+class LicenceType(Named, CreatableFromString):
     """The type of a licence"""
     class Meta:
         app_label = 'ralph_assets'
+
+    @classmethod
+    def create_from_string(cls, s, *args, **kwargs):
+        return cls(name=s)
 
 
 class SoftwareCategory(Named, CreatableFromString):

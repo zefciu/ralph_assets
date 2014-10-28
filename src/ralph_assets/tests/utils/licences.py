@@ -51,7 +51,8 @@ class SoftwareCategoryFactory(DjangoModelFactory):
 
 class LicenceFactory(DjangoModelFactory):
     FACTORY_FOR = Licence
-    accounting_id = ''
+
+    accounting_id = '5'
     asset_type = AssetType.back_office.id
     # assets: probabbly it should be set as kwargs during creation?
     budget_info = SubFactory(BudgetInfoFactory)
@@ -65,8 +66,8 @@ class LicenceFactory(DjangoModelFactory):
     parent = None
     price = 0
     property_of = SubFactory(AssetOwnerFactory)
-    provider = ''
-    remarks = ''
+    provider = Sequence(lambda n: 'provider-{}'.format(n))
+    remarks = Sequence(lambda n: 'remarks-{}'.format(n))
     service_name = SubFactory(ServiceFactory)
     software_category = SubFactory(SoftwareCategoryFactory)
     users = None

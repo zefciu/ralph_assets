@@ -2061,3 +2061,150 @@ class TestLicenceConnection(BaseViewsTest):
         response = self.client.post(url, form_data)
         self.assertEqual(len(response.context_data['formset'].errors), 0)
         self.assertEqual(LicenceUser.objects.count(), 0)
+
+
+class TestDataImporter(object):
+    # TODO:: move it separate file
+    # TODO:: merge it with TestImport
+    # TODO:: test adding foreign field
+    # TODO:: test getting (instead of adding) foreign field
+    # TODO:: assets tests should handle (device|office)_info crap
+
+    SEP = ','
+    upload_model = None
+    upload_asset_type = None
+    Model = None
+
+    def setUp(self):
+        self.login_as_superuser()
+        self.url = reverse('xls_upload')
+        self.csv_data = self._get_csv_data()
+
+    def _fields2choices(self, fields):
+        return {'column_choice-{}'.format(f): f for f in fields}
+
+    def _format_row(self, row):
+        return self.SEP.join(['"{}"'.format(item) for item in row])
+
+    def _get_csv_string(self, cols, vals):
+        header = self._format_row(cols)
+        rows_string = '\n'.join([self._format_row(row) for row in vals])
+        csv_string = '\n'.join([header, rows_string])
+        return csv_string
+
+    def _get_csv_data(self):
+        csv_data = {}
+        obj = self.ModelFactory()
+        for field in obj._meta.fields:
+            if field.name in self.excluded_fields:
+                continue
+            print(field)
+            field_value = getattr(obj, field.name)
+            if field.rel:
+                # foreign key, so get as string
+                field_value = field_value.name
+            csv_data[field.name] = field_value
+        return csv_data
+
+    def _check_form_errors(self, response, step):
+        errors = getattr(response.context['wizard']['form'], 'errors', None)
+        msg = 'step {step} failed, form errors: {form_errors!r}'.format(
+            form_errors=errors, step=step,
+        )
+        self.assertFalse(errors, msg)
+
+    def _update_by_csv(self, fields, values):
+        self.client.get(self.url)
+        csv_data = self._get_csv_string(fields, values)
+
+        step1_post = {
+            'upload-asset_type': self.upload_asset_type,
+            'upload-model': self.upload_model,
+            'upload-file': SimpleUploadedFile('test.csv', csv_data),
+            'xls_upload_view-current_step': 'upload',
+        }
+        response = self.client.post(self.url, step1_post)
+        self._check_form_errors(response, step=1)
+        self.assertContains(response, 'column_choice')
+        self.assertContains(response, 'step 2/3')
+
+        step2_post = {
+            'xls_upload_view-current_step': 'column_choice',
+        }
+        step2_post.update(self._fields2choices(fields))
+        response = self.client.post(self.url, step2_post)
+        self._check_form_errors(response, step=2)
+        self.assertContains(response, 'step 3/3')
+
+        step3_post = {
+            'xls_upload_view-current_step': 'confirm',
+        }
+        response = self.client.post(self.url, step3_post)
+        self._check_form_errors(response, step=3)
+        self.assertContains(response, 'Import done')
+
+    def test_add_by_import(self):
+        self._update_by_csv(self.csv_data.keys(), [self.csv_data.values()])
+        obj = self.Model.objects.latest('id')
+        for field_name, csv_value in self.csv_data.iteritems():
+            obj_value = getattr(obj, field_name)
+            if hasattr(obj_value, 'name'):
+                obj_value = getattr(obj, field_name).name
+            msg = 'Incorrect field {!r} value {!r} != {!r}'.format(
+                field_name, obj_value, csv_value,
+            )
+            print(field_name)
+            # if field_name == 'model':
+            #     import pdb;pdb.set_trace()
+            self.assertEqual(obj_value, csv_value, msg)
+
+    def test_update_by_import(self):
+        raise Exception('code it')
+        pass
+
+
+class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
+
+    upload_model = 'ralph_assets.licence'
+    upload_asset_type = AssetType.back_office.id
+    Model = Licence
+    ModelFactory = LicenceFactory
+    csv_data = {}
+    excluded_fields = set([
+        'cache_version', 'created', 'id', 'level', 'lft', 'modified',
+        'parent', 'rght', 'saving_user', 'tree_id',
+    ])
+
+
+class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
+
+    upload_model = 'ralph_assets.asset'
+    upload_asset_type = AssetType.back_office.id
+    Model = Asset
+    ModelFactory = BOAssetFactory
+    excluded_fields = set([
+        'cache_version', 'created', 'device_info', 'id', 'modified',
+        'modified_by', 'part_info', 'saving_user',
+        # these ones can't be created through import
+        'created_by', 'owner', 'user',
+        # TODO:: add|extend-existing test for adding csv with this
+        'office_info',
+
+    ])
+
+
+class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
+
+    upload_model = 'ralph_assets.asset'
+    upload_asset_type = AssetType.data_center.id
+    Model = Asset
+    ModelFactory = DCAssetFactory
+    excluded_fields = set([
+        'cache_version', 'created', 'office_info', 'id', 'modified',
+        'modified_by', 'part_info', 'saving_user',
+        # these ones can't be created through import
+        'created_by', 'owner', 'user',
+        # TODO:: add|extend-existing test for adding csv with this
+        'device_info',
+
+    ])
