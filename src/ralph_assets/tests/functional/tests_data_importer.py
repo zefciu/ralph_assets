@@ -30,7 +30,7 @@ from ralph_assets.tests.utils.licences import (
 
 
 class TestImport(ClientMixin, TestCase):
-    # TODO: merge it with TestDataImporter
+    # TODO: merge it with TestDataImporter?
     def setUp(self):
         self.login_as_superuser()
         self.url = reverse('xls_upload')
@@ -167,11 +167,11 @@ class TestDataImporter(object):
         self._check_form_errors(response, step=3)
         self.assertContains(response, 'Import done')
 
-    def _check_object_against_csv(self, added_obj, csv_data):
+    def _check_object_against_csv(self, obj, csv_data):
         for field_name, csv_value in csv_data.iteritems():
-            obj_value = getattr(added_obj, field_name)
+            obj_value = getattr(obj, field_name)
             if hasattr(obj_value, 'name'):
-                obj_value = getattr(added_obj, field_name).name
+                obj_value = getattr(obj, field_name).name
             msg = 'Incorrect field {!r} value {!r} != {!r}'.format(
                 field_name, obj_value, csv_value,
             )

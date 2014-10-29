@@ -293,10 +293,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 try:
                     for key, value in asset_data.items():
                         key = key.lower()
-                        setattr(
-                            asset, mappings[key],
-                            self._get_field_value(mappings[key], value)
-                        )
+                        new_value = self._get_field_value(mappings[key], value)
+                        setattr(asset, mappings[key], new_value)
                     asset.save()
                 except Exception as exc:
                     errors[asset_id] = repr(exc)

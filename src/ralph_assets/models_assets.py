@@ -246,8 +246,14 @@ class AssetModel(
         return cls(type=asset_type, name=s)
 
 
-class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
+class AssetOwner(
+    TimeTrackable, Named, WithConcurrentGetOrCreate, CreatableFromString,
+):
     """The company or other entity that are owners of assets."""
+
+    @classmethod
+    def create_from_string(cls, s, *args, **kwargs):
+        return cls(name=s)
 
 
 class AssetCategory(
