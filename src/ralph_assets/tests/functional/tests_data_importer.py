@@ -77,8 +77,6 @@ class TestImport(ClientMixin, TestCase):
             )
 
 
-# TODO:: test adding foreign field
-# TODO:: test getting (instead of adding) foreign field
 class TestDataImporter(object):
     SEP = ','
     upload_model = None
@@ -220,7 +218,6 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         'created_by', 'owner', 'user',
         # TODO: add|extend-existing test for office_info crap and remove it
         'office_info',
-
     ])
 
 
@@ -236,7 +233,7 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         'support_period', 'support_type', 'support_void_reporting',
         # these ones can't be created through import
         'created_by', 'owner', 'user',
-        'hostname',  # shouldn't be in device model, silence error from there
+        'hostname',  # shouldn't be in device model, silence here error from there
         # TODO: add|extend-existing test for device_info crap and remove it
         'device_info',
     ])
