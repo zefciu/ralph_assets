@@ -30,6 +30,7 @@ from ralph_assets.tests.utils.licences import (
 
 
 class TestImport(ClientMixin, TestCase):
+    # TODO: merge it with TestDataImporter
     def setUp(self):
         self.login_as_superuser()
         self.url = reverse('xls_upload')
@@ -76,12 +77,9 @@ class TestImport(ClientMixin, TestCase):
             )
 
 
+# TODO:: test adding foreign field
+# TODO:: test getting (instead of adding) foreign field
 class TestDataImporter(object):
-    # TODO:: merge it with TestImport
-    # TODO:: test adding foreign field
-    # TODO:: test getting (instead of adding) foreign field
-    # TODO:: assets tests should handle (device|office)_info crap
-
     SEP = ','
     upload_model = None
     upload_asset_type = None
@@ -124,16 +122,11 @@ class TestDataImporter(object):
         for field in obj._meta.fields:
             if field.name in self.excluded_fields:
                 continue
-            # print(field)
             field_value = getattr(obj, field.name)
             if field.rel:
                 # foreign key, so get as string
                 field_value = field_value.name
-            # print('!', repr(field_value))
-            # if field_value == 'None':
-            #     field_value = ''
             csv_data[field.name] = field_value
-            # print('!!', csv_data[field.name])
         obj.delete()
         return csv_data
 
@@ -194,7 +187,6 @@ class TestDataImporter(object):
         self.excluded_fields.remove('id')
         updated_obj = self.ModelFactory()
         csv_data = self._get_csv_data()
-        # TODO:: check if old value and csv_value are different
         csv_data['id'] = updated_obj.id
 
         self._update_by_csv(csv_data.keys(), [csv_data.values()])
@@ -221,11 +213,12 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
     Model = Asset
     ModelFactory = BOAssetFactory
     base_excluded_fields = set([
-        'cache_version', 'created', 'device_info', 'id', 'modified',
+        'cache_version', 'created', 'device_info', 'id', 'modified', 'note',
         'modified_by', 'part_info', 'saving_user', 'support_price',
+        'support_period', 'support_type', 'support_void_reporting',
         # these ones can't be created through import
         'created_by', 'owner', 'user',
-        # TODO:: add|extend-existing test for adding csv with this
+        # TODO: add|extend-existing test for office_info crap and remove it
         'office_info',
 
     ])
@@ -238,12 +231,13 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
     Model = Asset
     ModelFactory = DCAssetFactory
     base_excluded_fields = set([
-        'cache_version', 'created', 'office_info', 'id', 'modified',
+        'cache_version', 'created', 'office_info', 'id', 'modified', 'note',
         'modified_by', 'part_info', 'saving_user', 'support_price',
+        'support_period', 'support_type', 'support_void_reporting',
         # these ones can't be created through import
         'created_by', 'owner', 'user',
         'hostname',  # shouldn't be in device model, silence error from there
-        # TODO:: add|extend-existing test for adding csv with this
+        # TODO: add|extend-existing test for device_info crap and remove it
         'device_info',
     ])
 

@@ -207,6 +207,7 @@ class BaseAssetFactory(DjangoModelFactory):
     device_environment = SubFactory(DeviceEnvironmentFactory)
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
+    loan_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     location = Sequence(lambda n: 'location #{}'.format(n))
     model = SubFactory(AssetModelFactory)
     niw = Sequence(lambda n: 'Inventory number #{}'.format(n))
@@ -215,7 +216,6 @@ class BaseAssetFactory(DjangoModelFactory):
     price = fuzzy.FuzzyDecimal(0, 100)
     property_of = SubFactory(AssetOwnerFactory)
     production_use_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
-    production_year = 2011
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
@@ -238,6 +238,10 @@ class BaseAssetFactory(DjangoModelFactory):
     @lazy_attribute
     def created_by(self):
         return UserFactory().get_profile()
+
+    @lazy_attribute
+    def production_year(self):
+        return random.randint(1990, 2010)
 
     @lazy_attribute
     def sn(self):
@@ -271,7 +275,10 @@ class BaseAssetFactory(DjangoModelFactory):
 class DCAssetFactory(BaseAssetFactory):
     type = AssetType.data_center
     device_info = SubFactory(DeviceInfoFactory)
-    slots = 2
+
+    @lazy_attribute
+    def slots(self):
+        return random.randint(1, 100)
 
 
 class BOAssetFactory(BaseAssetFactory):

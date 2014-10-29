@@ -211,7 +211,10 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     value = field.rel.to.objects.get(username__iexact=value)
                 elif issubclass(field.rel.to, Sluggy):
                     value = field.rel.to.objects.get(slug=value)
-                elif issubclass(field.rel.to, ServiceCatalog) or issubclass(field.rel.to, DeviceEnvironment):  # noqa
+                elif (
+                    issubclass(field.rel.to, ServiceCatalog)
+                    or issubclass(field.rel.to, DeviceEnvironment)
+                ):
                     try:
                         value = field.rel.to.objects.get(name__iexact=value)
                     except field.rel.to.DoesNotExist:
@@ -294,7 +297,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                             asset, mappings[key],
                             self._get_field_value(mappings[key], value)
                         )
-                        asset.save()
                     asset.save()
                 except Exception as exc:
                     errors[asset_id] = repr(exc)
