@@ -135,7 +135,7 @@ class TestDataImporter(object):
         )
         self.assertFalse(errors, msg)
 
-    def _update_by_csv(self, fields, values):
+    def _import_by_csv(self, fields, values):
         self.client.get(self.url)
         csv_string = self._get_csv_string(fields, values)
 
@@ -177,7 +177,7 @@ class TestDataImporter(object):
 
     def test_add_by_import(self):
         csv_data = self._get_csv_data()
-        self._update_by_csv(csv_data.keys(), [csv_data.values()])
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
         self._check_object_against_csv(added_obj, csv_data)
 
@@ -187,7 +187,7 @@ class TestDataImporter(object):
         csv_data = self._get_csv_data()
         csv_data['id'] = updated_obj.id
 
-        self._update_by_csv(csv_data.keys(), [csv_data.values()])
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
         self._check_object_against_csv(updated_obj, csv_data)
 
@@ -233,7 +233,8 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         'support_period', 'support_type', 'support_void_reporting',
         # these ones can't be created through import
         'created_by', 'owner', 'user',
-        'hostname',  # shouldn't be in device model, silence here error from there
+        # shouldn't be in device model, silence here error from there
+        'hostname',
         # TODO: add|extend-existing test for device_info crap and remove it
         'device_info',
     ])
@@ -242,6 +243,6 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         device = DeviceFactory()
         csv_data = self._get_csv_data()
         csv_data['barcode'] = device.barcode
-        self._update_by_csv(csv_data.keys(), [csv_data.values()])
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
         self._check_object_against_csv(added_obj, csv_data)

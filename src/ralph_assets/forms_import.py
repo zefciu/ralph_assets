@@ -25,7 +25,6 @@ def get_amendment_model(mode):
 
 
 def detect_delimiter(csv_file):
-    # default delimiter (MS Office export)
     delimiter = ";"
     header = csv_file.readline()
     csv_file.seek(0)
