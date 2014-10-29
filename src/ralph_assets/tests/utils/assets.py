@@ -215,11 +215,13 @@ class BaseAssetFactory(DjangoModelFactory):
     price = fuzzy.FuzzyDecimal(0, 100)
     property_of = SubFactory(AssetOwnerFactory)
     production_use_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    production_year = 2011
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    required_support = False
     service = SubFactory(ServiceCatalogFactory)
     service_name = SubFactory(ServiceFactory)
     # sn exists below, as a lazy_attribute
@@ -269,6 +271,7 @@ class BaseAssetFactory(DjangoModelFactory):
 class DCAssetFactory(BaseAssetFactory):
     type = AssetType.data_center
     device_info = SubFactory(DeviceInfoFactory)
+    slots = 2
 
 
 class BOAssetFactory(BaseAssetFactory):

@@ -14,6 +14,7 @@ from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db import transaction
 from django.db.models.fields import (
+    BooleanField,
     CharField,
     DateField,
     DecimalField,
@@ -22,6 +23,7 @@ from django.db.models.fields import (
 from django.db.models.fields.related import RelatedField, ManyToManyField
 from django.shortcuts import render
 from django.template.defaultfilters import slugify
+from django.utils.dateparse import parse_date, parse_datetime
 from lck.django.common.models import Named
 from ralph.discovery.models_device import DeviceEnvironment, ServiceCatalog
 
@@ -163,7 +165,6 @@ class XlsUploadView(SessionWizardView, AssetsBase):
 
     def _get_field_value(self, field_name, value):
         """Transform a pure string into the value to be put into the field."""
-        #if field_name in [ 'valid_thru','invoice_date']: import pudb;pudb.set_trace()
         if '.' in field_name:
             Model = self.AmdModel
             _, field_name = field_name.split('.', 1)
@@ -180,16 +181,13 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 return ''
             else:
                 return
+        if isinstance(field, BooleanField):
+            value = False if value.lower() in ["0", "false"] else True
         if isinstance(field, DecimalField):
             if value.count(',') == 1 and '.' not in value:
                 value = value.replace(',', '.')
         if isinstance(field, DateField):
-            if ' ' in value:
-                # change "2012-5-30 13:23:54" to "2012-5-30"
-                value = value.split()[0]
-            #TODO:: handle dates or raise exception
-            import datetime
-            value = datetime.datetime.strptime(value, "%Y-%m-%d")
+            value = parse_datetime(value) or parse_date(value) or None
         if field.choices:
             value_lower = value.lower().strip()
             for k, v in field.choices:
@@ -291,17 +289,14 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                     continue
                 try:
                     for key, value in asset_data.items():
-                        #import pudb;pudb.set_trace()
                         key = key.lower()
-                        print('{!r} {!r}'.format(mappings[key], self._get_field_value(mappings[key], value)))
-                        #if key in [ 'valid_thru','invoice_date']: import pudb;pudb.set_trace()
                         setattr(
                             asset, mappings[key],
                             self._get_field_value(mappings[key], value)
                         )
+                        asset.save()
                     asset.save()
                 except Exception as exc:
-                #except ZeroDivisionError as exc:
                     errors[asset_id] = repr(exc)
         for sheet_name, sheet_data in add_per_sheet.items():
             for asset_data in sheet_data:
@@ -351,7 +346,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         if isinstance(asset, Asset):
                             asset.type = MODE2ASSET_TYPE[self.mode]
                             device = asset.find_device_to_link()
-                            if not device:
+                            if not device and self.mode == 'dc':
                                 msg = (
                                     "Unable to match asset nor"
                                     "'barcode' {!r} nor sn {!r}".format(
