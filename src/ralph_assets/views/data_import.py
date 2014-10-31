@@ -233,7 +233,7 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 if issubclass(field.rel.to, CreatableFromString):
                     value = field.rel.to.create_from_string(
                         asset_type=MODE2ASSET_TYPE[self.mode],
-                        s=value
+                        string_name=value
                     )
                     value.save()
                 else:

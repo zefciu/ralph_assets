@@ -48,8 +48,8 @@ class LicenceType(Named, CreatableFromString):
         app_label = 'ralph_assets'
 
     @classmethod
-    def create_from_string(cls, s, *args, **kwargs):
-        return cls(name=s)
+    def create_from_string(cls, string_name, *args, **kwargs):
+        return cls(name=string_name)
 
 
 class SoftwareCategory(Named, CreatableFromString):
@@ -62,8 +62,8 @@ class SoftwareCategory(Named, CreatableFromString):
         app_label = 'ralph_assets'
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(asset_type=asset_type, name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(asset_type=asset_type, name=string_name)
 
     @property
     def licences(self):

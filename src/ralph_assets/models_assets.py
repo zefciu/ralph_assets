@@ -95,7 +95,7 @@ class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
     @classmethod  # Decided not to play with abstractclassmethods
-    def create_from_string(cls, asset_type, s):
+    def create_from_string(cls, asset_type, string_name):
         raise NotImplementedError
 
 
@@ -201,8 +201,8 @@ class AssetManufacturer(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 class AssetModel(
@@ -242,8 +242,8 @@ class AssetModel(
         return "%s %s" % (self.manufacturer, self.name)
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(type=asset_type, name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(type=asset_type, name=string_name)
 
 
 class AssetOwner(
@@ -252,8 +252,8 @@ class AssetOwner(
     """The company or other entity that are owners of assets."""
 
     @classmethod
-    def create_from_string(cls, s, *args, **kwargs):
-        return cls(name=s)
+    def create_from_string(cls, string_name, *args, **kwargs):
+        return cls(name=string_name)
 
 
 class AssetCategory(
@@ -298,8 +298,8 @@ class Warehouse(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 def _get_file_path(instance, filename):
@@ -350,8 +350,8 @@ class Service(Named, TimeTrackable, CreatableFromString):
     cost_center = models.CharField(max_length=1024, blank=True)
 
     @classmethod
-    def create_from_string(cls, s, *args, **kwargs):
-        return cls(name=s)
+    def create_from_string(cls, string_name, *args, **kwargs):
+        return cls(name=string_name)
 
 
 class BudgetInfo(
@@ -368,8 +368,8 @@ class BudgetInfo(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 class AssetLastHostname(models.Model):
