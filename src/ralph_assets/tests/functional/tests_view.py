@@ -1786,6 +1786,18 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         device = Device.objects.get(sn=asset.sn)
         self._check_fields(device, correct_value)
 
+    def test_device_syncs_with_asset(self):
+        """Editing fields on device causes sync to asset."""
+        asset = self._get_asset_with_dummy_device()
+        device = Device.objects.get(sn=asset.sn)
+        device.device_environment = CIRelationFactory().child
+        device.save()
+        asset = Asset.objects.get(pk=asset.pk)
+        self.assertEqual(device.device_environment, asset.device_environment)
+
+
+
+
     def test_adding_assets_creates_dummy_device(self):
         """
         - add asset without ralph_device_id

@@ -691,11 +691,8 @@ class Asset(
         self, commit=True, sync=True, force_unlink=False, *args, **kwargs
     ):
         _replace_empty_with_none(self, ['source', 'hostname'])
-        if sync:
-            SyncFieldMixin.save(self, *args, **kwargs)
         self.handle_device_linkage(force_unlink)
-        instance = super(Asset, self).save(commit=commit, *args, **kwargs)
-        return instance
+        return super(Asset, self).save(commit=commit, *args, **kwargs)
 
     def get_data_icon(self):
         if self.get_data_type() == 'device':
