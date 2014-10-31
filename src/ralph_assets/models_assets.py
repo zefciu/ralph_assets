@@ -697,12 +697,8 @@ class Asset(
                     else:
                         self.create_stock_device()
 
-    def save(
-        self, commit=True, sync=True, force_unlink=False, *args, **kwargs
-    ):
+    def save(self, commit=True, force_unlink=False, *args, **kwargs):
         _replace_empty_with_none(self, ['source', 'hostname'])
-        if sync:
-            SyncFieldMixin.save(self, *args, **kwargs)
         self.handle_device_linkage(force_unlink)
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
