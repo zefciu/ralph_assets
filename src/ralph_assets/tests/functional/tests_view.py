@@ -1795,9 +1795,6 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = Asset.objects.get(pk=asset.pk)
         self.assertEqual(device.device_environment, asset.device_environment)
 
-
-
-
     def test_adding_assets_creates_dummy_device(self):
         """
         - add asset without ralph_device_id
