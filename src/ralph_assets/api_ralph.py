@@ -39,6 +39,7 @@ def _create_asset_dict(asset):
         asset_source = AssetSource.from_id(asset.source).raw
     except ValueError:
         asset_source = None
+    category = asset.model.category.name if asset.model.category else ''
     return {
         'asset_id': asset.id,
         'device_id': asset.device_info.ralph_device_id,
@@ -64,7 +65,7 @@ def _create_asset_dict(asset):
         'delivery_date': asset.delivery_date,
         'production_use_date': asset.production_use_date,
         'provider_order_date': asset.provider_order_date,
-        'category': asset.model.category.name,
+        'category': category,
         'slots': asset.slots,
         'price': asset.price,
         'deprecation_rate': asset.deprecation_rate,

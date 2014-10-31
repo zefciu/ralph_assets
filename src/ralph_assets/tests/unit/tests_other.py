@@ -345,3 +345,24 @@ class TestLinkedDevice(TestCase):
         asset = DCAssetFactory(device_info=None)
         asset.save()
         self.assertEqual(asset.linked_device, None)
+
+    def update_device(self, device, field, value):
+        setattr(device, field, value)
+        device.save()
+
+    def test_finding_device_to_link(self):
+        device_to_check = DeviceFactory(barcode=None, sn=None)
+        dc_asset = DCAssetFactory(device_info=None)
+
+        self.assertEqual(dc_asset.find_device_to_link(), None)
+
+        self.update_device(device_to_check, 'sn', dc_asset.sn)
+        self.assertEqual(dc_asset.find_device_to_link(), device_to_check)
+
+        self.update_device(device_to_check, 'sn', None)
+        self.update_device(device_to_check, 'barcode', dc_asset.barcode)
+        self.assertEqual(dc_asset.find_device_to_link(), device_to_check)
+
+        self.update_device(device_to_check, 'sn', dc_asset.sn)
+        self.update_device(device_to_check, 'barcode', dc_asset.barcode)
+        self.assertEqual(dc_asset.find_device_to_link(), device_to_check)

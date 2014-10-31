@@ -95,7 +95,7 @@ class CreatableFromString(object):
     """Simple objects that can be created from string."""
 
     @classmethod  # Decided not to play with abstractclassmethods
-    def create_from_string(cls, asset_type, s):
+    def create_from_string(cls, asset_type, string_name):
         raise NotImplementedError
 
 
@@ -201,8 +201,8 @@ class AssetManufacturer(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 class AssetModel(
@@ -242,12 +242,18 @@ class AssetModel(
         return "%s %s" % (self.manufacturer, self.name)
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(type=asset_type, name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(type=asset_type, name=string_name)
 
 
-class AssetOwner(TimeTrackable, Named, WithConcurrentGetOrCreate):
+class AssetOwner(
+    TimeTrackable, Named, WithConcurrentGetOrCreate, CreatableFromString,
+):
     """The company or other entity that are owners of assets."""
+
+    @classmethod
+    def create_from_string(cls, string_name, *args, **kwargs):
+        return cls(name=string_name)
 
 
 class AssetCategory(
@@ -292,8 +298,8 @@ class Warehouse(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, s):
-        return cls(name=s)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 def _get_file_path(instance, filename):
@@ -339,9 +345,13 @@ class Attachment(SavingUser, TimeTrackable):
         super(Attachment, self).save(*args, **kwargs)
 
 
-class Service(Named, TimeTrackable):
+class Service(Named, TimeTrackable, CreatableFromString):
     profit_center = models.CharField(max_length=1024, blank=True)
     cost_center = models.CharField(max_length=1024, blank=True)
+
+    @classmethod
+    def create_from_string(cls, string_name, *args, **kwargs):
+        return cls(name=string_name)
 
 
 class BudgetInfo(
@@ -358,8 +368,8 @@ class BudgetInfo(
         return self.name
 
     @classmethod
-    def create_from_string(cls, asset_type, string):
-        return cls(name=string)
+    def create_from_string(cls, asset_type, string_name):
+        return cls(name=string_name)
 
 
 class AssetLastHostname(models.Model):
@@ -687,12 +697,8 @@ class Asset(
                     else:
                         self.create_stock_device()
 
-    def save(
-        self, commit=True, sync=True, force_unlink=False, *args, **kwargs
-    ):
+    def save(self, commit=True, force_unlink=False, *args, **kwargs):
         _replace_empty_with_none(self, ['source', 'hostname'])
-        if sync:
-            SyncFieldMixin.save(self, *args, **kwargs)
         self.handle_device_linkage(force_unlink)
         instance = super(Asset, self).save(commit=commit, *args, **kwargs)
         return instance
@@ -710,12 +716,19 @@ class Asset(
         return self.type == AssetType.data_center
 
     def find_device_to_link(self):
-        if not self.type_is_data_center or not self.barcode:
-            return False
-        try:
-            device = Device.objects.get(barcode=self.barcode)
-        except Device.DoesNotExist:
-            device = False
+        if not self.type_is_data_center or (not self.barcode and not self.sn):
+            return None
+        device = None
+        if self.barcode:
+            try:
+                device = Device.objects.get(barcode=self.barcode)
+            except Device.DoesNotExist:
+                pass
+        if not device and self.sn:
+            try:
+                device = Device.objects.get(sn=self.sn)
+            except Device.DoesNotExist:
+                device = None
         return device
 
     def create_stock_device(self):
