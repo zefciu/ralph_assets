@@ -20,5 +20,6 @@ every device, for what, and how much it costs.
    configuration
    transitions
    history
+   regions
    changes
 
