@@ -24,6 +24,7 @@ from ralph_assets.models import (
     AssetSource,
     AssetStatus,
     AssetType,
+    DeviceInfo,
     Licence,
     LicenceType,
     Service,
@@ -234,6 +235,16 @@ class LicenceResource(ModelResource):
         )
 
 
+class DeviceInfoResource(ModelResource):
+    class Meta:
+        queryset = DeviceInfo.objects.all()
+        list_allowed_methods = ['get']
+        filtering = {
+            'ralph_device_id': ALL,
+        }
+        excludes = ["cache_version", "created", "deleted", "modified"]
+
+
 class AssetsResource(ModelResource):
     asset_type = ChoicesField(AssetType, 'type')
     licences = fields.ToManyField(LicenceResource, 'licences', full=True)
@@ -265,6 +276,9 @@ class AssetsResource(ModelResource):
         'device_environment',
         null=True,
     )
+    device_info = fields.ForeignKey(
+        DeviceInfoResource, 'device_info', null=True, full=True,
+    )
 
     class Meta:
         queryset = Asset.objects.all()
@@ -274,8 +288,10 @@ class AssetsResource(ModelResource):
             'delivery_date': ALL,
             'deprecation_rate': ALL,
             'device_environment': ALL_WITH_RELATIONS,
+            'device_info': ALL_WITH_RELATIONS,
             'force_deprecation': ALL,
             'hostname': ALL,
+            'id': ALL,
             'invoice_date': ALL,
             'invoice_no': ALL,
             'location': ALL,

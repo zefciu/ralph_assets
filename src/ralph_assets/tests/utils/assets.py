@@ -211,6 +211,7 @@ class BaseAssetFactory(DjangoModelFactory):
     device_environment = SubFactory(DeviceEnvironmentFactory)
     invoice_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     invoice_no = Sequence(lambda n: 'Invoice no #{}'.format(n))
+    loan_end_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     location = Sequence(lambda n: 'location #{}'.format(n))
     model = SubFactory(AssetModelFactory)
     niw = Sequence(lambda n: 'Inventory number #{}'.format(n))
@@ -218,10 +219,13 @@ class BaseAssetFactory(DjangoModelFactory):
     owner = SubFactory(UserFactory)
     price = fuzzy.FuzzyDecimal(0, 100)
     property_of = SubFactory(AssetOwnerFactory)
+    production_use_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     provider = Sequence(lambda n: 'Provider #%s' % n)
     provider_order_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
     remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
     request_date = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
+    required_support = False
     service = SubFactory(ServiceCatalogFactory)
     service_name = SubFactory(ServiceFactory)
     # sn exists below, as a lazy_attribute
@@ -234,6 +238,14 @@ class BaseAssetFactory(DjangoModelFactory):
     @lazy_attribute
     def barcode(self):
         return generate_barcode()
+
+    @lazy_attribute
+    def created_by(self):
+        return UserFactory().get_profile()
+
+    @lazy_attribute
+    def production_year(self):
+        return random.randint(1990, 2010)
 
     @lazy_attribute
     def sn(self):
@@ -272,6 +284,10 @@ class BaseAssetFactory(DjangoModelFactory):
 class DCAssetFactory(BaseAssetFactory):
     type = AssetType.data_center
     device_info = SubFactory(DeviceInfoFactory)
+
+    @lazy_attribute
+    def slots(self):
+        return random.randint(1, 100)
 
 
 class BOAssetFactory(BaseAssetFactory):

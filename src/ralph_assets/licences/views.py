@@ -199,6 +199,9 @@ class LicenceList(LicenseSelectedMixin, GenericSearch):
 
     active_sidebar_item = 'search'
     template_name = 'assets/licence_list.html'
+    pre_selected = [
+        'licence_type', 'software_category', 'property_of', 'manufacturer',
+    ]
 
     Model = Licence
     Form = LicenceSearchForm

@@ -29,6 +29,8 @@ ASSETS_COLUMNS = [
     'service_name__name',
     'property_of',
     'warehouse__name',
+    'invoice_date',
+    'invoice_no',
 ]
 LICENCES_COLUMNS = [
     'niw',

@@ -11,7 +11,10 @@ Released on TBA
 * Cleaned up urls.py,
 * Added new field to assets forms: Region,
 * Added region mechanism to supports,
-* Added region mechanism to licenses.
+* Added region mechanism to licenses,
+* Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
+* Added new field *segment* to backoffice asset and user-details.
+
 
 2.3.0
 ~~~~~

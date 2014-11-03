@@ -67,6 +67,7 @@ class AssetsSearchQueryableMixin(object):
             'ralph_device_id',
             'remarks',
             'required_support',
+            'segment',
             'service',
             'service_name',
             'sn',
@@ -181,6 +182,8 @@ class AssetsSearchQueryableMixin(object):
                     all_q &= Q(owner__profile__employee_id=field_value)
                 elif field == 'company':
                     all_q &= Q(owner__profile__company__icontains=field_value)
+                elif field == 'segment':
+                    all_q &= Q(owner__profile__segment__icontains=field_value)
                 elif field == 'profit_center':
                     all_q &= Q(owner__profile__profit_center=field_value)
                 elif field == 'cost_center':
@@ -289,6 +292,7 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
     sort_variable_name = 'sort'
     export_variable_name = 'export'
     template_name = 'assets/search.html'
+    pre_selected = None
 
     def get_context_data(self, *args, **kwargs):
         ret = super(GenericSearch, self).get_context_data(*args, **kwargs)
@@ -317,7 +321,10 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
 
     def handle_search_data(self, request):
         query = self.form.get_query()
-        query_set = self.Model.objects.filter(query)
+        objects = self.Model.objects
+        if self.pre_selected:
+            objects = objects.select_related(*self.pre_selected)
+        query_set = objects.filter(query)
         self.items_count = query_set.count()
         return query_set.all()
 
@@ -331,12 +338,13 @@ class _AssetSearch(AssetsSearchQueryableMixin, AssetsBase):
                 'back_office': 'BO',
             }[mode]
         )
+        pre_selected = ['device_info', 'model', 'warehouse']
         if mode == 'dc':
-            self.objects = Asset.objects_dc
+            self.objects = Asset.objects_dc.select_related(*pre_selected)
             self.admin_objects = Asset.admin_objects_dc
             search_form = DataCenterSearchAssetForm
         elif mode == 'back_office':
-            self.objects = Asset.objects_bo
+            self.objects = Asset.objects_bo.select_related(*pre_selected)
             self.admin_objects = Asset.admin_objects_bo
             search_form = BackOfficeSearchAssetForm
         self.form = search_form(self.request.GET, mode=mode)
@@ -431,7 +439,7 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
               sort_expression='remarks', bob_tag=True, export=True,
               show_conditions=show_back_office),
             _('Created', field='created', sort_expression='created',
-              bob_tag=True, show_conditions=show_back_office),
+              bob_tag=True, export=True, show_conditions=show_back_office),
             _('Price', field='price', sort_expression='price',
               bob_tag=True, export=True, show_conditions=show_dc),
             _('Venture', field='venture', bob_tag=True, export=True,
