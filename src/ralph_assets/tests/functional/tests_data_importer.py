@@ -10,7 +10,6 @@ import uuid
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from ralph.account.models import Region
 from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph.discovery.tests.util import DeviceFactory
 
@@ -104,7 +103,7 @@ class TestDataImporter(object):
         csv_string = '\n'.join([header, rows_string])
         return csv_string
 
-    def _get_csv_data(self, use_existing=True):
+    def _get_csv_data(self, important_data={}, use_existing=True):
         """
         Return dict, where:
             *keys* are names of model fields (model is set by
@@ -117,7 +116,6 @@ class TestDataImporter(object):
                 modelFactory = Asset, field = warehouse:
                     {'warehouse', Asset.warehouse.name}
         """
-        #TODO:: add defaults param, for eg. region, serice_catalog, env, etc.
         csv_data = {}
         obj = self.ModelFactory()
         for field in obj._meta.fields:
@@ -131,6 +129,9 @@ class TestDataImporter(object):
                     field_value += '-new'
             csv_data[field.name] = field_value
         obj.delete()
+        if not important_data:
+            important_data = {}
+        csv_data.update(important_data)
         return csv_data
 
     def _check_form_errors(self, response, step):
@@ -204,8 +205,7 @@ class TestDataImporter(object):
         """
         self.excluded_fields.remove('id')
         updated_obj = self.ModelFactory()
-        csv_data = self._get_csv_data()
-        csv_data['id'] = updated_obj.id
+        csv_data = self._get_csv_data(important_data={'id': updated_obj.id})
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
@@ -217,8 +217,9 @@ class TestDataImporter(object):
         """
         self.excluded_fields.remove('id')
         updated_obj = self.ModelFactory()
-        csv_data = self._get_csv_data(use_existing=False)
-        csv_data['id'] = updated_obj.id
+        csv_data = self._get_csv_data(
+            important_data={'id': updated_obj.id}, use_existing=False,
+        )
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
@@ -240,9 +241,9 @@ class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
         """
         Creates foreign fields from text values.
         """
-        #TODO:: call common function with excluded param
         self.excluded_fields.update(['region'])
         csv_data = self._get_csv_data(use_existing=False)
+
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
         self._check_object_against_csv(added_obj, csv_data)
@@ -251,13 +252,13 @@ class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
         """
         Creates foreign fields from text values.
         """
-        #TODO:: call common function with excluded param
         self.excluded_fields.remove('id')
         self.excluded_fields.update(['region'])
 
         updated_obj = self.ModelFactory()
-        csv_data = self._get_csv_data(use_existing=False)
-        csv_data['id'] = updated_obj.id
+        csv_data = self._get_csv_data(
+            important_data={'id': updated_obj.id}, use_existing=False,
+        )
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
@@ -284,8 +285,11 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         """
         Creates foreign fields from text values.
         """
-        self.excluded_fields.update(['service', 'device_environment', 'region'])
+        self.excluded_fields.update(
+            ['service', 'device_environment', 'region'],
+        )
         csv_data = self._get_csv_data(use_existing=False)
+
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
         self._check_object_against_csv(added_obj, csv_data)
@@ -295,10 +299,13 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Creates foreign fields from text values.
         """
         self.excluded_fields.remove('id')
-        self.excluded_fields.update(['service', 'device_environment', 'region'])
+        self.excluded_fields.update(
+            ['service', 'device_environment', 'region'],
+        )
         updated_obj = self.ModelFactory()
-        csv_data = self._get_csv_data(use_existing=False)
-        csv_data['id'] = updated_obj.id
+        csv_data = self._get_csv_data(
+            important_data={'id': updated_obj.id}, use_existing=False,
+        )
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
@@ -328,8 +335,9 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Uses existing foreign fields.
         """
         device = DeviceFactory()
-        csv_data = self._get_csv_data()
-        csv_data['barcode'] = device.barcode
+        csv_data = self._get_csv_data(
+            important_data={'barcode': device.barcode},
+        )
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
         self._check_object_against_csv(added_obj, csv_data)
@@ -339,13 +347,17 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Creates foreign fields from text values.
         """
         device = DeviceFactory()
-        self.excluded_fields.update(['service', 'device_environment', 'region'])
-        csv_data = self._get_csv_data(use_existing=False)
-        csv_data['barcode'] = device.barcode
-
         service_env = CIRelationFactory()
-        csv_data['service'] = service_env.parent.name
-        csv_data['device_environment'] = service_env.child.name
+        self.excluded_fields.update(
+            ['service', 'device_environment', 'region'],
+        )
+        csv_data = self._get_csv_data(
+            important_data={
+                'barcode': device.barcode,
+                'device_environment': service_env.child.name,
+                'service': service_env.parent.name,
+            }, use_existing=False,
+        )
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         added_obj = self.Model.objects.latest('id')
@@ -356,10 +368,13 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Creates foreign fields from text values.
         """
         self.excluded_fields.remove('id')
-        self.excluded_fields.update(['service', 'device_environment', 'region'])
+        self.excluded_fields.update(
+            ['service', 'device_environment', 'region'],
+        )
         updated_obj = self.ModelFactory()
-        csv_data = self._get_csv_data(use_existing=False)
-        csv_data['id'] = updated_obj.id
+        csv_data = self._get_csv_data(
+            important_data={'id': updated_obj.id}, use_existing=False,
+        )
 
         self._import_by_csv(csv_data.keys(), [csv_data.values()])
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
