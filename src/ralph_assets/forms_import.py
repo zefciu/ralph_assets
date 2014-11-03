@@ -199,7 +199,7 @@ class XlsColumnChoiceForm(forms.Form):
                 field.blank or
                 field.default != NOT_PROVIDED or
                 field.choices == AssetType() or
-                field.name in {'rght', 'tree_id', 'lft', 'level'}
+                field.name in {'rght', 'tree_id', 'lft', 'level', 'region'}
             )
         }
         missing = required - matched

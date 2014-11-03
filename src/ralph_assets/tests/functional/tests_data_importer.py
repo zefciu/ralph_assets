@@ -5,12 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
 import uuid
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from ralph.account.models import Region
 from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph.discovery.tests.util import DeviceFactory
 
@@ -79,7 +79,6 @@ class TestImport(ClientMixin, TestCase):
             )
 
 
-@unittest.skip('add region feature to data-importer')
 class TestDataImporter(object):
     SEP = ','
     upload_model = None
@@ -118,6 +117,7 @@ class TestDataImporter(object):
                 modelFactory = Asset, field = warehouse:
                     {'warehouse', Asset.warehouse.name}
         """
+        #TODO:: add defaults param, for eg. region, serice_catalog, env, etc.
         csv_data = {}
         obj = self.ModelFactory()
         for field in obj._meta.fields:
@@ -236,8 +236,34 @@ class TestLicenceDataImporter(TestDataImporter, ClientMixin, TestCase):
         'parent', 'rght', 'saving_user', 'tree_id',
     ])
 
+    def test_add_by_import_with_new_foreign_keys(self):
+        """
+        Creates foreign fields from text values.
+        """
+        #TODO:: call common function with excluded param
+        self.excluded_fields.update(['region'])
+        csv_data = self._get_csv_data(use_existing=False)
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
+        added_obj = self.Model.objects.latest('id')
+        self._check_object_against_csv(added_obj, csv_data)
 
-@unittest.skip('add region feature to data-importer')
+    def test_update_by_import_with_new_foreign_fields(self):
+        """
+        Creates foreign fields from text values.
+        """
+        #TODO:: call common function with excluded param
+        self.excluded_fields.remove('id')
+        self.excluded_fields.update(['region'])
+
+        updated_obj = self.ModelFactory()
+        csv_data = self._get_csv_data(use_existing=False)
+        csv_data['id'] = updated_obj.id
+
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
+        updated_obj = self.Model.objects.get(pk=updated_obj.id)
+        self._check_object_against_csv(updated_obj, csv_data)
+
+
 class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
 
     upload_model = 'ralph_assets.asset'
@@ -254,12 +280,22 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         'office_info',
     ])
 
+    def test_add_by_import_with_new_foreign_keys(self):
+        """
+        Creates foreign fields from text values.
+        """
+        self.excluded_fields.update(['service', 'device_environment', 'region'])
+        csv_data = self._get_csv_data(use_existing=False)
+        self._import_by_csv(csv_data.keys(), [csv_data.values()])
+        added_obj = self.Model.objects.latest('id')
+        self._check_object_against_csv(added_obj, csv_data)
+
     def test_update_by_import_with_new_foreign_fields(self):
         """
         Creates foreign fields from text values.
         """
         self.excluded_fields.remove('id')
-        self.excluded_fields.update(['service', 'device_environment'])
+        self.excluded_fields.update(['service', 'device_environment', 'region'])
         updated_obj = self.ModelFactory()
         csv_data = self._get_csv_data(use_existing=False)
         csv_data['id'] = updated_obj.id
@@ -268,18 +304,7 @@ class TestBOAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         updated_obj = self.Model.objects.get(pk=updated_obj.id)
         self._check_object_against_csv(updated_obj, csv_data)
 
-    def test_add_by_import_with_new_foreign_keys(self):
-        """
-        Creates foreign fields from text values.
-        """
-        self.excluded_fields.update(['service', 'device_environment'])
-        csv_data = self._get_csv_data(use_existing=False)
-        self._import_by_csv(csv_data.keys(), [csv_data.values()])
-        added_obj = self.Model.objects.latest('id')
-        self._check_object_against_csv(added_obj, csv_data)
 
-
-@unittest.skip('add region feature to data-importer')
 class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
 
     upload_model = 'ralph_assets.asset'
@@ -314,7 +339,7 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Creates foreign fields from text values.
         """
         device = DeviceFactory()
-        self.excluded_fields.update(['service', 'device_environment'])
+        self.excluded_fields.update(['service', 'device_environment', 'region'])
         csv_data = self._get_csv_data(use_existing=False)
         csv_data['barcode'] = device.barcode
 
@@ -331,7 +356,7 @@ class TestDCAssetDataImporter(TestDataImporter, ClientMixin, TestCase):
         Creates foreign fields from text values.
         """
         self.excluded_fields.remove('id')
-        self.excluded_fields.update(['service', 'device_environment'])
+        self.excluded_fields.update(['service', 'device_environment', 'region'])
         updated_obj = self.ModelFactory()
         csv_data = self._get_csv_data(use_existing=False)
         csv_data['id'] = updated_obj.id
