@@ -56,6 +56,7 @@ from ralph_assets.models import (
 )
 from ralph_assets import models_assets
 from ralph.discovery import models_device
+from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 
 
@@ -66,7 +67,7 @@ asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
         'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
         'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of',
+        'service_name', 'property_of', 'region',
     ]),
     ('Financial Info', [
         'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -84,8 +85,8 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'support_assigned',  'service',
-            'device_environment',
+            'required_support', 'support_assigned', 'service',
+            'device_environment', 'region',
         ],
         'collapsed': [
             'warehouse', 'task_url', 'category', 'loan_end_date_from',
@@ -119,7 +120,7 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
         'noncollapsed': [
             'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
             'required_support', 'support_assigned', 'service',
-            'device_environment',
+            'device_environment', 'region',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -836,6 +837,7 @@ class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
             'property_of',
             'provider',
             'provider_order_date',
+            'region',
             'remarks',
             'request_date',
             'required_support',
@@ -1000,6 +1002,7 @@ class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
             'property_of',
             'provider',
             'provider_order_date',
+            'region',
             'remarks',
             'request_date',
             'required_support',
@@ -1188,6 +1191,10 @@ class AddDeviceForm(BaseAddAssetForm, MultivalFieldForm):
         validators=[validate_imeis],
     )
 
+    def __init__(self, *args, **kwargs):
+        super(AddDeviceForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(queryset=get_actual_regions())
+
     def clean(self):
         """
         These form requirements:
@@ -1299,6 +1306,7 @@ class EditDeviceForm(BaseEditAssetForm):
             'required_support',
             'supports',
         ]
+        self.fields['region'] = ModelChoiceField(queryset=get_actual_regions())
 
     def clean(self):
         cleaned_data = super(EditDeviceForm, self).clean()
@@ -1623,6 +1631,9 @@ class SearchAssetForm(Form):
         # Ajax sources are different for DC/BO, use mode for distinguish
         self.mode = kwargs.pop('mode', None)
         super(SearchAssetForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(
+            queryset=get_actual_regions(), required=False,
+        )
 
 
 class DataCenterSearchAssetForm(SearchAssetForm):

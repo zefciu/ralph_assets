@@ -3,14 +3,17 @@ Change Log
 
 DEV
 ~~~
-Released on October X, 2014
+Released on TBA
 
 * Added quantity to licence model,
 * Created new widget based on formset,
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
+* Added new field to assets forms: Region,
+* Added region mechanism to supports,
+* Added region mechanism to licenses,
 * Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
-* Added new field *segment* to backoffice asset and user-details
+* Added new field *segment* to backoffice asset and user-details.
 
 
 2.3.0

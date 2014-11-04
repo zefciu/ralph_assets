@@ -10,7 +10,7 @@ from dj.choices import Country
 
 from django.test import TestCase
 from django.test.utils import override_settings
-
+from ralph.account.models import Region
 from ralph.discovery.tests.util import DeviceFactory
 from ralph_assets import models_assets
 from ralph_assets.others import get_assets_rows, get_licences_rows
@@ -69,19 +69,18 @@ class TestExportRelations(TestCase):
             niw='niw=666',
             warehouse=self.warehouse,
         )
-
         self.software_category = SoftwareCategoryFactory(name='soft-cat1')
         self.licence1 = LicenceFactory(
-            software_category=self.software_category,
-            number_bought=10,
-            sn="test-sn",
-            niw="niw-666",
             invoice_date=datetime.date(2014, 4, 28),
             invoice_no="666-999-666",
+            niw="niw-666",
+            number_bought=10,
             price=1000.0,
-            provider="test_provider",
-            asset_type=models_assets.AssetType.DC,
+            region=Region.get_default_region(),
+            sn="test-sn",
+            software_category=self.software_category,
         )
+        self.licence1.save()
 
     def test_assets_rows(self):
         rows = [item for item in get_assets_rows()]

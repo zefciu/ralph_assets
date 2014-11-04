@@ -18,10 +18,17 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import resolve, reverse
 from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
+from ralph.account.models import Region
+from ralph.business.models import Venture
+from ralph.cmdb.tests.utils import CIRelationFactory
+from ralph.discovery.models_device import Device, DeviceType
 from ralph.discovery.tests.util import DeviceFactory
+from ralph.ui.tests.global_utils import login_as_su
+from ralph.util.tests.utils import (
+    RegionFactory,
+)
 
-from ralph_assets import models_assets
-from ralph_assets import models_support
+from ralph_assets import models_assets, models_support
 from ralph_assets.licences.models import (
     AssetType,
     Licence,
@@ -35,25 +42,28 @@ from ralph_assets.tests.utils import (
     ClientMixin,
     UserFactory,
 )
-from ralph_assets.tests.utils import assets as assets_utils
-from ralph_assets.tests.utils import licences as sam_utils
+from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
 from ralph_assets.tests.utils.assets import (
     AssetFactory,
+    AssetManufacturerFactory,
     AssetModelFactory,
+    AssetOwnerFactory,
     BOAssetFactory,
+    BudgetInfoFactory,
+    CoaOemOsFactory,
     DCAssetFactory,
+    ServiceFactory,
     WarehouseFactory,
+    generate_barcode,
+    generate_imei,
 )
-from ralph_assets.tests.unit.tests_other import TestHostnameAssigning
-from ralph.cmdb.tests.utils import CIRelationFactory
 from ralph_assets.tests.utils.licences import (
-    LicenceFactory,
     LicenceAssetFactory,
+    LicenceFactory,
+    LicenceTypeFactory,
     LicenceUserFactory,
+    SoftwareCategoryFactory,
 )
-from ralph.business.models import Venture
-from ralph.discovery.models_device import Device, DeviceType
-from ralph.ui.tests.global_utils import login_as_su
 from ralph_assets.tests.utils.supports import (
     BOSupportFactory,
     DCSupportFactory,
@@ -81,7 +91,7 @@ def get_asset_data():
     return {
         'asset': '',  # required if asset (instead of *part*) is edited
         'barcode': 'barcode1',
-        'budget_info': assets_utils.BudgetInfoFactory().id,
+        'budget_info': BudgetInfoFactory().id,
         'delivery_date': datetime.date(2013, 1, 7),
         'deprecation_end_date': datetime.date(2013, 7, 25),
         'deprecation_rate': 77,
@@ -90,23 +100,24 @@ def get_asset_data():
         'invoice_no': 'Invoice no #3',
         'loan_end_date': datetime.date(2013, 12, 29),
         'location': 'location #3',
-        'model': assets_utils.AssetModelFactory().id,
+        'model': AssetModelFactory().id,
         'niw': 'Inventory number #3',
         'order_no': 'Order no #3',
-        'owner': assets_utils.UserFactory().id,
+        'owner': UserFactory().id,
         'price': Decimal('43.45'),
-        'property_of': assets_utils.AssetOwnerFactory().id,
+        'property_of': AssetOwnerFactory().id,
         'provider': 'Provider #3',
         'provider_order_date': datetime.date(2014, 3, 17),
+        'region': Region.get_default_region().id,
         'remarks': 'Remarks #3',
         'request_date': datetime.date(2014, 6, 9),
         'service': ci_relation.parent.id,
-        'service_name': assets_utils.ServiceFactory().id,
+        'service_name': ServiceFactory().id,
         'source': models_assets.AssetSource.shipment.id,
         'status': models_assets.AssetStatus.new.id,
         'task_url': 'http://www.url-3.com/',
-        'user': assets_utils.UserFactory().id,
-        'warehouse': assets_utils.WarehouseFactory().id,
+        'user': UserFactory().id,
+        'warehouse': WarehouseFactory().id,
     }
 
 
@@ -131,6 +142,49 @@ def check_fields(testcase, correct_data, object_to_check):
             prop_name, repr(object_value), repr(expected)
         )
         testcase.assertEqual(object_value, expected, msg)
+
+
+class TestRegions(object):
+
+    model_factory = None
+
+    def edit_obj_url(self, obj_id):
+        raise Exception("Implement it")
+
+    def listing_url(self):
+        raise Exception("Implement it")
+
+    def test_show_objects_by_user_region_single(self):
+        polish_region = RegionFactory(name='PL')
+        self.user.get_profile().region_set.add(polish_region)
+        dutch_region = RegionFactory(name='NL')
+
+        [self.model_factory(region=polish_region) for i in xrange(2)]
+        [self.model_factory(region=dutch_region) for i in xrange(2)]
+
+        response = self.client.get(self.listing_url())
+        self.assertEqual(1, response.context['bob_page'].paginator.num_pages)
+        self.assertEqual(2, len(response.context['bob_page'].object_list))
+
+    def test_show_objects_by_user_region_double(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(*[polish_region, dutch_region])
+
+        [self.model_factory(region=polish_region) for i in xrange(2)]
+        [self.model_factory(region=dutch_region) for i in xrange(2)]
+
+        response = self.client.get(self.listing_url())
+        self.assertEqual(1, response.context['bob_page'].paginator.num_pages)
+        self.assertEqual(4, len(response.context['bob_page'].object_list))
+
+    def test_404_on_not_granted_region(self):
+        polish_region = RegionFactory(name='PL')
+        dutch_region = RegionFactory(name='NL')
+        self.user.get_profile().region_set.add(polish_region)
+        obj = self.model_factory(region=dutch_region)
+        response = self.client.get(self.edit_obj_url(obj.id))
+        self.assertEqual(response.status_code, 404)
 
 
 class BaseViewsTest(ClientMixin, TransactionTestCase):
@@ -186,7 +240,14 @@ class TestDevicesView(BaseViewsTest):
     Parent class for common stuff for Test(DataCenter|BackOffice)DeviceView.
     """
 
+    mode = None
     asset_factory = None
+
+    def edit_obj_url(self, obj_id):
+        return reverse('device_edit', args=(self.mode, obj_id))
+
+    def listing_url(self):
+        return reverse('asset_search', args=(self.mode,))
 
     def setUp(self):
         self.login_as_superuser()
@@ -203,6 +264,21 @@ class TestDevicesView(BaseViewsTest):
         self._visible_edit_form_fields.extend([
             'licences_text', 'supports_text',
         ])
+
+    def _get_add_url(self, type_id=None, mode=None):
+        if (not type_id and not mode) or (type_id and mode):
+            raise Exception("Pass type_id xor mode")
+        if not mode:
+            try:
+                mode = models_assets.ASSET_TYPE2MODE[type_id],
+            except AttributeError:
+                raise Exception("Unknown type_id: {}".format(type_id))
+        url = reverse('add_device', kwargs={'mode': mode})
+        return url
+
+    def get_asset_from_response(self, response):
+        asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
+        return models_assets.Asset.objects.get(pk=asset_id)
 
     def get_asset_form_data(self, factory_data=None):
         from ralph_assets import urls
@@ -225,8 +301,7 @@ class TestDevicesView(BaseViewsTest):
         add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
         self.assertEqual(response.status_code, 200)
-        asset_id = resolve(response.request['PATH_INFO']).kwargs['asset_id']
-        return models_assets.Asset.objects.get(pk=asset_id)
+        return self.get_asset_from_response(response)
 
     def prepare_readonly_fields(self, new_asset_data, asset, readonly_fields):
         update(new_asset_data, asset, readonly_fields)
@@ -301,6 +376,7 @@ class TestDevicesView(BaseViewsTest):
                 val = initial_dict.get(field, None)
                 if val:
                     update_dict[field] = val
+        kwargs['region'] = Region.get_default_region().id
         update_dict.update(kwargs)
         response = self.client.post(url, update_dict, follow=True)
         return response, models_assets.Asset.objects.get(id=asset_id)
@@ -316,7 +392,9 @@ class TestDevicesView(BaseViewsTest):
         - send add device request with data d1
         - assert asset was added
         '''
-        request_data = self.get_asset_form_data()
+        request_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         request_data.update(dict(
             # required, irrelevant data here
             ralph_device_id='',
@@ -342,7 +420,10 @@ class TestDevicesView(BaseViewsTest):
         self.assertEqual(response.status_code, 302)
 
 
-class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
+class TestDataCenterDevicesView(TestDevicesView, TestRegions, BaseViewsTest):
+
+    mode = 'dc'
+    model_factory = DCAssetFactory
 
     def setUp(self):
         super(TestDataCenterDevicesView, self).setUp()
@@ -432,8 +513,9 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
     def test_hostname_is_assigned(self):
         extra_data = {
             # required data for this test
-            'ralph_device_id': '',
             'asset': '',  # required button
+            'ralph_device_id': '',
+            'region': Region.get_default_region().id,
             'status': str(TestHostnameAssigning.trigger_status.id),
         }
         self._test_hostname_is_assigned(extra_data)
@@ -462,12 +544,14 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         - we got error message
         - assets was not saved
         """
-        form_data = self.get_asset_form_data()
+        form_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         sns = [form_data['sn'], '1234567890']
         form_data.update({
             'sn': ','.join(sns),
             'barcode': ','.join(
-                [assets_utils.generate_barcode() for i in xrange(2)],
+                [generate_barcode() for i in xrange(2)],
             ),
             'ralph_device_id': '',
         })
@@ -484,8 +568,55 @@ class TestDataCenterDevicesView(TestDevicesView, BaseViewsTest):
         )
         self.assertFalse(Asset.objects.filter(sn__in=sns).all())
 
+    def test_can_save_correct_region(self):
+        valid_region = self.user.get_profile().get_regions()[0]
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'region': valid_region.id,
+        })
+        url = self._get_add_url(mode='dc')
+        response = self.client.post(url, form_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        asset = Asset.objects.get(sn=form_data['sn'])
+        self.assertEqual(asset.region, valid_region)
 
-class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
+    def test_cant_save_invalid_region(self):
+        invalid_region = RegionFactory()
+        form_data = self.get_asset_form_data({'device_info': None})
+        form_data.update({
+            'ralph_device_id': '',
+            'region': invalid_region.id,
+        })
+        url = self._get_add_url(mode='dc')
+        response = self.client.post(url, form_data, follow=True)
+        self.assertIn(
+            'Select a valid choice.'
+            ' That choice is not one of the available choices.',
+            response.context['asset_form'].errors['region'],
+        )
+
+    def test_shows_correct_regions(self):
+        region = RegionFactory()
+        self.user.get_profile().region_set.add(region)
+        url = self._get_add_url(mode='dc')
+        response = self.client.get(url, follow=True)
+
+        correct_choices = [
+            (u'', u'---------'),
+            (region.id, region.name),
+        ]
+        for choice, correct_choice in zip(
+            response.context['asset_form'].fields['region'].choices,
+            correct_choices,
+        ):
+            self.assertEqual(choice, correct_choice)
+
+
+class TestBackOfficeDevicesView(TestDevicesView, TestRegions, BaseViewsTest):
+
+    mode = 'back_office'
+    model_factory = BOAssetFactory
 
     def setUp(self):
         super(TestBackOfficeDevicesView, self).setUp()
@@ -496,10 +627,10 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             'type': models_assets.AssetType.back_office.id,
         })
         self.office_data = {
-            'coa_oem_os': assets_utils.CoaOemOsFactory().id,
+            'coa_oem_os': CoaOemOsFactory().id,
             'purpose': models_assets.AssetPurpose.others.id,
             'license_key': str(uuid.uuid1()),
-            'imei': assets_utils.generate_imei(15),
+            'imei': generate_imei(15),
             'coa_number': str(uuid.uuid1()),
         }
         self.additional_fields = [
@@ -584,6 +715,7 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             # required data for this test
             'asset': '',  # required button
             'status': str(TestHostnameAssigning.trigger_status.id),
+            'region': Region.get_default_region().id,
         }
         self._test_hostname_is_assigned(extra_data)
 
@@ -669,7 +801,9 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
 
     def test_save_without_changes(self):
         """Assets must be the same values after dry save."""
-        original_asset = BOAssetFactory(force_deprecation=True)
+        original_asset = BOAssetFactory(
+            force_deprecation=True, region=Region.get_default_region(),
+        )
         exclude = [
             'assethistorychange',
             'attachments',
@@ -704,8 +838,10 @@ class TestBackOfficeDevicesView(TestDevicesView, BaseViewsTest):
             )
 
 
-class TestLicencesView(BaseViewsTest):
+class TestLicencesView(TestRegions, BaseViewsTest):
     """This test case concern all licences views."""
+
+    model_factory = LicenceFactory
 
     def setUp(self):
         super(TestLicencesView, self).setUp()
@@ -713,22 +849,23 @@ class TestLicencesView(BaseViewsTest):
             'accounting_id': '1',
             'asset_type': models_assets.AssetType.back_office.id,
             # TODO: this field is not saving 'assets':'|{}|'.format(asset.id),
-            'budget_info': assets_utils.BudgetInfoFactory().id,
+            'budget_info': BudgetInfoFactory().id,
             'invoice_date': datetime.date(2014, 06, 11),
             'invoice_no': 'Invoice no',
-            'licence_type': sam_utils.LicenceTypeFactory().id,
+            'licence_type': LicenceTypeFactory().id,
             'license_details': 'licence_details',
-            'manufacturer': assets_utils.AssetManufacturerFactory().id,
+            'manufacturer': AssetManufacturerFactory().id,
             'niw': 'Inventory number',
             'number_bought': '99',
             'order_no': 'Order no',
             'price': Decimal('100.99'),
-            'property_of': assets_utils.AssetOwnerFactory().id,
+            'property_of': AssetOwnerFactory().id,
             'provider': 'Provider',
+            'region': Region.get_default_region().id,
             'remarks': 'Additional remarks',
-            'service_name': assets_utils.ServiceFactory().id,
+            'service_name': ServiceFactory().id,
             'sn': 'Licence key',
-            'software_category': sam_utils.SoftwareCategoryFactory().id,
+            'software_category': SoftwareCategoryFactory().id,
             'valid_thru': datetime.date(2014, 06, 10),
         }
         self.licence = LicenceFactory()
@@ -740,6 +877,12 @@ class TestLicencesView(BaseViewsTest):
             'sn', 'software_category', 'valid_thru',
         ]
         self.visible_edit_form_fields = self.visible_add_form_fields[:]
+
+    def edit_obj_url(self, obj_id):
+        return reverse('edit_licence', args=(obj_id,))
+
+    def listing_url(self):
+        return reverse('licences_list')
 
     def update_licence_by_form(self, licence_id, **kwargs):
         url = reverse('edit_licence', kwargs={'licence_id': licence_id})
@@ -773,7 +916,7 @@ class TestLicencesView(BaseViewsTest):
             response, reverse('licences_list'), status_code=302,
             target_status_code=200,
         )
-        license = Licence.objects.reverse()[0]
+        license = Licence.objects.get(sn=request_data['sn'])
         check_fields(self, request_data.items(), license)
 
     def test_edit_license(self):
@@ -983,8 +1126,16 @@ class TestLicencesView(BaseViewsTest):
             )
 
 
-class TestSupportsView(BaseViewsTest):
+class TestSupportsView(TestRegions, BaseViewsTest):
     """This test case concern all supports views."""
+
+    model_factory = DCSupportFactory
+
+    def edit_obj_url(self, obj_id):
+        return reverse('edit_support', args=(obj_id,))
+
+    def listing_url(self):
+        return reverse('support_list')
 
     def setUp(self):
         super(TestSupportsView, self).setUp()
@@ -1005,7 +1156,8 @@ class TestSupportsView(BaseViewsTest):
             period_in_months='12',
             price=Decimal('99.99'),
             producer='Producer',
-            property_of=assets_utils.AssetOwnerFactory().id,
+            property_of=AssetOwnerFactory().id,
+            region=Region.get_default_region().id,
             serial_no='Serial no',
             sla_type='Sla type',
             status=models_support.SupportStatus.new.id,
@@ -1048,8 +1200,8 @@ class TestSupportsView(BaseViewsTest):
 
     def _update_with_supports(self, _dict):
         assets = [
-            assets_utils.DCAssetFactory().id,
-            assets_utils.BOAssetFactory().id,
+            DCAssetFactory().id,
+            BOAssetFactory().id,
         ]
         assets_values = '|{}|'.format('|'.join(map(str, assets)))
         _dict.update(dict(assets=assets_values))
@@ -1363,12 +1515,13 @@ class DeviceEditViewTest(ClientMixin, TestCase):
 
         post_data = {
             'asset': '1',  # submit button
-            'model': model.id,
-            'warehouse': warehouse.id,
-            'device': asset.id,
-            'type': '1',
-            'sn': str(uuid.uuid1()),
             'deprecation_rate': '25',
+            'device': asset.id,
+            'model': model.id,
+            'region': Region.get_default_region().id,
+            'sn': str(uuid.uuid1()),
+            'type': '1',
+            'warehouse': warehouse.id,
         }
         return self.client.post(url, post_data, follow=True)
 
@@ -1652,9 +1805,12 @@ class TestSyncFieldMixin(TestDevicesView):
         service = ci_relation.parent
         data = self.get_asset_form_data()
         device = self.create_device()
-        data['ralph_device_id'] = device.id
-        data['service'] = service.id
-        data['device_environment'] = device_environment.id
+        data.update({
+            'device_environment': device_environment.id,
+            'ralph_device_id': device.id,
+            'region': Region.get_default_region().id,
+            'service': service.id,
+        })
 
         url = reverse('add_device', kwargs={'mode': 'dc'})
         self.client.post(url, data, follow=True)
@@ -1685,10 +1841,13 @@ class TestSyncFieldMixin(TestDevicesView):
             'device_edit', kwargs={'mode': 'dc', 'asset_id': asset.id},
         )
         data = self.get_object_form_data(url, ['asset_form', 'additional_info'])  # noqa
-        data['ralph_device_id'] = device.id
-        data['service'] = service.id
-        data['device_environment'] = device_environment.id
-        data['asset'] = 1
+        data.update({
+            'asset': 1,
+            'device_environment': device_environment.id,
+            'ralph_device_id': device.id,
+            'region': Region.get_default_region().id,
+            'service': service.id,
+        })
         self.client.post(url, data, follow=True)
 
         asset = Asset.objects.all()[0]
@@ -1748,7 +1907,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
 
     def _get_asset_with_dummy_device(self, asset_data=None):
         # set device_info=None to prevent creation of device
-        form_data = self.get_asset_form_data({'device_info': None})
+        form_data = self.get_asset_form_data({
+            'device_info': None,
+            'region': Region.get_default_region(),
+        })
         form_data['ralph_device_id'] = ''
         form_data.update(asset_data or {})
         asset = self.add_asset_by_form(form_data)
@@ -1767,7 +1929,9 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         }
         device = DeviceFactory(**old_value)
         self._check_fields(device, old_value)
-        form_data = self.get_asset_form_data()
+        form_data = self.get_asset_form_data({
+            'region': Region.get_default_region(),
+        })
         form_data['ralph_device_id'] = device.id
         self.add_asset_by_form(form_data)
         device = Device.objects.get(pk=device.id)
@@ -1825,9 +1989,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         asset = DCAssetFactory(device_info=None)
         form_data = self.get_asset_form_data({'device_info': None})
         form_data.update({
+            'asset': '',
             'create_stock': 'true',
             'ralph_device_id': '',
-            'asset': '',
+            'region': Region.get_default_region().id,
         })
         edit_url = self._get_edit_url(asset.id, form_data['type'])
         self.client.post(edit_url, form_data, follow=True)
@@ -1901,6 +2066,7 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         form_data.update({
             'ralph_device_id': '',
             'barcode': asset_with_device.get_ralph_device().barcode,
+            'region': Region.get_default_region().id,
         })
         add_asset_url = self._get_add_url(form_data['type'])
         response = self.client.post(add_asset_url, form_data, follow=True)
@@ -1958,7 +2124,10 @@ class TestAssetAndDeviceLinkage(TestDevicesView, BaseViewsTest):
         first_asset.barcode = 'changed-barcode'
         first_asset.save()
 
-        form_data = self.get_asset_form_data({'device_info': None})
+        form_data = self.get_asset_form_data({
+            'device_info': None,
+            'region': Region.get_default_region(),
+        })
         form_data.update({
             'ralph_device_id': '',
             'barcode': first_asset.get_ralph_device().barcode,

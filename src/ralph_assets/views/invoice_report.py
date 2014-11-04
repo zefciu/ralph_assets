@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import datetime
 import logging
 
-from inkpy.api import generate_pdf
+from inkpy import api
 
 from django.db.models import Sum, Q
 from django.contrib import messages
@@ -30,9 +30,6 @@ from ralph_assets.views.search import AssetsSearchQueryableMixin, GenericSearch
 
 
 logger = logging.getLogger(__name__)
-
-# ugly hack to mock it in tests
-generate_pdf = generate_pdf
 
 
 def generate_pdf_response(pdf_data, file_name):
@@ -124,7 +121,7 @@ class BaseInvoiceReport(GenericSearch):
         output_path = '{}{}'.format(
             settings.ASSETS_REPORTS['TEMP_STORAGE_PATH'], file_name,
         )
-        generate_pdf(
+        api.generate_pdf(
             self.template_file.template.path, output_path, data,
             settings.GENERATED_DOCS_LOCALE,
         )

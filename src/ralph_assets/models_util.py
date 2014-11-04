@@ -14,6 +14,9 @@ from django.contrib.contenttypes import generic
 from django.db import models
 from lck.django.choices import Choices
 
+from ralph.account.models import Region
+from ralph import middleware
+
 
 class ProblemSeverity(Choices):
     _ = Choices.Choice
@@ -55,3 +58,28 @@ class WithForm(object):
     @abc.abstractproperty
     def url(self):
         """Return the url of edit for for this resource."""
+
+
+class RegionalizedDBManager(models.Manager):
+
+    def get_query_set(self):
+        query_set = super(RegionalizedDBManager, self).get_query_set()
+        regions = middleware.get_actual_regions()
+        query_set = query_set.filter(region__in=regions)
+        return query_set
+
+
+class Regionalized(models.Model):
+    """Describes an abstract model with region definition in ``region`` field
+    defined in ralph.accounts.models.Region"""
+
+    objects = RegionalizedDBManager()
+    admin_objects = models.Manager()
+
+    region = models.ForeignKey(Region)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return self.region.name

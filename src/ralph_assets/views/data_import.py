@@ -25,6 +25,7 @@ from django.shortcuts import render
 from django.template.defaultfilters import slugify
 from django.utils.dateparse import parse_date, parse_datetime
 from lck.django.common.models import Named
+from ralph.account.models import Region
 from ralph.discovery.models_device import DeviceEnvironment, ServiceCatalog
 
 from ralph_assets.forms_import import (
@@ -209,6 +210,14 @@ class XlsUploadView(SessionWizardView, AssetsBase):
             try:
                 if issubclass(field.rel.to, User):
                     value = field.rel.to.objects.get(username__iexact=value)
+                elif issubclass(field.rel.to, Region):
+                    try:
+                        value = field.rel.to.objects.get(name__iexact=value)
+                    except field.rel.to.DoesNotExist:
+                        msg = 'Couldn\'t find value {!r} for key {!r}'.format(
+                            value, field.name,
+                        )
+                        raise RequiredFieldError(msg)
                 elif issubclass(field.rel.to, Sluggy):
                     value = field.rel.to.objects.get(slug=value)
                 elif (
@@ -338,6 +347,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                         kwargs[field_name] = value
                 else:
                     try:
+                        if 'region' not in kwargs:
+                            kwargs['region'] = Region.get_default_region()
                         asset = self.Model(**kwargs)
                         if self.AmdModel is not None:
                             amd_model_object = self.AmdModel(**amd_kwargs)

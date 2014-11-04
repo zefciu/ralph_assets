@@ -6,23 +6,26 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ajax_select.fields import AutoCompleteSelectMultipleField
 from collections import OrderedDict
+
+from ajax_select.fields import AutoCompleteSelectMultipleField
 from django import forms
-from django.forms import ChoiceField
+from django.forms import ChoiceField, ModelChoiceField
 from django.forms.widgets import Textarea
 from django.utils.translation import ugettext_lazy as _
-
 from django_search_forms.fields import (
     DateRangeSearchField,
     RelatedSearchField,
     TextSearchField,
 )
-from django_search_forms.form import SearchForm
 
+from ralph.account.models import Region
+from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget
+
 from ralph_assets import models_support
 from ralph_assets.forms import LOOKUPS, ReadOnlyFieldsMixin
+from ralph_assets.forms_utils import RegionRelatedSearchField, RegionSearchForm
 from ralph_assets.models import AssetType
 from ralph_assets.models_support import SupportType
 
@@ -38,7 +41,7 @@ class SupportForm(forms.ModelForm):
                 'description', 'price', 'date_from', 'date_to',
                 'escalation_path', 'contract_terms', 'additional_notes',
                 'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
-                'invoice_date', 'period_in_months', 'property_of',
+                'invoice_date', 'period_in_months', 'property_of', 'region',
             ]),
         ])
         widgets = {
@@ -67,6 +70,7 @@ class SupportForm(forms.ModelForm):
             'price',
             'producer',
             'property_of',
+            'region',
             'serial_no',
             'sla_type',
             'status',
@@ -86,6 +90,12 @@ class SupportForm(forms.ModelForm):
     def clean(self, *args, **kwargs):
         result = super(SupportForm, self).clean(*args, **kwargs)
         return result
+
+    def __init__(self, *args, **kwargs):
+        super(SupportForm, self).__init__(*args, **kwargs)
+        self.fields['region'] = ModelChoiceField(
+            queryset=get_actual_regions(),
+        )
 
 
 class AddSupportForm(SupportForm):
@@ -109,7 +119,7 @@ class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
                 'escalation_path', 'contract_terms', 'additional_notes',
                 'sla_type', 'producer', 'supplier', 'serial_no', 'invoice_no',
                 'invoice_date', 'period_in_months', 'property_of', 'assets',
-                'created',
+                'created', 'region',
             ]),
         ])
         fields = (
@@ -130,6 +140,7 @@ class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
             'price',
             'producer',
             'property_of',
+            'region',
             'serial_no',
             'sla_type',
             'status',
@@ -138,7 +149,7 @@ class EditSupportForm(ReadOnlyFieldsMixin, SupportForm):
         )
 
 
-class SupportSearchForm(SearchForm):
+class SupportSearchForm(RegionSearchForm):
     class Meta(object):
         Model = models_support.Support
         fields = []
@@ -152,3 +163,4 @@ class SupportSearchForm(SearchForm):
     assets = TextSearchField(
         filter_field='assets__sn', label=_('by sn (of assigned asset)'),
     )
+    region = RegionRelatedSearchField(Model=Region)

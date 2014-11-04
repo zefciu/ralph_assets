@@ -52,7 +52,11 @@ from ralph.discovery.models_util import SavingUser
 from ralph_assets.history.models import HistoryMixin
 from ralph_assets.history.utils import field_changes
 from ralph.util.models import SyncFieldMixin
-from ralph_assets.models_util import WithForm
+from ralph_assets.models_util import (
+    Regionalized,
+    RegionalizedDBManager,
+    WithForm,
+)
 from ralph_assets.utils import iso2_to_iso3
 
 
@@ -326,11 +330,15 @@ class AssetAdminManager(models.Manager):
     pass
 
 
-class BOManager(BOAdminManager, ViewableSoftDeletableManager):
+class BOManager(
+    BOAdminManager, ViewableSoftDeletableManager, RegionalizedDBManager
+):
     pass
 
 
-class DCManager(DCAdminManager, ViewableSoftDeletableManager):
+class DCManager(
+    DCAdminManager, ViewableSoftDeletableManager, RegionalizedDBManager
+):
     pass
 
 
@@ -408,6 +416,7 @@ class AssetLastHostname(models.Model):
 
 class Asset(
     AttachmentMixin,
+    Regionalized,
     HistoryMixin,
     TimeTrackable,
     EditorTrackable,

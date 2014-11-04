@@ -9,11 +9,13 @@ import datetime
 from random import randint
 
 from factory import (
+    lazy_attribute,
     Sequence,
     SubFactory,
     fuzzy,
 )
 from factory.django import DjangoModelFactory as Factory
+from ralph.account.models import Region
 
 from ralph_assets import models_assets
 from ralph_assets import models_support
@@ -48,6 +50,11 @@ class SupportFactory(Factory):
     status = models_support.SupportStatus.new.id
     supplier = Sequence(lambda n: 'supplier-#{}'.format(n))
     support_type = SubFactory(SupportTypeFactory)
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
 
 
 class DCSupportFactory(SupportFactory):

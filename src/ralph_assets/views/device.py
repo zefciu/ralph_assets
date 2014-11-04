@@ -18,7 +18,6 @@ from django.shortcuts import get_object_or_404
 
 from ralph.util.api_assets import get_device_components
 from ralph_assets.forms import (
-    AddDeviceForm,
     DeviceForm,
     MoveAssetPartForm,
     OfficeForm,
@@ -80,7 +79,6 @@ class AddDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                 self.additional_info = OfficeForm()
 
     def get(self, *args, **kwargs):
-        self.asset_form = AddDeviceForm(mode=self.mode)
         device_form_class = self.form_dispatcher('AddDevice')
         self.asset_form = device_form_class(mode=self.mode)
         self._set_additional_info_form()
@@ -136,7 +134,7 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
 
     def initialize_vars(self, *args, **kwargs):
         self.asset = get_object_or_404(
-            Asset.admin_objects,
+            Asset.objects,
             id=kwargs.get('asset_id'),
         )
         self.parts = Asset.objects.filter(part_info__device=self.asset)

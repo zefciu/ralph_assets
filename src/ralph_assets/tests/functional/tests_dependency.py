@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from ralph.cmdb.tests.utils import CIRelationFactory
+from ralph.account.models import Region
 
 from ralph_assets.models_assets import (
     Asset,
@@ -45,7 +46,9 @@ class TestDependency(TestCase):
                 'device_environment': self.ci_relation.child.id,
                 'model': self.model_blade.id,
                 'ralph_device_id': '',
+                'region': Region.get_default_region().id,
                 'service': self.ci_relation.parent.id,
+                'slots': 2,
                 'sn': '123456789',
                 'type': MODE2ASSET_TYPE['dc'].id,
                 'warehouse': self.warehouse.id,
@@ -64,6 +67,8 @@ class TestDependency(TestCase):
                 'model': self.model_none_blade.id,
                 'ralph_device_id': '',
                 'service': self.ci_relation.parent.id,
+                'region': Region.get_default_region().id,
+                'slots': '',
                 'sn': '123456789',
                 'type': MODE2ASSET_TYPE['dc'].id,
                 'warehouse': self.warehouse.id,
