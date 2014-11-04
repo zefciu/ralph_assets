@@ -5,15 +5,13 @@ DEV
 ~~~
 Released on TBA
 
-* Added quantity to licence model,
-* Created new widget based on formset,
+* Added quantity to assigned licences,
+* Added feature Region to assets, liceces and supports,
+* Added new field *segment* to back office assets and user-details.
+* Created new widget dedicated to many-to-many relations,
+* Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
 * Moved licence module to new app structure,
 * Cleaned up urls.py,
-* Added new field to assets forms: Region,
-* Added region mechanism to supports,
-* Added region mechanism to licenses,
-* Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
-* Added new field *segment* to backoffice asset and user-details.
 
 
 2.3.0
