@@ -6,7 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-from random import randint
+from decimal import Decimal
+from random import randint, randrange
 from uuid import uuid1
 
 from factory import (
@@ -52,7 +53,7 @@ class SoftwareCategoryFactory(DjangoModelFactory):
 
 class LicenceFactory(DjangoModelFactory):
     FACTORY_FOR = Licence
-    accounting_id = ''
+
     asset_type = AssetType.back_office.id
     # assets: probabbly it should be set as kwargs during creation?
     budget_info = SubFactory(BudgetInfoFactory)
@@ -61,20 +62,39 @@ class LicenceFactory(DjangoModelFactory):
     licence_type = SubFactory(LicenceTypeFactory)
     license_details = Sequence(lambda n: 'Licence-details-%s' % n)
     manufacturer = SubFactory(AssetManufacturerFactory)
-    number_bought = 5
     order_no = Sequence(lambda n: 'ORDER-NUMBER-%s' % n)
     parent = None
-    price = 0
     property_of = SubFactory(AssetOwnerFactory)
-    provider = ''
-    remarks = ''
+    provider = Sequence(lambda n: 'provider-{}'.format(n))
+    remarks = Sequence(lambda n: 'remarks-{}'.format(n))
     service_name = SubFactory(ServiceFactory)
     software_category = SubFactory(SoftwareCategoryFactory)
     users = None
     valid_thru = fuzzy.FuzzyDate(datetime.date(2008, 1, 1))
 
     @lazy_attribute
+    def accounting_id(self):
+        return str(randint(1, 100))
+
+    @lazy_attribute
     def niw(self):
+        return str(uuid1())
+
+    @lazy_attribute
+    def number_bought(self):
+        return randint(1, 100)
+
+    @lazy_attribute
+    def price(self):
+        return Decimal(randrange(10000))/100
+
+    @lazy_attribute
+    def region(self):
+        # lazy attr because static fails (it's not accessible during import)
+        return Region.get_default_region()
+
+    @lazy_attribute
+    def sn(self):
         return str(uuid1())
 
     @post_generation
@@ -82,15 +102,6 @@ class LicenceFactory(DjangoModelFactory):
         if not create:
             return None
         return [UserFactory() for i in range(randint(1, 8))]
-
-    @lazy_attribute
-    def sn(self):
-        return str(uuid1())
-
-    @lazy_attribute
-    def region(self):
-        # lazy attr because static fails (it's not accessible during import)
-        return Region.get_default_region()
 
 
 class LicenceAssetFactory(DjangoModelFactory):
