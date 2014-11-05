@@ -1,17 +1,17 @@
 Change Log
 ----------
 
-DEV
-~~~
-Released on TBA
+2.4.0
+~~~~~
+Released on November 5, 2014
 
 * Added quantity to assigned licences,
 * Added feature Region to assets, liceces and supports,
-* Added new field *segment* to back office assets and user-details.
+* Added new field *segment* to back office assets and user-details,
 * Created new widget dedicated to many-to-many relations,
 * Reduced SQL queries about 50% in ``Licence`` and ``Hardware`` list view,
 * Moved licence module to new app structure,
-* Cleaned up urls.py,
+* Cleaned up urls.py.
 
 
 2.3.0
