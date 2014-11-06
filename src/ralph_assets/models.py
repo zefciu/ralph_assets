@@ -120,8 +120,8 @@ class FreeLicenceLookup(RestrictedLookupChannel):
                 ralph_assets_licence.*,
                 ralph_assets_softwarecategory.name,
                 (
-                    COUNT(ralph_assets_licence_assets.asset_id)  +
-                    COUNT(ralph_assets_licence_users.user_id)
+                    COUNT(ralph_assets_licenceasset.asset_id)  +
+                    COUNT(ralph_assets_licenceuser.user_id)
                 ) AS used
             FROM
                 ralph_assets_licence
@@ -129,13 +129,13 @@ class FreeLicenceLookup(RestrictedLookupChannel):
                 ralph_assets_licence.software_category_id =
                 ralph_assets_softwarecategory.id
             )
-            LEFT JOIN ralph_assets_licence_assets ON (
+            LEFT JOIN ralph_assets_licenceasset ON (
                 ralph_assets_licence.id =
-                ralph_assets_licence_assets.licence_id
+                ralph_assets_licenceasset.licence_id
             )
-            LEFT JOIN ralph_assets_licence_users ON (
+            LEFT JOIN ralph_assets_licenceuser ON (
                 ralph_assets_licence.id =
-                ralph_assets_licence_users.licence_id
+                ralph_assets_licenceuser.licence_id
             )
             WHERE
                 ralph_assets_softwarecategory.name LIKE %s
