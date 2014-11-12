@@ -1763,8 +1763,8 @@ class UserRelationForm(Form):
     def __init__(self, user, *args, **kwargs):
         initial = kwargs.setdefault('initial', {})
         initial['licences'] = [
-            licence['pk']
-            for licence in user.licences.values('pk')
+            licence['licence_id']
+            for licence in user.licences.values('licence_id')
         ]
         super(UserRelationForm, self).__init__(*args, **kwargs)
 

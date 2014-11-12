@@ -308,7 +308,7 @@ class LicenceAsset(models.Model):
 
 class LicenceUser(models.Model):
     licence = models.ForeignKey(Licence)
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, related_name='licences')
     quantity = models.PositiveIntegerField(default=1)
 
     class Meta:

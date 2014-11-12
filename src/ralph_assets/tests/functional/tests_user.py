@@ -11,6 +11,7 @@ from django.test import TestCase
 
 from ralph.ui.tests.global_utils import login_as_su
 from ralph_assets.tests.utils import MessagesTestMixin, UserFactory
+from ralph_assets.tests.utils.licences import LicenceFactory
 
 
 class TestUserListView(MessagesTestMixin, TestCase):
@@ -38,3 +39,21 @@ class TestUserDetailView(MessagesTestMixin, TestCase):
             response,
             'User {} not found'.format('invalid_username'),
         )
+
+
+class TestUserEditRelations(TestCase):
+
+    def setUp(self):
+        self.client = login_as_su()
+
+    def test_users_view(self):
+        user = UserFactory(**{'username': 'test_user'})
+        url = reverse('edit_user_relations', args=(user.username,))
+        self.assertEqual(user.licences.count(), 0)
+        post_data = {
+            'licences': '|'.join([
+                str(LicenceFactory().id) for i in range(5)]
+            )
+        }
+        self.client.post(url, post_data, follow=True)
+        self.assertEqual(user.licences.count(), 5)
