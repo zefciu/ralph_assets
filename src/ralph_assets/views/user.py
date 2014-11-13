@@ -20,6 +20,7 @@ from ralph.util.reports import Report
 from ralph_assets.models import Asset, TransitionsHistory
 from ralph_assets.views.base import AssetsBase, DataTableColumnAssets
 from ralph_assets.forms import UserRelationForm, SearchUserForm
+from ralph_assets.licences.models import LicenceUser
 
 
 MAX_PAGE_SIZE = 65535
@@ -144,8 +145,11 @@ class EditUser(AssetsBase):
         self.form = UserRelationForm(data=request.POST, user=self.user)
         if self.form.is_valid():
             self.user.licence_set.clear()
-            for licence in self.form.cleaned_data.get('licences'):
-                self.user.licence_set.add(licence)
+            for licence_id in self.form.cleaned_data.get('licences'):
+                LicenceUser.objects.create(
+                    licence_id=licence_id,
+                    user=self.user,
+                )
             messages.success(request, _('User relations updated'))
             return HttpResponseRedirect(
                 reverse(
