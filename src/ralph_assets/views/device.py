@@ -263,6 +263,7 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                 self.asset.save(
                     user=self.request.user, force_unlink=force_unlink,
                 )
+                self.asset.licences.clear()
                 for licence in self.asset_form.cleaned_data.get(
                     'licences', []
                 ):
