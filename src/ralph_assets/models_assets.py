@@ -126,6 +126,19 @@ class LicenseType(Choices):
     box = _("box")
 
 
+class Orientation(Choices):
+    _ = Choices.Choice
+
+    DEPTH = Choices.Group(0)
+    front = _("front")
+    back = _("back")
+    middle = _("middle")
+
+    WIDTH = Choices.Group(100)
+    left = _("left")
+    right = _("right")
+
+
 class AssetType(Choices):
     _ = Choices.Choice
 
@@ -860,6 +873,65 @@ class Asset(
         return self.type
 
 
+class DeprecatedRalphDCManager(models.Manager):
+    def get_query_set(self):
+        query_set = super(DeprecatedRalphDCManager, self).get_query_set()
+        data_centers = query_set.filter(
+            parent__model__type=DeviceType.data_center,
+        )
+        return data_centers
+
+
+class DeprecatedRalphDC(Device):
+    objects = DeprecatedRalphDCManager()
+
+    class Meta:
+        proxy = True
+
+
+class DeprecatedRalphRackManager(models.Manager):
+    def get_query_set(self):
+        query_set = super(DeprecatedRalphRackManager, self).get_query_set()
+        racks = query_set.filter(
+            parent__model__type=DeviceType.rack,
+        )
+        return racks
+
+
+class DeprecatedRalphRack(Device):
+    objects = DeprecatedRalphRackManager()
+
+    class Meta:
+        proxy = True
+
+
+class DataCenter(Named):
+    deprecated_ralph_dc = models.ForeignKey(
+        DeprecatedRalphDC, null=True, blank=True,
+    )
+
+
+class ServerRoom(Named.NonUnique):
+    data_center = models.ForeignKey(DataCenter, verbose_name=_("data center"))
+
+
+class Rack(Named.NonUnique):
+    class Meta:
+        unique_together = ('name', 'data_center')
+
+    data_center = models.ForeignKey(DataCenter, null=False, blank=False)
+    deprecated_ralph_rack = models.ForeignKey(
+        DeprecatedRalphRack, null=True, related_name='deprecated_asset_rack',
+        blank=True,
+    )
+    max_u_height = models.IntegerField(default=48)
+    server_room = models.ForeignKey(
+        ServerRoom, verbose_name=_("server room"),
+        null=True,
+        blank=True,
+    )
+
+
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     ralph_device_id = models.IntegerField(
         verbose_name=_("Ralph device id"),
@@ -870,7 +942,19 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     )
     u_level = models.CharField(max_length=10, null=True, blank=True)
     u_height = models.CharField(max_length=10, null=True, blank=True)
-    rack = models.CharField(max_length=10, null=True, blank=True)
+    data_center = models.ForeignKey(DataCenter, null=True, blank=False)
+    server_room = models.ForeignKey(ServerRoom, null=True, blank=True)
+    rack = models.ForeignKey(Rack, null=True)
+    # deperecated field, use rack instead
+    rack_old = models.CharField(max_length=10, null=True, blank=True)
+    slot_no = models.IntegerField(
+        verbose_name=_("slot number"), null=True, blank=True,
+    )
+    position = models.IntegerField(null=True)
+    orientation = models.PositiveIntegerField(
+        choices=Orientation(),
+        default=Orientation.front.id,
+    )
 
     @property
     def size(self):
