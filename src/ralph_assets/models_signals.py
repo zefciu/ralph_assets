@@ -15,12 +15,15 @@ from ralph_assets.models import Asset, DeviceInfo, Orientation
 SAVE_PRIORITY = 215
 
 
-def _update_localization(device, asset_dev_info):
-    # Don't touch blade servers.
-    if not Asset.objects.filter(device_info=asset_dev_info).exists() or (
+def _can_not_edit_localization(asset_dev_info):
+    return not Asset.objects.filter(device_info=asset_dev_info).exists() or (
         asset_dev_info.asset.model.category and
         asset_dev_info.asset.model.category.is_blade
-    ):
+    )
+
+
+def _update_localization(device, asset_dev_info):
+    if _can_not_edit_localization(asset_dev_info):
         return
     # Rack not defined in asset device_info
     if (
@@ -55,11 +58,7 @@ def _update_cached_localization(device, asset_dev_info):
 
 
 def _update_level_and_orientation(device, asset_dev_info):
-    # Don't touch blade servers.
-    if not Asset.objects.filter(device_info=asset_dev_info).exists() or (
-        asset_dev_info.asset.model.category and
-        asset_dev_info.asset.model.category.is_blade
-    ):
+    if _can_not_edit_localization(asset_dev_info):
         return
     if asset_dev_info.position:
         device.chassis_position = asset_dev_info.position
