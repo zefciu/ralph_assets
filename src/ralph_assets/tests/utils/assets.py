@@ -39,8 +39,10 @@ from ralph_assets.models_assets import (
     AssetSource,
     AssetType,
     CoaOemOs,
+    DataCenter,
     DeviceInfo,
     OfficeInfo,
+    Rack,
     Service,
     Warehouse,
 )
@@ -70,6 +72,19 @@ def generate_imei(n):
     part = ''.join(str(random.randrange(0, 9)) for _ in range(n - 1))
     res = luhn_residue('{}{}'.format(part, 0))
     return '{}{}'.format(part, -res % 10)
+
+
+class DataCenterFactory(DjangoModelFactory):
+    FACTORY_FOR = DataCenter
+
+    name = Sequence(lambda n: 'DataCenter #%s' % n)
+
+
+class RackFactory(DjangoModelFactory):
+    FACTORY_FOR = Rack
+
+    name = Sequence(lambda n: 'Rack #%s' % n)
+    data_center = SubFactory(DataCenterFactory)
 
 
 class CoaOemOsFactory(DjangoModelFactory):
