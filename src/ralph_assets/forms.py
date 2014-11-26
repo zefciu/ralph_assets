@@ -58,10 +58,13 @@ from ralph_assets import models_assets
 from ralph.discovery import models_device
 from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
+from ralph.ui.forms.addresses import IPWithHostField
 
 
 RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
 
+
+# We use lambdas, so the fieldsets can be recreated after modifications
 
 asset_fieldset = lambda: OrderedDict([
     ('Basic Info', [
@@ -545,6 +548,7 @@ class DeviceForm(ModelForm):
         kwargs.pop('mode')
         exclude = kwargs.pop('exclude', None)
         super(DeviceForm, self).__init__(*args, **kwargs)
+
         self.fields['ralph_device_id'] = AutoCompleteSelectField(
             LOOKUPS['ralph_device'],
             required=False,
@@ -764,6 +768,22 @@ class DependencyAssetForm(DependencyForm):
 
 
 class BaseAssetForm(ModelForm):
+
+    edit_management_ip = False
+
+    def __init__(self, *args, **kwargs):
+        super(BaseAssetForm, self).__init__(*args, **kwargs)
+        instance = kwargs.get('instance')
+        if self.edit_management_ip:
+            self.fields['management_ip'] = IPWithHostField(required=False)
+            self.fieldsets['Basic Info'].append('management_ip')
+            if instance and self.edit_management_ip:
+                device = instance.get_ralph_device()
+                if device:
+                    management_ip = device.management_ip
+                    self.fields['management_ip'].initial =\
+                        management_ip and management_ip.as_tuple()
+
     class Meta:
         model = Asset
 
@@ -1252,6 +1272,8 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
 
 class DataCenterAddDeviceForm(AddDeviceForm):
 
+    edit_management_ip = True
+
     class Meta(BaseAddAssetForm.Meta):
         fields = BaseAddAssetForm.Meta.fields + (
             'device_environment', 'service',
@@ -1300,7 +1322,6 @@ class EditDeviceForm(BaseEditAssetForm):
 
     def __init__(self, *args, **kwargs):
         super(EditDeviceForm, self).__init__(*args, **kwargs)
-        self.fieldsets = asset_fieldset()
         self.fieldsets['Assigned licenses info'] = ['licences']
         self.fieldsets['Assigned supports info'] = [
             'required_support',
@@ -1382,6 +1403,8 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
 
 
 class DataCenterEditDeviceForm(EditDeviceForm):
+
+    edit_management_ip = True
 
     class Meta(BaseEditAssetForm.Meta):
         fields = BaseEditAssetForm.Meta.fields + (

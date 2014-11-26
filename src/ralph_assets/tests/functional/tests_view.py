@@ -2333,3 +2333,45 @@ class TestLicenceConnection(BaseViewsTest):
         response = self.client.post(url, form_data)
         self.assertEqual(len(response.context_data['formset'].errors), 0)
         self.assertEqual(LicenceUser.objects.count(), 0)
+
+
+class TestManagementIp(TestDevicesView):
+    """Tests for management_ip editing."""
+
+    def test_edit_management_ip(self):
+        """Management_ip is editable via asset form."""
+        asset = DCAssetFactory()
+        url = reverse(
+            'device_edit', kwargs={'mode': 'dc', 'asset_id': asset.id}
+        )
+        data = self.get_object_form_data(
+            url, ['asset_form', 'additional_info']
+        )
+        data['management_ip_0'] = 'hostname.dc1'
+        data['management_ip_1'] = '1.1.1.1'
+        data['asset'] = ''
+        self.client.post(url, data)
+        asset = Asset.objects.get(pk=asset.pk)
+        self.assertEqual(
+            asset.get_ralph_device().management_ip.address,
+            '1.1.1.1',
+        )
+
+    def test_edit_management_for_dc(self):
+        """For DC assets we can edit management_ip."""
+        asset = DCAssetFactory()
+        url = reverse(
+            'device_edit', kwargs={'mode': 'dc', 'asset_id': asset.id}
+        )
+        response = self.client.get(url)
+        self.assertContains(response, 'management_ip')
+
+    def test_no_edit_management_ip_for_bo(self):
+        """For DC assets we can't edit management_ip."""
+        asset = BOAssetFactory()
+        url = reverse('device_edit', kwargs={
+            'mode': 'back_office',
+            'asset_id': asset.id,
+        })
+        response = self.client.get(url)
+        self.assertNotContains(response, 'management_ip')
