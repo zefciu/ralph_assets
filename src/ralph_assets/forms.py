@@ -121,8 +121,8 @@ asset_search_back_office_fieldsets = lambda: OrderedDict([
 asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
-            'barcode', 'sn', 'model', 'manufacturer', 'warehouse',
-            'required_support', 'support_assigned', 'service',
+            'location_name', 'barcode', 'sn', 'model', 'manufacturer',
+            'warehouse', 'required_support', 'support_assigned', 'service',
             'device_environment', 'region',
         ],
         'collapsed': [
@@ -1709,6 +1709,8 @@ class DataCenterSearchAssetForm(SearchAssetForm):
     def __init__(self, *args, **kwargs):
         super(DataCenterSearchAssetForm, self).__init__(*args, **kwargs)
         self.fieldsets = asset_search_dc_fieldsets()
+
+    location_name = CharField(required=False, label=_('Rack, server room, dc'))
 
     category = TreeNodeChoiceField(
         required=False,
