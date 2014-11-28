@@ -23,6 +23,7 @@ from ralph_assets.tests.utils.assets import (
     BOAssetFactory,
     DCAssetFactory,
     AssetManufacturerFactory,
+    RackFactory,
 )
 from ralph_assets.models_assets import (
     Asset,
@@ -586,12 +587,12 @@ class TestSearchEngine(TestCase):
             DCAssetFactory(model__name=name)
             BOAssetFactory(model__name=name)
 
+        rack = RackFactory(name='707', server_room__name='Server Room 404')
         for manufacturer in ['Apple', 'Sony', 'Nikon', 'Sony Ericsson']:
             manu = AssetManufacturerFactory(name=manufacturer)
             DCAssetFactory(
                 model__manufacturer=manu,
-                device_info__rack__name='707',
-                device_info__rack__server_room__name='Server Room 404',
+                device_info__rack=rack,
             )
             BOAssetFactory(model__manufacturer=manu)
             licences.LicenceFactory(manufacturer=manu)
