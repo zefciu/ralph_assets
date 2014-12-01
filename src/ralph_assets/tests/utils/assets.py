@@ -149,6 +149,7 @@ class AssetModelFactory(DjangoModelFactory):
     type = AssetCategoryType.back_office
     manufacturer = SubFactory(AssetManufacturerFactory)
     category = SubFactory(AssetCategoryFactory)
+    height_of_device = 1
 
 
 class WarehouseFactory(DjangoModelFactory):
