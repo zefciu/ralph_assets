@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_404_NOT_FOUND
 from rest_framework.views import APIView
 
-from ralph_assets.models_assets import Rack, DeviceInfo
+from ralph_assets.models_assets import DeviceInfo, Orientation, Rack
 from ralph_assets.views.base import ACLGateway
 
 
@@ -30,26 +30,55 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
             rack = Rack.objects.get(id=rack_id)
         except Rack.DoesNotExist:
             return Response({
-                'status': False,
                 'message': _('Rack with id `{0}` does not exist'.format(
                     rack_id
                 )),
             }, status=HTTP_404_NOT_FOUND)
 
-        results = []
-        for device_info in DeviceInfo.objects.filter(
-            rack=rack,
-        ).select_related(
-            'asset__model',
-        ):
-            results.append({
-                'asset_id': device_info.asset.id,
-                'model': device_info.asset.model.name,
-                'barcode': device_info.asset.barcode,
-                'sn': device_info.asset.sn,
-                'url': device_info.asset.url,
-                'position': device_info.position,
-                'height_of_device': device_info.asset.model.height_of_device,
-            })
+        def get_empty_positions(max_height, result):
+            positions = []
+            for item in result:
+                position = int(item['position'])
+                height = int(item['height'])
+                positions.extend(
+                    xrange(position, position + height)
+                )
+            return set(xrange(1, max_height + 1)) - set(positions)
 
-        return Response({'status': True, 'data': results})
+        def get_side(side):
+            results = []
+            for device in DeviceInfo.objects.filter(
+                rack=rack,
+                orientation=side,
+            ).select_related(
+                'asset__model',
+            ):
+                results.append({
+                    'asset_id': device.asset.id,
+                    'model': device.asset.model.name,
+                    'height': int(device.asset.model.height_of_device),
+                    'barcode': device.asset.barcode,
+                    'sn': device.asset.sn,
+                    'url': device.asset.url,
+                    'position': device.position,
+                })
+            for empty_position in get_empty_positions(
+                rack.max_u_height, results
+            ):
+                results.append({'empty': True, 'position': empty_position})
+            return results
+
+        return Response({
+            "name": rack.name,
+            "max_u_height": rack.max_u_height,
+            "sides": [
+                {
+                    "type": "front",
+                    "items": get_side(Orientation.front),
+                },
+                {
+                    "type": "back",
+                    "items": get_side(Orientation.back),
+                }
+            ]
+        })
