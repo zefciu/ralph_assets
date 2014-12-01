@@ -40,12 +40,10 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
             for item in result:
                 position = int(item['position'])
                 height = int(item['height'])
-                positions.extend(
-                    xrange(position, position + height)
-                )
+                positions.extend(range(position, position + height))
             return set(xrange(1, max_height + 1)) - set(positions)
 
-        def get_side(side):
+        def get_data_by_side(side):
             results = []
             for device in DeviceInfo.objects.filter(
                 rack=rack,
@@ -68,17 +66,15 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
                 results.append({'empty': True, 'position': empty_position})
             return results
 
+        sides = [
+            {
+                "type": side.desc,
+                "items": get_data_by_side(side)
+            }
+            for side in [Orientation.front, Orientation.back]
+        ]
         return Response({
             "name": rack.name,
             "max_u_height": rack.max_u_height,
-            "sides": [
-                {
-                    "type": "front",
-                    "items": get_side(Orientation.front),
-                },
-                {
-                    "type": "back",
-                    "items": get_side(Orientation.back),
-                }
-            ]
+            "sides": sides
         })
