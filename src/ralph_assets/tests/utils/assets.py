@@ -178,6 +178,8 @@ class RackFactory(DjangoModelFactory):
     name = Sequence(lambda n: 'Rack #{}'.format(n))
     data_center = SubFactory(DataCenterFactory)
     server_room = SubFactory(ServerRoomFactory)
+    visualization_col = fuzzy.FuzzyInteger(1, 10)
+    visualization_row = fuzzy.FuzzyInteger(1, 10)
 
 
 class DeviceInfoFactory(DjangoModelFactory):
