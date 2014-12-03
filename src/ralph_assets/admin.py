@@ -33,6 +33,7 @@ from ralph_assets.models import (
     Warehouse,
 )
 from ralph_assets.models_assets import REPORT_LANGUAGES
+from ralph_assets.models_dc_assets import Accessory
 from ralph_assets.models_util import ImportProblem
 from ralph_assets.licences.models import LicenceType, SoftwareCategory
 from ralph_assets.models_support import Support, SupportType
@@ -334,3 +335,18 @@ class RackAdmin(ModelAdmin):
 
 
 admin.site.register(models_assets.Rack, RackAdmin)
+
+
+class AccessoryAdmin(ModelAdmin):
+    save_on_top = True
+    list_display = (
+        'name', 'data_center', 'server_room', 'rack', 'orientation',
+        'position', 'type', 'remarks',
+    )
+    search_fields = (
+        'name', 'data_center', 'server_room', 'rack', 'orientation',
+        'position', 'type', 'remarks',
+    )
+
+
+admin.site.register(Accessory, AccessoryAdmin)

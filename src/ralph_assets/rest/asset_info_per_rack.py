@@ -12,7 +12,13 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 from rest_framework.views import APIView
 
 from ralph_assets.models_assets import DeviceInfo, Orientation, Rack
+from ralph_assets.models_dc_assets import Accessory
 from ralph_assets.views.base import ACLGateway
+
+
+TYPE_EMPTY = 'empty'
+TYPE_ACCESSORY = 'accessory'
+TYPE_ASSET = 'asset'
 
 
 class AssetInfoPerRackAPIView(ACLGateway, APIView):
@@ -38,12 +44,13 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
         def get_empty_positions(max_height, result):
             positions = []
             for item in result:
-                position = int(item['position'])
-                height = int(item['height'])
-                positions.extend(range(position, position + height))
+                if item['_type'] == TYPE_ASSET:
+                    position = int(item['position'])
+                    height = int(item['height'])
+                    positions.extend(range(position, position + height))
             return set(xrange(1, max_height + 1)) - set(positions)
 
-        def get_data_by_side(side):
+        def get_data_by_side(rack, side):
             results = []
             for device in DeviceInfo.objects.filter(
                 rack=rack,
@@ -52,6 +59,7 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
                 'asset__model',
             ):
                 results.append({
+                    '_type': TYPE_ASSET,
                     'asset_id': device.asset.id,
                     'model': device.asset.model.name,
                     'height': int(device.asset.model.height_of_device),
@@ -60,16 +68,29 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
                     'url': device.asset.url,
                     'position': device.position,
                 })
+            for accessory in Accessory.objects.filter(
+                rack=rack,
+                orientation=side,
+            ):
+                results.append({
+                    '_type': TYPE_ACCESSORY,
+                    'position': accessory.position,
+                    'remarks': accessory.remarks,
+                    'type': accessory.type,
+                })
             for empty_position in get_empty_positions(
                 rack.max_u_height, results
             ):
-                results.append({'empty': True, 'position': empty_position})
+                results.append({
+                    '_type': TYPE_EMPTY,
+                    'position': empty_position,
+                })
             return results
 
         sides = [
             {
                 "type": side.desc,
-                "items": get_data_by_side(side)
+                "items": get_data_by_side(rack, side)
             }
             for side in [Orientation.front, Orientation.back]
         ]

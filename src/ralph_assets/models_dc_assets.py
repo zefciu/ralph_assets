@@ -123,11 +123,16 @@ class Rack(Named.NonUnique):
 class AccessoryType(Choices):
     _ = Choices.Choice
     brush = _("brush")
+    organizer = _("organizer")
     patch_panel = _("patch panel")
 
 
 class Accessory(Named):
     data_center = models.ForeignKey(DataCenter, null=True, blank=False)
+    orientation = models.PositiveIntegerField(
+        choices=Orientation(),
+        default=Orientation.front.id,
+    )
     position = models.IntegerField(null=True, blank=False)
     rack = models.ForeignKey(Rack, null=True, blank=False)
     remarks = models.CharField(
