@@ -8,9 +8,6 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from mock import patch
 
-from ralph_assets.models_assets import DataCenter as AssetDataCenter
-from ralph_assets.models_assets import ServerRoom as AssetServerRoom
-from ralph_assets.models_assets import Rack as AssetRack
 from ralph_assets.models_assets import DeviceInfo, Orientation
 from ralph_assets.models_signals import (
     _get_core_parent,
@@ -20,7 +17,13 @@ from ralph_assets.models_signals import (
     asset_device_info_post_save,
     update_core_localization,
 )
-from ralph_assets.tests.utils.assets import DCAssetFactory, DeviceInfoFactory
+from ralph_assets.tests.utils.assets import (
+    DataCenterFactory,
+    DCAssetFactory,
+    DeviceInfoFactory,
+    RackFactory,
+    ServerRoomFactory,
+)
 from ralph.discovery.models import DeviceType
 from ralph.discovery.tests.util import DeviceModelFactory, DeviceFactory
 
@@ -59,31 +62,31 @@ class AssetDevInfoPostSaveTest(TestCase):
         self.dev_4 = DeviceFactory(name="h201.dc2", parent=self.rack_2_2)
         self.dev_5 = DeviceFactory(name="h201-1.dc2", parent=self.dev_4)
         # assets side
-        self.assets_dc_1 = AssetDataCenter.objects.create(
+        self.assets_dc_1 = DataCenterFactory(
             name='DC1', deprecated_ralph_dc_id=self.dc_1.id,
         )
-        self.assets_dc_2 = AssetDataCenter.objects.create(
+        self.assets_dc_2 = DataCenterFactory(
             name='DC2', deprecated_ralph_dc_id=self.dc_2.id,
         )
-        self.assets_sr_1 = AssetServerRoom.objects.create(
+        self.assets_sr_1 = ServerRoomFactory(
             name="DC1_1", data_center=self.assets_dc_1,
         )
-        self.assets_sr_2 = AssetServerRoom.objects.create(
+        self.assets_sr_2 = ServerRoomFactory(
             name="DC2_1", data_center=self.assets_dc_2,
         )
-        self.assets_rack_1_1 = AssetRack.objects.create(
+        self.assets_rack_1_1 = RackFactory(
             name="Rack 1 DC1", deprecated_ralph_rack_id=self.rack_1_1.id,
             data_center=self.assets_dc_1,
         )
-        self.assets_rack_1_2 = AssetRack.objects.create(
+        self.assets_rack_1_2 = RackFactory(
             name="Rack 2 DC1", deprecated_ralph_rack_id=self.rack_1_2.id,
             data_center=self.assets_dc_1,
         )
-        self.assets_rack_2_1 = AssetRack.objects.create(
+        self.assets_rack_2_1 = RackFactory(
             name="Rack 1 DC2", deprecated_ralph_rack_id=self.rack_2_1.id,
             data_center=self.assets_dc_2,
         )
-        self.assets_rack_2_2 = AssetRack.objects.create(
+        self.assets_rack_2_2 = RackFactory(
             name="Rack 2 DC2", deprecated_ralph_rack_id=self.rack_2_2.id,
             data_center=self.assets_dc_2,
         )
@@ -134,7 +137,7 @@ class AssetDevInfoPostSaveTest(TestCase):
 
     def test_update_localization(self):
         # case: device_info without deprecated_ralph_rack
-        rack = AssetRack.objects.create(
+        rack = RackFactory(
             name="Rack 4 DC2", data_center=self.assets_dc_2,
         )
         old_device_info = self.assets_dev_2.device_info
@@ -151,7 +154,7 @@ class AssetDevInfoPostSaveTest(TestCase):
         self.assertEqual(self.dev_2.parent_id, self.rack_1_2.id)
 
         # case: rack and dc changed
-        rack = AssetRack.objects.create(
+        rack = RackFactory(
             name="Rack 5 DC2", data_center=self.assets_dc_2,
             deprecated_ralph_rack_id=self.rack_2_2.id
         )
