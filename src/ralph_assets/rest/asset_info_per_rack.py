@@ -12,7 +12,7 @@ from rest_framework.status import HTTP_404_NOT_FOUND
 from rest_framework.views import APIView
 
 from ralph_assets.models_assets import DeviceInfo, Orientation, Rack
-from ralph_assets.models_dc_assets import Accessory
+from ralph_assets.models_dc_assets import RackAccessory
 from ralph_assets.views.base import ACLGateway
 
 
@@ -68,15 +68,15 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
                     'url': device.asset.url,
                     'position': device.position,
                 })
-            for accessory in Accessory.objects.filter(
+            for rack_accessory in RackAccessory.objects.filter(
                 rack=rack,
                 orientation=side,
             ):
                 results.append({
                     '_type': TYPE_ACCESSORY,
-                    'position': accessory.position,
-                    'remarks': accessory.remarks,
-                    'type': accessory.type,
+                    'position': rack_accessory.position,
+                    'remarks': rack_accessory.remarks,
+                    'type': rack_accessory.accessory.name,
                 })
             for empty_position in get_empty_positions(
                 rack.max_u_height, results

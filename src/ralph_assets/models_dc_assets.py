@@ -117,6 +117,10 @@ class ServerRoom(Named.NonUnique):
         return '{} ({})'.format(self.name, self.data_center.name)
 
 
+class Accessory(Named):
+    pass
+
+
 class Rack(Named.NonUnique):
     class Meta:
         unique_together = ('name', 'data_center')
@@ -134,10 +138,13 @@ class Rack(Named.NonUnique):
     )
     visualization_col = models.PositiveIntegerField(
         verbose_name=_('column number on visualization grid'),
+        default=0,
     )
     visualization_row = models.PositiveIntegerField(
         verbose_name=_('row number on visualization grid'),
+        default=0,
     )
+    accessories = models.ManyToManyField(Accessory, through='RackAccessory')
 
     def __unicode__(self):
         name = self.name
@@ -148,36 +155,28 @@ class Rack(Named.NonUnique):
         return name
 
 
-class AccessoryType(Choices):
-    _ = Choices.Choice
-    brush = _("brush")
-    organizer = _("organizer")
-    patch_panel = _("patch panel")
-
-
-class Accessory(Named.NonUnique):
+class RackAccessory(models.Model):
+    accessory = models.ForeignKey(Accessory)
+    rack = models.ForeignKey(Rack)
     data_center = models.ForeignKey(DataCenter, null=True, blank=False)
+    server_room = models.ForeignKey(ServerRoom, null=True, blank=False)
     orientation = models.PositiveIntegerField(
         choices=Orientation(),
         default=Orientation.front.id,
     )
     position = models.IntegerField(null=True, blank=False)
-    rack = models.ForeignKey(Rack, null=True, blank=False)
     remarks = models.CharField(
         verbose_name='Additional remarks',
         max_length=1024,
         blank=True,
     )
-    server_room = models.ForeignKey(ServerRoom, null=True, blank=False)
-    type = models.PositiveIntegerField(choices=AccessoryType())
 
     def __unicode__(self):
-        name = self.name
-        if self.server_room:
-            name = '{} - {}'.format(name, self.server_room)
-        elif self.data_center:
-            name = '{} - {}'.format(name, self.data_center)
-        return name
+        rack_name = self.rack.name if self.rack else ''
+        accessory_name = self.accessory.name if self.accessory else ''
+        return 'RackAccessory: {rack_name} - {accessory_name}'.format(
+            rack_name=rack_name, accessory_name=accessory_name,
+        )
 
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):

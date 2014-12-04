@@ -442,14 +442,7 @@ admin.site.register(models_assets.Rack, RackAdmin)
 
 class AccessoryAdmin(ModelAdmin):
     save_on_top = True
-    list_display = (
-        'name', 'data_center', 'server_room', 'rack', 'orientation',
-        'position', 'type', 'remarks',
-    )
-    search_fields = (
-        'name', 'data_center', 'server_room', 'rack', 'orientation',
-        'position', 'type', 'remarks',
-    )
-
+    list_display = ('name',)
+    search_fields = ('name',)
 
 admin.site.register(Accessory, AccessoryAdmin)

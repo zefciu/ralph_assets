@@ -48,7 +48,7 @@ from ralph_assets.models_assets import (
     Service,
     Warehouse,
 )
-from ralph_assets.models_dc_assets import Accessory, AccessoryType
+from ralph_assets.models_dc_assets import Accessory, RackAccessory
 from ralph_assets.tests.utils import UserFactory
 
 category_code_set = 'ABCDEFGHIJKLMNOPRSTUVWXYZ1234567890'
@@ -172,6 +172,12 @@ class ServerRoomFactory(DjangoModelFactory):
     data_center = SubFactory(DataCenterFactory)
 
 
+class AccessoryFactory(DjangoModelFactory):
+    FACTORY_FOR = Accessory
+
+    name = Sequence(lambda n: 'Accessory #{}'.format(n))
+
+
 class RackFactory(DjangoModelFactory):
     FACTORY_FOR = Rack
 
@@ -180,6 +186,15 @@ class RackFactory(DjangoModelFactory):
     server_room = SubFactory(ServerRoomFactory)
     visualization_col = fuzzy.FuzzyInteger(1, 10)
     visualization_row = fuzzy.FuzzyInteger(1, 10)
+
+
+class RackAccessoryFactory(DjangoModelFactory):
+    FACTORY_FOR = RackAccessory
+
+    accessory = SubFactory(AccessoryFactory)
+    rack = SubFactory(RackFactory)
+    position = fuzzy.FuzzyInteger(1, 48)
+    remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
 
 
 class DeviceInfoFactory(DjangoModelFactory):
@@ -192,32 +207,6 @@ class DeviceInfoFactory(DjangoModelFactory):
     slot_no = fuzzy.FuzzyInteger(0, 100)
     position = fuzzy.FuzzyInteger(1, 48)
     orientation = Orientation.front.id
-
-    @factory.post_generation
-    def rack(self, create, extracted, **kwargs):
-        if not create:
-            # Simple build, do nothing.
-            return
-
-        if extracted:
-            self.rack = extracted
-        else:
-            server_room = ServerRoomFactory()
-            self.data_center = server_room.data_center
-            self.server_room = server_room
-            self.rack = RackFactory(
-                data_center=server_room.data_center, server_room=server_room,
-            )
-
-
-class AccessoryFactory(DjangoModelFactory):
-    FACTORY_FOR = Accessory
-
-    name = Sequence(lambda n: 'Accessory #{}'.format(n))
-    position = fuzzy.FuzzyInteger(1, 48)
-    rack = SubFactory(RackFactory)
-    remarks = Sequence(lambda n: 'Remarks #{}'.format(n))
-    type = AccessoryType.brush.id
 
     @factory.post_generation
     def rack(self, create, extracted, **kwargs):
