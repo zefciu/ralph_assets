@@ -155,7 +155,7 @@ class AccessoryType(Choices):
     patch_panel = _("patch panel")
 
 
-class Accessory(Named):
+class Accessory(Named.NonUnique):
     data_center = models.ForeignKey(DataCenter, null=True, blank=False)
     orientation = models.PositiveIntegerField(
         choices=Orientation(),
@@ -170,6 +170,14 @@ class Accessory(Named):
     )
     server_room = models.ForeignKey(ServerRoom, null=True, blank=False)
     type = models.PositiveIntegerField(choices=AccessoryType())
+
+    def __unicode__(self):
+        name = self.name
+        if self.server_room:
+            name = '{} - {}'.format(name, self.server_room)
+        elif self.data_center:
+            name = '{} - {}'.format(name, self.data_center)
+        return name
 
 
 class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
