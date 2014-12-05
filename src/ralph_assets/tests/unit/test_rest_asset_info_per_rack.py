@@ -60,7 +60,7 @@ class TestRestAssetInfoPerRack(TestCase):
     def test_get(self):
         returned_json = json.loads(
             self.client.get(
-                '/assets/api/rack/{0}/devices/'.format(self.rack_1.id)
+                '/assets/api/rack/{0}/'.format(self.rack_1.id)
             ).content
         )
         expected_json = {

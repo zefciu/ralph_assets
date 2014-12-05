@@ -35,6 +35,9 @@ class TestRackForm(TestCase):
                 'max_u_height': 48,
                 'visualization_col': 1,
                 'visualization_row': 1,
+                'rackaccessory_set-TOTAL_FORMS': 0,
+                'rackaccessory_set-INITIAL_FORMS': 0,
+                'rackaccessory_set-MAX_NUM_FORMS': 0,
             },
             follow=True,
         )
@@ -58,6 +61,9 @@ class TestRackForm(TestCase):
                 'max_u_height': 48,
                 'visualization_col': 1,
                 'visualization_row': 1,
+                'rackaccessory_set-TOTAL_FORMS': 0,
+                'rackaccessory_set-INITIAL_FORMS': 0,
+                'rackaccessory_set-MAX_NUM_FORMS': 0,
             },
             follow=True,
         )
@@ -77,6 +83,9 @@ class TestRackForm(TestCase):
                 'max_u_height': 48,
                 'visualization_col': 5,
                 'visualization_row': 5,
+                'rackaccessory_set-TOTAL_FORMS': 0,
+                'rackaccessory_set-INITIAL_FORMS': 0,
+                'rackaccessory_set-MAX_NUM_FORMS': 0,
             },
             follow=True,
         )
@@ -102,6 +111,9 @@ class TestRackForm(TestCase):
                 'max_u_height': 48,
                 'visualization_col': 11,
                 'visualization_row': 1,
+                'rackaccessory_set-TOTAL_FORMS': 0,
+                'rackaccessory_set-INITIAL_FORMS': 0,
+                'rackaccessory_set-MAX_NUM_FORMS': 0,
             },
             follow=True,
         )
@@ -120,6 +132,9 @@ class TestRackForm(TestCase):
                 'max_u_height': 48,
                 'visualization_col': 1,
                 'visualization_row': 11,
+                'rackaccessory_set-TOTAL_FORMS': 0,
+                'rackaccessory_set-INITIAL_FORMS': 0,
+                'rackaccessory_set-MAX_NUM_FORMS': 0,
             },
             follow=True,
         )

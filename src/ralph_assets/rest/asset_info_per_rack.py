@@ -41,13 +41,16 @@ class AssetInfoPerRackAPIView(ACLGateway, APIView):
                 )),
             }, status=HTTP_404_NOT_FOUND)
 
-        def get_empty_positions(max_height, result):
+        def get_empty_positions(max_height, devices):
             positions = []
-            for item in result:
+            for item in devices:
+                position = int(item['position'])
+                if item['_type'] == TYPE_ACCESSORY:
+                    height = 1
                 if item['_type'] == TYPE_ASSET:
-                    position = int(item['position'])
                     height = int(item['height'])
-                    positions.extend(range(position, position + height))
+                positions.extend(range(position, position + height))
+
             return set(xrange(1, max_height + 1)) - set(positions)
 
         def get_data_by_side(rack, side):
