@@ -171,6 +171,11 @@ class TestApiScrooge(TestCase):
             date_to=date(2014, 11, 12)
         )
         DCSupportFactory(
+            date_from=date(2013, 11, 13),
+            date_to=date(2014, 11, 12),
+            price=0,
+        )
+        DCSupportFactory(
             date_from=date(2012, 11, 13),
             date_to=date(2013, 11, 11)
         )
