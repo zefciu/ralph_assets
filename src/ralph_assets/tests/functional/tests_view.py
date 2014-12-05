@@ -37,6 +37,7 @@ from ralph_assets.licences.models import (
 )
 from ralph_assets.forms import DeviceForm
 from ralph_assets.models_assets import Asset, SAVE_PRIORITY
+from ralph_assets.models_support import Support
 from ralph_assets.tests.utils import (
     AjaxClient,
     AttachmentFactory,
@@ -1219,8 +1220,11 @@ class TestSupportsView(TestRegions, BaseViewsTest):
         """
         request_data = self.support_data.copy()
         response = self.client.post(reverse('add_support'), request_data)
+        support = Support.objects.order_by('-id')[0]
         self.assertRedirects(
-            response, reverse('support_list'), status_code=302,
+            response,
+            reverse('edit_support', kwargs={'support_id': support.id}),
+            status_code=302,
             target_status_code=200,
         )
         support = models_support.Support.objects.reverse()[0]
