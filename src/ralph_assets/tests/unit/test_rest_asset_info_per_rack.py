@@ -18,9 +18,9 @@ from ralph_assets.rest.asset_info_per_rack import (
     TYPE_ASSET,
 )
 from ralph_assets.tests.utils.assets import (
-    AccessoryFactory,
     AssetFactory,
     RackFactory,
+    RackAccessoryFactory,
 )
 
 
@@ -41,13 +41,13 @@ class TestRestAssetInfoPerRack(TestCase):
         self.rack_1.deviceinfo_set.add(self.asset_2.device_info)
         rack_2.deviceinfo_set.add(asset_3.device_info)
 
-        self.rack1_accessory = AccessoryFactory(
+        self.rack1_accessory = RackAccessoryFactory(
             rack=self.rack_1,
             server_room=self.rack_1.server_room,
             data_center=self.rack_1.server_room.data_center,
             orientation=Orientation.front,
         )
-        self.rack2_accessory = AccessoryFactory(
+        self.rack2_accessory = RackAccessoryFactory(
             rack=rack_2,
             server_room=rack_2.server_room,
             data_center=rack_2.server_room.data_center,
@@ -96,7 +96,7 @@ class TestRestAssetInfoPerRack(TestCase):
                             '_type': TYPE_ACCESSORY,
                             'position': self.rack1_accessory.position,
                             'remarks': self.rack1_accessory.remarks,
-                            'type': self.rack1_accessory.type,
+                            'type': self.rack1_accessory.accessory.name,
 
 
 
