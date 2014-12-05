@@ -419,6 +419,12 @@ class RackForm(forms.ModelForm):
         return cleaned_data
 
 
+class AccessoryInline(admin.TabularInline):
+    fields = ('accessory', 'position', 'remarks', 'orientation')
+    model = models_assets.Rack.accessories.through
+    extra = 1
+
+
 class RackAdmin(ModelAdmin):
     form = RackForm
     save_on_top = True
@@ -435,6 +441,9 @@ class RackAdmin(ModelAdmin):
             'fields': ('visualization_col', 'visualization_row'),
         }),
     )
+    inlines = [
+        AccessoryInline,
+    ]
 
 
 admin.site.register(models_assets.Rack, RackAdmin)

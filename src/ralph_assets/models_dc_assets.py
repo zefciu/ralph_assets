@@ -95,7 +95,7 @@ class DeprecatedRalphRack(Device):
 
 class DataCenter(Named):
     deprecated_ralph_dc = models.ForeignKey(
-        DeprecatedRalphDC, null=True, blank=True,
+        DeprecatedRalphDC, null=True, blank=True, unique=True
     )
     visualization_cols_num = models.PositiveIntegerField(
         verbose_name=_('visualization grid columns number'),
