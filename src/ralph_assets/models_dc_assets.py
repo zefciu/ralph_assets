@@ -118,7 +118,10 @@ class ServerRoom(Named.NonUnique):
 
 
 class Accessory(Named):
-    pass
+
+    class Meta:
+        verbose_name = _('accessory')
+        verbose_name_plural = _('accessories')
 
 
 class Rack(Named.NonUnique):
