@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
+import re
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
@@ -36,6 +37,10 @@ INVALID_SERVER_ROOM = 2
 INVALID_ORIENTATION = 3
 INVALID_POSITION = 4
 REQUIRED_SLOT_NUMBER = 5
+INVALID_SLOT_NUMBER = 6
+
+# i.e. number in range 1-16 and optional postfix 'A' or 'B'
+VALID_SLOT_NUMBER_FORMAT = re.compile('^([1-9][A,B]?|1[0-6][A,B]?)$')
 
 
 class Orientation(Choices):
@@ -197,8 +202,8 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
     rack = models.ForeignKey(Rack, null=True, blank=True)
     # deperecated field, use rack instead
     rack_old = models.CharField(max_length=10, null=True, blank=True)
-    slot_no = models.IntegerField(
-        verbose_name=_("slot number"), null=True, blank=True,
+    slot_no = models.CharField(
+        verbose_name=_("slot number"), max_length=3, null=True, blank=True,
     )
     position = models.IntegerField(null=True)
     orientation = models.PositiveIntegerField(
@@ -255,6 +260,10 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
                 self.rack.max_u_height,
             )
             raise ValidationError({'position': msg}, code=INVALID_POSITION)
+        if self.slot_no and not VALID_SLOT_NUMBER_FORMAT.search(self.slot_no):
+            msg = ("Slot number should be a number from range 1-16 with "
+                   "an optional postfix 'A' or 'B' (e.g. '16A')")
+            raise ValidationError({'slot_no': msg}, code=INVALID_SLOT_NUMBER)
 
     @property
     def size(self):
