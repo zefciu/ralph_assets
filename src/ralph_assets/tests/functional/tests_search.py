@@ -596,8 +596,16 @@ class TestSearchEngine(TestCase):
             'dc': reverse('asset_search', args=('dc',)),
             'bo': reverse('asset_search', args=('back_office',)),
         }
-        self.assets_dc = [AssetFactory() for _ in range(5)]
-        self.assets_bo = [BOAssetFactory() for _ in range(5)]
+
+    @classmethod
+    def tearDownClass(cls):
+        from django.core.management import call_command
+        call_command('flush', interactive=False, verbosity=0)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.assets_dc = [DCAssetFactory() for _ in range(5)]
+        cls.assets_bo = [BOAssetFactory() for _ in range(5)]
         for name in ['iPad 5 16 GB', 'ProLiant BL2x2d', 'WS-CBS312']:
             DCAssetFactory(model__name=name)
             BOAssetFactory(model__name=name)
