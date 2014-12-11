@@ -2395,7 +2395,7 @@ class TestAddDeviceInfoForm(TestDevicesView, BaseViewsTest):
         blade_model = AssetModelFactory(category__is_blade=True)
         form_data.update({
             'model': blade_model.id,
-            'slot_no': 3,
+            'slot_no': '3',
         })
         response = self.client.post(self.url, form_data, follow=True)
         self.assertFalse(response.context['additional_info'].errors)
@@ -2439,9 +2439,10 @@ class TestEditDeviceInfoForm(TestDevicesView, BaseViewsTest):
     def test_slotno_required_positive(self):
         form_data = self.get_asset_form_data()
         blade_model = AssetModelFactory(category__is_blade=True)
+        new_slot_no = unicode(int(self.asset.device_info.slot_no[0]) + 1) + 'B'
         form_data.update({
             'model': blade_model.id,
-            'slot_no': self.asset.device_info.slot_no + 1,
+            'slot_no':  new_slot_no,
             'asset': '',
         })
         response = self.client.post(self.url, form_data, follow=True)
@@ -2482,7 +2483,7 @@ class TestEditDeviceInfoForm(TestDevicesView, BaseViewsTest):
         self.assertFalse(response.context['additional_info'].errors)
         self.assertFalse(response.context['asset_form'].errors)
         asset = Asset.objects.get(pk=self.asset.id)
-        self.assertEqual(asset.device_info.slot_no, None)
+        self.assertEqual(asset.device_info.slot_no, '')
         # check editing was successful, so any field has changed
         self.assertEqual(asset.price, form_data['price'])
         self.assertNotEqual(self.asset.price, asset.price)
