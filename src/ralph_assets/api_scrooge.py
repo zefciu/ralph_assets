@@ -104,8 +104,9 @@ class get_supports(DatedGetter):
     begin_field = 'date_from'
     end_field = 'date_to'
 
-    filters = {'asset_type': AssetType.data_center}
+    filters = {'asset_type': AssetType.data_center, 'price__gt': 0}
     fields = [
+        ('support_id', 'id'),
         'name',
         'price',
         'date_from',
