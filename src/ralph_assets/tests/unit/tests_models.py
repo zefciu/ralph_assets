@@ -14,12 +14,14 @@ from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 
 from ralph_assets.api_pricing import get_assets, get_asset_parts
-from ralph_assets.models_assets import AssetStatus, PartInfo
+from ralph_assets.models_assets import AssetStatus, PartInfo, Rack
 from ralph_assets.licences.models import LicenceAsset, Licence, WrongModelError
 from ralph_assets.tests.utils.assets import (
     AssetSubCategoryFactory,
     AssetModelFactory,
     AssetFactory,
+    DCAssetFactory,
+    RackFactory,
     ServiceFactory,
 )
 from ralph_assets.tests.utils.supports import DCSupportFactory
@@ -283,3 +285,25 @@ class TestModelHistory(TestCase):
             self.assertEqual(i + 2, history.count())
             licence.assign(asset, i + 1)
             self.assertEqual(i + 3, history.count())
+
+
+class TestModelRack(TestCase):
+    def test_free_u(self):
+        rack = RackFactory()
+        rack = Rack.objects.with_free_u()[0]
+        rack_height = 48
+        self.assertEqual(rack.free_u, rack_height)
+
+        # mount 1U device to rack
+        asset_count = 10
+        model_height = 2
+        model = AssetModelFactory(height_of_device=model_height)
+        [
+            DCAssetFactory(device_info__rack=rack, model=model)
+            for _ in range(asset_count)
+        ]
+        # prod i tyl
+        rack = Rack.objects.with_free_u()[0]
+        self.assertEqual(
+            rack.free_u, rack_height - (asset_count * model_height)
+        )
