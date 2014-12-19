@@ -16,11 +16,23 @@ TYPE_ACCESSORY = 'accessory'
 TYPE_ASSET = 'asset'
 
 
+class RelatedAssetSerializer(serializers.ModelSerializer):
+    model = serializers.CharField(source='model.name')
+    slot_no = serializers.CharField(source='device_info.slot_no')
+    url = serializers.CharField(source='url')
+
+    class Meta:
+        model = Asset
+        fields = ('id', 'model', 'barcode', 'sn', 'slot_no', 'url')
+
+
 class AssetSerializer(serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
+    category = serializers.CharField(source='model.category.name')
     height = serializers.FloatField(source='model.height_of_device')
     url = serializers.CharField(source='url')
     position = serializers.IntegerField(source='device_info.position')
+    children = RelatedAssetSerializer(source='get_related_assets')
     _type = serializers.SerializerMethodField('get_type')
 
     def get_type(self, obj):
@@ -29,8 +41,8 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = (
-            'id', 'model', 'height', 'barcode', 'sn', 'url', 'position',
-            '_type',
+            'id', 'model', 'category', 'height', 'barcode', 'sn', 'url',
+            'position', 'children', '_type',
         )
 
 

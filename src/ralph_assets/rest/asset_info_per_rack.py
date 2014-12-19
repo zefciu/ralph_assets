@@ -10,7 +10,7 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ralph_assets.models_assets import Orientation, Rack, Asset
+from ralph_assets.models_assets import Orientation, Rack
 from ralph_assets.models_dc_assets import RackAccessory
 from ralph_assets.views.base import ACLGateway
 
@@ -36,11 +36,7 @@ class AssetsView(ACLGateway, APIView):
             raise Http404
 
     def _get_assets(self, rack, side):
-        assets = Asset.objects.select_related('model', 'device_info').filter(
-            device_info__rack=rack,
-            device_info__orientation=side
-        )
-        return AssetSerializer(assets, many=True).data
+        return AssetSerializer(rack.get_root_assets(side), many=True).data
 
     def _get_accessories(self, rack, side):
         accessories = RackAccessory.objects.select_related('accessory').filter(
