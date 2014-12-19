@@ -294,16 +294,43 @@ class TestModelRack(TestCase):
         rack_height = 48
         self.assertEqual(rack.free_u, rack_height)
 
-        # mount 1U device to rack
+        # mount 2U device to rack
         asset_count = 10
         model_height = 2
         model = AssetModelFactory(height_of_device=model_height)
         [
-            DCAssetFactory(device_info__rack=rack, model=model)
+            DCAssetFactory(
+                device_info__rack=rack, model=model, device_info__slot_no=''
+            )
             for _ in range(asset_count)
         ]
-        # prod i tyl
         rack = Rack.objects.with_free_u()[0]
         self.assertEqual(
             rack.free_u, rack_height - (asset_count * model_height)
         )
+
+    def test_get_child_for_blade_chasiss(self):
+        position = 3
+        rack = RackFactory()
+        chasiss = DCAssetFactory(
+            device_info__rack=rack,
+            device_info__position=position,
+            model__height_of_device=10,
+        )
+        [
+            DCAssetFactory(
+                device_info__rack=rack,
+                device_info__position=position,
+                model__category__is_blade=True,
+            )
+            for _ in range(5)
+        ]
+        [
+            DCAssetFactory(
+                device_info__position=position,
+                model__category__is_blade=True,
+            )
+            for _ in range(4)
+        ]
+        children = chasiss.get_related_assets()
+        self.assertEqual(children.count(), 5)

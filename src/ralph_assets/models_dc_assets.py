@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
@@ -181,18 +180,28 @@ class Rack(Named.NonUnique):
     objects = RackManager()
 
     def get_free_u(self):
-        from ralph_assets.models_assets import Asset
-        assets = Asset.objects.filter(device_info__rack=self)
-        current_height = int(
-            assets.exclude(
-                model__category__is_blade=True
-            ).aggregate(
-                sum=Sum('model__height_of_device')
-            )['sum'] or 0)
-        return self.max_u_height - current_height
+        assets = self.get_root_assets()
+        assets_height = assets.aggregate(
+            sum=Sum('model__height_of_device'))['sum'] or 0
+        # accesory always has 1U of height
+        accessories = RackAccessory.objects.values_list(
+            'position', flat=True).filter(rack=self)
+        return self.max_u_height - assets_height - len(set(accessories))
 
     def get_orientation_desc(self):
         return RackOrientation.name_from_id(self.orientation)
+
+    def get_root_assets(self, side=None):
+        from ralph_assets.models_assets import Asset
+        filter_kwargs = {
+            'device_info__rack': self,
+            'device_info__slot_no': '',
+        }
+        if side:
+            filter_kwargs['device_info__orientation'] = side
+        return Asset.objects.select_related(
+            'model', 'device_info'
+        ).filter(**filter_kwargs).exclude(model__category__is_blade=True)
 
     def __unicode__(self):
         name = self.name
