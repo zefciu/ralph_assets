@@ -2303,5 +2303,12 @@
         "fields": {
             "name": "patch_panel_utp"
         }
+    },
+    {
+        "pk": 5,
+        "model": "ralph_assets.accessory",
+        "fields": {
+            "name": "power_socket"
+        }
     }
 ]
