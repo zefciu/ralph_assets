@@ -7,7 +7,12 @@ from __future__ import unicode_literals
 
 from rest_framework import serializers
 
-from ralph_assets.models_dc_assets import DataCenter, Rack, RackAccessory
+from ralph_assets.models_dc_assets import (
+    DataCenter,
+    Rack,
+    RackAccessory,
+    RackOrientation,
+)
 from ralph_assets.models import Asset
 
 
@@ -84,6 +89,11 @@ class RackSerializer(serializers.ModelSerializer):
             'visualization_col', 'visualization_row', 'free_u', 'description',
             'orientation',
         )
+
+    def update(self):
+        orientation = self.data['orientation']
+        self.object.orientation = RackOrientation.id_from_name(orientation)
+        return self.save(**self.data)
 
 
 class DCSerializer(serializers.ModelSerializer):
