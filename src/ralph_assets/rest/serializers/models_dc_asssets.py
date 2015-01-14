@@ -31,6 +31,7 @@ class AssetSerializer(serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
     category = serializers.CharField(source='model.category.name')
     height = serializers.FloatField(source='model.height_of_device')
+    layout = serializers.CharField(source='model.get_layout_class')
     url = serializers.CharField(source='url')
     position = serializers.IntegerField(source='device_info.position')
     children = RelatedAssetSerializer(source='get_related_assets')
@@ -42,8 +43,8 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = (
-            'id', 'model', 'category', 'height', 'barcode', 'sn', 'url',
-            'position', 'children', '_type',
+            'id', 'model', 'category', 'height', 'layout', 'barcode', 'sn',
+            'url', 'position', 'children', '_type',
         )
 
 
