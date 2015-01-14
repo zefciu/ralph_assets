@@ -1,7 +1,7 @@
 Welcome to Ralph Assets's documentation!
 ========================================
 
-The Ralph Assets module brings offline stock management functionality to Ralph.
+Ralph Assets module brings offline stock management functionality to Ralph.
 It maintains placing orders, purchasing and releasing of devices to the users.
 It is not limited to the data center. You can maintain inventory of your back
 office assets with it as well.
