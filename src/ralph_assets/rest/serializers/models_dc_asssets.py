@@ -90,5 +90,6 @@ class DCSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataCenter
-        fields = ('id', 'name', 'rack_set')
+        fields = ('id', 'name', 'visualization_cols_num',
+                  'visualization_rows_num', 'rack_set')
         depth = 1
