@@ -13,8 +13,13 @@ from django.test import TestCase
 from ralph.business.models import Venture
 from ralph.discovery.models_device import Device, DeviceType
 
+from ralph.discovery.tests.util import DeviceModelFactory
 from ralph_assets.api_pricing import get_assets, get_asset_parts
 from ralph_assets.models_assets import AssetStatus, PartInfo, Rack
+from ralph_assets.models_dc_assets import (
+    DeprecatedRalphDC,
+    DeprecatedRalphRack,
+)
 from ralph_assets.licences.models import LicenceAsset, Licence, WrongModelError
 from ralph_assets.tests.utils.assets import (
     AssetSubCategoryFactory,
@@ -334,3 +339,35 @@ class TestModelRack(TestCase):
         ]
         children = chasiss.get_related_assets()
         self.assertEqual(children.count(), 5)
+
+
+class TestModelDeprecatedDataCenter(TestCase):
+
+    def test_create(self):
+        model = DeviceModelFactory(type=DeviceType.data_center)
+        self.assertTrue(DeprecatedRalphDC.create(name='DC', model=model))
+
+    def test_create_without_model(self):
+        with self.assertRaises(ValueError):
+            DeprecatedRalphDC.create(name='DC')
+
+    def test_create_with_incorrect_model(self):
+        model = DeviceModelFactory()
+        with self.assertRaises(ValueError):
+            DeprecatedRalphDC.create(name='DC', model=model)
+
+
+class TestModelDeprecatedRack(TestCase):
+
+    def test_create(self):
+        model = DeviceModelFactory(type=DeviceType.rack)
+        self.assertTrue(DeprecatedRalphRack.create(name='Rack', model=model))
+
+    def test_create_without_model(self):
+        with self.assertRaises(ValueError):
+            DeprecatedRalphRack.create(name='Rack')
+
+    def test_create_with_incorrect_model(self):
+        model = DeviceModelFactory()
+        with self.assertRaises(ValueError):
+            DeprecatedRalphRack.create(name='Rack', model=model)

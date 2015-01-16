@@ -79,6 +79,28 @@ class RackOrientation(Choices):
     right = _("right")
 
 
+class RequiredModelWithTypeMixin(object):
+    """
+    Mixin forces a model type in deprecated object (rack, dc).
+    """
+    _model_type = None
+
+    def __init__(self, *args, **kwargs):
+        if not self._model_type:
+            raise ValueError('Please provide _model_type')
+        super(RequiredModelWithTypeMixin, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def create(cls, **kwargs):
+        if 'model' not in kwargs.iterkeys():
+            raise ValueError('Please provide model.')
+        elif kwargs['model'].type != cls._model_type:
+            raise ValueError(
+                'Model must be a {} type.'.format(cls._model_type.desc)
+            )
+        return cls(**kwargs)
+
+
 class DeprecatedRalphDCManager(models.Manager):
     def get_query_set(self):
         query_set = super(DeprecatedRalphDCManager, self).get_query_set()
@@ -86,7 +108,8 @@ class DeprecatedRalphDCManager(models.Manager):
         return data_centers
 
 
-class DeprecatedRalphDC(Device):
+class DeprecatedRalphDC(RequiredModelWithTypeMixin, Device):
+    _model_type = DeviceType.data_center
     objects = DeprecatedRalphDCManager()
 
     class Meta:
@@ -100,7 +123,8 @@ class DeprecatedRalphRackManager(models.Manager):
         return racks
 
 
-class DeprecatedRalphRack(Device):
+class DeprecatedRalphRack(RequiredModelWithTypeMixin, Device):
+    _model_type = DeviceType.rack
     objects = DeprecatedRalphRackManager()
 
     class Meta:
