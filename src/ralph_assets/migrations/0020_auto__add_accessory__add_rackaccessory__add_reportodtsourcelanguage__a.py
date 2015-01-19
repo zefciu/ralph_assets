@@ -31,21 +31,6 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('ralph_assets', ['RackAccessory'])
 
-        # Adding model 'ReportOdtSourceLanguage'
-        db.create_table('ralph_assets_reportodtsourcelanguage', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now)),
-            ('cache_version', self.gf('django.db.models.fields.PositiveIntegerField')(default=0)),
-            ('template', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
-            ('language', self.gf('django.db.models.fields.CharField')(max_length=3)),
-            ('report_odt_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'odt_templates', to=orm['ralph_assets.ReportOdtSource'])),
-        ))
-        db.send_create_signal('ralph_assets', ['ReportOdtSourceLanguage'])
-
-        # Adding unique constraint on 'ReportOdtSourceLanguage', fields ['language', 'report_odt_source']
-        db.create_unique('ralph_assets_reportodtsourcelanguage', ['language', 'report_odt_source_id'])
-
         # Adding model 'Rack'
         db.create_table('ralph_assets_rack', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -136,9 +121,6 @@ class Migration(SchemaMigration):
 
         # Deleting model 'RackAccessory'
         db.delete_table('ralph_assets_rackaccessory')
-
-        # Deleting model 'ReportOdtSourceLanguage'
-        db.delete_table('ralph_assets_reportodtsourcelanguage')
 
         # Deleting model 'Rack'
         db.delete_table('ralph_assets_rack')
