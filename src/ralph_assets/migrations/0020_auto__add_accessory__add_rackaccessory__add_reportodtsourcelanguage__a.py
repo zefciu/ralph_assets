@@ -34,7 +34,7 @@ class Migration(SchemaMigration):
         # Adding model 'Rack'
         db.create_table('ralph_assets_rack', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            #OK('name', self.gf('django.db.models.fields.CharField')(max_length=75)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=75)),
             ('data_center', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.DataCenter'])),
             ('server_room', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['ralph_assets.ServerRoom'], null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.CharField')(max_length=250, blank=True)),
