@@ -14,11 +14,11 @@ from ralph_assets.rest import DCRacksAPIView
 urlpatterns = patterns(
     '',
     url(
-        r'^rack/(?P<rack_id>\d+)/$',
+        r'^rack/(?P<rack_id>\d+)/?$',
         AssetsView.as_view(),
     ),
     url(
-        r'^data_center/(?P<data_center_id>\d+)/$',
+        r'^data_center/(?P<data_center_id>\d+)/?$',
         DCRacksAPIView.as_view(),
     ),
 )
