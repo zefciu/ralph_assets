@@ -354,7 +354,7 @@ admin.site.register(models_assets.DataCenter, DataCenterAdmin)
 class ServerRoomAdmin(ModelAdmin):
     save_on_top = True
     list_display = ('name', 'data_center')
-    search_fields = ('name', 'data_center')
+    search_fields = ('name', 'data_center__name')
 
 
 admin.site.register(models_assets.ServerRoom, ServerRoomAdmin)
@@ -430,7 +430,9 @@ class RackAdmin(ModelAdmin):
     save_on_top = True
     raw_id_fields = ('deprecated_ralph_rack',)
     list_display = ('name', 'data_center', 'server_room', 'max_u_height',)
-    search_fields = ('name', 'data_center', 'server_room', 'max_u_height',)
+    search_fields = (
+        'name', 'data_center__name', 'server_room__name', 'max_u_height',
+    )
     fieldsets = (
         (None, {
             'fields': (
