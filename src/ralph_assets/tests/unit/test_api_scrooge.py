@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import mock
 from datetime import date
 
 from django.test import TestCase
@@ -160,6 +161,16 @@ class TestApiScrooge(TestCase):
         today = date(2013, 11, 12)
         result = [a for a in api_scrooge.get_assets(today)]
         self.assertEquals(result, [])
+
+    @mock.patch('ralph_assets.models_assets.Asset.is_liquidated')
+    @mock.patch('ralph_assets.api_scrooge.logger')
+    def test_get_asset_liquidated(self, logger_mock, is_liquidated_mock):
+        is_liquidated_mock.return_value = True
+        DCAssetFactory()
+        today = date(2013, 11, 12)
+        result = [a for a in api_scrooge.get_assets(today)]
+        self.assertEquals(result, [])
+        self.assertTrue(logger_mock.info.called)
 
     def test_get_supports(self):
         DCSupportFactory(

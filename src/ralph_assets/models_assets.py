@@ -833,6 +833,21 @@ class Asset(
             )
         return deprecation_date < date
 
+    def is_liquidated(self, date=None):
+        date = date or datetime.date.today()
+        # check if asset has status 'liquidated' and if yes, check if it has
+        # this status on given date
+        if self.status == AssetStatus.liquidated and self._liquidated_at(date):
+            return True
+        return False
+
+    def _liquidated_at(self, date):
+        liquidated_history = self.get_history().filter(
+            new_value='liquidated',
+            field_name='status',
+        ).order_by('-date')[:1]
+        return liquidated_history and liquidated_history[0].date.date() <= date
+
     def delete_with_info(self, *args, **kwargs):
         """
         Remove Asset with linked info-tables alltogether, because cascade

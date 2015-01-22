@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+from datetime import timedelta
 from unittest import skip
 
 from django.test import TestCase
@@ -84,7 +85,7 @@ class TestModelAsset(TestCase):
         self.assertEqual(self.asset2.is_discovered, False)
         self.assertEqual(self.asset3.is_discovered, False)
 
-    def test_is_deperecation(self):
+    def test_is_deperecated(self):
         date = datetime.date(2014, 03, 29)
         self.assertEqual(self.asset.get_deprecation_months(), 12)
         self.assertEqual(self.asset2.get_deprecation_months(), 24)
@@ -99,6 +100,27 @@ class TestModelAsset(TestCase):
             self.asset_depr_date.is_deprecated(datetime.date(2014, 12, 20)),
             True,
         )
+
+    def test_asset_is_liquidated(self):
+        date = datetime.date.today()
+        self.assertFalse(self.asset.is_liquidated(date))
+
+        self.asset.status = AssetStatus.liquidated
+        self.asset.save()
+
+        self.assertTrue(self.asset.is_liquidated(date + timedelta(days=1)))
+        self.assertTrue(self.asset.is_liquidated(date))
+        self.assertFalse(self.asset.is_liquidated(date + timedelta(days=-1)))
+
+    def test_asset_reverted_from_liquidated_state(self):
+        date = datetime.date.today()
+        self.asset.status = AssetStatus.liquidated
+        self.asset.save()
+        self.asset.status = AssetStatus.used
+        self.asset.save()
+        self.assertFalse(self.asset.is_liquidated(date + timedelta(days=1)))
+        self.assertFalse(self.asset.is_liquidated(date))
+        self.assertFalse(self.asset.is_liquidated(date + timedelta(days=-1)))
 
     def test_venture(self):
         venture = Venture.objects.create(name='v1')

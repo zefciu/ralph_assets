@@ -71,6 +71,9 @@ def get_assets(date):
         if not asset.device_environment_id:
             logger.error('Asset {0} has no environment'.format(asset.id))
             continue
+        if asset.is_liquidated(date):
+            logger.info("Skipping asset {} - it's liquidated")
+            continue
         device_info = asset.device_info
         hostname = None
         if device_info:
