@@ -5,15 +5,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ralph_assets.history.utils import context
+from ralph_assets.history.utils import HistoryContext
 
 
 def pre_save(sender, instance, **kwargs):
-    context.start(sender, instance)
+    instance._history_context = HistoryContext()
+    instance._history_context.start(sender, instance)
 
 
 def post_save(sender, instance, **kwargs):
-    context.end()
+    instance._history_context.end()
 
 
 def m2m_changed(sender, instance, action, reverse, **kwargs):
