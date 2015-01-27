@@ -49,10 +49,29 @@ from ralph.ui.channels import RestrictedLookupChannel
 from ralph_assets.models_util import (
     WithForm,
 )
+from ralph_assets.models_dc_assets import ServerRoom, Rack
 from ralph.discovery.models import Device, DeviceType
 
 
 RALPH_DATE_FORMAT = '%Y-%m-%d'
+
+
+class ServerRoomLookup(RestrictedLookupChannel):
+    model = ServerRoom
+
+    def get_query(self, pk, request):
+        return ServerRoom.objects.filter(
+            Q(data_center__pk=pk),
+        ).order_by('name')[:10]
+
+
+class RackLookup(RestrictedLookupChannel):
+    model = Rack
+
+    def get_query(self, pk, request):
+        return Rack.objects.filter(
+            Q(server_room__pk=pk)
+        ).order_by('name')[:10]
 
 
 class DeviceLookup(RestrictedLookupChannel):

@@ -12,6 +12,7 @@ from ajax_select.fields import (
     AutoCompleteSelectField,
     AutoCompleteField,
     AutoCompleteSelectMultipleField,
+    CascadeModelChoiceField,
 )
 from bob.forms import (
     AJAX_UPDATE,
@@ -35,7 +36,7 @@ from django.forms import (
     ModelForm,
     ValidationError,
 )
-from django.forms.widgets import HiddenInput, Textarea, TextInput
+from django.forms.widgets import HiddenInput, Select, Textarea, TextInput
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -54,6 +55,7 @@ from ralph_assets.models import (
     RALPH_DATE_FORMAT,
     Service,
 )
+from ralph_assets.models_dc_assets import DataCenter, ServerRoom, Rack
 from ralph_assets import models_assets
 from ralph.discovery import models_device
 from ralph.middleware import get_actual_regions
@@ -547,6 +549,30 @@ class DeviceForm(ModelForm):
     create_stock = BooleanField(
         required=False,
         label=_('Create stock device'),
+    )
+
+    data_center = ModelChoiceField(
+        label=_('data center'),
+        queryset=DataCenter.objects.all(),
+        required=True,
+        widget=Select(attrs={'id': 'data-center-selection'}),
+    )
+    server_room = CascadeModelChoiceField(
+        ('ralph_assets.models', 'ServerRoomLookup'),
+        label=_('Server room'),
+        queryset=ServerRoom.objects.all(),
+        required=True,
+
+        attrs={'id': 'server-room-selection'},
+        parent_field=data_center,
+    )
+    rack = CascadeModelChoiceField(
+        ('ralph_assets.models', 'RackLookup'),
+        label=_('Rack'),
+        queryset=Rack.objects.all(),
+        required=False,
+
+        parent_field=server_room,
     )
 
     def __init__(self, *args, **kwargs):

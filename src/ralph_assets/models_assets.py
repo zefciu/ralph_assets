@@ -64,7 +64,7 @@ from ralph_assets.models_dc_assets import (  # noqa
     DeprecatedRalphRack,
     DeprecatedRalphRackManager,
     DeviceInfo,
-    INVALID_DATA_CENTER,
+    INVALID_RACK,
     INVALID_ORIENTATION,
     INVALID_POSITION,
     INVALID_SERVER_ROOM,

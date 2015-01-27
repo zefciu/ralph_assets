@@ -32,7 +32,7 @@ from ralph.discovery.models_util import SavingUser
 
 logger = logging.getLogger(__name__)
 
-INVALID_DATA_CENTER = 1
+INVALID_RACK = 1
 INVALID_SERVER_ROOM = 2
 INVALID_ORIENTATION = 3
 INVALID_POSITION = 4
@@ -307,19 +307,13 @@ class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
         """
         if self.rack and self.server_room:
             if self.rack.server_room != self.server_room:
-                msg = 'Valid server room for this rack is: "{}"'.format(
-                    self.rack.server_room.name,
-                )
-                raise ValidationError(
-                    {'server_room': msg}, code=INVALID_SERVER_ROOM,
-                )
+                msg = 'This rack is not from picked server room'
+                raise ValidationError({'rack': msg}, code=INVALID_RACK)
         if self.server_room and self.data_center:
             if self.server_room.data_center != self.data_center:
-                msg = 'Valid data center for this server room is: "{}"'.format(
-                    self.server_room.data_center.name,
-                )
+                msg = 'This server room is not from picked data center'
                 raise ValidationError(
-                    {'data_center': msg}, code=INVALID_DATA_CENTER,
+                    {'server_room': msg}, code=INVALID_SERVER_ROOM,
                 )
         if self.position == 0 and not Orientation.is_width(self.orientation):
             msg = 'Valid orientations for picked position are: {}'.format(
