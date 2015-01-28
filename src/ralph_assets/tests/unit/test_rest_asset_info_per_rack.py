@@ -63,6 +63,7 @@ class TestRestAssetInfoPerRack(TestCase):
         self.client.logout()
 
     def test_get(self):
+        core_url = '/ui/search/info/{0}'
         returned_json = json.loads(
             self.client.get(
                 '/assets/api/rack/{0}/'.format(self.rack_1.id)
@@ -87,6 +88,8 @@ class TestRestAssetInfoPerRack(TestCase):
                     '_type': TYPE_ASSET,
                     'id': self.asset_1.id,
                     'url': '{}'.format(self.asset_1.url),
+                    'core_url': core_url.format(
+                        self.asset_1.device_info.ralph_device_id),
                     'category': '{}'.format(self.asset_1.model.category),
                     'barcode': self.asset_1.barcode,
                     'sn': '{}'.format(self.asset_1.sn),
@@ -100,6 +103,8 @@ class TestRestAssetInfoPerRack(TestCase):
                     '_type': TYPE_ASSET,
                     'id': self.asset_2.id,
                     'url': '{}'.format(self.asset_2.url),
+                    'core_url': core_url.format(
+                        self.asset_2.device_info.ralph_device_id),
                     'category': '{}'.format(self.asset_2.model.category),
                     'barcode': self.asset_2.barcode,
                     'sn': '{}'.format(self.asset_2.sn),
