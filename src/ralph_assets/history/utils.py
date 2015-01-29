@@ -76,10 +76,12 @@ class DictDiffer(object):
         self.intersect = self.set_current.intersection(self.set_past)
 
     def changed(self):
-        return set(
-            change for change in self.intersect
-            if self.past_dict[change] != self.current_dict[change]
-        )
+        for change in self.intersect:
+            past_value = self.past_dict[change]
+            current_value = self.current_dict[change]
+            # cast to unicode
+            if unicode(past_value) != unicode(current_value):
+                yield change
 
 
 class HistoryContext(object):
@@ -89,7 +91,7 @@ class HistoryContext(object):
         self.obj = None
 
     def get_fields_snapshot(self, objs):
-        if not objs:
+        if not any(objs):
             return
         kwargs = {}
         fields = self.registry.get(objs[0].__class__, [])
@@ -151,7 +153,9 @@ class HistoryContext(object):
                         'new': new_value,
                     }
                 )
-        History.objects.log_changes(self.obj, self.obj.saving_user, diff_data)
+        History.objects.log_changes(
+            self.obj, getattr(self.obj, 'saving_user', None), diff_data
+        )
 
     def start(self, sender, obj, m2m=False, pk_set=set(), reverse=False):
         self.obj = obj
@@ -164,5 +168,3 @@ class HistoryContext(object):
         self.obj = None
         self.sender = None
         self.reverse = False
-
-context = HistoryContext()
