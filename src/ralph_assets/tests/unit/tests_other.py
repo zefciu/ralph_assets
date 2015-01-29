@@ -401,7 +401,7 @@ class TestDeviceInfoValidation(TestCase):
         )
         with self.assertRaises(ValidationError) as exc:
             device_info.clean_fields()
-        self.assertEqual(exc.exception.code, models_assets.INVALID_DATA_CENTER)
+        self.assertEqual(exc.exception.code, models_assets.INVALID_SERVER_ROOM)
 
     def test_server_room_relation(self):
         '''test if picked rack is owned by picked server-room'''
@@ -419,7 +419,7 @@ class TestDeviceInfoValidation(TestCase):
         )
         with self.assertRaises(ValidationError) as exc:
             device_info.clean_fields()
-        self.assertEqual(exc.exception.code, models_assets.INVALID_SERVER_ROOM)
+        self.assertEqual(exc.exception.code, models_assets.INVALID_RACK)
 
     def test_position_requires_width(self):
         '''test if picked orientation is owned by picked position - width'''

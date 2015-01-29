@@ -19,6 +19,9 @@ from ralph.ui.tests.global_utils import login_as_su
 from ralph_assets.tests.utils.assets import (
     BOAssetFactory,
     DCAssetFactory,
+    DataCenterFactory,
+    ServerRoomFactory,
+    RackFactory,
 )
 from ralph_assets.tests.utils.licences import LicenceFactory
 
@@ -34,14 +37,19 @@ class BaseLookupsTest(TestCase):
         channel = base64.b64encode(cPickle.dumps(lookup))
         return reverse('ajax_lookup', kwargs={'channel': channel})
 
-    def _check_lookup_count(self, base_url, searched_term, expected_count):
-        full_url = "{}?{}".format(base_url, urlencode({
+    def _get_lookup_url(self, base_url, searched_term):
+        return "{}?{}".format(base_url, urlencode({
             'term': searched_term,
         }))
-        response = self.client.get(full_url)
-        self.assertEqual(
-            len(json.loads(response.content)), expected_count,
-        )
+
+    def _get_lookup_results(self, lookup_url):
+        response = self.client.get(lookup_url)
+        return json.loads(response.content)
+
+    def _check_lookup_count(self, base_url, searched_term, expected_count):
+        lookup_url = self._get_lookup_url(base_url, searched_term)
+        jsoned = self._get_lookup_results(lookup_url)
+        self.assertEqual(len(jsoned), expected_count)
 
 
 class TestPerms(BaseLookupsTest):
@@ -129,3 +137,55 @@ class TestLinkedDeviceNameLookup(BaseLookupsTest):
         self._check_lookup_count(
             self.base_url, searched_term=hostname, expected_count=1
         )
+
+
+class TestServerRoomLookup(BaseLookupsTest):
+    lookup = ('ralph_assets.models', 'ServerRoomLookup')
+
+    def test_gets_from_data_center(self):
+        server_room1 = ServerRoomFactory(data_center=DataCenterFactory())
+        server_room2 = ServerRoomFactory(data_center=DataCenterFactory())
+        self.assertNotEqual(server_room1.data_center, server_room2.data_center)
+        self._check_lookup_count(
+            self.base_url,
+            searched_term=server_room1.data_center.id,
+            expected_count=1,
+        )
+
+    def test_gets_ascending_order(self):
+        data_center = DataCenterFactory()
+        z_server_room = ServerRoomFactory(name='z-server-room',
+                                          data_center=data_center)
+        a_server_room = ServerRoomFactory(name='a-server-room',
+                                          data_center=data_center)
+        self.assertEqual(z_server_room.data_center, a_server_room.data_center)
+        jsoned = self._get_lookup_results(
+            self._get_lookup_url(self.base_url, data_center.id),
+        )
+        self.assertEqual(jsoned[0]['value'], a_server_room.name)
+        self.assertEqual(jsoned[1]['value'], z_server_room.name)
+
+
+class TestRackLookup(BaseLookupsTest):
+    lookup = ('ralph_assets.models', 'RackLookup')
+
+    def test_gets_from_server_room(self):
+        rack1 = RackFactory(server_room=ServerRoomFactory())
+        rack2 = RackFactory(server_room=ServerRoomFactory())
+        self.assertNotEqual(rack1.server_room, rack2.server_room)
+        self._check_lookup_count(
+            self.base_url,
+            searched_term=rack1.server_room.id,
+            expected_count=1,
+        )
+
+    def test_gets_ascending_order(self):
+        server_room = ServerRoomFactory()
+        z_rack = RackFactory(name='z-rack', server_room=server_room)
+        a_rack = RackFactory(name='a-rack', server_room=server_room)
+        self.assertEqual(z_rack.server_room, a_rack.server_room)
+        jsoned = self._get_lookup_results(
+            self._get_lookup_url(self.base_url, server_room.id),
+        )
+        self.assertEqual(jsoned[0]['value'], a_rack.name)
+        self.assertEqual(jsoned[1]['value'], z_rack.name)
