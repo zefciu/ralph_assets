@@ -28,6 +28,7 @@ from ralph.discovery.models_device import (
     DeviceType,
 )
 from ralph.discovery.models_util import SavingUser
+from ralph_assets.history.models import HistoryMixin
 
 
 logger = logging.getLogger(__name__)
@@ -271,7 +272,7 @@ class RackAccessory(models.Model):
         )
 
 
-class DeviceInfo(TimeTrackable, SavingUser, SoftDeletable):
+class DeviceInfo(HistoryMixin, TimeTrackable, SavingUser, SoftDeletable):
     ralph_device_id = models.IntegerField(
         verbose_name=_("Ralph device id"),
         null=True,
