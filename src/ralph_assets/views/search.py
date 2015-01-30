@@ -18,6 +18,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from ralph.util.reports import Report, set_progress
 from ralph.business.models import Venture
+from ralph.discovery.models_device import Device
 from ralph_assets.forms import (
     BackOfficeSearchAssetForm,
     DataCenterSearchAssetForm,
@@ -47,25 +48,25 @@ class AssetsSearchQueryableMixin(object):
             'deprecation_rate',
             'device_environment',
             'device_info',
-            'hostname',
             'employee_id',
             'guardian',
+            'hostname',
             'id',
             'imei',
             'invoice_no',
             'location',
+            'location_name',
             'manufacturer',
             'model',
             'niw',
-            'support_assigned',
             'order_no',
             'owner',
             'part_info',
             'profit_center',
             'provider',
             'purpose',
-            'location_name',
             'ralph_device_id',
+            'region'
             'remarks',
             'required_support',
             'segment',
@@ -74,12 +75,13 @@ class AssetsSearchQueryableMixin(object):
             'sn',
             'source',
             'status',
+            'support_assigned',
             'task_url',
             'unlinked',
             'user',
+            'venture_department',
             'warehouse',
             'without_assigned_location',
-            'region'
         ]
         # handle simple 'equals' search fields at once.
         all_q = Q()
@@ -299,6 +301,13 @@ class AssetsSearchQueryableMixin(object):
                         Q(device_info__rack__server_room__name=field_value) |
                         Q(device_info__rack__data_center__name=field_value)
                     )
+                elif field == 'venture_department':
+                    devices = Device.objects.select_related(
+                        'venture__department'
+                    ).filter(
+                        venture__department__id=int(field_value)
+                    ).values_list('id', flat=True)
+                    all_q &= Q(device_info__ralph_device_id__in=devices)
                 else:
                     q = Q(**{field: field_value})
                     all_q = all_q & q

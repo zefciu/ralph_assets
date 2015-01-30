@@ -14,6 +14,7 @@ from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Q
 
+from ralph.business.models import Department
 from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
@@ -462,6 +463,14 @@ class UserLookup(RestrictedLookupChannel):
             last_name=obj.last_name,
             department=obj.profile.department,
         )
+
+
+class VentureDepartmentLookup(RestrictedLookupChannel):
+    model = Department
+
+    def get_query(self, q, request):
+        return self.model.objects.filter(
+            name__icontains=q).order_by('name')[:10]
 
 
 def get_edit_url(object_):
