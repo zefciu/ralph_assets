@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from django.core.urlresolvers import reverse
 from rest_framework import serializers
 
 from ralph_assets.models_dc_assets import (
@@ -22,22 +23,35 @@ TYPE_ASSET = 'asset'
 TYPE_PDU = 'pdu'
 
 
-class RelatedAssetSerializer(serializers.ModelSerializer):
+class CoreDeviceMixin(object):
+    def get_core_url(self, obj):
+        """
+        Return the URL to device in core.
+        """
+        device_core_id = obj.device_info.ralph_device_id
+        return reverse('search', kwargs={
+            'details': 'info', 'device': device_core_id
+        })
+
+
+class RelatedAssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
     slot_no = serializers.CharField(source='device_info.slot_no')
     url = serializers.CharField(source='url')
+    core_url = serializers.SerializerMethodField('get_core_url')
 
     class Meta:
         model = Asset
-        fields = ('id', 'model', 'barcode', 'sn', 'slot_no', 'url')
+        fields = ('id', 'model', 'barcode', 'sn', 'slot_no', 'url', 'core_url')
 
 
-class AssetSerializer(serializers.ModelSerializer):
+class AssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
     category = serializers.CharField(source='model.category.name')
     height = serializers.FloatField(source='model.height_of_device')
     layout = serializers.CharField(source='model.get_layout_class')
     url = serializers.CharField(source='url')
+    core_url = serializers.SerializerMethodField('get_core_url')
     position = serializers.IntegerField(source='device_info.position')
     children = RelatedAssetSerializer(source='get_related_assets')
     _type = serializers.SerializerMethodField('get_type')
@@ -49,7 +63,7 @@ class AssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = (
             'id', 'model', 'category', 'height', 'layout', 'barcode', 'sn',
-            'url', 'position', 'children', '_type',
+            'url', 'core_url', 'position', 'children', '_type',
         )
 
 
