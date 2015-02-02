@@ -124,8 +124,9 @@ asset_search_dc_fieldsets = lambda: OrderedDict([
     ('Basic Info', {
         'noncollapsed': [
             'location_name', 'barcode', 'sn', 'model', 'manufacturer',
-            'warehouse', 'required_support', 'support_assigned', 'service',
-            'device_environment', 'region', 'without_assigned_location',
+            'warehouse', 'required_support', 'support_assigned',
+            'venture_department', 'service', 'device_environment', 'region',
+            'without_assigned_location',
         ],
         'collapsed': [
             'status', 'task_url', 'category', 'loan_end_date_from',
@@ -174,6 +175,7 @@ LOOKUPS = {
     'service': ('ralph.ui.channels', 'ServiceCatalogLookup'),
     'softwarecategory': ('ralph_assets.models', 'SoftwareCategoryLookup'),
     'support': ('ralph_assets.models', 'SupportLookup'),
+    'venture_department': ('ralph_assets.models', 'VentureDepartmentLookup'),
 }
 
 
@@ -1767,6 +1769,12 @@ class DataCenterSearchAssetForm(SearchAssetForm):
             "Shows assets without assigned location fields, like: "
             "data center, server room, rack, etc."
         )
+    )
+    venture_department = AutoCompleteSelectField(
+        LOOKUPS['venture_department'],
+        required=False,
+        help_text=None,
+        plugin_options={'disable_confirm': True}
     )
 
 
