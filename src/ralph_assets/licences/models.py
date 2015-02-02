@@ -15,7 +15,6 @@ from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
     Named,
-    SoftDeletable,
     TimeTrackable,
     WithConcurrentGetOrCreate,
 )
@@ -37,6 +36,7 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_util import (
     Regionalized,
+    RegionalizedDBManager,
 )
 from ralph_assets.models_util import WithForm
 from ralph_assets.history.models import History, HistoryMixin
@@ -76,10 +76,13 @@ class SoftwareCategory(Named, CreatableFromString):
             yield licence
 
 
+class LicenseManger(RegionalizedDBManager):
+    pass
+
+
 class Licence(
     AttachmentMixin,
     Regionalized,
-    SoftDeletable,
     HistoryMixin,
     MPTTModel,
     TimeTrackable,
@@ -88,6 +91,7 @@ class Licence(
     SavingUser,
 ):
     """A set of licences for a single software with a single expiration date"""
+    objects = LicenseManger()
     manufacturer = models.ForeignKey(
         AssetManufacturer,
         on_delete=models.PROTECT,
