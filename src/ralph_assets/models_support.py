@@ -31,7 +31,6 @@ from ralph_assets.models_assets import (
 )
 from ralph_assets.models_util import (
     Regionalized,
-    RegionalizedDBManager,
 )
 
 
@@ -46,10 +45,6 @@ class SupportStatus(Choices):
     new = _("new")
 
 
-class SupportManger(RegionalizedDBManager):
-    pass
-
-
 class Support(
     Regionalized,
     HistoryMixin,
@@ -61,7 +56,6 @@ class Support(
     TimeTrackable,
     WithConcurrentGetOrCreate,
 ):
-    objects = SupportManger()
     contract_id = models.CharField(max_length=50, blank=False)
     description = models.CharField(max_length=100, blank=True)
     attachments = models.ManyToManyField(
