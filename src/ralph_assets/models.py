@@ -63,7 +63,7 @@ class ServerRoomLookup(RestrictedLookupChannel):
     def get_query(self, pk, request):
         return ServerRoom.objects.filter(
             Q(data_center__pk=pk),
-        ).order_by('name')[:10]
+        ).order_by('name')
 
 
 class RackLookup(RestrictedLookupChannel):
@@ -72,7 +72,7 @@ class RackLookup(RestrictedLookupChannel):
     def get_query(self, pk, request):
         return Rack.objects.filter(
             Q(server_room__pk=pk)
-        ).order_by('name')[:10]
+        ).order_by('name')
 
 
 class DeviceLookup(RestrictedLookupChannel):
