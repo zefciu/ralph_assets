@@ -313,7 +313,7 @@ class LicenceUser(models.Model):
 
     def __unicode__(self):
         return '{} of {} assigned to {}'.format(
-            self.quantity, self.licence, self.user
+            self.quantity, self.licence, self.asset
         )
 
 

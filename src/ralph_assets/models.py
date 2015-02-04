@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
-from django.db.models import Q, Sum, F
+from django.db.models import Q
 
 from ralph.business.models import Department
 from ralph_assets.models_assets import (
@@ -136,23 +136,39 @@ class FreeLicenceLookup(RestrictedLookupChannel):
     model = Licence
 
     def get_query(self, query, request):
-        out_licensed_ids = Licence.objects.annotate(
-            assets_sum=Sum('licenceasset__quantity')
-        ).annotate(
-            users_sum=Sum('licenceuser__quantity')
-        ).exclude(
-            Q(number_bought__lte=F('assets_sum')) |
-            Q(number_bought__lte=F('users_sum')) |
-            Q(number_bought__lte=F('assets_sum') + F('users_sum'))
-        ).values_list('id', flat=True)
-
-        licences = Licence.objects.exclude(
-            id__in=(out_licensed_ids),
-        ).filter(
-            Q(niw__icontains=query) |
-            Q(software_category__name__icontains=query)
+        expression = '%{}%'.format(query)
+        return self.model.objects.raw(
+            """SELECT
+                ralph_assets_licence.*,
+                ralph_assets_softwarecategory.name,
+                (
+                    COUNT(ralph_assets_licenceasset.asset_id)  +
+                    COUNT(ralph_assets_licenceuser.user_id)
+                ) AS used
+            FROM
+                ralph_assets_licence
+            INNER JOIN ralph_assets_softwarecategory ON (
+                ralph_assets_licence.software_category_id =
+                ralph_assets_softwarecategory.id
+            )
+            LEFT JOIN ralph_assets_licenceasset ON (
+                ralph_assets_licence.id =
+                ralph_assets_licenceasset.licence_id
+            )
+            LEFT JOIN ralph_assets_licenceuser ON (
+                ralph_assets_licence.id =
+                ralph_assets_licenceuser.licence_id
+            )
+            WHERE
+                ralph_assets_softwarecategory.name LIKE %s
+            OR
+                ralph_assets_licence.niw LIKE %s
+            GROUP BY ralph_assets_licence.id
+            HAVING used < ralph_assets_licence.number_bought
+            LIMIT 10;
+            """,
+            (expression, expression)
         )
-        return licences[:10]
 
     def get_result(self, obj):
         return obj.id
