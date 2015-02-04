@@ -8,9 +8,9 @@ from __future__ import unicode_literals
 import datetime
 import urllib
 
-from django.test import TestCase
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-
+from django.test import TestCase
 
 from ralph.cmdb.tests.utils import (
     DeviceEnvironmentFactory,
@@ -31,6 +31,7 @@ from ralph_assets.models_assets import (
     AssetStatus,
 )
 from ralph.ui.tests.global_utils import login_as_su
+from ralph.util.tests.utils import RegionFactory
 from ralph_assets.tests.utils import supports
 
 
@@ -896,6 +897,28 @@ class TestSearchEngine(TestCase):
     def test_server_room_exact(self):
         self._check_results_length(
             self.testing_urls['dc'], 'location_name', 'Server Room 404', 4,
+        )
+
+    def test_region_without_assigned_region_to_user(self):
+        other_region = RegionFactory()
+        other_region_asset = self.assets_bo[0]
+        other_region_asset.region = other_region
+        other_region_asset.save()
+
+        self._check_results_length(
+            self.testing_urls['bo'], 'region', str(other_region.id), 0,
+        )
+
+    def test_region(self):
+        other_region = RegionFactory()
+        other_region_asset = self.assets_bo[0]
+        other_region_asset.region = other_region
+        other_region_asset.save()
+        user = User.objects.get(username='ralph')
+        user.profile.region_set.add(other_region)
+
+        self._check_results_length(
+            self.testing_urls['bo'], 'region', str(other_region.id), 1,
         )
 
 

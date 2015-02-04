@@ -66,7 +66,7 @@ class AssetsSearchQueryableMixin(object):
             'provider',
             'purpose',
             'ralph_device_id',
-            'region'
+            'region',
             'remarks',
             'required_support',
             'segment',
