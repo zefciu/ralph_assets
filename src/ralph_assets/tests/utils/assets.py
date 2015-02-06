@@ -279,6 +279,7 @@ class BaseAssetFactory(DjangoModelFactory):
     model = SubFactory(AssetModelFactory)
     niw = Sequence(lambda n: 'Inventory number #{}'.format(n))
     order_no = Sequence(lambda n: 'Order no #{}'.format(n))
+    purchase_order = Sequence(lambda n: 'PURCHASE-{}'.format(n))
     owner = SubFactory(UserFactory)
     price = fuzzy.FuzzyDecimal(0, 100)
     property_of = SubFactory(AssetOwnerFactory)
