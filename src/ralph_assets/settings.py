@@ -2,6 +2,16 @@
 ASSETS_CHANGELOG_URL = ''  # TODO: set it, when it's formed
 DEFAULT_DEPRECATION_RATE = 25
 
+# customize asset's statuses per its type (datacenter or backoffice)
+# possible choices are:
+#     new, in_progress, waiting_for_release, used, loan, damaged, liquidated,
+#     in_service, in_repair, ok, installed, free, reserved,
+# e.g.:
+# ASSET_STATUSES = {
+#     'back_office': ['new', 'in_progress', 'used'],
+#     'data_center': ['new'],
+# }
+
 ASSETS_REPORTS = {
     'ENABLE': False,
     'INVOICE_REPORT': {'SLUG': 'invoice-report'},

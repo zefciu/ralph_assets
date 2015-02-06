@@ -13,6 +13,7 @@ from ralph.account.models import Region
 from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
+    AssetStatus,
     MODE2ASSET_TYPE,
 )
 from ralph_assets.tests.utils.assets import (
@@ -51,6 +52,7 @@ class TestDependency(TestCase):
             'slot_no': 3,
             'slots': 2,
             'sn': '123456789',
+            'status': AssetStatus.new.id,
             'type': MODE2ASSET_TYPE['dc'].id,
             'warehouse': self.warehouse.id,
         })
@@ -72,6 +74,7 @@ class TestDependency(TestCase):
             'region': Region.get_default_region().id,
             'slots': '',
             'sn': '123456789',
+            'status': AssetStatus.new.id,
             'type': MODE2ASSET_TYPE['dc'].id,
             'warehouse': self.warehouse.id,
         })
