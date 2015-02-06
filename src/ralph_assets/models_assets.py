@@ -199,6 +199,40 @@ class AssetStatus(Choices):
     free = _("free")
     reserved = _("reserved")
 
+    @classmethod
+    def _filter_status(cls, asset_type, required=True):
+        """
+        Filter choices depending on 2 things:
+
+            1. defined ASSET_STATUSES in settings (if not defined returns all
+                statuses)
+            2. passed *asset_type* (which is one of keys from ASSET_STATUSES)
+
+        :param required: prepends empty value to choices
+        """
+        customized = getattr(settings, 'ASSET_STATUSES', None)
+        found = [] if required else [('', '----')]
+        if not customized:
+            found.extend(AssetStatus())
+            return found
+        for key in customized[asset_type]:
+            try:
+                choice = getattr(AssetStatus, key)
+            except AttributeError:
+                msg = ("No such choice {!r} in AssetStatus"
+                       " - check settings").format(key)
+                raise Exception(msg)
+            found.append((choice.id, choice.name,))
+        return found
+
+    @classmethod
+    def data_center(cls, required):
+        return AssetStatus._filter_status('data_center', required)
+
+    @classmethod
+    def back_office(cls, required):
+        return AssetStatus._filter_status('back_office', required)
+
 
 class AssetSource(Choices):
     _ = Choices.Choice

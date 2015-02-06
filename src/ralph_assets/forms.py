@@ -415,13 +415,13 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
         ]
 
     barcode = BarcodeField(max_length=200, required=False)
-    source = ChoiceField(
-        required=False,
-        choices=[('', '----')] + AssetSource(),
-    )
     owner = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
         required=False,
+    )
+    source = ChoiceField(
+        required=False,
+        choices=[('', '----')] + AssetSource(),
     )
     user = AutoCompleteSelectField(
         LOOKUPS['asset_user'],
@@ -508,6 +508,9 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
         label=_('Purpose'),
         required=False,
     )
+    status = ChoiceField(
+        choices=AssetStatus.back_office(required=True), required=False,
+    )
     type = ChoiceField(
         required=True,
         choices=[('', '----')] + [
@@ -531,6 +534,9 @@ class DataCenterBulkEditAssetForm(BulkEditAssetForm):
         plugin_options=dict(
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
+    )
+    status = ChoiceField(
+        choices=AssetStatus.data_center(required=True), required=False,
     )
 
 
@@ -1301,6 +1307,9 @@ class BackOfficeAddDeviceForm(AddDeviceForm):
         required=False,
         label=_('Service catalog'),
     )
+    status = ChoiceField(
+        choices=AssetStatus.back_office(required=True), required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeAddDeviceForm, self).__init__(*args, **kwargs)
@@ -1330,6 +1339,9 @@ class DataCenterAddDeviceForm(AddDeviceForm):
         LOOKUPS['service'],
         required=True,
         label=_('Service catalog'),
+    )
+    status = ChoiceField(
+        choices=AssetStatus.data_center(required=True), required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -1451,6 +1463,9 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
         required=False,
         label=_('Service catalog'),
     )
+    status = ChoiceField(
+        choices=AssetStatus.back_office(required=True), required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeEditDeviceForm, self).__init__(*args, **kwargs)
@@ -1502,6 +1517,9 @@ class DataCenterEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
         LOOKUPS['service'],
         required=True,
         label=_('Service catalog'),
+    )
+    status = ChoiceField(
+        choices=AssetStatus.data_center(required=True), required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -1763,6 +1781,9 @@ class DataCenterSearchAssetForm(SearchAssetForm):
         help_text=None,
         plugin_options={'disable_confirm': True}
     )
+    status = ChoiceField(
+        choices=AssetStatus.data_center(required=False), required=False,
+    )
     without_assigned_location = BooleanField(
         required=False,
         help_text=(
@@ -1801,6 +1822,9 @@ class BackOfficeSearchAssetForm(SearchAssetForm):
         required=False,
     )
     segment = CharField(max_length=256, required=False)
+    status = ChoiceField(
+        choices=AssetStatus.back_office(required=False), required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         super(BackOfficeSearchAssetForm, self).__init__(*args, **kwargs)

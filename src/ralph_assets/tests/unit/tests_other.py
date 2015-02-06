@@ -465,3 +465,52 @@ class TestDeviceInfoValidation(TestCase):
         with self.assertRaises(ValidationError) as exc:
             device_info.clean_fields()
         self.assertEqual(exc.exception.code, models_assets.INVALID_POSITION)
+
+
+class TestAssetStatuses(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_return_all_choices_if_not_set(self):
+        self.assertEqual(
+            models_assets.AssetStatus.data_center(required=True),
+            models_assets.AssetStatus(),
+        )
+        self.assertEqual(
+            models_assets.AssetStatus.back_office(required=True),
+            models_assets.AssetStatus(),
+        )
+
+    @override_settings(ASSET_STATUSES={
+        'data_center': ['new']
+    })
+    def test_return_only_choices_from_settings(self):
+        correct_choices = [
+            (models_assets.AssetStatus.new.id,
+             models_assets.AssetStatus.new.name),
+        ]
+        self.assertEqual(
+            models_assets.AssetStatus.data_center(required=True),
+            correct_choices,
+        )
+
+    @override_settings(ASSET_STATUSES={
+        'data_center': ['undefined-status']
+    })
+    def test_raise_exception_when_unknown_status(self):
+        self.assertRaises(
+            Exception, models_assets.AssetStatus.data_center, (True,),
+        )
+
+    def test_exclude_blank(self):
+        self.assertEqual(
+            len(models_assets.AssetStatus.data_center(required=True)),
+            len(models_assets.AssetStatus()),
+        )
+
+    def test_include_blank(self):
+        found = models_assets.AssetStatus.data_center(required=False)
+        self.assertEqual(len(found), len(models_assets.AssetStatus()) + 1)
+        BLANK_IDX = 0
+        self.assertNotIn(found[BLANK_IDX], models_assets.AssetStatus())
