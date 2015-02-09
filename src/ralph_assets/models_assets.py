@@ -521,6 +521,7 @@ class Asset(
         max_length=128, db_index=True, null=True, blank=True,
     )
     order_no = models.CharField(max_length=50, null=True, blank=True)
+    purchase_order = models.CharField(max_length=50, null=True, blank=True)
     invoice_date = models.DateField(null=True, blank=True)
     sn = models.CharField(max_length=200, null=True, blank=True, unique=True)
     barcode = models.CharField(
