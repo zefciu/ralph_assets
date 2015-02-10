@@ -285,7 +285,7 @@ class AssetModel(
     manufacturer = models.ForeignKey(
         AssetManufacturer, on_delete=models.PROTECT, blank=True, null=True)
     category = models.ForeignKey(
-        'AssetCategory', null=True, blank=True, related_name='models'
+        'AssetCategory', null=True, related_name='models'
     )
     power_consumption = models.IntegerField(
         verbose_name=_("Power consumption"),
