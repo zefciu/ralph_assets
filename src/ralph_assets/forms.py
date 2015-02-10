@@ -68,92 +68,97 @@ RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
 
 # We use lambdas, so the fieldsets can be recreated after modifications
 
-asset_fieldset = lambda: OrderedDict([
-    ('Basic Info', [
-        'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
-        'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-        'service_name', 'property_of', 'region',
-    ]),
-    ('Financial Info', [
-        'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
-        'deprecation_rate', 'source', 'request_date', 'provider_order_date',
-        'delivery_date', 'deprecation_end_date', 'budget_info',
-        'force_deprecation',
-    ]),
-    ('User Info', [
-        'user', 'owner', 'employee_id', 'company', 'department', 'manager',
-        'profit_center', 'cost_center',
-    ]),
-])
+def asset_fieldset():
+    return OrderedDict([
+        ('Basic Info', [
+            'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
+            'location', 'status', 'task_url', 'loan_end_date', 'remarks',
+            'service_name', 'property_of', 'region',
+        ]),
+        ('Financial Info', [
+            'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
+            'deprecation_rate', 'source', 'request_date',
+            'provider_order_date', 'delivery_date', 'deprecation_end_date',
+            'budget_info', 'force_deprecation',
+        ]),
+        ('User Info', [
+            'user', 'owner', 'employee_id', 'company', 'department', 'manager',
+            'profit_center', 'cost_center',
+        ]),
+    ])
 
-asset_search_back_office_fieldsets = lambda: OrderedDict([
-    ('Basic Info', {
-        'noncollapsed': [
-            'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-            'required_support', 'support_assigned', 'service',
-            'device_environment', 'region',
-        ],
-        'collapsed': [
-            'warehouse', 'task_url', 'category', 'loan_end_date_from',
-            'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
-            'service_name', 'location', 'remarks',
-        ],
-    }),
-    ('User data', {
-        'noncollapsed': ['user', 'owner', 'segment'],
-        'collapsed': [
-            'company', 'department', 'employee_id', 'cost_center',
-            'profit_center',
-        ],
-    }),
-    ('Financial data', {
-        'noncollapsed': [
-            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
-            'budget_info',
-        ],
-        'collapsed': [
-            'provider', 'source', 'ralph_device_id', 'request_date_from',
-            'request_date_to', 'provider_order_date_from',
-            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
-            'deprecation_rate',
-        ]
-    })
-])
 
-asset_search_dc_fieldsets = lambda: OrderedDict([
-    ('Basic Info', {
-        'noncollapsed': [
-            'location_name', 'barcode', 'sn', 'model', 'manufacturer',
-            'warehouse', 'required_support', 'support_assigned',
-            'venture_department', 'service', 'device_environment', 'region',
-            'without_assigned_location',
-        ],
-        'collapsed': [
-            'status', 'task_url', 'category', 'loan_end_date_from',
-            'loan_end_date_to', 'part_info', 'niw', 'service_name',
-            'location', 'remarks',
-        ],
-    }),
-    ('User data', {
-        'noncollapsed': ['user', 'owner'],
-        'collapsed': [
-            'company', 'department', 'employee_id', 'cost_center',
-            'profit_center',
-        ],
-    }),
-    ('Financial data', {
-        'noncollapsed': [
-            'invoice_no', 'invoice_date_from', 'invoice_date_to', 'order_no',
-            'budget_info',
-        ],
-        'collapsed': [
-            'provider', 'source', 'ralph_device_id', 'request_date_from',
-            'request_date_to', 'provider_order_date_from',
-            'provider_order_date_to', 'delivery_date_from', 'delivery_date_to',
-            'deprecation_rate',
-        ]
-    })
-])
+def asset_search_back_office_fieldsets():
+    return OrderedDict([
+        ('Basic Info', {
+            'noncollapsed': [
+                'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
+                'required_support', 'support_assigned', 'service',
+                'device_environment', 'region',
+            ],
+            'collapsed': [
+                'warehouse', 'task_url', 'category', 'loan_end_date_from',
+                'loan_end_date_to', 'part_info', 'niw', 'manufacturer',
+                'service_name', 'location', 'remarks',
+            ],
+        }),
+        ('User data', {
+            'noncollapsed': ['user', 'owner', 'segment'],
+            'collapsed': [
+                'company', 'department', 'employee_id', 'cost_center',
+                'profit_center',
+            ],
+        }),
+        ('Financial data', {
+            'noncollapsed': [
+                'invoice_no', 'invoice_date_from', 'invoice_date_to',
+                'order_no', 'budget_info',
+            ],
+            'collapsed': [
+                'provider', 'source', 'ralph_device_id', 'request_date_from',
+                'request_date_to', 'provider_order_date_from',
+                'provider_order_date_to', 'delivery_date_from',
+                'delivery_date_to', 'deprecation_rate',
+            ]
+        })
+    ])
+
+
+def asset_search_dc_fieldsets():
+    return OrderedDict([
+        ('Basic Info', {
+            'noncollapsed': [
+                'location_name', 'barcode', 'sn', 'model', 'manufacturer',
+                'warehouse', 'required_support', 'support_assigned',
+                'venture_department', 'service', 'device_environment',
+                'region', 'without_assigned_location',
+            ],
+            'collapsed': [
+                'status', 'task_url', 'category', 'loan_end_date_from',
+                'loan_end_date_to', 'part_info', 'niw', 'service_name',
+                'location', 'remarks',
+            ],
+        }),
+        ('User data', {
+            'noncollapsed': ['user', 'owner'],
+            'collapsed': [
+                'company', 'department', 'employee_id', 'cost_center',
+                'profit_center',
+            ],
+        }),
+        ('Financial data', {
+            'noncollapsed': [
+                'invoice_no', 'invoice_date_from', 'invoice_date_to',
+                'order_no', 'budget_info',
+            ],
+            'collapsed': [
+                'provider', 'source', 'ralph_device_id', 'request_date_from',
+                'request_date_to', 'provider_order_date_from',
+                'provider_order_date_to', 'delivery_date_from',
+                'delivery_date_to', 'deprecation_rate',
+            ]
+        })
+    ])
 
 LOOKUPS = {
     'asset': ('ralph_assets.models', 'DeviceLookup'),
