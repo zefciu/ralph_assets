@@ -10,7 +10,7 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ralph_assets.views.base import ACLGateway
+from ralph.ui.views.common import ACLGateway
 from ralph_assets.models_assets import DataCenter
 from ralph_assets.rest.serializers.models_dc_asssets import DCSerializer
 
