@@ -25,6 +25,7 @@ from ralph_assets.tests.utils.assets import (
 )
 from ralph_assets.tests.utils.licences import (
     LicenceAssetFactory,
+    LicenceUserFactory,
     LicenceFactory,
 )
 
@@ -101,6 +102,18 @@ class TestFreeLicenceLookup(BaseLookupsTest):
         self._check_lookup_count(
             self.base_url, searched_term=licence_asset.licence.niw,
             expected_count=0,
+        )
+
+    def test_licence_found_when_assigned_to_user(self):
+        BOUGHT = 5
+        licence = LicenceFactory(number_bought=BOUGHT)
+        licence_asset = LicenceAssetFactory(
+            licence=licence, quantity=2,
+        )
+        LicenceUserFactory(licence=licence, quantity=2)
+        self._check_lookup_count(
+            self.base_url, searched_term=licence_asset.licence.niw,
+            expected_count=1,
         )
 
     def test_licence_found_when_no_assiging_to_user(self):

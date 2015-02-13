@@ -12,11 +12,11 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
-from django.db.models import Aggregate, F, Q
-from django.db.models.sql.aggregates import Aggregate as SqlAggregate
-
+from django.db import connection
+from django.db.models import Q
 
 from ralph.business.models import Department
+from ralph.middleware import get_actual_regions
 from ralph_assets.models_assets import (
     Asset,
     AssetCategory,
@@ -132,45 +132,60 @@ class LinkedDeviceNameLookup(DeviceLookup):
         return item
 
 
-class WrappedSum(SqlAggregate):
-    """Wrap standard sql SUM with IFNULL function to return 0 instead of null
-    """
-    sql_function = 'SUM'
-    sql_template = 'IFNULL(%(function)s(%(field)s), 0)'
-
-
-class CustomSum(Aggregate):
-    """
-    Override standard Sum so that, it is wrapped with IFNULL function call
-    """
-    def add_to_query(self, query, alias, col, source, is_summary):
-        aggregate = WrappedSum(
-            col, source=source, is_summary=is_summary, **self.extra
-        )
-        query.aggregates[alias] = aggregate
-
-
 class FreeLicenceLookup(RestrictedLookupChannel):
     """Lookup the licences that have any specimen left."""
 
     model = Licence
+    min_length = 4
 
     def get_query(self, query, request):
-        licences = Licence.objects.annotate(
-            assets_sum=CustomSum('licenceasset__quantity'),
-            users_sum=CustomSum('licenceuser__quantity')
-        ).filter(
-            Q(niw__icontains=query) |
-            Q(number_bought__gt=F('assets_sum') + F('users_sum')) |
-            Q(software_category__name__icontains=query)
-        )[:10]
-        return licences
+        cursor = connection.cursor()
+        raw_sql = """
+        SELECT
+            ralph_assets_licence.id,
+            number_bought - IFNULL(SUM(quantity), 0) as on_stock
+        FROM
+            ralph_assets_licence
+            INNER JOIN ralph_assets_softwarecategory ON (
+                ralph_assets_licence.software_category_id =	ralph_assets_softwarecategory.id
+            )
+            LEFT JOIN (
+                SELECT licence_id, quantity FROM ralph_assets_licenceasset
+                UNION ALL
+                SELECT licence_id, quantity FROM ralph_assets_licenceuser) t ON
+                    t.licence_id = ralph_assets_licence.id
+        WHERE
+            ralph_assets_licence.region_id IN (select uu.id from account_region uu where uu.name in ({region_expression}))
+        AND (
+            ralph_assets_softwarecategory.name like %s
+        OR
+            ralph_assets_licence.niw LIKE %s
+        )
+        GROUP by
+            ralph_assets_licence.id
+        HAVING
+            on_stock > 0
+        ORDER BY
+            number_bought DESC
+        LIMIT 10
+        """  # noqa
+        regions = [region.name for region in get_actual_regions()]
+        region_expression = ', '.join(['%s'] * len(regions))
+        raw_sql = raw_sql.format(region_expression=region_expression)
+        expression = '%{}%'.format(query)
+
+        args = []
+        args.extend(regions)
+        args.extend([expression] * 2)
+        cursor.execute(raw_sql, args)
+        ids = [row[0] for row in cursor.fetchall()]
+        results = Licence.objects.filter(id__in=ids)
+        return results
 
     def get_result(self, obj):
         return obj.id
 
     def format_item_display(self, obj):
-        free = str(obj.number_bought - obj.assets.count() - obj.users.count())
         return """
         <span>{name}</span>
         <span class="licence-niw">{niw}</span>
@@ -178,7 +193,7 @@ class FreeLicenceLookup(RestrictedLookupChannel):
         """.format(
             name=escape(str(obj)),
             niw=obj.niw,
-            free=free,
+            free=obj.free,
         )
 
 
