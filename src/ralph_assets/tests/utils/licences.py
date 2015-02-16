@@ -86,7 +86,7 @@ class LicenceFactory(DjangoModelFactory):
 
     @lazy_attribute
     def price(self):
-        return Decimal(randrange(10000))/100
+        return Decimal(randrange(10000)) / 100
 
     @lazy_attribute
     def region(self):
