@@ -23,6 +23,7 @@ Contents:
    transitions
    history
    regions
+   signals
    changes
    license
 

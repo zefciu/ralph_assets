@@ -57,6 +57,7 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_dc_assets import DataCenter, ServerRoom, Rack
 from ralph_assets import models_assets
+from ralph_assets.signals import post_customize_fields
 from ralph.discovery import models_device
 from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
@@ -876,6 +877,7 @@ class BaseAssetForm(ModelForm):
             self.fields['model'].widget.channel = LOOKUPS['asset_bomodel']
             self.fields['type'].choices = [
                 (c.id, c.desc) for c in AssetType.BO.choices]
+        post_customize_fields.send(sender=self, mode=self.mode)
 
 
 class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
