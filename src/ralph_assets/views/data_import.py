@@ -221,8 +221,8 @@ class XlsUploadView(SessionWizardView, AssetsBase):
                 elif issubclass(field.rel.to, Sluggy):
                     value = field.rel.to.objects.get(slug=value)
                 elif (
-                    issubclass(field.rel.to, ServiceCatalog)
-                    or issubclass(field.rel.to, DeviceEnvironment)
+                    issubclass(field.rel.to, ServiceCatalog) or
+                    issubclass(field.rel.to, DeviceEnvironment)
                 ):
                     try:
                         value = field.rel.to.objects.get(name__iexact=value)
