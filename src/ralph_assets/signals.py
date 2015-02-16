@@ -11,3 +11,4 @@ from __future__ import unicode_literals
 import django.dispatch
 
 post_transition = django.dispatch.Signal(['user', 'assets', 'transition'])
+post_customize_fields = django.dispatch.Signal(['mode'])
