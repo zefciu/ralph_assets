@@ -113,9 +113,9 @@ class LinkedDeviceNameLookup(DeviceLookup):
             'id', flat=True
         ).filter(name__icontains=text)
         query = Q(
-            Q(barcode__icontains=text)
-            | Q(sn__icontains=text)
-            | Q(device_info__ralph_device_id__in=matched_devices_ids)
+            Q(barcode__icontains=text) |
+            Q(sn__icontains=text) |
+            Q(device_info__ralph_device_id__in=matched_devices_ids)
         )
         return self.get_base_objects().filter(query).order_by()[:10]
 

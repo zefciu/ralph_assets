@@ -1714,8 +1714,8 @@ class TestColumnsInSearch(BaseViewsTest):
             if not col.bob_tag:
                 continue
             if (col.show_conditions is True) or (
-                isinstance(col.show_conditions, tuple)
-                and col.show_conditions[1] == mode
+                isinstance(col.show_conditions, tuple) and
+                col.show_conditions[1] == mode
             ):
                 mode_cols.add(col.header_name)
         return mode_cols

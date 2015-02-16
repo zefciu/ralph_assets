@@ -337,8 +337,8 @@ class TransitionView(ActiveSubmoduleByAssetMixin, _AssetSearch):
             )
 
         if (
-            self.assets.filter(model__category__code='').count() > 0
-            and self.change_hostname
+            self.assets.filter(model__category__code='').count() > 0 and
+            self.change_hostname
         ):
             messages.error(
                 self.request, _("Asset has no assigned category with code"),
@@ -346,10 +346,10 @@ class TransitionView(ActiveSubmoduleByAssetMixin, _AssetSearch):
             error = True
         # check assets has assigned user
         if (
-            self.transition_type in required_user_transitions
-            or (
-                not self.assign_user
-                and self.transition_type not in not_required_user_transitions
+            self.transition_type in required_user_transitions or
+            (
+                not self.assign_user and
+                self.transition_type not in not_required_user_transitions
             )
         ):
             assets = self.assets.values('user__username').distinct()

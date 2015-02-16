@@ -61,8 +61,8 @@ class TransitionForm(forms.Form):
 
     def clean(self):
         if (
-            not self.transition.odt_templates
-            and self.transition.required_report
+            not self.transition.odt_templates and
+            self.transition.required_report
         ):
             raise forms.ValidationError(_('Odt template does not exist!'))
         return super(TransitionForm, self).clean()
