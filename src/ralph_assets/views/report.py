@@ -249,6 +249,7 @@ class StatusModelReport(BaseReport):
                 name=item['model__name'],
                 count=item['num'],
                 parent=get_desc(AssetStatus, item['status']),
+                unique=False,
             )
 
 
