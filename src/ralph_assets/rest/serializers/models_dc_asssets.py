@@ -28,10 +28,13 @@ class CoreDeviceMixin(object):
         """
         Return the URL to device in core.
         """
+        url = None
         device_core_id = obj.device_info.ralph_device_id
-        return reverse('search', kwargs={
-            'details': 'info', 'device': device_core_id
-        })
+        if device_core_id:
+            url = reverse('search', kwargs={
+                'details': 'info', 'device': device_core_id
+            })
+        return url
 
 
 class RelatedAssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
