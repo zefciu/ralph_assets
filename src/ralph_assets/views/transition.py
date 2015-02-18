@@ -22,6 +22,7 @@ from inkpy.api import generate_pdf
 from lck.django.common import nested_commit_on_success
 
 from ralph_assets import signals
+from ralph_assets.exceptions import PostTransitionException
 from ralph_assets.forms_transitions import TransitionForm
 from ralph_assets.models import (
     ReportOdtSourceLanguage,
@@ -39,11 +40,6 @@ from ralph_assets.views.search import _AssetSearch
 
 
 logger = logging.getLogger(__name__)
-
-
-class PostTransitionException(Exception):
-    """General exception to be thrown in *post_transition* signal receivers.
-    Exception message is used to inform user."""
 
 
 class TransitionDispatcher(object):

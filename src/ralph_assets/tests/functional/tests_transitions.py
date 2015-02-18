@@ -19,6 +19,7 @@ from django.test.utils import override_settings
 from ralph.ui.tests.global_utils import login_as_su
 from ralph.ui.tests.global_utils import UserFactory
 from ralph_assets import signals
+from ralph_assets.exceptions import PostTransitionException
 from ralph_assets.models_assets import Asset
 from ralph_assets.models_transition import Action
 from ralph_assets.tests.utils import MessagesTestMixin
@@ -184,8 +185,7 @@ class TestTransitionHostname(MessagesTestMixin, TestCase):
         def post_transition_handler(
             sender, user, assets, transition, **kwargs
         ):
-            from ralph_assets.views import transition
-            raise transition.PostTransitionException(
+            raise PostTransitionException(
                 "Unable to generate document - try later, please."
             )
 
