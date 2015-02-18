@@ -1307,7 +1307,8 @@
             "lft": 135,
             "is_blade": false,
             "tree_id": 1,
-            "type": 1
+            "type": 1,
+            "code": "PC"
         }
     },
     {
@@ -1326,7 +1327,8 @@
             "lft": 137,
             "is_blade": false,
             "tree_id": 1,
-            "type": 1
+            "type": 1,
+            "code": "PC"
         }
     },
     {
