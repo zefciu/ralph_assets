@@ -398,7 +398,7 @@ class DCAdminManager(models.Manager):
         )
 
 
-class AssetAdminManager(models.Manager):
+class AssetAdminManager(RegionalizedDBManager):
     pass
 
 
