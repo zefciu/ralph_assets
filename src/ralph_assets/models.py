@@ -48,6 +48,13 @@ from ralph_assets.models_transition import (
     Transition,
     TransitionsHistory,
 )
+from ralph_assets.models_part import (
+    PartModel,
+    PartType,
+    Part,
+    DCPart,
+)
+
 from ralph.ui.channels import RestrictedLookupChannel
 from ralph_assets.models_util import (
     WithForm,
@@ -509,6 +516,7 @@ __all__ = [
     'CoaOemOs',
     'DCAssetModelLookup',
     'DCDeviceLookup',
+    'DCPart',
     'DeviceInfo',
     'DeviceLookup',
     'Licence',
@@ -516,6 +524,9 @@ __all__ = [
     'OfficeInfo',
     'Orientation',
     'PartInfo',
+    'PartModel',
+    'PartType',
+    'Part',
     'ReportOdtSource',
     'ReportOdtSourceLanguage',
     'Service',

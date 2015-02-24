@@ -18,6 +18,7 @@ from ralph_assets.forms import (
     BasePartForm,
     EditPartForm,
     OfficeForm,
+    PartForm,
 )
 from ralph_assets.models import Asset
 from ralph_assets.views.base import (
@@ -37,79 +38,95 @@ from ralph_assets.views.utils import (
 
 logger = logging.getLogger(__name__)
 
-
-class AddPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
+class AddPart(SubmoduleModeMixin, AssetsBase):
     active_sidebar_item = 'add part'
     template_name = 'assets/add_part.html'
 
     def get_context_data(self, **kwargs):
         ret = super(AddPart, self).get_context_data(**kwargs)
         ret.update({
-            'asset_form': self.asset_form,
-            'part_info_form': self.part_info_form,
+            'part_form': self.asset_form,
             'form_id': 'add_part_form',
             'edit_mode': False,
         })
         return ret
 
-    def initialize_vars(self):
-        self.device_id = None
-
     def get(self, *args, **kwargs):
-        self.initialize_vars()
-        mode = self.mode
-        self.asset_form = AddPartForm(mode=mode)
-        self.device_id = self.request.GET.get('device')
-        part_form_initial = {}
-        if self.device_id:
-            part_form_initial['device'] = self.device_id
-        self.part_info_form = BasePartForm(
-            initial=part_form_initial, mode=mode)
+        self.asset_form = PartForm()
         return super(AddPart, self).get(*args, **kwargs)
 
-    def post(self, *args, **kwargs):
-        self.initialize_vars()
-        mode = self.mode
-        self.asset_form = AddPartForm(self.request.POST, mode=mode)
-        self.part_info_form = BasePartForm(self.request.POST, mode=mode)
-        if self.asset_form.is_valid() and self.part_info_form.is_valid():
-            creator_profile = self.request.user.get_profile()
-            asset_data = self.asset_form.cleaned_data
-            for f_name in {
-                "barcode", "category", "company", "cost_center", "department",
-                "employee_id", "imei", "licences", "manager", "profit_center",
-                "supports", "segment",
-            }:
-                if f_name in asset_data:
-                    del asset_data[f_name]
-            asset_data['barcode'] = None
-            serial_numbers = self.asset_form.cleaned_data['sn']
-            del asset_data['sn']
-            if 'imei' in asset_data:
-                del asset_data['imei']
-            ids = []
-            for sn in serial_numbers:
-                ids.append(
-                    _create_part(
-                        creator_profile, asset_data,
-                        self.part_info_form.cleaned_data, sn
-                    )
-                )
-            messages.success(self.request, _("Assets saved."))
-            cat = self.request.path.split('/')[2]
-            if len(ids) == 1:
-                return HttpResponseRedirect(
-                    '/assets/%s/edit/part/%s/' % (cat, ids[0])
-                )
-            else:
-                return HttpResponseRedirect(
-                    '/assets/%s/bulkedit/?select=%s' % (
-                        cat, '&select='.join(["%s" % id for id in ids]))
-                )
-            return HttpResponseRedirect(get_return_link(self.mode))
-        else:
-            messages.error(self.request, _("Please correct the errors."))
-        return super(AddPart, self).get(*args, **kwargs)
+# class AddPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
+#     active_sidebar_item = 'add part'
+#     template_name = 'assets/add_part.html'
+# 
+#     def get_context_data(self, **kwargs):
+#         ret = super(AddPart, self).get_context_data(**kwargs)
+#         ret.update({
+#             'asset_form': self.asset_form,
+#             'part_info_form': self.part_info_form,
+#             'form_id': 'add_part_form',
+#             'edit_mode': False,
+#         })
+#         return ret
+# 
+#     def initialize_vars(self):
+#         self.device_id = None
+# 
+#     def get(self, *args, **kwargs):
+#         self.initialize_vars()
+#         mode = self.mode
+#         self.asset_form = AddPartForm(mode=mode)
+#         self.device_id = self.request.GET.get('device')
+#         part_form_initial = {}
+#         if self.device_id:
+#             part_form_initial['device'] = self.device_id
+#         self.part_info_form = BasePartForm(
+#             initial=part_form_initial, mode=mode)
+#         return super(AddPart, self).get(*args, **kwargs)
+# 
+#     def post(self, *args, **kwargs):
+#         self.initialize_vars()
+#         mode = self.mode
+#         self.asset_form = AddPartForm(self.request.POST, mode=mode)
+#         self.part_info_form = BasePartForm(self.request.POST, mode=mode)
+#         if self.asset_form.is_valid() and self.part_info_form.is_valid():
+#             creator_profile = self.request.user.get_profile()
+#             asset_data = self.asset_form.cleaned_data
+#             for f_name in {
+#                 "barcode", "category", "company", "cost_center", "department",
+#                 "employee_id", "imei", "licences", "manager", "profit_center",
+#                 "supports", "segment",
+#             }:
+#                 if f_name in asset_data:
+#                     del asset_data[f_name]
+#             asset_data['barcode'] = None
+#             serial_numbers = self.asset_form.cleaned_data['sn']
+#             del asset_data['sn']
+#             if 'imei' in asset_data:
+#                 del asset_data['imei']
+#             ids = []
+#             for sn in serial_numbers:
+#                 ids.append(
+#                     _create_part(
+#                         creator_profile, asset_data,
+#                         self.part_info_form.cleaned_data, sn
+#                     )
+#                 )
+#             messages.success(self.request, _("Assets saved."))
+#             cat = self.request.path.split('/')[2]
+#             if len(ids) == 1:
+#                 return HttpResponseRedirect(
+#                     '/assets/%s/edit/part/%s/' % (cat, ids[0])
+#                 )
+#             else:
+#                 return HttpResponseRedirect(
+#                     '/assets/%s/bulkedit/?select=%s' % (
+#                         cat, '&select='.join(["%s" % id for id in ids]))
+#                 )
+#             return HttpResponseRedirect(get_return_link(self.mode))
+#         else:
+#             messages.error(self.request, _("Please correct the errors."))
+#         return super(AddPart, self).get(*args, **kwargs)
 
 
 class EditPart(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):

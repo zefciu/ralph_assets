@@ -57,11 +57,13 @@ from ralph_assets.models import (
 )
 from ralph_assets.models_dc_assets import DataCenter, ServerRoom, Rack
 from ralph_assets import models_assets
+from ralph_assets import models_part
 from ralph_assets.signals import post_customize_fields
 from ralph.discovery import models_device
 from ralph.middleware import get_actual_regions
 from ralph.ui.widgets import DateWidget, ReadOnlyWidget, SimpleReadOnlyWidget
 from ralph.ui.forms.addresses import IPWithHostField
+from ralph.util.models import CA_TYPE2MODEL
 
 
 RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
@@ -1932,3 +1934,22 @@ class SearchUserForm(Form):
         LOOKUPS['asset_user'],
         required=False,
     )
+
+class PartForm(ModelForm):
+    """A part"""
+    class Meta:
+        model = models_part.DCPart
+        fields = ['sn']
+
+    def __init__(self, *args, **kwargs):
+        self.fieldsets = {
+            'main': ['sn']
+        }
+        super(PartForm, self).__init__(*args, **kwargs)
+        for field in self._meta.model.custom_attributes:
+            value_model = CA_TYPE2MODEL[field.type]
+            self.fields[field.name] =\
+                value_model._meta.get_field('value').formfield(
+                    label = field.verbose_name
+                )
+
