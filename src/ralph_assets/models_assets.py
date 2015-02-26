@@ -193,6 +193,7 @@ class AssetStatus(Choices):
     in_service = _("in service")
     in_repair = _("in repair")
     ok = _("ok")
+    to_deploy = _("to deploy")
 
     SOFTWARE = Choices.Group(100)
     installed = _("installed")
