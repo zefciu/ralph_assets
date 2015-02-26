@@ -222,7 +222,7 @@ class AssetStatus(Choices):
                 msg = ("No such choice {!r} in AssetStatus"
                        " - check settings").format(key)
                 raise Exception(msg)
-            found.append((choice.id, choice.name,))
+            found.append((choice.id, unicode(choice)))
         return found
 
     @classmethod
