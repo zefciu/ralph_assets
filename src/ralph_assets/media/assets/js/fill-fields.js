@@ -84,6 +84,10 @@ $(document).ready(function () {
           } else {
               el = $('input[name="' + pre + "-" + i + "-" + post + '"]');
           }
+          var dstIsSrc = $(sourceField).attr('id') === $(el).attr('id');
+          if (dstIsSrc) {
+              continue;
+          }
           if (!el.length) {
               break;
           }

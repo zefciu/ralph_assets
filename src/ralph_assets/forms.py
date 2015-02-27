@@ -487,7 +487,7 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
             'warehouse', 'sn', 'property_of', 'purpose', 'remarks',
             'service_name', 'invoice_no', 'invoice_date', 'price', 'provider',
             'task_url', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date',
+            'deprecation_end_date', 'licences',
         )
 
     def __init__(self, *args, **kwargs):
@@ -501,6 +501,10 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 
     hostname = CharField(
         required=False, widget=SimpleReadOnlyWidget(),
+    )
+    licences = AutoCompleteSelectMultipleField(
+        LOOKUPS['free_licences'],
+        required=False,
     )
     model = AutoCompleteSelectField(
         LOOKUPS['asset_bomodel'],
