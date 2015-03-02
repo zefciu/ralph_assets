@@ -80,3 +80,8 @@ def multi_assign_form(form, counter=''):
 )
 def mode_switch(context):
     return {'mode': context['mode']}
+
+
+@register.inclusion_tag('assets/templatetags/transition_button.html')
+def transition_button(transition_type):
+    return {'transition_type': transition_type}

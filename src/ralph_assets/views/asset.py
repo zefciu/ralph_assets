@@ -23,7 +23,11 @@ from ralph_assets.views.base import (
     get_return_link,
 )
 from ralph_assets.views.search import _AssetSearch, AssetSearchDataTable
-from ralph_assets.views.utils import _move_data, _update_office_info
+from ralph_assets.views.utils import (
+    _move_data,
+    _update_office_info,
+    get_transition_url,
+)
 from ralph.util.reports import Report
 
 
@@ -151,3 +155,16 @@ class AssetBulkEdit(
             _(('Please correct errors and check both "serial numbers" and '
                '"barcodes" for duplicates'))
         )
+
+    def get_success_url(self):
+        """Redirect after successfully send formset.
+
+        :return: returns URL (``str``)
+        """
+        assets_ids = self.get_items_ids()
+        transition_type = self.request.POST.get('transition_type')
+        success_url = (
+            get_transition_url(transition_type, assets_ids, self.mode) or
+            super(AssetBulkEdit, self).get_success_url()
+        )
+        return success_url

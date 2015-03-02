@@ -35,9 +35,10 @@ from ralph_assets.views.base import (
 from ralph_assets.views.utils import (
     _create_assets,
     _move_data,
-    _update_office_info,
     _update_asset,
     _update_device_info,
+    _update_office_info,
+    get_transition_url,
 )
 
 
@@ -253,7 +254,10 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                     messages.error(
                         self.request, _("Please select one or more parts."),
                     )
-        elif 'asset' in post_data.keys():
+        elif (
+            'asset' in post_data.keys() or
+            'transition_type' in post_data.keys()
+        ):
             if all((
                 self.asset_form.is_valid(),
                 self.additional_info.is_valid(),
@@ -285,10 +289,16 @@ class EditDevice(HardwareModeMixin, SubmoduleModeMixin, AssetsBase):
                 ):
                     self.asset.supports.add(support)
                 messages.success(self.request, _("Assets edited."))
-                cat = self.request.path.split('/')[2]
-                return HttpResponseRedirect(
-                    '/assets/%s/edit/device/%s/' % (cat, self.asset.id)
-                )
+                transition_type = post_data.get('transition_type')
+                if transition_type:
+                    redirect_url = get_transition_url(
+                        transition_type, [self.asset.id], self.mode
+                    )
+                else:
+                    redirect_url = reverse(
+                        'device_edit', args=[self.mode, self.asset.id, ],
+                    )
+                return HttpResponseRedirect(redirect_url)
             else:
                 messages.error(self.request, _("Please correct the errors."))
                 messages.error(
