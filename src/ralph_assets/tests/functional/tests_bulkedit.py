@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.utils import override_settings
 
+from ralph.account.models import Region
 from ralph_assets import models_assets
 from ralph_assets.models_assets import AssetStatus
 from ralph_assets.tests.utils import UserFactory
@@ -188,6 +189,7 @@ class TestBulkEdit(TestCase):
             'sn': 'bo-sn-number',
             'type': models_assets.AssetType.back_office,
             'provider': 'provider',
+            'region': Region.get_default_region(),
         })
 
         bo_asset = BOAssetFactory(**bo_asset_data)
