@@ -8,12 +8,14 @@ from __future__ import unicode_literals
 
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.filters import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.admin import ModelAdmin
 
+from ralph import middleware
 from ralph_assets import models_assets
 from ralph_assets.models import (
     Asset,
@@ -125,6 +127,33 @@ class BudgetInfoAdmin(ModelAdmin):
 admin.site.register(models_assets.BudgetInfo, BudgetInfoAdmin)
 
 
+class AssetRegionFilter(SimpleListFilter):
+    """
+    Allow to filter assets by region
+    """
+    title = _('region')
+    parameter_name = 'region'
+
+    def lookups(self, request, model_admin):
+        return [(r.id, r.name) for r in middleware.get_actual_regions()]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(region_id=self.value())
+        else:
+            return queryset
+
+
+class AssetAdminForm(forms.ModelForm):
+    class Meta:
+        model = models_assets.Asset
+
+    def __init__(self, *args, **kwargs):
+        super(AssetAdminForm, self).__init__(*args, **kwargs)
+        # return only valid regions for current user
+        self.fields['region'].queryset = middleware.get_actual_regions()
+
+
 class AssetAdmin(ModelAdmin):
     fields = (
         'sn',
@@ -132,6 +161,7 @@ class AssetAdmin(ModelAdmin):
         'model',
         'status',
         'warehouse',
+        'region',
         'source',
         'invoice_no',
         'order_no',
@@ -157,7 +187,8 @@ class AssetAdmin(ModelAdmin):
         'device_info__ralph_device_id',
     )
     list_display = ('sn', 'model', 'type', 'barcode', 'status', 'deleted',)
-    list_filter = ('type',)
+    list_filter = ('type', AssetRegionFilter)
+    form = AssetAdminForm
 
     def has_delete_permission(self, request, obj=None):
         return False
