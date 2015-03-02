@@ -12,6 +12,7 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 
+from ralph_assets.licences.models import Licence
 from ralph_assets.models import Asset
 from ralph_assets.models_assets import AssetType
 from ralph_assets.views.base import (
@@ -106,11 +107,33 @@ class AssetBulkEdit(
                     formset.forms[idx].fields[field].initial = (
                         getattr(asset.office_info, field, None)
                     )
+            self._initialize_licences(formset.forms[idx], asset)
+
+    def _initialize_licences(self, form, asset):
+        licences_ids = asset.licences.values_list('id', flat=True)
+        if licences_ids:
+            form.fields['licences'].initial = licences_ids
+
+    def _save_licences(self, asset, form):
+        asset.licences.clear()
+        licence_ids = form.cleaned_data.get('licences', [])
+        licences = Licence.objects.filter(id__in=licence_ids)
+        for licence in licences:
+            licence.assign(asset)
+            licence.save()
+
+    def _get_formset_idx(self, formset, instance):
+        for idx, form in enumerate(formset.forms):
+            if int(formset.forms[idx]['id'].value()) == instance.id:
+                break
+        return idx
 
     def save_formset(self, instances, formset):
         with transaction.commit_on_success():
-            for idx, instance in enumerate(instances):
+            for instance in instances:
+                idx = self._get_formset_idx(formset, instance)
                 instance.modified_by = self.request.user.get_profile()
+                self._save_licences(instance, formset.forms[idx])
                 instance.save(user=self.request.user)
                 new_src, office_info_data = _move_data(
                     formset.forms[idx].cleaned_data,
