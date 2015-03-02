@@ -11,6 +11,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from ralph.cmdb.tests.utils import ServiceCatalogFactory
+from ralph.discovery.tests.util import DeviceFactory
 from ralph_assets.models_assets import Orientation
 from ralph_assets.rest.serializers.models_dc_asssets import (
     TYPE_ACCESSORY,
@@ -32,13 +34,22 @@ class TestRestAssetInfoPerRack(TestCase):
         self.rack_1 = RackFactory(max_u_height=3)
         rack_2 = RackFactory()
 
+        self.dev_1 = DeviceFactory(name="h001.dc")
+        self.dev_1.management_ip = '10.20.30.1'
+        self.dev_2 = DeviceFactory(name="h002.dc")
+        self.dev_2.management_ip = '10.20.30.2'
+
         self.asset_1 = AssetFactory(
             device_info__position=1,
             device_info__slot_no='',
+            device_info__ralph_device_id=self.dev_1.id,
+            service=ServiceCatalogFactory(name='Alpha Service'),
         )
         self.asset_2 = AssetFactory(
             device_info__position=2,
             device_info__slot_no='',
+            device_info__ralph_device_id=self.dev_2.id,
+            service=ServiceCatalogFactory(name='Beta Service'),
         )
         asset_3 = AssetFactory()
 
@@ -87,6 +98,7 @@ class TestRestAssetInfoPerRack(TestCase):
                 {
                     '_type': TYPE_ASSET,
                     'id': self.asset_1.id,
+                    'hostname': self.dev_1.name,
                     'url': '{}'.format(self.asset_1.url),
                     'core_url': core_url.format(
                         self.asset_1.device_info.ralph_device_id),
@@ -98,10 +110,13 @@ class TestRestAssetInfoPerRack(TestCase):
                     'model': self.asset_1.model.name,
                     'children': [],
                     'layout': u'',
+                    'management_ip': self.dev_1.management_ip.address,
+                    'service': self.asset_1.service.name,
                 },
                 {
                     '_type': TYPE_ASSET,
                     'id': self.asset_2.id,
+                    'hostname': self.dev_2.name,
                     'url': '{}'.format(self.asset_2.url),
                     'core_url': core_url.format(
                         self.asset_2.device_info.ralph_device_id),
@@ -113,6 +128,8 @@ class TestRestAssetInfoPerRack(TestCase):
                     'model': self.asset_2.model.name,
                     'children': [],
                     'layout': u'',
+                    'management_ip': self.dev_2.management_ip.address,
+                    'service': self.asset_2.service.name,
                 },
                 {
                     '_type': TYPE_ACCESSORY,
