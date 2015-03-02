@@ -80,6 +80,9 @@
           <button name="asset" type="submit" class="btn btn-primary">
             {% trans "Save" %}
           </button>
+          {% if mode == 'back_office' %}
+            {% transition_button 'return-asset' %}
+          {% endif %}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 {% extends 'assets/base.html' %}
 {% load bob icons i18n %}
+{% load assets %}
 
 {% block content %}
 <div id="float_toolbar">
@@ -56,6 +57,9 @@
   <div class="row">
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save</button>
+      {% if mode == 'back_office' %}
+        {% transition_button 'return-asset' %}
+      {% endif %}
     </div>
   </div>
 </form>

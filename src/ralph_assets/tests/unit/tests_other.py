@@ -35,6 +35,7 @@ from ralph_assets.tests.utils.licences import (
     SoftwareCategoryFactory,
 )
 from ralph_assets.utils import iso2_to_iso3, iso3_to_iso2
+from ralph_assets.views.utils import get_transition_url
 
 
 class TestExportRelations(TestCase):
@@ -514,3 +515,22 @@ class TestAssetStatuses(TestCase):
         self.assertEqual(len(found), len(models_assets.AssetStatus()) + 1)
         BLANK_IDX = 0
         self.assertNotIn(found[BLANK_IDX], models_assets.AssetStatus())
+
+
+class TestAssetUtils(TestCase):
+
+    def test_get_transition_url(self):
+        transition_type = 'return-asset'
+        assets_ids = [1]
+        assets_mode = 'back_office'
+        url = get_transition_url(transition_type, assets_ids, assets_mode)
+        self.assertTrue(url)
+        self.assertIn('transition_type=return-asset', url)
+        self.assertIn('select=1', url)
+
+    def test_empty_transition_url(self):
+        transition_type = ''
+        assets_ids = [1]
+        assets_mode = 'back_office'
+        url = get_transition_url(transition_type, assets_ids, assets_mode)
+        self.assertFalse(url)

@@ -5,9 +5,36 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from urllib import urlencode
+
+from django.core.urlresolvers import reverse
 from django.db import transaction
 
 from ralph_assets.models import Asset, DeviceInfo, OfficeInfo, PartInfo
+
+
+def get_transition_url(transition_type, assets_ids, asset_mode):
+    """
+    Generates url for transition *transition_type* for assets from list
+    assets_ids in mode *asset_mode*.
+
+    :transition_type: transition type, like 'return-asset', 'release-asset',
+        etc.
+    :assets_ids: list of assets' ids on which transition is executed
+    :asset_mode: mode of asset, options are 'dc' or 'back_office'
+
+    :returns: url to transition
+    """
+    success_url = None
+    if transition_type:
+        success_url = '?'.join([
+            reverse('transition', args=[asset_mode, ]),
+            urlencode({
+                'select': assets_ids,
+                'transition_type': transition_type,
+            }, doseq=True),
+        ])
+    return success_url
 
 
 def _move_data(src, dst, fields):
