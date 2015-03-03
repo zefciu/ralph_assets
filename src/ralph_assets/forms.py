@@ -1487,10 +1487,10 @@ class DataCenterEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
 
     fieldsets = OrderedDict([
         ('Basic Info', [
-            'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
-            'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-            'service_name', 'property_of', 'hostname', 'service',
-            'device_environment', 'region', 'management_ip',
+            'management_ip', 'type', 'category', 'model', 'niw', 'barcode',
+            'sn', 'warehouse', 'location', 'status', 'task_url',
+            'loan_end_date', 'remarks', 'service_name', 'property_of',
+            'hostname', 'service', 'device_environment', 'region',
         ]),
         ('Financial Info', [
             'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
