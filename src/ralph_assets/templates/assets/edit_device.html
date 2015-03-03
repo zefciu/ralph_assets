@@ -3,6 +3,19 @@
 
 {% block form_title %}{% trans "Edit device" %}{% endblock %}
 
+
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{{ STATIC_URL }}assets/css/mobile.css">
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script type="text/javascript" src="{{ STATIC_URL }}assets/js/mobile.js">
+  </script>
+{% endblock %}
+
+
 {% block additional_inputs %}
   {% for field in additional_info %}
     {% field_wrapper field %}

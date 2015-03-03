@@ -18,10 +18,13 @@
     <div class="row-fluid">
 
       <div class="span6">
+      <button name="asset" type="submit" class="btn btn-primary visible-phone">
+            Save
+       </button>
       {% with left_col_fieldsets=asset_form.fieldsets.items|slice:":2" %}
         {# 'basic info', 'financial info' #}
         {% for fieldset_label, fields in left_col_fieldsets %}
-          <div class="well fieldset">
+          <div class="well fieldset {{fieldset_label|slugify}}">
             <h6>{{fieldset_label}}</h6>
 
           {% for field in fields %}
@@ -57,7 +60,7 @@
         {% endfor %}
       {% endwith %}
 
-        <div class="well">
+        <div class="well additional-info">
           <h6>Additional Info</h6>
           {# mode(DC|BO) specific fields #}
           {% block additional_inputs %}{% endblock %}
