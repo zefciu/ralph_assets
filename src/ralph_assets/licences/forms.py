@@ -322,6 +322,7 @@ class BulkEditLicenceForm(LicenceForm):
             'sn',
             'remarks',
             'budget_info',
+            'region',
         )
     sn = forms.CharField(label=_('Licence key'))
     remarks = forms.CharField(label=_('Additional remarks'), required=False)
