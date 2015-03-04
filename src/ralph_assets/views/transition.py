@@ -405,17 +405,15 @@ class TransitionView(ActiveSubmoduleByAssetMixin, _AssetSearch):
             try:
                 dispatcher.run()
             except PostTransitionException as e:
-                self.transition_ended = False
                 messages.error(self.request, _(e.message))
-            else:
-                self.report_file_path = dispatcher.report_file_patch
-                self.report_file_name = dispatcher.get_report_file_name
-                self.transition_history = dispatcher.get_transition_history_object()  # noqa
-                messages.success(
-                    self.request,
-                    _("Transitions performed successfully"),
-                )
-                self.transition_ended = True
+            self.report_file_path = dispatcher.report_file_patch
+            self.report_file_name = dispatcher.get_report_file_name
+            self.transition_history = dispatcher.get_transition_history_object()  # noqa
+            messages.success(
+                self.request,
+                _("Transitions performed successfully"),
+            )
+            self.transition_ended = True
             return super(TransitionView, self).get(*args, **kwargs)
         messages.error(self.request, _('Please correct errors.'))
         return super(TransitionView, self).get(*args, **kwargs)
