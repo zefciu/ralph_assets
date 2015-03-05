@@ -191,6 +191,11 @@ urlpatterns = patterns(
         name='assets_reports',
     ),
     url(
+        r'reports/(?P<mode>\S+)/(?P<dc>\S+)/(?P<slug>\S+)$',
+        login_required(ReportDetail.as_view()),
+        name='report_detail',
+    ),
+    url(
         r'reports/(?P<mode>\S+)/(?P<slug>\S+)$',
         login_required(ReportDetail.as_view()),
         name='report_detail',
