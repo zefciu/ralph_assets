@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -92,7 +93,10 @@ class TestRestAssetInfoPerRack(TestCase):
                 'visualization_row': self.rack_1.visualization_row,
                 'free_u': self.rack_1.get_free_u(),
                 'description': '{}'.format(self.rack_1.description),
-                'orientation': '{}'.format(self.rack_1.get_orientation_desc())
+                'orientation': '{}'.format(self.rack_1.get_orientation_desc()),
+                'rack_admin_url': reverse(
+                    'admin:ralph_assets_rack_change', args=(self.rack_1.id,),
+                )
             },
             'front': [
                 {
