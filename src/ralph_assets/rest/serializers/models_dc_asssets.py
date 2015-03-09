@@ -118,19 +118,25 @@ class PDUSerializer(serializers.ModelSerializer):
 class RackSerializer(serializers.ModelSerializer):
     free_u = serializers.IntegerField(source='get_free_u', read_only=True)
     orientation = serializers.CharField(source='get_orientation_desc')
+    rack_admin_url = serializers.SerializerMethodField('get_rack_admin_url')
 
     class Meta:
         model = Rack
         fields = (
             'id', 'name', 'data_center', 'server_room', 'max_u_height',
             'visualization_col', 'visualization_row', 'free_u', 'description',
-            'orientation',
+            'orientation', 'rack_admin_url',
         )
 
     def update(self):
         orientation = self.data['orientation']
         self.object.orientation = RackOrientation.id_from_name(orientation)
         return self.save(**self.data)
+
+    def get_rack_admin_url(self, obj):
+        return reverse(
+            'admin:ralph_assets_rack_change', args=(obj.id,),
+        )
 
 
 class DCSerializer(serializers.ModelSerializer):
