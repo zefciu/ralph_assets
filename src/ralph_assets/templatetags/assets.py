@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django import template
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.forms import CheckboxInput
 
@@ -84,4 +85,7 @@ def mode_switch(context):
 
 @register.inclusion_tag('assets/templatetags/transition_button.html')
 def transition_button(transition_type):
-    return {'transition_type': transition_type}
+    return {
+        'transition_type': transition_type,
+        'asset_transitions_enabled': settings.ASSETS_TRANSITIONS.get('ENABLE'),
+    }
