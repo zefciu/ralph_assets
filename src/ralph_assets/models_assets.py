@@ -452,7 +452,7 @@ class BudgetInfo(
 
 class AssetLastHostname(models.Model):
     prefix = models.CharField(max_length=8, db_index=True)
-    counter = models.PositiveSmallIntegerField(default=1)
+    counter = models.PositiveIntegerField(default=1)
     postfix = models.CharField(max_length=8, db_index=True)
 
     class Meta:
