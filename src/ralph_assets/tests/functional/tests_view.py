@@ -57,7 +57,7 @@ from ralph_assets.tests.utils.assets import (
     DeviceInfoFactory,
     ServiceFactory,
     WarehouseFactory,
-    generate_barcode,
+    unique_str,
     generate_imei,
     get_device_info_dict,
 )
@@ -557,7 +557,7 @@ class TestDataCenterDevicesView(TestDevicesView, TestRegions, BaseViewsTest):
         form_data.update({
             'sn': ','.join(sns),
             'barcode': ','.join(
-                [generate_barcode() for i in xrange(2)],
+                [unique_str() for i in xrange(2)],
             ),
             'ralph_device_id': '',
         })
