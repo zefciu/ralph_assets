@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 from ralph.account.models import Region
 
 from ralph_assets import models_assets
@@ -66,8 +67,7 @@ class TestValidations(TestCase):
 
     def test_try_send_empty_edit_form(self):
         send_post = self.client.post(
-            # TODO: there is high probability thst device is not exists
-            '/assets/dc/edit/device/1/',
+            reverse('device_edit', args=('dc', self.first_asset.id, )),
             {'ralph_device_id': ''},  # Test hock
         )
         self.assertEqual(send_post.status_code, 200)
@@ -101,26 +101,29 @@ class TestValidations(TestCase):
         )
         post_data = get_bulk_edit_post_data(
             {
+                'id': self.first_asset.id,
                 'invoice_date': 'wrong_field_data',
                 'sn': self.asset_with_duplicated_sn.sn,
             },
             {
+                'id': self.second_asset.id,
                 'invoice_date': '',
                 'model': '',
                 'status': '',
                 'source': '',
             },
             {
+                'id': self.asset_with_duplicated_sn.id,
                 'invoice_no': '',
             }
         )
 
-        send_post_with_empty_fields = self.client.post(url, post_data)
+        response = self.client.post(url, post_data)
 
         # Try to send post with empty field send_post should be false
         try:
             self.assertRedirects(
-                send_post_with_empty_fields,
+                response,
                 url,
                 status_code=302,
                 target_status_code=200,
@@ -154,7 +157,7 @@ class TestValidations(TestCase):
             )
         ]
         for bulk in bulk_data:
-            formset = send_post_with_empty_fields.context_data['formset']
+            formset = response.context_data['formset']
             self.assertEqual(
                 formset[bulk['row']]._errors[bulk['field']][0],
                 bulk['error']
@@ -162,7 +165,7 @@ class TestValidations(TestCase):
 
         # if sn was duplicated, the message should be shown on the screen
         msg = SCREEN_ERROR_MESSAGES['duplicated_sn_or_bc']
-        self.assertTrue(msg in send_post_with_empty_fields.content)
+        self.assertTrue(msg in response.content)
 
     def test_add_part(self):
         """
