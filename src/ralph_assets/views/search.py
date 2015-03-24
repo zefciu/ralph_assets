@@ -73,6 +73,7 @@ class AssetsSearchQueryableMixin(object):
             'service',
             'service_name',
             'sn',
+            'purchase_order',
             'source',
             'status',
             'support_assigned',
@@ -151,6 +152,16 @@ class AssetsSearchQueryableMixin(object):
                         )
                     else:
                         all_q &= Q(sn__icontains=field_value)
+                elif field == 'purchase_order':
+                    if exact:
+                        all_q &= Q(purchase_order=field_value)
+                    elif multi:
+                        all_q &= self._search_fields_or(
+                            ['purchase_order'],
+                            re.split(SEARCH_DELIMITERS, field_value),
+                        )
+                    else:
+                        all_q &= Q(purchase_order__icontains=field_value)
                 elif field == 'niw':
                     if exact:
                         all_q &= Q(niw=field_value)
@@ -446,6 +457,8 @@ class AssetSearchDataTable(_AssetSearch, DataTableMixin):
               bob_tag=True, export=True),
             _('Barcode', field='barcode', sort_expression='barcode',
               bob_tag=True, export=True),
+            _('Purchase Order', field='purchase_order',
+              sort_expression='purchase_order', bob_tag=True, export=True),
             _('Category', field='model__category',
               sort_expression='model__category', bob_tag=True,
               show_conditions=show_back_office, export=True),

@@ -48,6 +48,7 @@
                     </td>
                     <td>{{row.get_status_display}}</td>
                     <td>{{row.barcode|default:'-' }}</td>
+                    <td>{{row.purchase_order|default:'-' }}</td>
                     {% if mode == 'back_office' %}
                         <td>{{row.model.category|default:'-' }}</td>
                         <td>{{row.model.manufacturer.name|default:'-' }}</td>

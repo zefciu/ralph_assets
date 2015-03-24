@@ -1752,8 +1752,8 @@ class TestColumnsInSearch(BaseViewsTest):
         correct_col_names = set([
             'Additional remarks', 'Barcode', 'Category', 'Dropdown',
             'Hostname', 'IMEI', 'Invoice date', 'Invoice no.', 'Manufacturer',
-            'Model', 'Property of', 'SN', 'Service name', 'Status', 'Type',
-            'User', 'Warehouse', 'Created',
+            'Model', 'Purchase Order', 'Property of', 'SN', 'Service name',
+            'Status', 'Type', 'User', 'Warehouse', 'Created',
         ])
         mode = 'back_office'
         search_url = reverse('asset_search', kwargs={'mode': mode})
@@ -1763,8 +1763,8 @@ class TestColumnsInSearch(BaseViewsTest):
         DCAssetFactory()
         correct_col_names = set([
             'Barcode', 'Discovered', 'Dropdown', 'Invoice date',
-            'Invoice no.', 'Model', 'Order no.', 'Price', 'SN', 'Status',
-            'Type', 'Venture', 'Warehouse',
+            'Invoice no.', 'Model', 'Purchase Order', 'Order no.', 'Price',
+            'SN', 'Status', 'Type', 'Venture', 'Warehouse',
         ])
         mode = 'dc'
         search_url = reverse('asset_search', kwargs={'mode': mode})
