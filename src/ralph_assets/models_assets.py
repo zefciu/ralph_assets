@@ -253,6 +253,7 @@ class ModelVisualizationLayout(Choices):
     layout_1x2 = _('1x2').extra(css_class='rows-1 cols-2')
     layout_2x8 = _('2x8').extra(css_class='rows-2 cols-8')
     layout_2x8AB = _('2x16 (A/B)').extra(css_class='rows-2 cols-8 half-slots')
+    layout_4x2 = _('4x2').extra(css_class='rows-4 cols-2')
 
 
 class AssetManufacturer(
@@ -300,8 +301,14 @@ class AssetModel(
         blank=True,
         default=0,
     )
-    visualization_layout = models.PositiveIntegerField(
-        verbose_name=_("visualization layout"),
+    visualization_layout_front = models.PositiveIntegerField(
+        verbose_name=_("visualization layout of front side"),
+        choices=ModelVisualizationLayout(),
+        default=ModelVisualizationLayout().na.id,
+        blank=True,
+    )
+    visualization_layout_back = models.PositiveIntegerField(
+        verbose_name=_("visualization layout of back side"),
         choices=ModelVisualizationLayout(),
         default=ModelVisualizationLayout().na.id,
         blank=True,
@@ -315,9 +322,15 @@ class AssetModel(
     def create_from_string(cls, asset_type, string_name):
         return cls(type=asset_type, name=string_name)
 
-    def get_layout_class(self):
-        item = ModelVisualizationLayout.from_id(self.visualization_layout)
+    def _get_layout_class(self, field):
+        item = ModelVisualizationLayout.from_id(field)
         return getattr(item, 'css_class', '')
+
+    def get_front_layout_class(self):
+        return self._get_layout_class(self.visualization_layout_front)
+
+    def get_back_layout_class(self):
+        return self._get_layout_class(self.visualization_layout_back)
 
 
 class AssetOwner(
@@ -495,14 +508,45 @@ class Gap(object):
     url = ''
     linked_device = None
 
-    def __init__(self, slot_no):
+    def __init__(self, slot_no, orientation):
         self.slot_no = slot_no
+        self.orientation = orientation
 
     @property
     def device_info(self):
-        return namedtuple('DeviceInfo', ['slot_no', 'ralph_device_id'])(
-            self.slot_no, None
+        return namedtuple('DeviceInfo', [
+            'slot_no', 'ralph_device_id', 'get_orientation_desc'
+        ])(
+            self.slot_no, None, lambda: self.orientation
         )
+
+    @classmethod
+    def generate_gaps(cls, items):
+        def get_number(slot_no):
+            """Returns the integer part of slot number"""
+            m = re.match('(\d+)', slot_no)
+            return (m and int(m.group(0))) or 0
+        if not items:
+            return []
+        max_slot_no = max([
+            get_number(asset.device_info.slot_no)
+            for asset in items
+        ])
+        first_asset_slot_no = items[0].device_info.slot_no
+        ab = first_asset_slot_no and first_asset_slot_no[-1] in {'A', 'B'}
+        slot_nos = {asset.device_info.slot_no for asset in items}
+
+        def handle_missing(slot_no):
+            if slot_no not in slot_nos:
+                items.append(Gap(slot_no, items[0].get_orientation_desc()))
+
+        for slot_no in xrange(1, max_slot_no + 1):
+            if ab:
+                for letter in ['A', 'B']:
+                    handle_missing(str(slot_no) + letter)
+            else:
+                handle_missing(str(slot_no))
+        return items
 
 
 class Asset(
@@ -966,39 +1010,17 @@ class Asset(
 
     def get_related_assets(self):
         """Returns the children of a blade chassis"""
+        orientations = [Orientation.front, Orientation.back]
         assets = list(
             Asset.objects.select_related('device_info', 'model').filter(
                 device_info__position=self.device_info.position,
                 device_info__rack=self.device_info.rack,
+                device_info__orientation__in=orientations,
             ).exclude(id=self.id)
         )
         if not assets:
             return []
-
-        def get_number(slot_no):
-            """Returns the integer part of slot number"""
-            m = re.match('(\d+)', slot_no)
-            return (m and int(m.group(0))) or 0
-
-        max_slot_no = max([
-            get_number(asset.device_info.slot_no)
-            for asset in assets
-        ])
-        first_asset_slot_no = assets[0].device_info.slot_no
-        ab = first_asset_slot_no and first_asset_slot_no[-1] in {'A', 'B'}
-        slot_nos = {asset.device_info.slot_no for asset in assets}
-
-        def handle_missing(slot_no):
-            if slot_no not in slot_nos:
-                assets.append(Gap(slot_no))
-
-        for slot_no in xrange(1, max_slot_no + 1):
-            if ab:
-                for letter in ['A', 'B']:
-                    handle_missing(str(slot_no) + letter)
-            else:
-                handle_missing(str(slot_no))
-        return assets
+        return Gap.generate_gaps(assets)
 
     def get_orientation_desc(self):
         return self.device_info.get_orientation_desc()

@@ -8,7 +8,6 @@ DATABASES = {
         'HOST': 'localhost',
     },
 }
-
 PLUGGABLE_APPS = ['cmdb', 'assets']
 
 SOUTH_TESTS_MIGRATE = False

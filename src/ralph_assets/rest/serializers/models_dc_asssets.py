@@ -35,7 +35,19 @@ class AdminMixin(serializers.ModelSerializer):
         ), args=(obj.id,))
 
 
-class CoreDeviceMixin(object):
+class AssetSerializerBase(serializers.ModelSerializer):
+    model = serializers.CharField(source='model.name')
+    url = serializers.CharField(source='url')
+    core_url = serializers.SerializerMethodField('get_core_url')
+    hostname = serializers.SerializerMethodField('get_hostname')
+    service = serializers.CharField(source='service.name')
+    orientation = serializers.SerializerMethodField('get_orientation')
+
+    def get_orientation(self, obj):
+        if not hasattr(obj.device_info, 'get_orientation_desc'):
+            return 'front'
+        return obj.device_info.get_orientation_desc()
+
     def get_core_url(self, obj):
         """
         Return the URL to device in core.
@@ -53,38 +65,29 @@ class CoreDeviceMixin(object):
         return device.name if device else ''
 
 
-class RelatedAssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
-    model = serializers.CharField(source='model.name')
+class RelatedAssetSerializer(AssetSerializerBase):
     slot_no = serializers.CharField(source='device_info.slot_no')
-    url = serializers.CharField(source='url')
-    core_url = serializers.SerializerMethodField('get_core_url')
-    hostname = serializers.SerializerMethodField('get_hostname')
-    service = serializers.CharField(source='service.name')
 
     class Meta:
         model = Asset
         fields = (
             'id', 'model', 'barcode', 'sn', 'slot_no', 'url', 'core_url',
-            'hostname', 'service',
+            'hostname', 'service', 'orientation'
         )
 
 
-class AssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
-    model = serializers.CharField(source='model.name')
+class AssetSerializer(AssetSerializerBase):
     category = serializers.CharField(source='model.category.name')
     height = serializers.FloatField(source='model.height_of_device')
-    layout = serializers.CharField(source='model.get_layout_class')
-    url = serializers.CharField(source='url')
-    core_url = serializers.SerializerMethodField('get_core_url')
+    front_layout = serializers.CharField(source='model.get_front_layout_class')
+    back_layout = serializers.CharField(source='model.get_back_layout_class')
     position = serializers.IntegerField(source='device_info.position')
     children = RelatedAssetSerializer(
         source='get_related_assets',
         many=True,
     )
     _type = serializers.SerializerMethodField('get_type')
-    hostname = serializers.SerializerMethodField('get_hostname')
     management_ip = serializers.SerializerMethodField('get_management')
-    service = serializers.CharField(source='service.name')
 
     def get_type(self, obj):
         return TYPE_ASSET
@@ -99,22 +102,26 @@ class AssetSerializer(CoreDeviceMixin, serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = (
-            'id', 'model', 'category', 'height', 'layout', 'barcode', 'sn',
-            'url', 'core_url', 'position', 'children', '_type', 'hostname',
-            'management_ip', 'service',
+            'id', 'model', 'category', 'height', 'front_layout', 'back_layout',
+            'barcode', 'sn', 'url', 'core_url', 'position', 'children',
+            '_type', 'hostname', 'management_ip', 'service', 'orientation'
         )
 
 
 class RackAccessorySerializer(serializers.ModelSerializer):
     type = serializers.CharField(source='accessory.name')
     _type = serializers.SerializerMethodField('get_type')
+    orientation = serializers.SerializerMethodField('get_orientation')
 
     def get_type(self, obj):
         return TYPE_ACCESSORY
 
+    def get_orientation(self, obj):
+        return obj.get_orientation_desc()
+
     class Meta:
         model = RackAccessory
-        fields = ('position', 'remarks', 'type', '_type')
+        fields = ('position', 'orientation', 'remarks', 'type', '_type')
 
 
 class PDUSerializer(serializers.ModelSerializer):
