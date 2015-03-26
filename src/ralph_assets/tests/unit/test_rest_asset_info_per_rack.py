@@ -98,7 +98,8 @@ class TestRestAssetInfoPerRack(TestCase):
                     'admin:ralph_assets_rack_change', args=(self.rack_1.id,),
                 )
             },
-            'front': [
+            'devices':
+            [
                 {
                     '_type': TYPE_ASSET,
                     'id': self.asset_1.id,
@@ -113,9 +114,11 @@ class TestRestAssetInfoPerRack(TestCase):
                     'position': self.asset_1.device_info.position,
                     'model': self.asset_1.model.name,
                     'children': [],
-                    'layout': u'',
+                    'front_layout': u'',
+                    'back_layout': u'',
                     'management_ip': self.dev_1.management_ip.address,
                     'service': self.asset_1.service.name,
+                    'orientation': 'front',
                 },
                 {
                     '_type': TYPE_ASSET,
@@ -131,18 +134,20 @@ class TestRestAssetInfoPerRack(TestCase):
                     'position': self.asset_2.device_info.position,
                     'model': self.asset_2.model.name,
                     'children': [],
-                    'layout': u'',
+                    'front_layout': u'',
+                    'back_layout': u'',
                     'management_ip': self.dev_2.management_ip.address,
                     'service': self.asset_2.service.name,
+                    'orientation': 'front',
                 },
                 {
                     '_type': TYPE_ACCESSORY,
+                    'orientation': 'front',
                     'position': self.rack1_accessory.position,
                     'remarks': self.rack1_accessory.remarks,
                     'type': self.rack1_accessory.accessory.name,
                 },
             ],
-            'back': [],
             'pdus': []
         }
-        self.assertEquals(returned_json, expected_json)
+        self.assertEqual(returned_json, expected_json)
