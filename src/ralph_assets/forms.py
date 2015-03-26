@@ -72,9 +72,10 @@ RALPH_DATE_FORMAT_LIST = [RALPH_DATE_FORMAT]
 def asset_fieldset():
     return OrderedDict([
         ('Basic Info', [
-            'type', 'category', 'model', 'niw', 'barcode', 'sn', 'warehouse',
-            'location', 'status', 'task_url', 'loan_end_date', 'remarks',
-            'service_name', 'property_of', 'region',
+            'type', 'category', 'model', 'purchase_order', 'niw', 'barcode',
+            'sn', 'warehouse', 'location', 'status', 'task_url',
+            'loan_end_date', 'remarks', 'service_name', 'property_of',
+            'region',
         ]),
         ('Financial Info', [
             'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -93,8 +94,8 @@ def asset_search_back_office_fieldsets():
     return OrderedDict([
         ('Basic Info', {
             'noncollapsed': [
-                'barcode', 'status', 'imei', 'sn', 'model', 'hostname',
-                'required_support', 'support_assigned', 'service',
+                'barcode', 'status', 'imei', 'sn', 'model', 'purchase_order',
+                'hostname', 'required_support', 'support_assigned', 'service',
                 'device_environment', 'region',
             ],
             'collapsed': [
@@ -129,10 +130,10 @@ def asset_search_dc_fieldsets():
     return OrderedDict([
         ('Basic Info', {
             'noncollapsed': [
-                'location_name', 'barcode', 'sn', 'model', 'manufacturer',
-                'warehouse', 'required_support', 'support_assigned',
-                'venture_department', 'service', 'device_environment',
-                'region', 'without_assigned_location',
+                'location_name', 'barcode', 'sn', 'model', 'purchase_order',
+                'manufacturer', 'warehouse', 'required_support',
+                'support_assigned', 'venture_department', 'service',
+                'device_environment', 'region', 'without_assigned_location',
             ],
             'collapsed': [
                 'status', 'task_url', 'category', 'loan_end_date_from',
@@ -483,11 +484,12 @@ class BulkEditAssetForm(DependencyForm, ModelForm):
 class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
-            'type', 'status', 'barcode', 'hostname', 'model', 'user', 'owner',
-            'warehouse', 'sn', 'property_of', 'region', 'purpose', 'remarks',
-            'service_name', 'invoice_no', 'invoice_date', 'price', 'provider',
-            'task_url', 'deprecation_rate', 'order_no', 'source',
-            'deprecation_end_date', 'licences',
+            'type', 'status', 'barcode', 'hostname', 'model',
+            'purchase_order', 'user', 'owner', 'warehouse', 'sn',
+            'property_of', 'region', 'purpose', 'remarks', 'service_name',
+            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
+            'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
+            'licences',
         )
 
     def __init__(self, *args, **kwargs):
@@ -532,9 +534,9 @@ class BackOfficeBulkEditAssetForm(BulkEditAssetForm):
 class DataCenterBulkEditAssetForm(BulkEditAssetForm):
     class Meta(BulkEditAssetForm.Meta):
         fields = (
-            'status', 'barcode', 'model', 'user', 'owner', 'warehouse', 'sn',
-            'property_of', 'remarks', 'service_name', 'invoice_no',
-            'invoice_date', 'price', 'provider', 'task_url',
+            'status', 'barcode', 'model', 'purchase_order', 'user', 'owner',
+            'warehouse', 'sn', 'property_of', 'remarks', 'service_name',
+            'invoice_no', 'invoice_date', 'price', 'provider', 'task_url',
             'deprecation_rate', 'order_no', 'source', 'deprecation_end_date',
         )
 
@@ -908,6 +910,7 @@ class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
             'location',
             'manager',
             'model',
+            'purchase_order',
             'niw',
             'note',
             'order_no',
@@ -946,6 +949,7 @@ class BaseAddAssetForm(DependencyAssetForm, BaseAssetForm):
             add_link='/admin/ralph_assets/assetmodel/add/?name=',
         )
     )
+    purchase_order = CharField(required=False)
     licences = AutoCompleteSelectMultipleField(
         LOOKUPS['free_licences'],
         required=False,
@@ -1073,6 +1077,7 @@ class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
             'location',
             'manager',
             'model',
+            'purchase_order',
             'niw',
             'note',
             'order_no',
@@ -1423,10 +1428,11 @@ class BackOfficeEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
 
     fieldsets = OrderedDict([
         ('Basic Info', [
-            'type', 'category', 'model', 'niw', 'barcode', 'sn', 'imei',
-            'warehouse', 'location', 'status', 'task_url', 'loan_end_date',
-            'purpose', 'remarks', 'service_name', 'property_of', 'hostname',
-            'created', 'service', 'device_environment', 'region',
+            'type', 'category', 'model', 'purchase_order', 'niw', 'barcode',
+            'sn', 'imei', 'warehouse', 'location', 'status', 'task_url',
+            'loan_end_date', 'purpose', 'remarks', 'service_name',
+            'property_of', 'hostname', 'created', 'service',
+            'device_environment', 'region',
         ]),
         ('Financial Info', [
             'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -1487,10 +1493,11 @@ class DataCenterEditDeviceForm(ReadOnlyFieldsMixin, EditDeviceForm):
 
     fieldsets = OrderedDict([
         ('Basic Info', [
-            'management_ip', 'type', 'category', 'model', 'niw', 'barcode',
-            'sn', 'warehouse', 'location', 'status', 'task_url',
-            'loan_end_date', 'remarks', 'service_name', 'property_of',
-            'hostname', 'service', 'device_environment', 'region',
+            'management_ip', 'type', 'category', 'model', 'purchase_order',
+            'niw', 'barcode', 'sn', 'warehouse', 'location', 'status',
+            'task_url', 'loan_end_date', 'remarks', 'service_name',
+            'property_of', 'hostname', 'service', 'device_environment',
+            'region',
         ]),
         ('Financial Info', [
             'order_no', 'invoice_date', 'invoice_no', 'price', 'provider',
@@ -1555,6 +1562,7 @@ class SearchAssetForm(Form):
         help_text=None,
         plugin_options={'disable_confirm': True}
     )
+    purchase_order = CharField(required=False)
     invoice_no = CharField(required=False)
     order_no = CharField(required=False)
     provider = CharField(required=False, label=_('Provider'))
