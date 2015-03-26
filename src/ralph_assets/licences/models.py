@@ -38,7 +38,6 @@ from ralph_assets.models_assets import (
 from ralph_assets.models_util import (
     Regionalized,
 )
-from ralph_assets.models_util import WithForm
 from ralph_assets.history.models import History, HistoryMixin
 
 
@@ -84,7 +83,6 @@ class Licence(
     MPTTModel,
     TimeTrackable,
     WithConcurrentGetOrCreate,
-    WithForm,
     SavingUser,
 ):
     """A set of licences for a single software with a single expiration date"""
@@ -205,8 +203,7 @@ class Licence(
             self.invoice_date,
         )
 
-    @property
-    def url(self):
+    def get_absolute_url(self):
         return reverse('edit_licence', kwargs={
             'licence_id': self.id,
         })

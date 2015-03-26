@@ -50,7 +50,7 @@ class LicenseSelectedMixin(object):
     submodule_name = 'licences'
 
 
-class AssginLicenceMixin(object):
+class AssignLicenceMixin(object):
     template_name = 'assets/licences/object_connections.html'
     base_model = None
 
@@ -81,7 +81,7 @@ class AssginLicenceMixin(object):
             data = request.POST
         self.update_formset(data)
 
-        return super(AssginLicenceMixin, self).dispatch(
+        return super(AssignLicenceMixin, self).dispatch(
             request, *args, **kwargs
         )
 
@@ -102,7 +102,7 @@ class AssginLicenceMixin(object):
         )(data, queryset=self.queryset)
 
     def get_context_data(self, **kwargs):
-        context = super(AssginLicenceMixin, self).get_context_data(**kwargs)
+        context = super(AssignLicenceMixin, self).get_context_data(**kwargs)
         context.update({
             'formset': self.formset,
             'empty_formset': self.empty_formset,
@@ -127,11 +127,11 @@ class AssginLicenceMixin(object):
         return self.get(request, *args, **kwargs)
 
 
-class AssginToLicenceBase(AssginLicenceMixin, AssetsBase):
+class AssignToLicenceBase(AssignLicenceMixin, AssetsBase):
     submodule_name = 'licences'
 
     def get_context_data(self, **kwargs):
-        context = super(AssginToLicenceBase, self).get_context_data(**kwargs)
+        context = super(AssignToLicenceBase, self).get_context_data(**kwargs)
         context.update({
             'active_tab': self.active_tab,
         })
@@ -165,7 +165,7 @@ class LicenceLinkColumn(DataTableColumn):
     'Licence' in a grid"""
     def render_cell_content(self, resource):
         return '<a href="{url}">{licence}</a>'.format(
-            url=resource.url,
+            url=resource.get_absolute_url(),
             licence=unicode(_('Licence')),
         )
 
@@ -316,7 +316,7 @@ class LicenceFormView(LicenceBaseView):
                 licence.asset_type = MODE2ASSET_TYPE[self.mode]
             licence.save()
             messages.success(self.request, self.message)
-            return HttpResponseRedirect(licence.url)
+            return HttpResponseRedirect(licence.get_absolute_url())
         except ValueError:
             return super(LicenceFormView, self).get(request, *args, **kwargs)
 
@@ -391,14 +391,14 @@ class CountLicence(AjaxMixin, JsonResponseMixin, GenericSearch):
         return self.render_json_response(summary)
 
 
-class AssginAssetToLicence(AssginToLicenceBase):
+class AssignAssetToLicence(AssignToLicenceBase):
     active_tab = 'assets'
     base_model = LicenceAsset
     base_field = 'asset'
     lookup = LOOKUPS['linked_device']
 
 
-class AssginUserToLicence(AssginToLicenceBase):
+class AssignUserToLicence(AssignToLicenceBase):
     active_tab = 'users'
     base_model = LicenceUser
     base_field = 'user'

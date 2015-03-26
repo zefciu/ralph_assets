@@ -145,7 +145,7 @@ class DeleteAttachment(BaseAttachment):
                 self.request,
                 _("Selected {} doesn't exists.").format(self.parent_name),
             )
-            return HttpResponseRedirect(self.parent.url)
+            return HttpResponseRedirect(self.parent.get_absolute_url())
         delete_type = self.request.POST.get('delete_type')
         if delete_type == 'from_one':
             if attachment in self.parent.attachments.all():
@@ -166,4 +166,4 @@ class DeleteAttachment(BaseAttachment):
         else:
             msg = "Unknown delete type: {}".format(delete_type)
             messages.error(self.request, _(msg))
-        return HttpResponseRedirect(self.parent.url)
+        return HttpResponseRedirect(self.parent.get_absolute_url())

@@ -1145,6 +1145,12 @@ class TestSupportsView(TestRegions, BaseViewsTest):
     def listing_url(self):
         return reverse('support_list')
 
+    def test_show_objects_by_user_region_single(self):
+        pass  # djid-handled
+
+    def test_show_objects_by_user_region_double(self):
+        pass  # djid-handled
+
     def setUp(self):
         super(TestSupportsView, self).setUp()
         SupportTypeFactory().id
@@ -1779,15 +1785,6 @@ class TestColumnsInSearch(BaseViewsTest):
             'Created',
         ])
         search_url = reverse('licences_list')
-        self.check_cols_presence(search_url, correct_col_names, mode=None)
-
-    def test_supports_cols_presence(self):
-        DCSupportFactory()
-        correct_col_names = set([
-            'Dropdown', 'Type', 'Contract id', 'Name', 'Date from', 'Date to',
-            'Price', 'Created',
-        ])
-        search_url = reverse('support_list')
         self.check_cols_presence(search_url, correct_col_names, mode=None)
 
 

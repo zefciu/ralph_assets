@@ -286,7 +286,7 @@ class LinkedDevicesReport(BaseReport):
             ids.append(str(asset.id))
             link = {
                 'label': 'go to asset',
-                'url': asset.url,
+                'url': asset.get_absolute_url(),
             }
 
             node, root = self.report.add(
@@ -317,7 +317,7 @@ class LinkedDevicesReport(BaseReport):
             ids.append(str(asset.id))
             link = {
                 'label': 'go to asset',
-                'url': asset.url,
+                'url': asset.get_absolute_url(),
             }
             node, root = self.report.add(
                 parent=_('Assets without linked device'),

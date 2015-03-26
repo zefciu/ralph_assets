@@ -26,7 +26,7 @@ def get_asset_supports(asset):
     for support in asset.supports.all():
         supports.append({
             'name': support.name,
-            'url': support.url,
+            'url': support.get_absolute_url(),
         })
     return supports
 
@@ -76,7 +76,7 @@ def _create_asset_dict(asset):
         'rack': asset.device_info.rack_old,
         'required_support': asset.required_support,
         'supports': get_asset_supports(asset),
-        'url': asset.url,
+        'url': asset.get_absolute_url(),
     }
 
 

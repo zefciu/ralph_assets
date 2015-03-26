@@ -8,7 +8,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import abc
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.db import models
@@ -49,15 +48,6 @@ def add_problem(resource, severity, message):
     )
     problem.resource = resource
     problem.save()
-
-
-class WithForm(object):
-    """A generic resource that has an edit form and can tell you what is its
-    URL."""
-
-    @abc.abstractproperty
-    def url(self):
-        """Return the url of edit for for this resource."""
 
 
 class RegionalizedDBManager(models.Manager):

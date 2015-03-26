@@ -11,24 +11,35 @@
 {% block scripts %}
     {{ block.super }}
     <script type="text/javascript">
+        requirejs.config({
+            paths: {
+                'assets': 'assets/js/assets',
+                'split': 'assets/js/split',
+            }
+        });
         showAddAnotherPopup = function(e) {
             window.open(e.href + e.previousElementSibling.value);
             if (typeof(this.event) != 'undefined') {
                 this.event.preventDefault();
             };
             return false;
-    }
+        };
+        require(['jquery', 'assets', 'split'], function($, assets, split) {
+            $(function() {
+                assets.initialize()
+                split.initialize()
+            });
+        });
     </script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/base.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/split.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/fill-fields.js"></script>
     <script type="text/javascript">
-        var editor;
-        $(".code_field").each(function(index, el) {
-            editor = ace.edit(el.id);
-            var that = this;
-            editor.getSelection().on('changeCursor', function(ev){
-            })
+        require(['jquery'], function ($) {
+            var editor;
+            $(".code_field").each(function(index, el) {
+                editor = ace.edit(el.id);
+                var that = this;
+                editor.getSelection().on('changeCursor', function(ev){
+                })
+            });
         });
     </script>
 {% endblock %}

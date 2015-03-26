@@ -49,9 +49,6 @@ from ralph_assets.models_transition import (
     TransitionsHistory,
 )
 from ralph.ui.channels import RestrictedLookupChannel
-from ralph_assets.models_util import (
-    WithForm,
-)
 from ralph_assets.models_dc_assets import ServerRoom, Rack
 from ralph.discovery.models import Device, DeviceType
 
@@ -489,8 +486,11 @@ def get_edit_url(object_):
         return reverse(
             'edit_user_relations', kwargs={'username': object_.username},
         )
-    elif isinstance(object_, WithForm):
-        return object_.url
+    else:
+        try:
+            return object_.get_absolute_url()
+        except AttributeError:
+            return None
 
 
 __all__ = [

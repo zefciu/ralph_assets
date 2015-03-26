@@ -107,8 +107,7 @@ class Support(
         self.saving_user = None
         super(Support, self).__init__(*args, **kwargs)
 
-    @property
-    def url(self):
+    def get_absolute_url(self):
         return reverse('edit_support', kwargs={
             'support_id': self.id,
         })

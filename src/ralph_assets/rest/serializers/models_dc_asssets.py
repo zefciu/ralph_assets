@@ -37,7 +37,7 @@ class AdminMixin(serializers.ModelSerializer):
 
 class AssetSerializerBase(serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
-    url = serializers.CharField(source='url')
+    url = serializers.SerializerMethodField('get_absolute_url')
     core_url = serializers.SerializerMethodField('get_core_url')
     hostname = serializers.SerializerMethodField('get_hostname')
     service = serializers.CharField(source='service.name')
@@ -47,6 +47,9 @@ class AssetSerializerBase(serializers.ModelSerializer):
         if not hasattr(obj.device_info, 'get_orientation_desc'):
             return 'front'
         return obj.device_info.get_orientation_desc()
+
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
 
     def get_core_url(self, obj):
         """
@@ -88,6 +91,7 @@ class AssetSerializer(AssetSerializerBase):
     )
     _type = serializers.SerializerMethodField('get_type')
     management_ip = serializers.SerializerMethodField('get_management')
+    url = serializers.SerializerMethodField('get_absolute_url')
 
     def get_type(self, obj):
         return TYPE_ASSET
