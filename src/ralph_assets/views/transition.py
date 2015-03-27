@@ -190,7 +190,7 @@ class TransitionDispatcher(object):
         return self.file_name
 
     @nested_commit_on_success
-    def run(self):
+    def run(self, request):
         self.file_name = None
         actions = self.transition.actions_names
         if 'change_status' in actions:
@@ -218,12 +218,15 @@ class TransitionDispatcher(object):
         elif 'change_hostname' in actions:
             self._action_change_hostname()
         self._save_history()
-        signals.post_transition.send(
-            sender=self,
-            user=self.logged_user,
-            assets=self.assets,
-            transition=self.instance.transition_object,
-        )
+        try:
+            signals.post_transition.send(
+                sender=self,
+                user=self.logged_user,
+                assets=self.assets,
+                transition=self.instance.transition_object,
+            )
+        except PostTransitionException as e:
+            messages.error(request, _(e.message))
 
 
 class TransitionView(ActiveSubmoduleByAssetMixin, _AssetSearch):
@@ -402,10 +405,7 @@ class TransitionView(ActiveSubmoduleByAssetMixin, _AssetSearch):
                 loan_end_date=self.request.POST.get('loan_end_date'),
                 request=self.request,
             )
-            try:
-                dispatcher.run()
-            except PostTransitionException as e:
-                messages.error(self.request, _(e.message))
+            dispatcher.run(self.request)
             self.report_file_path = dispatcher.report_file_patch
             self.report_file_name = dispatcher.get_report_file_name
             self.transition_history = dispatcher.get_transition_history_object()  # noqa
