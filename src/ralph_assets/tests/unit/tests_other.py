@@ -9,6 +9,7 @@ import datetime
 
 from dj.choices import Country
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import TestCase
 from django.test.utils import override_settings
 from ralph.account.models import Region
@@ -87,6 +88,10 @@ class TestExportRelations(TestCase):
             software_category=cls.software_category,
         )
         cls.licence1.save()
+
+    @classmethod
+    def tearDownClass(cls):
+        call_command('flush', interactive=False, verbosity=0)
 
     def test_assets_rows(self):
         rows = [item for item in get_assets_rows()]
@@ -208,6 +213,10 @@ class TestHostnameGenerator(TestCase):
         cls.asset1 = BOAssetFactory()
         cls.asset2 = BOAssetFactory()
 
+    @classmethod
+    def tearDownClass(cls):
+        call_command('flush', interactive=False, verbosity=0)
+
     def _check_hostname_not_generated(self, asset):
         asset._try_assign_hostname(True)
         changed_asset = models_assets.Asset.objects.get(pk=asset.id)
@@ -302,6 +311,10 @@ class TestHostnameAssigning(TestCase):
         cls.owner_country_name = models_assets.get_user_iso3_country_name(
             cls.owner
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        call_command('flush', interactive=False, verbosity=0)
 
     def test_assigning_when_no_hostname(self):
         """
