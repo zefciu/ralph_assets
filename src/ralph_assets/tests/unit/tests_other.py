@@ -35,6 +35,7 @@ from ralph_assets.tests.utils.licences import (
     SoftwareCategoryFactory,
 )
 from ralph_assets.utils import iso2_to_iso3, iso3_to_iso2
+from ralph_assets.views.asset import ChassisBulkEdit
 
 
 class TestExportRelations(TestCase):
@@ -520,3 +521,41 @@ class TestAssetStatuses(TestCase):
         self.assertEqual(len(found), len(models_assets.AssetStatus()) + 1)
         BLANK_IDX = 0
         self.assertNotIn(found[BLANK_IDX], models_assets.AssetStatus())
+
+
+class TestBulkEditLocationMessage(TestCase):
+
+    def setUp(self):
+        self.chassis_bulk_edit = ChassisBulkEdit()
+
+    def test_get_non_blade_with_sn_message(self):
+        assets = [DCAssetFactory(sn='test', barcode=None)]
+        msg_sn, msg_barcode = self.chassis_bulk_edit._get_non_blade_message(
+            assets
+        )
+        self.assertTrue(msg_sn)
+        self.assertFalse(msg_barcode)
+
+    def test_get_non_blade_with_barcode_message(self):
+        assets = [DCAssetFactory(sn=None, barcode='test')]
+        msg_sn, msg_barcode = self.chassis_bulk_edit._get_non_blade_message(
+            assets
+        )
+        self.assertFalse(msg_sn)
+        self.assertTrue(msg_barcode)
+
+    def test_get_non_blade_with_sn_and_barcode_message(self):
+        assets = [
+            DCAssetFactory(sn=None, barcode='test2'),
+            DCAssetFactory(sn='test2', barcode=None)
+        ]
+        msg_sn, msg_barcode = self.chassis_bulk_edit._get_non_blade_message(
+            assets
+        )
+        self.assertTrue(msg_sn)
+        self.assertTrue(msg_barcode)
+
+    def test_get_non_blade_with_empty_message(self):
+        msg_sn, msg_barcode = self.chassis_bulk_edit._get_non_blade_message([])
+        self.assertFalse(msg_sn)
+        self.assertFalse(msg_barcode)

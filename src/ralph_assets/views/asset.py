@@ -207,8 +207,9 @@ class ChassisBulkEdit(SubmoduleModeMixin, HardwareModeMixin, AssetsBase):
             Asset.objects.filter(pk__in=self.selected_servers)
         )
         if non_blades:
-            msg = self._get_non_blade_message(non_blades)
-            messages.error(self.request, msg)
+            msg_sn, msg_barcode = self._get_non_blade_message(non_blades)
+            messages.error(self.request, msg_sn)
+            messages.error(self.request, msg_barcode)
             return HttpResponseRedirect(
                 self._get_invalid_url(self.selected_servers)
             )
@@ -257,26 +258,31 @@ class ChassisBulkEdit(SubmoduleModeMixin, HardwareModeMixin, AssetsBase):
         return non_blades
 
     def _get_non_blade_message(self, non_blades):
-        msg = _(
-            "Assets with these sns are not blade server: {}".format(
-                ', '.join([asset.sn or '' for asset in non_blades])
+        sn_list, barcode_list = [], []
+        msg_sn, msg_barcode = '', ''
+        for asset in non_blades:
+            if asset.sn:
+                sn_list.append(asset.sn)
+            elif asset.barcode:
+                barcode_list.append(asset.barcode)
+
+        if sn_list:
+            msg_sn = _(
+                "Assets with these sns are not blade server: {}".format(
+                    ', '.join(sn_list)
+                )
             )
-        )
-        return msg
+        if barcode_list:
+            msg_barcode = _(
+                "Assets with these bardcodes are not blade server: {}".format(
+                    ', '.join(barcode_list)
+                )
+            )
+        return msg_sn, msg_barcode
 
     def post(self, request, *args, **kwargs):
         chassis_form = BladeSystemForm(request.POST)
         blade_server_formset = self.get_formset()(request.POST)
-        non_blades = self._find_non_blades([
-            form.instance.asset for form in blade_server_formset.forms
-        ])
-        if non_blades:
-            msg = self._get_non_blade_message(non_blades)
-            messages.error(self.request, msg)
-            selected_ids = [
-                form['id'].value() for form in blade_server_formset.forms
-            ]
-            return HttpResponseRedirect(self._get_invalid_url(selected_ids))
 
         all_data_valid = (
             chassis_form.is_valid() and
