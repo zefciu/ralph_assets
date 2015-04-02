@@ -104,7 +104,7 @@ class TestRestAssetInfoPerRack(TestCase):
                     '_type': TYPE_ASSET,
                     'id': self.asset_1.id,
                     'hostname': self.dev_1.name,
-                    'url': '{}'.format(self.asset_1.url),
+                    'url': '{}'.format(self.asset_1.get_absolute_url()),
                     'core_url': core_url.format(
                         self.asset_1.device_info.ralph_device_id),
                     'category': '{}'.format(self.asset_1.model.category),
@@ -124,7 +124,7 @@ class TestRestAssetInfoPerRack(TestCase):
                     '_type': TYPE_ASSET,
                     'id': self.asset_2.id,
                     'hostname': self.dev_2.name,
-                    'url': '{}'.format(self.asset_2.url),
+                    'url': '{}'.format(self.asset_2.get_absolute_url()),
                     'core_url': core_url.format(
                         self.asset_2.device_info.ralph_device_id),
                     'category': '{}'.format(self.asset_2.model.category),

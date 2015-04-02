@@ -1,5 +1,5 @@
 /*jshint multistr: true */
-(function(){
+define(['jquery'], function ($) {
     "use strict";
 
     var Report = function () {};
@@ -81,14 +81,19 @@
     };
 
     Bulk.prototype.get_ids = function(){
-        var ids = [];
-        $("#assets_table input[type=checkbox]").each(
-            function(index, val){
-                if(val.checked) {
-                    ids.push($(val).val());
+        var ids = [], djid;
+        djid = $('.djid');
+        if (djid.length) {
+            ids = djid.jqGrid('getGridParam', 'selarrrow');
+        } else {
+            $("#assets_table input[type=checkbox]").each(
+                function(index, val){
+                    if(val.checked) {
+                        ids.push($(val).val());
+                    }
                 }
-            }
-        );
+            );
+        }
         return ids;
     };
 
@@ -173,7 +178,7 @@
     };
 
 
-    $(document).ready(function() {
+    function initialize() {
         var report = new Report();
         var bulk = new Bulk();
         var tableListing = new TableListing();
@@ -299,6 +304,9 @@
             if(detectedChanges)
                 return 'Detected unsaved changes on form.';
         }
-    });
-
-})();
+    }
+    
+    return {
+        initialize: initialize
+    }
+});

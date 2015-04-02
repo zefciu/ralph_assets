@@ -361,8 +361,10 @@ class MultilineField(CharField):
             raise ValidationError(mark_safe(
                 'Following items already exist: ' +
                 ', '.join([
-                    '<a href="{}">{}</a>'.format(asset.url, asset.id)
-                    for asset in assets
+                    '<a href="{}">{}</a>'.format(
+                        asset.get_absolute_url(),
+                        asset.id
+                    ) for asset in assets
                 ])
             ))
 

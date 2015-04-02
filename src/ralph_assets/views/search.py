@@ -382,6 +382,16 @@ class GenericSearch(Report, AssetsBase, DataTableMixin):
         return query_set.all()
 
 
+class DjidView(AssetsBase):
+    """Generic search with djid."""
+    template_name = 'assets/djid_view.html'
+
+    def get_context_data(self, *args, **kwargs):
+        ret = super(DjidView, self).get_context_data(*args, **kwargs)
+        ret['djid_id'] = self.DjidClass._meta.djid_id
+        return ret
+
+
 class _AssetSearch(AssetsSearchQueryableMixin, AssetsBase):
 
     def set_mode(self, mode):

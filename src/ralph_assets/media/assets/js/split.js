@@ -1,33 +1,5 @@
-$(document).ready(function () {
+define(['jquery', 'bob'], function ($, bob) {
     var FORM_COUNT = parseInt($('input[name="form-TOTAL_FORMS"]').val());
-
-    $('.add_row').on("click", function () {
-        var old_last = $('.form-split tbody tr').last();
-        if ($($('input:hidden', old_last)[2]).val() || !old_last.length) {
-            var row_html = $('#row-to-copy').html();
-            $('.form-split tbody').append(row_html)
-            change_form_counter('add');
-            renumber_forms();
-            var new_last = $('.form-split tbody tr').last();
-            bas = BobAjaxSelect.getInstance();
-            bas.register_in_element(new_last);
-            $('.results_on_deck', new_last).bind('added', function() {
-                var id = $($('input:hidden', new_last)[1])
-                if (id.val() == 0) {
-                    id.val('')
-                }
-            })
-            return false;
-        }
-    });
-
-    $("body").delegate(".form-split .delete_row", "click", function () {
-        var row_count = $('.form-split tbody tr').length;
-        $(this).parents('tr').remove();
-        change_form_counter('subtract');
-        renumber_forms();
-        return false;
-    });
 
     function change_form_counter(action) {
         if (action == 'add') {
@@ -63,4 +35,37 @@ $(document).ready(function () {
             $(elem).html(i + 1);
         });
     }
+
+    function initialize() {
+            $('.add_row').on("click", function () {
+            var old_last = $('.form-split tbody tr').last();
+            if ($($('input:hidden', old_last)[2]).val() || !old_last.length) {
+                var row_html = $('#row-to-copy').html();
+                $('.form-split tbody').append(row_html)
+                change_form_counter('add');
+                renumber_forms();
+                var new_last = $('.form-split tbody tr').last();
+                bas = bob.getInstance();
+                bas.register_in_element(new_last);
+                $('.results_on_deck', new_last).bind('added', function() {
+                    var id = $($('input:hidden', new_last)[1])
+                    if (id.val() == 0) {
+                        id.val('')
+                    }
+                })
+                return false;
+            }
+        });
+
+        $("body").delegate(".form-split .delete_row", "click", function () {
+            var row_count = $('.form-split tbody tr').length;
+            $(this).parents('tr').remove();
+            change_form_counter('subtract');
+            renumber_forms();
+            return false;
+        });
+    }
+
+    return {initialize: initialize}
+
 });

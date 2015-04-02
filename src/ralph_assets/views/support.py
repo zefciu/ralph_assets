@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from bob.data_table import DataTableColumn
+from bob.djid import Djid
 
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -13,26 +13,15 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
+from ralph.account.models import Perm, ralph_permission
 from ralph_assets.forms_support import (
     AddSupportForm,
     EditSupportForm,
-    SupportSearchForm,
 )
 from ralph_assets.models_assets import Asset
 from ralph_assets.models_support import Support
 from ralph_assets.views.base import AssetsBase
-from ralph_assets.licences.views import CheckBoxColumn
-from ralph_assets.views.search import GenericSearch
-
-
-class SupportLinkColumn(DataTableColumn):
-    """A column that links to the edit page of a support simply displaying
-    'Support' in a grid"""
-    def render_cell_content(self, resource):
-        return '<a href="{url}">{support}</a>'.format(
-            url=resource.url,
-            support=unicode(_('Support')),
-        )
+from ralph_assets.views.search import DjidView
 
 
 class SupportView(AssetsBase):
@@ -65,7 +54,7 @@ class SupportView(AssetsBase):
             support.save(user=self.request.user)
             self.form.save_m2m()
             messages.success(self.request, self.message)
-            return HttpResponseRedirect(support.url)
+            return HttpResponseRedirect(support.get_absolute_url())
         except ValueError:
             return super(SupportView, self).get(request, *args, **kwargs)
 
@@ -98,68 +87,42 @@ class AddSupportView(SupportView):
             return super(AddSupportView, self).get(request, *args, **kwargs)
 
 
-class SupportList(GenericSearch):
+class SupportListDjid(Djid):
+    """The grid with support list"""
+
+    @classmethod
+    def view_decorator(cls, view):
+        perms = [
+            {
+                'perm': Perm.has_assets_access,
+                'msg': _("You don't have permission to see Assets."),
+            },
+        ]
+        return ralph_permission(perms)(view)
+
+    class Meta:
+        Model = Support
+        columns = [
+            'contract_id',
+            'name',
+            'date_from',
+            'date_to',
+            'price',
+            'created',
+        ]
+        djid_id = 'support-list'
+
+        additional_params = {
+            'autowidth': True,
+            'multiselect': True,
+        }
+
+
+class SupportList(DjidView, AssetsBase):
     """The support list."""
 
     submodule_name = 'supports'
-    active_sidebar_item = 'search'
-    Form = SupportSearchForm
-    Model = Support
-
-    columns = [
-        CheckBoxColumn(
-            _('Dropdown'),
-            selectable=True,
-            bob_tag=True,
-        ),
-        SupportLinkColumn(
-            _('Type'),
-            bob_tag=True,
-        ),
-        DataTableColumn(
-            _('Contract id'),
-            bob_tag=True,
-            field='contract_id',
-            sort_expression='contract_id',
-        ),
-        DataTableColumn(
-            _('Name'),
-            bob_tag=True,
-            field='name',
-            sort_expression='name',
-        ),
-        DataTableColumn(
-            _('Date from'),
-            bob_tag=True,
-            field='date_from',
-            sort_expression='date_from',
-        ),
-        DataTableColumn(
-            _('Date to'),
-            bob_tag=True,
-            field='date_to',
-            sort_expression='date_to',
-        ),
-        DataTableColumn(
-            _('Price'),
-            bob_tag=True,
-            field='price',
-            sort_expression='price',
-        ),
-        DataTableColumn(
-            _('Created'),
-            bob_tag=True,
-            field='created',
-            sort_expression='created',
-        ),
-    ]
-
-    def get_context_data(self, *args, **kwargs):
-        data = super(SupportList, self).get_context_data(
-            *args, **kwargs
-        )
-        data['supports'] = Support.objects.all()
-        return data
+    DjidClass = SupportListDjid
 
 
 class EditSupportView(SupportView):

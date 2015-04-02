@@ -56,7 +56,6 @@ from ralph.util.models import SyncFieldMixin
 from ralph_assets.models_util import (
     Regionalized,
     RegionalizedDBManager,
-    WithForm,
 )
 from ralph_assets.utils import iso2_to_iso3
 from ralph_assets.models_dc_assets import (  # noqa
@@ -557,7 +556,6 @@ class Asset(
     EditorTrackable,
     SavingUser,
     SoftDeletable,
-    WithForm,
     SyncFieldMixin,
 ):
     '''
@@ -974,8 +972,7 @@ class Asset(
                 return False
             return dev.model.type != DeviceType.unknown.id
 
-    @property
-    def url(self):
+    def get_absolute_url(self):
         return reverse('device_edit', kwargs={
             'mode': ASSET_TYPE2MODE[self.type],
             'asset_id': self.id,

@@ -33,9 +33,15 @@ class TestApiRalph(TestCase):
         self.assertEqual(asset_data['sn'], asset.sn)
         self.assertEqual(asset_data['barcode'], asset.barcode)
         self.assertEqual(asset_data['supports'][0]['name'], support1.name)
-        self.assertEqual(asset_data['supports'][0]['url'], support1.url)
+        self.assertEqual(
+            asset_data['supports'][0]['url'],
+            support1.get_absolute_url(),
+        )
         self.assertEqual(asset_data['supports'][1]['name'], support2.name)
-        self.assertEqual(asset_data['supports'][1]['url'], support2.url)
+        self.assertEqual(
+            asset_data['supports'][1]['url'],
+            support2.get_absolute_url(),
+        )
         self.assertEqual(
             asset_data['required_support'], asset.required_support,
         )
