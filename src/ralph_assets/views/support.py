@@ -113,7 +113,9 @@ class SupportListDjid(Djid):
         djid_id = 'support-list'
 
         additional_params = {
+            'height': 465,
             'autowidth': True,
+            'scroll': False,
             'multiselect': True,
         }
 
