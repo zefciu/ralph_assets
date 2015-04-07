@@ -365,7 +365,7 @@ class TestModelRack(TestCase):
             rack.free_u, rack_height - (asset_count * model_height)
         )
 
-    def test_chassis_returns_childre_with_gaps(self):
+    def test_chassis_returns_children_with_gaps(self):
         position = 3
         rack = RackFactory()
         chassis = DCAssetFactory(
@@ -386,7 +386,7 @@ class TestModelRack(TestCase):
             device_info__position=position,
             model__category__is_blade=True,
         )
-        children = chassis.get_related_assets()
+        children = list(chassis.get_related_assets())
         self.assertEqual(len(children), 5)
         self.assertIn(
             ('3', '-'),
@@ -396,7 +396,7 @@ class TestModelRack(TestCase):
             }
         )
 
-    def test_chassis_returns_childre_with_gaps_ab(self):
+    def test_chassis_returns_children_with_gaps_ab(self):
         position = 3
         rack = RackFactory()
         chassis = DCAssetFactory(
@@ -417,7 +417,7 @@ class TestModelRack(TestCase):
             device_info__position=position,
             model__category__is_blade=True,
         )
-        children = chassis.get_related_assets()
+        children = list(chassis.get_related_assets())
         self.assertEqual(len(children), 6)
         self.assertIn(
             ('2A', '-'),

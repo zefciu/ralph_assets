@@ -13,6 +13,7 @@ import logging
 import os
 import re
 from collections import namedtuple
+from itertools import chain
 
 from dateutil.relativedelta import relativedelta
 
@@ -504,12 +505,14 @@ class Gap(object):
     sn = '-'
     service = namedtuple('Service', ['name'])('-')
     model = namedtuple('Model', ['name'])('-')
-    url = ''
     linked_device = None
 
     def __init__(self, slot_no, orientation):
         self.slot_no = slot_no
         self.orientation = orientation
+
+    def get_absolute_url(self):
+        return ''
 
     @property
     def device_info(self):
@@ -1008,16 +1011,19 @@ class Asset(
     def get_related_assets(self):
         """Returns the children of a blade chassis"""
         orientations = [Orientation.front, Orientation.back]
-        assets = list(
-            Asset.objects.select_related('device_info', 'model').filter(
-                device_info__position=self.device_info.position,
-                device_info__rack=self.device_info.rack,
-                device_info__orientation__in=orientations,
-            ).exclude(id=self.id)
-        )
-        if not assets:
-            return []
-        return Gap.generate_gaps(assets)
+        assets_by_orientation = []
+        for orientation in orientations:
+            assets_by_orientation.append(list(
+                Asset.objects.select_related('device_info', 'model').filter(
+                    device_info__position=self.device_info.position,
+                    device_info__rack=self.device_info.rack,
+                    device_info__orientation=orientation,
+                ).exclude(id=self.id)
+            ))
+        assets = [
+            Gap.generate_gaps(assets) for assets in assets_by_orientation
+        ]
+        return chain(*assets)
 
     def get_orientation_desc(self):
         return self.device_info.get_orientation_desc()
