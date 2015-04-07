@@ -58,6 +58,12 @@ class TestRestAssetInfoPerRack(TestCase):
         self.rack_1.deviceinfo_set.add(self.asset_2.device_info)
         rack_2.deviceinfo_set.add(asset_3.device_info)
 
+        self.pdu_1 = AssetFactory(
+            device_info__rack=self.rack_1,
+            device_info__orientation=Orientation.left,
+            device_info__position=0,
+        )
+        self.rack_1.deviceinfo_set.add(self.pdu_1.device_info)
         self.rack1_accessory = RackAccessoryFactory(
             rack=self.rack_1,
             server_room=self.rack_1.server_room,
@@ -148,6 +154,13 @@ class TestRestAssetInfoPerRack(TestCase):
                     'type': self.rack1_accessory.accessory.name,
                 },
             ],
-            'pdus': []
+            'pdus': [
+                {
+                    'model': self.pdu_1.model.name,
+                    'orientation': 'left',
+                    'url': self.pdu_1.get_absolute_url(),
+                    'sn': '{}'.format(self.pdu_1.sn)
+                },
+            ]
         }
         self.assertEqual(returned_json, expected_json)

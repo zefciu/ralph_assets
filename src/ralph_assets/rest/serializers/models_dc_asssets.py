@@ -131,7 +131,7 @@ class RackAccessorySerializer(serializers.ModelSerializer):
 class PDUSerializer(serializers.ModelSerializer):
     model = serializers.CharField(source='model.name')
     orientation = serializers.IntegerField(source='get_orientation_desc')
-    url = serializers.CharField(source='url')
+    url = serializers.CharField(source='get_absolute_url')
 
     def get_type(self, obj):
         return TYPE_PDU
