@@ -37,6 +37,11 @@ from ralph_assets.models_util import (
 class SupportType(Named):
     """The type of a support"""
 
+    def get_absolute_url(self):
+        return reverse(
+            'admin:ralph_assets_supporttype_change', args=(self.id,)
+        )
+
 
 class SupportStatus(Choices):
     _ = Choices.Choice

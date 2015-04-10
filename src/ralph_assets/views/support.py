@@ -103,12 +103,16 @@ class SupportListDjid(Djid):
     class Meta:
         Model = Support
         columns = [
+            'support_type',
             'contract_id',
             'name',
+            'serial_no',
             'date_from',
             'date_to',
             'price',
             'created',
+            'additional_notes',
+            'description',
         ]
         djid_id = 'support-list'
 
