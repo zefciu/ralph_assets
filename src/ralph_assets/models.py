@@ -233,6 +233,9 @@ class SupportLookup(RestrictedLookupChannel):
         )
         return self.get_base_objects().filter(query).order_by('name')[:10]
 
+    def get_item_url(self, obj):
+        return obj.get_absolute_url()
+
     def get_result(self, obj):
         return obj.id
 

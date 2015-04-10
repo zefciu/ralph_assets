@@ -58,3 +58,10 @@ class AssetsView(ACLGateway, APIView):
             serializer.update()
             return Response(serializer.data)
         return Response(serializer.errors)
+
+    def post(self, request, format=None):
+        serializer = RackSerializer(data=request.DATA)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
