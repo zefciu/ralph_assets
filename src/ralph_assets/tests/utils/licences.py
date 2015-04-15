@@ -5,9 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import datetime
 from decimal import Decimal
 from random import randint, randrange
+import datetime
+import itertools
 
 from factory import (
     fuzzy,
@@ -37,18 +38,32 @@ from ralph_assets.tests.utils.assets import (
     UserFactory,
 )
 
+licence_type_generator = itertools.cycle([
+    'per processor', 'per user', 'OEM'
+])
+software_category_generator = itertools.cycle([
+    'Database', 'Office software', 'Free software', 'Other'
+])
+
 
 class LicenceTypeFactory(DjangoModelFactory):
     FACTORY_FOR = LicenceType
+    FACTORY_DJANGO_GET_OR_CREATE = ('name', )
 
-    name = Sequence(lambda n: 'Licence type #%s' % n)
+    @lazy_attribute
+    def name(self):
+        return licence_type_generator.next()
 
 
 class SoftwareCategoryFactory(DjangoModelFactory):
     FACTORY_FOR = SoftwareCategory
+    FACTORY_DJANGO_GET_OR_CREATE = ('name', )
 
-    name = Sequence(lambda n: 'Software category #%s' % n)
     asset_type = AssetType.BO
+
+    @lazy_attribute
+    def name(self):
+        return software_category_generator.next()
 
 
 class LicenceFactory(DjangoModelFactory):
