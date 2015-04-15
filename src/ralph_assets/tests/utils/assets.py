@@ -53,6 +53,15 @@ from ralph_assets.tests.utils import UserFactory
 category_code_set = 'ABCDEFGHIJKLMNOPRSTUVWXYZ1234567890'
 category_code_combinations = itertools.product(category_code_set, repeat=2)
 
+asset_owner_generator = itertools.cycle([
+    'ACME', 'Mobile Team', 'Java Developers', 'Java Haters', 'Python lovers',
+    'All Stars PHP Team'
+])
+
+asset_manufacturer_generator = itertools.cycle([
+    'ACME Inc.', 'HP', 'Microsoft', 'Dell', 'Apple'
+])
+
 
 def unique_str():
     unique_str.counter += 1
@@ -107,8 +116,11 @@ class ServiceFactory(DjangoModelFactory):
 
 class AssetOwnerFactory(DjangoModelFactory):
     FACTORY_FOR = AssetOwner
+    FACTORY_DJANGO_GET_OR_CREATE = ('name', )
 
-    name = Sequence(lambda n: 'Asset owner #%s' % n)
+    @lazy_attribute
+    def name(self):
+        return asset_owner_generator.next()
 
 
 class AssetCategoryFactory(DjangoModelFactory):
@@ -136,8 +148,11 @@ class AssetSubCategoryFactory(AssetCategoryFactory):
 
 class AssetManufacturerFactory(DjangoModelFactory):
     FACTORY_FOR = AssetManufacturer
+    FACTORY_DJANGO_GET_OR_CREATE = ('name', )
 
-    name = Sequence(lambda n: 'Manufacturer #%s' % n)
+    @lazy_attribute
+    def name(self):
+        return asset_manufacturer_generator.next()
 
 
 class AssetModelFactory(DjangoModelFactory):
