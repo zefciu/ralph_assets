@@ -2,14 +2,66 @@ Quickstart
 ==========
 
 The Ralph Assets module enables management of assets, licences and supports.
-Any objects in this modules allows manage relation beetween them.
+Any objects in this modules allows manage relation beetween them. This
+quickstart assumes that you installed ralph with the demo data.
 
 
 Assets
 ^^^^^^
 
+On the main Assets' page you can see some demo hardware assets. Note that they
+are not discovered i.e. they are added to the database but ralph scan didn't
+discover them in the network.
+
+Adding new assets
+--------------------------
+
+We start by adding two similar assets.
+
+1. Click "Add device"
+
+2. Fill the form with the following data
+
+.. image:: _static/ralph_quick_start_add_assets.png
+    :width: 600px
+
+- **Basic info:**
+
+    - Model:  PowerEdge Rxxx (HP) (Server Rack)
+    - Warehouse: Warsaw
+    - Service catalog: Databases
+    - Environment: Prod
+    - Region: Default Region
+    - Hostname: localhost 
+    - IP address: 127.0.0.1
+- **Financial info:**
+    - Price: 2000
+    - Deprecation rate: 25
+    - Invoice date: Enter yesterday's date
+- **Additional info:**
+    - Data center: DC A
+    - Server room: Server room A
+    - Orientation: front
+    - Position: 1
+
+- SN/SNs::
+  12345
+  67890
+- Barcode/Barcodes::
+  12345
+  67890
+
+Note that in real-world cases if you use barcodes and a scanner it is easy to
+enter several assets with common model using the scanner to fill in "SN" and
+"Barcode" fields.
+
+
+
+
 Searching and Filtering of Assets
 ---------------------------------
+
+In the search form on the left 
 
 Let's start with the main screen. Here you find all your hardware assets which
 are in the database. Use the left column for filtering of the assets.
