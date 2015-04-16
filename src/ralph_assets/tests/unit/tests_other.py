@@ -572,3 +572,43 @@ class TestBulkEditLocationMessage(TestCase):
         msg_sn, msg_barcode = self.chassis_bulk_edit._get_non_blade_message([])
         self.assertFalse(msg_sn)
         self.assertFalse(msg_barcode)
+
+
+class TestAssetUrls(TestCase):
+
+    def test_get_configuration_url_returns_url(self):
+        asset = DCAssetFactory()
+        url = asset.get_configuration_url()
+        self.assertTrue(url)
+
+    def test_get_configuration_url_returns_none(self):
+        asset = DCAssetFactory(device_info=None)
+        url = asset.get_configuration_url()
+        self.assertFalse(url)
+
+    def test_get_vizualization_returns_url(self):
+        asset = DCAssetFactory()
+        url = asset.get_vizualization_url()
+        self.assertTrue(url)
+
+    def test_get_vizualization_returns_none_when_no_device_info(self):
+        asset = DCAssetFactory(device_info=None)
+        url = asset.get_vizualization_url()
+        self.assertFalse(url)
+
+    def test_get_vizualization_returns_none_when_no_data_center(self):
+        asset = DCAssetFactory()
+        asset.device_info.data_center = None
+        asset.device_info.save()
+        self.assertTrue(asset.device_info.rack)
+        self.assertFalse(asset.device_info.data_center)
+        url = asset.get_vizualization_url()
+        self.assertTrue(url)
+
+    def test_get_vizualization_returns_none_when_no_rack(self):
+        asset = DCAssetFactory(device_info=DeviceInfoFactory())
+        asset.device_info.rack = None
+        self.assertTrue(asset.device_info.data_center)
+        self.assertFalse(asset.device_info.rack)
+        url = asset.get_vizualization_url()
+        self.assertFalse(url)
