@@ -1124,6 +1124,10 @@ class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
     licences = AutoCompleteSelectMultipleField(
         LOOKUPS['free_licences'],
         required=False,
+        help_text=_(
+            'Type licence\'s "inventory number" or "software category"'
+            ', at least 4 characters.'
+        ),
     )
     warehouse = AutoCompleteSelectField(
         LOOKUPS['asset_warehouse'],
@@ -1180,6 +1184,7 @@ class BaseEditAssetForm(DependencyAssetForm, BaseAssetForm):
     supports = AutoCompleteSelectMultipleField(
         LOOKUPS['support'],
         required=False,
+        help_text=_('Type support\'s "name" or "contract id"'),
     )
     budget_info = AutoCompleteSelectField(
         LOOKUPS['budget_info'],

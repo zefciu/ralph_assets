@@ -282,6 +282,7 @@ class DeviceInfo(HistoryMixin, TimeTrackable, SavingUser, SoftDeletable):
     rack_old = models.CharField(max_length=10, null=True, blank=True)
     slot_no = models.CharField(
         verbose_name=_("slot number"), max_length=3, null=True, blank=True,
+        help_text=_('Fill it if asset is blade server'),
     )
     position = models.IntegerField(null=True)
     orientation = models.PositiveIntegerField(

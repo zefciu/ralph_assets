@@ -95,6 +95,9 @@ class Licence(
     licence_type = models.ForeignKey(
         LicenceType,
         on_delete=models.PROTECT,
+        help_text=_(
+            "Should be like 'per processor' or 'per machine' and so on. ",
+        ),
     )
     property_of = models.ForeignKey(
         AssetOwner,

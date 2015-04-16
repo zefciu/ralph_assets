@@ -633,6 +633,11 @@ class Asset(
         max_digits=5,
         blank=True,
         default=settings.DEFAULT_DEPRECATION_RATE,
+        help_text=_(
+            'This value is in percentage.'
+            ' For example value: "100" means it depreciates during a year.'
+            ' Value: "25" means it depreciates during 4 years, and so on... .'
+        ),
     )
     force_deprecation = models.BooleanField(help_text=(
         'Check if you no longer want to bill for this asset'
