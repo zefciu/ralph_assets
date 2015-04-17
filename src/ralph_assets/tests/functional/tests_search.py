@@ -612,7 +612,7 @@ class TestSearchEngine(TestCase):
             BOAssetFactory(model__name=name)
 
         rack = RackFactory(name='707', server_room__name='Server Room 404')
-        for manufacturer in ['Apple', 'Sony', 'Nikon', 'Sony Ericsson']:
+        for manufacturer in ['Huaweii', 'Sony', 'Nikon', 'Sony Ericsson']:
             manu = AssetManufacturerFactory(name=manufacturer)
             DCAssetFactory(
                 model__manufacturer=manu,
@@ -621,8 +621,10 @@ class TestSearchEngine(TestCase):
             BOAssetFactory(model__manufacturer=manu)
             licences.LicenceFactory(manufacturer=manu)
 
+        manu = AssetManufacturerFactory(name='Akme')
         for unique in ['123456', '456123']:
             DCAssetFactory(
+                model__manufacturer=manu,
                 barcode=unique,
                 sn=unique,
                 niw=unique,
@@ -630,7 +632,12 @@ class TestSearchEngine(TestCase):
                 device_info__rack__server_room__name='Server Room 33',
             )
         for unique in ['654321', '321654']:
-            BOAssetFactory(barcode=unique, sn=unique, niw=unique)
+            BOAssetFactory(
+                model__manufacturer=manu,
+                barcode=unique,
+                sn=unique,
+                niw=unique,
+            )
 
     def _search_results(self, url, field_name=None, value=None):
         if field_name and value:
@@ -709,7 +716,7 @@ class TestSearchEngine(TestCase):
         field_name = 'manufacturer'
         for url in urls.values():
             self._check_results_length(url, field_name, '"Sony"', 1)
-            self._check_results_length(url, field_name, '"Apple"', 1)
+            self._check_results_length(url, field_name, '"Huaweii"', 1)
             self._check_results_length(url, field_name, '"Sony Ericsson"', 1)
             self._check_results_length(url, field_name, '"Manu 404"', 0)
 
@@ -719,8 +726,8 @@ class TestSearchEngine(TestCase):
         field_name = 'manufacturer'
         for url in urls.values():
             self._check_results_length(url, field_name, 'Sony', 2)
-            self._check_results_length(url, field_name, 'pp', 1)
-            self._check_results_length(url, field_name, 'o', 3)
+            self._check_results_length(url, field_name, 'ii', 1)
+            self._check_results_length(url, field_name, 'on', 3)
 
     def test_barcode(self):
         field_name = 'barcode'
