@@ -1033,6 +1033,26 @@ class Asset(
     def get_orientation_desc(self):
         return self.device_info.get_orientation_desc()
 
+    def get_configuration_url(self):
+        device = self.get_ralph_device()
+        configuration_url = device.url if device else None
+        return configuration_url
+
+    def get_vizualization_url(self):
+        try:
+            rack_id, data_center_id = (
+                self.device_info.rack.id, self.device_info.rack.data_center.id,
+            )
+        except AttributeError:
+            visualization_url = None
+        else:
+            prefix = reverse('dc_view')
+            postfix = '/dc/{data_center_id}/rack/{rack_id}'.format(
+                data_center_id=data_center_id, rack_id=rack_id,
+            )
+            visualization_url = '#'.join([prefix, postfix])
+        return visualization_url
+
 
 class CoaOemOs(Named):
     """Define oem installed operating system"""

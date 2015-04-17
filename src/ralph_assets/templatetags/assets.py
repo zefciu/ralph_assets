@@ -89,3 +89,11 @@ def transition_button(transition_type):
         'transition_type': transition_type,
         'asset_transitions_enabled': settings.ASSETS_TRANSITIONS.get('ENABLE'),
     }
+
+
+@register.inclusion_tag('assets/templatetags/data_center_links.html')
+def data_center_links(asset):
+    return {
+        'configuration_url': asset.get_configuration_url(),
+        'visualization_url': asset.get_vizualization_url(),
+    }

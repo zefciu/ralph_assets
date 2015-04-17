@@ -1,0 +1,18 @@
+{% load i18n %}
+
+{% if visualization_url or configuration_url %}
+    <div class="pagination pagination-centered">
+        <ul>
+            {% if configuration_url %}
+                <li><a href='{{ configuration_url }}'>
+                    {% blocktrans %} View configuration {% endblocktrans %}
+                </a></li>
+            {% endif %}
+            {% if visualization_url %}
+                <li><a href='{{ visualization_url }}'>
+                    {% blocktrans %} View rack visualization {% endblocktrans %}
+                </a></li>
+            {% endif %}
+        </ul>
+    </div>
+{% endif %}
