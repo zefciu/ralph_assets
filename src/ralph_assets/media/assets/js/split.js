@@ -1,4 +1,4 @@
-define(['jquery', 'bob'], function ($, bob) {
+define(['jquery', 'bob', 'bob-ajax-select'], function ($, bob, ajax_select) {
     var FORM_COUNT = parseInt($('input[name="form-TOTAL_FORMS"]').val());
 
     function change_form_counter(action) {
@@ -45,7 +45,7 @@ define(['jquery', 'bob'], function ($, bob) {
                 change_form_counter('add');
                 renumber_forms();
                 var new_last = $('.form-split tbody tr').last();
-                bas = bob.getInstance();
+                bas = ajax_select.getInstance();
                 bas.register_in_element(new_last);
                 $('.results_on_deck', new_last).bind('added', function() {
                     var id = $($('input:hidden', new_last)[1])
