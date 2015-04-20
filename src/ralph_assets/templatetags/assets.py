@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.forms import CheckboxInput
 
-from ralph_assets.models import get_edit_url
+from ralph_assets.models import get_edit_url, Transition
 from ralph_assets.models_support import Support
 from ralph_assets.models_assets import ASSET_TYPE2MODE
 
@@ -83,17 +83,17 @@ def mode_switch(context):
     return {'mode': context['mode']}
 
 
-@register.inclusion_tag('assets/templatetags/transition_button.html')
-def transition_button(transition_type):
-    return {
-        'transition_type': transition_type,
-        'asset_transitions_enabled': settings.ASSETS_TRANSITIONS.get('ENABLE'),
-    }
-
-
 @register.inclusion_tag('assets/templatetags/data_center_links.html')
 def data_center_links(asset):
     return {
         'configuration_url': asset.get_configuration_url(),
         'visualization_url': asset.get_vizualization_url(),
+    }
+
+
+@register.inclusion_tag('assets/templatetags/transition_button.html')
+def transition_button(asset):
+    return {
+        'transitions': Transition.get_for_asset(asset),
+        'asset_transitions_enabled': settings.ASSETS_TRANSITIONS.get('ENABLE'),
     }

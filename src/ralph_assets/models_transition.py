@@ -8,10 +8,12 @@ from __future__ import unicode_literals
 
 import os
 import logging
+from collections import Iterable
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.db import models
+from django.db.models import Q
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from lck.django.common.models import (
@@ -62,6 +64,27 @@ class Transition(Named, TimeTrackable, WithConcurrentGetOrCreate):
     def odt_templates(self):
         return ReportOdtSourceLanguage.objects.filter(
             report_odt_source__slug=self.slug
+        )
+
+    @classmethod
+    def get_for_asset(cls, asset):
+        """Returns all transitions that are possible for this asset or assets
+        """
+        if isinstance(asset, Iterable):
+            if not asset:
+                return []
+            transitions = iter(
+                cls.get_for_asset(single_asset)
+                for single_asset in asset
+            )
+            first_transition = set(next(transitions))
+            return reduce(
+                set.intersection,
+                transitions,
+                first_transition,
+            )
+        return cls.objects.filter(
+            Q(from_status__isnull=True) | Q(from_status=asset.status)
         )
 
 

@@ -1,10 +1,18 @@
 {% load i18n %}
 
 {% if asset_transitions_enabled %}
-<button class='btn' name="transition_type" value='{{transition_type}}'
-  type="submit">
-  {% blocktrans %}
-    submit and {{transition_type}}
-  {% endblocktrans %}
-</button>
+<input type="hidden" id="transition-type" name="transition-type">
+<span class="dropdown">
+    <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true" id="save-and-btn">
+        {% blocktrans %}
+            Save and...
+        {% endblocktrans %}
+    </button>
+    <span class="caret"></span>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="save-and-btn">
+      {% for transition in transitions %}
+      <li><a class="transition-link" data-transition="{{ transition.slug }}">{{ transition.slug }}</a></li>
+      {% endfor %}
+  </ul>
+</span>
 {% endif %}
