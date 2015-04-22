@@ -1,17 +1,17 @@
 {% extends 'assets/add_assets.html' %}
-{% load assets bob i18n history_tags %}
+{% load assets bob i18n history_tags staticfiles %}
 
 {% block form_title %}{% trans "Edit device" %}{% endblock %}
 
 
 {% block styles %}
     {{ block.super }}
-    <link rel="stylesheet" href="{{ STATIC_URL }}assets/css/mobile.css">
+    <link rel="stylesheet" href="{% static 'assets/css/mobile.css' %}">
 {% endblock %}
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="{{ STATIC_URL }}assets/js/mobile.js">
+  <script type="text/javascript" src="{% static 'assets/js/mobile.js' %}">
   </script>
 {% endblock %}
 
