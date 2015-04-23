@@ -89,6 +89,7 @@ class TransitionDispatcher(object):
 
     def _action_unassign_user(self):
         for asset in self.assets:
+            asset.previous_user = asset.user
             asset.user = None
             asset.save(user=self.logged_user)
 
@@ -99,11 +100,13 @@ class TransitionDispatcher(object):
 
     def _action_unassign_loan_end_date(self):
         for asset in self.assets:
+            asset.previous_loan_end_date = asset.loan_end_date
             asset.loan_end_date = None
             asset.save(user=self.logged_user)
 
     def _action_unassign_owner(self):
         for asset in self.assets:
+            asset.previous_owner = asset.owner
             asset.owner = None
             asset.save(user=self.logged_user)
 

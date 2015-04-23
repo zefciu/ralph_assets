@@ -258,7 +258,12 @@ class TestTransition(TestCase):
 
     @prepare_transition('return-asset', unassign_actions, required_report=True)
     def test_transition_form_unassign(self):
-        self._prepare_assets({'user': self.user})
+        today = date.today()
+        self._prepare_assets({
+            'user': self.user,
+            'owner': self.owner,
+            'loan_end_date': today,
+        })
         self._assign_licence_to_assets()
         asset_ids = Asset.objects.values_list('id', flat=True)
         url_params = {'select': asset_ids, 'transition_type': 'return-asset'}
@@ -270,6 +275,11 @@ class TestTransition(TestCase):
             ).distinct().count(),
             1,
         )
+        for asset in self.assets:
+            asset = Asset.objects.get(id=asset.pk)
+            self.assertEqual(asset.user, None)
+            self.assertEqual(asset.owner, None)
+            self.assertEqual(asset.loan_end_date, None)
 
     @prepare_transition('return-asset', unassign_actions, required_report=True)
     def test_transition_history_file(self):
