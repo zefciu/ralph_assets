@@ -56,21 +56,42 @@ enter several assets with common model using the scanner to fill in "SN" and
 "Barcode" fields.
 
 
-
-
 Searching and Filtering of Assets
 ---------------------------------
 
-In the search form on the left 
+Click on the 'Hardware' button to go back to the asset listing. Now try to
+search for the assets you just added. First try to search by SN type the
+following into the ``SN`` field and click "Search" after.:
 
-Let's start with the main screen. Here you find all your hardware assets which
-are in the database. Use the left column for filtering of the assets.
+* ``123``
+* ``"123"``
+* ``"12345"``
 
-There are two types of assets -- devices and parts. A device could be a blade
-server, and a part is a component of this server, for example memory or hard
-disk drive. A part can be assigned to a single device at a time. You can move
-parts from one device to another when you need it.
+Note that you can search for whole value only using quotes or for substrings
+without them.
 
+* Erase ``SN`` field and start typing ``Databases`` into ``Service catalog``
+  field. The select ``Databases`` from the live-search you see. Click "Search"
+
+You can also search be virtually any attribute an asset has.
+
+
+Scanning your asset
+---------------------------
+
+Click ``Core`` and ``Search`` in the menu. Find the container your ralph
+instance runs on by entering ``0242AC11FFFF`` (this is the MAC address you used
+when starting your Docker container) in ``Serial number, MAC or WWN``
+field. Note that the device has no operating system in the ``Components`` tab
+or Addresses set up in ``Addresses`` tab.
+
+Click ``Quick Scan`` in menu and enter ``127.0.0.1``. Keeping all plugins
+selected click ``Scan`` button.
+
+After a while all the plugins will finish its work. Note that most of them will
+fail. That's OK. Most of the plugins work only with very specific equipment
+vendors. You should however see the plugins: ``dns_hostname``, ``snmp_lldp``,
+``software`` and ``ssh_linux`` successfull.
 
 Adding Assets
 -------------
